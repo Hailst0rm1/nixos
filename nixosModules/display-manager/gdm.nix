@@ -1,14 +1,18 @@
 {
   pkgs,
   lib,
+  config,
   ...
-}: {
-  services.xserver = {
-    enable = true;
-    displayManager = {
-      gdm.enable = lib.mkDefault true;
+}: let
+  cfg = config.desktopEnvironment.displayManager;
+in {
+  config = lib.mkIf (cfg == "gdm") {
+    services.xserver = {
+      enable = true;
+      displayManager = {
+        gdm.enable = lib.mkDefault true;
+      };
     };
-    xkb.layout = "us";
   };
 }
 

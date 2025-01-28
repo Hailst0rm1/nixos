@@ -3,61 +3,75 @@
   lib,
   pkgs-unstable,
   ...
-}: {
-  nixpkgs.config.allowUnfree = true;
-
-  boot = {
-    # Use stable kernel from nixos-unstable branch since its usually more up to date
-    # and has better compatibility with Nvidia drivers
-    kernelPackages = pkgs-unstable.linuxPackages;
-
-    initrd.kernelModules = [
-      "nvidia"
-      "nvidia_modeset"
-      "nvidia_uvm"
-      "nvidia_drm"
-    ];
-
-    kernelParams = [
-      # "nvidia_drm.fbdev=1"
-    ];
+}:
+let
+  cfg = config.graphicDriver.nvidia;
+in {
+  options.graphicDriver.nvidia = {
+    enable = lib.mkEnableOption "Enable nvidia gpu drivers.";
+    type = lib.mkOption {
+      default = "default";
+      type = lib.types.str;
+      description = "Select display manager.";
+    };
   };
 
-  hardware.graphics = {
-    enable = true;
-    extraPackages = [pkgs-unstable.libva-vdpau-driver];
-  };
+  config = lib.mkIf (cfg.enable == true && cfg.type == "default") {
+    nixpkgs.config.allowUnfree = true;
 
-  # Load nvidia driver for Xorg and Wayland
-  services.xserver.videoDrivers = ["nvidia"];
+    boot = {
+      # Use stable kernel from nixos-unstable branch since its usually more up to date
+      # and has better compatibility with Nvidia drivers
+      kernelPackages = pkgs-unstable.linuxPackages;
 
-  hardware.nvidia = {
-    # Modesetting is required.
-    modesetting.enable = true;
+      initrd.kernelModules = [
+        "nvidia"
+        "nvidia_modeset"
+        "nvidia_uvm"
+        "nvidia_drm"
+      ];
 
-    # Nvidia power management. Experimental, and can cause sleep/suspend to fail.
-    # Enable this if you have graphical corruption issues or application crashes after waking
-    # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead
-    # of just the bare essentials.
-    powerManagement.enable = true;
+      kernelParams = [
+        # "nvidia_drm.fbdev=1"
+      ];
+    };
 
-    # Fine-grained power management. Turns off GPU when not in use.
-    # Experimental and only works on modern Nvidia GPUs (Turing or newer).
-    powerManagement.finegrained = false;
+    hardware.graphics = {
+      enable = true;
+      extraPackages = [pkgs-unstable.libva-vdpau-driver];
+    };
 
-    # Use the NVidia open source kernel module (not to be confused with the
-    # independent third-party "nouveau" open source driver).
-    # Support is limited to the Turing and later architectures. Full list of
-    # supported GPUs is at:
-    # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
-    # Only available from driver 515.43.04+
-    # Currently alpha-quality/buggy, so false is currently the recommended setting.
-    open = false;
+    # Load nvidia driver for Xorg and Wayland
+    services.xserver.videoDrivers = ["nvidia"];
 
-    # Enable the Nvidia settings menu,
-    # accessible via `nvidia-settings`.
-    nvidiaSettings = true;
+    hardware.nvidia = {
+      # Modesetting is required.
+      modesetting.enable = true;
 
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
+      # Nvidia power management. Experimental, and can cause sleep/suspend to fail.
+      # Enable this if you have graphical corruption issues or application crashes after waking
+      # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead
+      # of just the bare essentials.
+      powerManagement.enable = true;
+
+      # Fine-grained power management. Turns off GPU when not in use.
+      # Experimental and only works on modern Nvidia GPUs (Turing or newer).
+      powerManagement.finegrained = false;
+
+      # Use the NVidia open source kernel module (not to be confused with the
+      # independent third-party "nouveau" open source driver).
+      # Support is limited to the Turing and later architectures. Full list of
+      # supported GPUs is at:
+      # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
+      # Only available from driver 515.43.04+
+      # Currently alpha-quality/buggy, so false is currently the recommended setting.
+      open = false;
+
+      # Enable the Nvidia settings menu,
+      # accessible via `nvidia-settings`.
+      nvidiaSettings = true;
+
+      package = config.boot.kernelPackages.nvidiaPackages.stable;
+    };
   };
 }

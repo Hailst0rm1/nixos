@@ -1,4 +1,4 @@
-{ pkgs, hostname, username,  ... }:
+{ pkgs, lib, config, ... }:
 
 let
   keymap = pkgs.writeText "keymap.xkb" ''
@@ -37,26 +37,29 @@ let
     };
   '';
 in
-
 {
-  environment.etc."X11/xkb/keymap.xkb".source = keymap;
+  options.system.keyboard.colemak-se = lib.mkEnableOption "Enable the colemak-se layout";
 
-  # Ensure home-manager doesn't interfere with XKB
-  home-manager.users.hailst0rm = {
-    home.keyboard = null;
-  };
+  config = lib.mkIf config.system.keyboard.colemak-se {
+    environment.etc."X11/xkb/keymap.xkb".source = keymap;
 
-  services.xserver = {
-    enable = true;
-    xkb = {
-      extraLayouts.colemak-se = {
-        description = "Colemak-SE";
-        languages   = [ "swe" ];
-        symbolsFile = keymap;
+    # Ensure home-manager doesn't interfere with XKB
+    home-manager.users.hailst0rm = {
+      home.keyboard = null;
+    };
+
+    services.xserver = {
+      enable = true;
+      xkb = {
+        extraLayouts.colemak-se = {
+          description = "Colemak-SE";
+          languages   = [ "swe" ];
+          symbolsFile = keymap;
+        };
+        layout = "colemak-se";
+        model = "pc105";
+        variant = "";
       };
-      layout = "colemak-se";
-      model = "pc105";
-      variant = "";
     };
   };
 }

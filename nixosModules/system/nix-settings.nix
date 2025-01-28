@@ -1,27 +1,37 @@
-{...}: {
-  # Enable flakes
-  nix.settings = {
-    experimental-features = [
-      "nix-command"
-      "flakes"
-    ];
-    auto-optimise-store = true; # Store cleanup
+{ config, lib, ...}:
+let
+  cfg = config.system.automatic;
+in {
+  options.system.automatic = {
+    upgrade = lib.mkEnableOption "Enable weekly system upgrades";
+    cleanup = lib.mkEnableOption "Enable automatic system cleanup every 10 days";
   };
+  
+  config = {
+    # Enable flakes
+    nix.settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      auto-optimise-store = true; # Store cleanup
+    };
 
-  # Automatic cleanup
-  nix.gc = {
-    automatic = true;
-    dates = "daily";
-    options = "--delete-older-than 10d";
-  };
+    # Automatic cleanup
+    nix.gc = lib.mkIf cfg.upgrade {
+      automatic = true;
+      dates = "daily";
+      options = "--delete-older-than 10d";
+    };
 
-  # Automatic system upgrades (weekly)
-  system.autoUpgrade = {
-    enable = true;
-    operation = "boot";
-    flake = "$HOME/.nixos";
-    flags = [ "--update-input" "nixpkgs" "--commit-lock-file" ];
-    dates = "weekly";
+    # Automatic system upgrades (weekly)
+    system.autoUpgrade = lib.mkIf cfg.upgrade {
+      enable = true;
+      operation = "boot";
+      flake = "$HOME/.nixos";
+      flags = [ "--update-input" "nixpkgs" "--commit-lock-file" ];
+      dates = "weekly";
+    };
   };
 }
 

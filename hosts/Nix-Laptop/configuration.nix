@@ -9,36 +9,59 @@ in {
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
     myLib.validFiles ../../nixosModules
-
-    # Keep for now - remove once they are modularly added:
-    ../../nixosModules/default.nix
-    #../../nixosModules/zen-browser.nix
-    ../../nixosModules/graphics/nvidia/test.nix
-    #../../nixosModules/graphics/intel/default.nix
-    ../../nixosModules/themes/stylix.nix
   ];
 
   # variables.nix
   systemVariables = {
     username = "hailst0rm";
     hostname = "Nix-Laptop";
-    bootloader = "systemd";
-    kernel = "zen";
   };
 
-  # default.nix
-  nixosModules.default = true;
+  # desktop/default.nix
+  # Gnome is default
+  desktopEnvironment.name = "hyprland";
 
+  # graphic
+  graphicDriver.nvidia = {
+    enable = true;
+    type = "test";
+  };
+
+  security = {
+    dnscrypt.enable = false;
+    completePolkit.enable = false;
+    yubikey.enable = false;
+  };
+
+  # Bluetooth
+  hardware.bluetooth.enable = true;
+  hardware.bluetooth.powerOnBoot = false;
+  
+  system = {
+    # TODO: Kernel
+    theme = "catppuccin-mocha";
+    bootloader = "systemd";
+    keyboard.colemak-se = true;
+    firewall.enable = true;
+    automatic = {
+      upgrade = true;
+      cleanup = true;
+    };
+  };
+
+  virtualisation = {
+    host = {
+      vmware = true;
+      qemu = true;
+    };
+    guest = {
+      vmware = false;
+      qemu = false;
+    };
+  };
+
+  # Allow unfree software
   nixpkgs.config.allowUnfree = true;
-  # # # # # # # # # # # !!!!!! # # # # # # # # # #
-  # UNCOMMENT THIS SECTION WHILE INSTALLING      #
-  #                                              #
-  #security.pam = {
-  #  u2f.enable = lib.mkForce false;
-  #  services.login.u2fAuth = lib.mkForce false;
-  #  services.login.u2fAuth = lib.mkForce false;
-  #}
-  # # # # # # # # # # # !!!!!! # # # # # # # # # #
 
   # Set your time zone.
   time.timeZone = "Europe/Stockholm";
@@ -52,6 +75,17 @@ in {
     extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
     initialPassword = "t";
   };
+    
+
+  # # # # # # # # # # # !!!!!! # # # # # # # # # #
+  # UNCOMMENT THIS SECTION WHILE INSTALLING      #
+  #                                              #
+  #security.pam = {
+  #  u2f.enable = lib.mkForce false;
+  #  services.login.u2fAuth = lib.mkForce false;
+  #  services.login.u2fAuth = lib.mkForce false;
+  #}
+  # # # # # # # # # # # !!!!!! # # # # # # # # # #
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
   # and migrated your data accordingly.
