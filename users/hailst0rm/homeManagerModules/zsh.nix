@@ -36,9 +36,9 @@
       };
 
       envExtra = ''
-        export EDITOR="${config.editor}"
         export TERMINAL="${config.terminal}"
         export TERM="${config.terminal}"
+        export EDITOR="${config.editor}"
         export BROWSER="${config.browser}"
         export VIDEO="${config.video}"
         export IMAGE="${config.image}"
@@ -46,8 +46,8 @@
         #export LAUNCHER="cosmic-launcher"
         export FLAKE="${config.nixosDir}" # For nh
         export GIT_EXTERNAL_DIFF="difft" # Using difftastic for git diffs
-        export FZF_DEFAULT_OPTS="--color=16"
         export ZINIT_HOME="$HOME/.local/share/zsh/zinit"
+        export FZF_DEFAULT_OPTS="--color=16"
         export FZF_DEFAULT_OPTS=" \
         --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
         --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
@@ -88,46 +88,6 @@
 
       initExtra = ''
         ${pkgs-unstable.fastfetch}/bin/fastfetch
-
-  displays () {
-      DIR="${config.nixosDir}/users/${config.username}/hosts/displays"
-      FILE="$DIR/${config.hostname}.conf"
-
-      # Create the directory if it doesn't exist
-      if [[ ! -d "$DIR" ]]; then
-          mkdir -p "$DIR"
-      fi
-
-      # Create the file if it doesn't exist
-      if [[ ! -f "$FILE" ]]; then
-          touch "$FILE"
-      	# Set file permissions
-      	sudo chmod 755 "$FILE"
-      fi
-
-
-      # Inform user about script
-      echo "[!] The monitors will refresh once you close the GUI application - not once you've applied the settings in GUI"
-
-      # Run nwg-displays
-      nwg-displays -m $FILE &>/dev/null
-
-      # Modify the file after nwg-displays exits
-  if [[ -f "$FILE" ]]; then
-  # Process the file content
-  {
-    echo -n '[ '
-    grep '^monitor=' "$FILE" | sed -E 's/^monitor=(.*)$/"\1"/' | tr '\n' ' ' | sed 's/ $/ ]/'
-  } > "$FILE.tmp"
-
-  # Replace the original file with the processed one
-  mv "$FILE.tmp" "$FILE"
-  fi
-
-      # Reload Hyprland
-      hyprctl reload 1>/dev/null
-  }
-
 
         nix-edit () {
           yazi ${config.nixosDir}

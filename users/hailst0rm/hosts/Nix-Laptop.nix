@@ -5,9 +5,7 @@ let
 in {
   imports = [
     myLib.validFiles ../homeManagerModules
-    myLib.validFiles ../../applications
-    #../../../hosts/Nix-Laptop/configuration.nix
-
+    ../../applications.nix
 
     # Keep for now but delete later
     ../homeManagerModules/default.nix
@@ -27,10 +25,7 @@ in {
     homeDirectory = lib.mkDefault "/home/${config.username}";
   };
 
-
-  # Inherit variables from system
-  
-
+  # Variables.nix (mainly used for zsh-environment)
   terminal = "ghostty";
   shell = "zsh";
   editor = "hx";
@@ -38,19 +33,42 @@ in {
   browser = "firefox";
   video = "totem";
   image = "loupe";
-  keyboardLayout = "colemak-se";
+  keyboard = "colemak-se,se";
 
-  tools = {
-    
+  # Import configuration for other tools
+  importConfig = {
+    git.enable = true;
+    yazi.enable = true;
+    stylix.enable = true;
+    hyprland = {
+      enable = true;
+      panel = "hyprpanel";
+      lockscreen = "hyprlock";
+      appLauncher = "rofi";
+      notifications = "hyprpanel";
+      wallpaper = "swww";
+    };
   };
 
   applications = {
-    
+    bitwarden.enable = true;
+    discord.enable = true;
+    firefox.enable = true;
+    mattermost.enable = true;
+    obsidian.enable = true;
+    proton-all.enable = true;
+    spotify.enable = true;
+    zen-browser.enable = true;
+    proton.enableAll = true;
+    games = {
+      ryujinx.enable = true;
+    };
   };
-  
 
-  # Git
-  #gitUsername = "Hailst0rm1";
-  #gitEmail = "hailst0rm1@proton.me"
+  scripts = {
+    get-commands.enable = true;
+    get-alias.enable = true;
+    # Bind the other to hyprland.enable
+  };
 }
 

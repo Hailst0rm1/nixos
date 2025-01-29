@@ -1,0 +1,68 @@
+{ config, lib, pkgs, pkgs-unstable, inputs, ... }:
+
+let
+  cfg = config.applications;
+  proton = config.applications.proton;
+  games = config.applications.games;
+in {
+  options.applications = {
+    bitwarden.enable = lib.mkEnableOption "Enable Bitwarden.";
+    brave.enable = lib.mkEnableOption "Enable Brave browser.";
+    discord.enable = lib.mkEnableOption "Enable Discord.";
+    firefox.enable = lib.mkEnableOption "Enable FireFox.";
+    mattermost.enable = lib.mkEnableOption "Enable Mattermost.";
+    obsidian.enable = lib.mkEnableOption "Enable Obsidian.";
+    ollama.enable = lib.mkEnableOption "Enable Ollama.";
+    spotify.enable = lib.mkEnableOption "Enable Spotify.";
+    zen-browser.enable = lib.mkEnableOption "Enable Zen Browser.";
+
+    ## Proton Applications
+    proton = {
+      enableAll = lib.mkEnableOption "Enable all Proton applications.";
+      mail.enable = lib.mkEnableOption "Enable ProtonMail Desktop.";
+      vpn.enable = lib.mkEnableOption "Enable ProtonVPN GUI.";
+      pass.enable = lib.mkEnableOption "Enable ProtonPass.";
+    };
+
+    ## Games
+    games = {
+      ryujinx.enable = lib.mkEnableOption "Enable Ryujinx emulator.";
+    };
+  };
+
+  config = {
+    home.packages = lib.mkMerge [
+      ## Applications
+      (lib.mkIf cfg.bitwarden.enable [ pkgs.bitwarden-desktop ])
+      (lib.mkIf cfg.brave.enable [ pkgs-unstable.brave ])
+      (lib.mkIf cfg.discord.enable [ pkgs-unstable.discord ])
+      (lib.mkIf cfg.firefox.enable [ pkgs.firefox ])
+      (lib.mkIf cfg.mattermost.enable [ pkgs.mattermost ])
+      (lib.mkIf cfg.obsidian.enable [ pkgs-unstable.obsidian ])
+      (lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ])
+      (lib.mkIf cfg.zen-browser.enable [ inputs.zen-browser.packages.${pkgs.system}.default ])
+
+      ## Proton Applications (with enableAll option)
+      (lib.mkIf (proton.mail.enable || proton.enableAll) [ pkgs-unstable.protonmail-desktop ])
+      (lib.mkIf (proton.vpn.enable || proton.enableAll) [ pkgs.protonvpn-gui ])
+      (lib.mkIf (proton.pass.enable || proton.enableAll) [ pkgs-unstable.proton-pass ])
+
+      ## Games
+      (lib.mkIf games.ryujinx.enable [ pkgs-unstable.ryujinx-greemdev ])
+    ];
+
+    ## Application configuration
+    services = {
+      mattermost = lib.mkIf cfg.mattermost.enable {
+        enable = true;
+        siteUrl = "https://localhost:8065";
+      };
+
+      ollama = lib.mkIf cfg.ollama.enable {
+        enable = true;
+        acceleration = "cuda";
+        package = pkgs-unstable.ollama;
+      };
+    };
+  };
+}
