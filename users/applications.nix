@@ -13,6 +13,7 @@ in {
     mattermost.enable = lib.mkEnableOption "Enable Mattermost.";
     obsidian.enable = lib.mkEnableOption "Enable Obsidian.";
     ollama.enable = lib.mkEnableOption "Enable Ollama.";
+    remmina.enable = lib.mkEnableOption "Enable Remmina";
     spotify.enable = lib.mkEnableOption "Enable Spotify.";
     zen-browser.enable = lib.mkEnableOption "Enable Zen Browser.";
 
@@ -63,6 +64,16 @@ in {
         acceleration = "cuda";
         package = pkgs-unstable.ollama;
       };
+
+      remmina = lib.mkIf cfg.remmina.enable {
+        enable = true;
+        package = pkgs.remmina;
+      };
+    };
+
+    # Spotify binding
+    wayland.windowManager.hyprland = lib.mkIf (cfg.spotify.enable && config.importConfig.hyprland.enable){
+      bind = [ "$mainMod, S, exec, spotify --disable-gpu" ];
     };
   };
 }

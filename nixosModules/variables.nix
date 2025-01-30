@@ -24,5 +24,13 @@
       default = "x86_64-linux";
       description = "The target system architecture.";
     };
+
+    location = lib.mkOption {
+      type = lib.types.str;
+      default = "Stockholm";
+      description = "Current physical location";
+    };
+
+    laptop = lib.mkEnableOption "Enable if computer is a laptop.";
   };
 }

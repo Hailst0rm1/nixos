@@ -42,7 +42,7 @@ in {
         general = {
           gaps_in = 5;
           gaps_out = 10;
-          border_size = 2;
+          border_size = 3;
 
           layout = "master";
         };
@@ -57,9 +57,18 @@ in {
           kb_options = "grp:win_space_toggle";
         };
 
+        # Use "displays" (scripts/displays.sh) to configure displays dynamically
+        # This will load the configuration if one is set using "displays" - otherwise use default value
         monitor = let
           configFile = ../../hosts/displays/${config.hostname}.conf;
         in if builtins.pathExists configFile then import configFile else defaultDisplay;
+
+      	plugin = {
+          hyprsplit = {
+	          num_workspaces = "5";
+	          persistent_workspaces = true;
+	        };
+        };
 
         decoration = {
           rounding = 5;
@@ -92,12 +101,6 @@ in {
           preserve_split = true; # you probably want this
         };
 
-      	plugin = {
-          hyprsplit = {
-	          num_workspaces = "5";
-	          persistent_workspaces = true;
-	        };
-        };
 	
         "$mainMod" = "ALT";
         #"$mainMod" = "SUPER";
@@ -134,11 +137,10 @@ in {
       	    # Applications
             "$mainMod, return, exec, ${config.terminal}"
             "$mainMod, SPACE, exec, ${config.appLauncher}"
-            "$mainMod, R, exec, rofi -show run"
-            "$mainMod, W, exec, rofi -show window"
+            "$mainMod, R, exec, ${config.appLauncher} -show run"
+            "$mainMod, W, exec, ${config.appLauncher} -show window"
             "$mainMod SHIFT, return, exec, ${config.browser}"
             "$mainMod, N, exec, ${config.fileManager}"
-            "$mainMod, S, exec, spotify --disable-gpu"
             "$mainMod, B, exec, ${config.terminal} btm"
       	    ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
 
@@ -213,6 +215,9 @@ in {
 
     home.packages = with pkgs; [
 
+      # Applauncher
+      (pkgs.${cfg.appLauncher})
+
       # ---Clipboard
       wl-clipboard
       #xclip
@@ -225,32 +230,34 @@ in {
       nwg-displays
 
       # ---File manager
-      nautilus # File manager
+      (pkgs.${config.fileManager})
 
       # ---Gnome applications
-      #image-roll
-      loupe # Image viewer
-      totem # Video viewer
+      (pkgs.${config.image})
+      (pkgs.${config.video})
       gedit # Text editor
       gnome-calculator
       gnome-music 
 
       # ---Lockscreen
-      hyprlock
+      (pkgs.${cfg.lockscreen})
 
       # ---Networkmanager
       networkmanagerapplet
 
       # ---Notifications
-      #dunst
-      #swaynotificationcenter
+      (pkgs.${cfg.notifications})
 
       # ---OSD
+      # Add config in hyprland/default.nix?
       #swayosd
       
       # --Plugins
       hyprlandPlugins.hyprsplit
       hyprlandPlugins.hyprspace
+
+      # Resource usage
+      btm
 
       # ---Screenrecorder
       wl-screenrec
@@ -261,19 +268,17 @@ in {
       hyprshot
 
       # ---Topbar
-      #waybar
+      (pkgs.${cfg.panel})
 
       # ---Terminal
-      kitty
-      ghostty
+      (pkgs.${config.terminal})
 
       # ---Wallpaper
-      swww
+      (pkgs.${cfg.wallpaper})
       ffmpeg_6 # Video converter
 
       # ---Other
       playerctl
-
     ];
   };
 }

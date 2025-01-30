@@ -1,5 +1,7 @@
 {
   config,
+  hostname,
+  system,
   ...
 }: let
   # Lib
@@ -14,7 +16,10 @@ in {
   # variables.nix
   systemVariables = {
     username = "hailst0rm";
-    hostname = "Nix-Laptop";
+    hostname = hostname;
+    system = system;
+    laptop = true;
+    location = "Barkarby";
   };
 
   # desktop/default.nix

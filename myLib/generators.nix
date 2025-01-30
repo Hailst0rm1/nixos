@@ -1,14 +1,13 @@
-{ inputs, lib, ... }: {
-  mkSystem = {
-  }:
+{ inputs, lib, config, ... }: {
+  mkSystem = { hostname }:
     inputs.nixpkgs.lib.nixosSystem {
       specialArgs = {
         pkgs-unstable = import inputs.nixpkgs-unstable {
-          inherit system;
+          #inherit system;
           config.allowUnfree = true;
         };
 
-        inherit inputs;
+        inherit inputs hostname ;
       };
 
       modules = [
@@ -23,12 +22,12 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
 
-          home-manager.users.${username} = import ../users/${username}/hosts/${hostname}.nix;
+          home-manager.users.${config.username} = import ../users/${config.username}/hosts/${config.hostname}.nix;
 
           # Custom args
           home-manager.extraSpecialArgs = {
             pkgs-unstable = import inputs.nixpkgs-unstable {
-              inherit system;
+              #inherit config.system;
               config.allowUnfree = true;
             };
 

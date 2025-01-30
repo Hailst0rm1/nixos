@@ -8,7 +8,10 @@
   services.playerctld.enable = true;
 
   home.packages = [
+    pkgs.openvpn
     # Advanced tooling
+    pkgs-unstable.lazydocker # Docker TUI
+    pkgs-unstable.lazyjournal # Journal TUI
     pkgs-unstable.glow # Markdown view
     pkgs-unstable.helix # Code editor
     pkgs-unstable.yazi # File-manager TUI

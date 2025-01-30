@@ -41,8 +41,9 @@ in {
           "*" = {
             left = [ "dashboard" "workspaces" "windowtitle" ];
             middle = [ "clock" ];
-            right = [ "media" "volume" "kbinput" "battery" "bluetooth" "network" "notifications" ];
-          };
+            right = [ "media" "volume" "kbinput" ] 
+              ++ lib.optionals config.laptop [ "battery" ] 
+              ++ [ "bluetooth" "network" "notifications" ];
           "1" = {
             left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
             middle = [ "clock" ];
@@ -68,16 +69,16 @@ in {
           time.military = true;
           weather.unit = "metric";
         	weather.key = "39a8319acbc241bebc492626252001";
-          weather.location = "Barkarby";
+          weather.location = config.location;
         };
 
         menus.dashboard.powermenu.avatar.image = "${../wallpapers/profile-pic.jpg}";
 
-        menus.dashboard.stats.enable_gpu = true;
+        menus.dashboard.stats.enable_gpu = lib.mkDefault (config.graphicDriver.nvidia.enable);
+        menus.power.lowBatteryNotification = lib.mkDefault (config.laptop);
         menus.dashboard.controls.enabled = false;
         menus.dashboard.shortcuts.enabled = false;
         menus.dashboard.directories.enabled = false;
-        menus.power.lowBatteryNotification = true;
 
         theme.osd = {
           location = "bottom";

@@ -6,13 +6,6 @@ in {
   imports = [
     myLib.validFiles ../homeManagerModules
     ../../applications.nix
-
-    # Keep for now but delete later
-    ../homeManagerModules/default.nix
-    ../homeManagerModules/zen-browser.nix
-
-    # Switch emulator
-    ../../applications/games/ryujinx.nix
   ];
 
   programs = {
@@ -44,7 +37,7 @@ in {
       enable = true;
       panel = "hyprpanel";
       lockscreen = "hyprlock";
-      appLauncher = "rofi";
+      appLauncher = "rofi-wayland";
       notifications = "hyprpanel";
       wallpaper = "swww";
     };
@@ -57,6 +50,7 @@ in {
     mattermost.enable = true;
     obsidian.enable = true;
     proton-all.enable = true;
+    remmina.enable = true;
     spotify.enable = true;
     zen-browser.enable = true;
     proton.enableAll = true;
@@ -68,7 +62,6 @@ in {
   scripts = {
     get-commands.enable = true;
     get-alias.enable = true;
-    # Bind the other to hyprland.enable
   };
 }
 

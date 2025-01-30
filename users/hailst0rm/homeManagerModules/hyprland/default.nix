@@ -1,6 +1,7 @@
-{ lib, ... }:
-
-{
+{ pkgs, lib, config, ... }:
+let
+  cfg = config.importConfig.hyprland;
+in {
   options.importConfig.hyprland = {
     enable = lib.mkEnableOption "Enable Hyprland setup.";
 
@@ -18,7 +19,7 @@
 
     appLauncher = lib.mkOption {
       type = lib.types.str;
-      default = "rofi";
+      default = "rofi-wayland";
       description = "The default application launcher for Hyprland.";
     };
 
@@ -35,4 +36,3 @@
     };
   };
 }
-

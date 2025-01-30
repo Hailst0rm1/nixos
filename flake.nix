@@ -61,10 +61,6 @@
   };
 
   outputs = inputs @ { ... }: let
-    system = "x86_64-linux";
-    nixos-dir = "$HOME/.nixos";
-    username = "hailst0rm";
-
     # Generator functions for Machines and VMs
     myLib = import ./myLib/generators.nix {inherit inputs;};
   in
@@ -75,29 +71,16 @@
         # ===================== Physical Machines ===================== #
 
         # Home Workstation
-        Nix-Workstation = mkSystem;
+        #Nix-Workstation = mkSystem { hostname = "Nix-Workstation"; system = "x86_64-linux"; };
+        Nix-Workstation = mkSystem { hostname = "Nix-Workstation"; };
 
         # Work Laptop
-        Nix-Laptop = mkSystem;
-
-        # Desktop
-        d3skn1x = mkSystem {
-          inherit system nixos-dir username;
-          hostname = "d3skn1x";
-          desktop = "COSMIC";
-          device = "/dev/nvme1n1";
-        };
-
-        # Laptop
-        cl4pn1x = mkSystem {
-          inherit system nixos-dir username;
-          hostname = "cl4pn1x";
-          desktop = "COSMIC";
-          device = "/dev/nvme0n1";
-        };
+        #Nix-Laptop = mkSystem { hostname = "Nix-Laptop"; system = "x86_64-linux"; };
+        Nix-Laptop = mkSystem { hostname = "Nix-Laptop"; };
+      
       };
 
-      # ===================== VM:s + ISO ===================== #
+     # ===================== VM:s + ISO ===================== #
 
       packages.x86_64-linux = {
 
