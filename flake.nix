@@ -61,8 +61,13 @@
   };
 
   outputs = inputs @ { ... }: let
+    config = {
+      system = "x86_64-linux";  # Adjust according to your system architecture
+      username = "your-username";  # Replace with the actual username
+    };
+    lib = inputs.nixpkgs.lib;
     # Generator functions for Machines and VMs
-    myLib = import ./myLib/generators.nix {inherit inputs;};
+    myLib = import ./myLib/generators.nix {inherit inputs config lib;};
   in
     with myLib; {
 

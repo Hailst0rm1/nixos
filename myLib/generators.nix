@@ -1,4 +1,4 @@
-{ inputs, lib, config, ... }: {
+{ inputs, config, lib, ... }: {
   mkSystem = { hostname }:
     inputs.nixpkgs.lib.nixosSystem {
       specialArgs = {
@@ -7,7 +7,7 @@
           config.allowUnfree = true;
         };
 
-        inherit inputs hostname ;
+        inherit inputs hostname;
       };
 
       modules = [
@@ -17,6 +17,7 @@
         {nixpkgs.overlays = [ inputs.hyprpanel.overlay ];}
 
         # Home Manager configuration
+        #./homeManager.nix
         inputs.home-manager.nixosModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
@@ -97,8 +98,9 @@
   validFiles = dir: map
     (file: ./. + "/${file}")
     (lib.filter
-      (file: lib.hasSuffix ".nix" file && file != "default.nix" &&
+      (file: lib.hasSuffix ".nix" file &&
         ! lib.hasPrefix "x/taffybar/" file &&
         ! lib.hasSuffix "-hm.nix" file)
       (lib.files dir));
+
 }

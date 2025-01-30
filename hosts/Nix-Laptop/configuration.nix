@@ -1,7 +1,7 @@
 {
   config,
   hostname,
-  system,
+  lib,
   ...
 }: let
   # Lib
@@ -10,14 +10,16 @@ in {
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    myLib.validFiles ../../nixosModules
+    #myLib.validFiles ../../nixosModules
+    #lib.filter 
+      #(n: lib.strings.hasSuffix ".nix" n)
+      #(lib.filesystem.listFilesRecursive ../../nixosModules)
   ];
 
   # variables.nix
-  systemVariables = {
+  tnrsyuahrtsvar = {
     username = "hailst0rm";
     hostname = hostname;
-    system = system;
     laptop = true;
     location = "Barkarby";
   };

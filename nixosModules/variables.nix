@@ -1,6 +1,6 @@
 { pkgs, lib, ... }:
 {
-  options = {
+  options.var = {
     username = lib.mkOption {
       type = lib.types.str;
       default = "hailst0rm";
