@@ -1,8 +1,8 @@
-{ config, lib, pkgs-unstable, ... }: {
+{ config, lib, pkgs, pkgs-unstable, ... }: {
   config = lib.mkIf (config.terminal == "ghostty") {
     programs.ghostty = {
       enable = true;
-      package = pkgs-unstable.ghostty;
+      package = pkgs.ghostty;
       enableZshIntegration = true;
       settings = {
         font-size = lib.mkForce 14;

@@ -7,7 +7,7 @@
 let
   cfg = config.graphicDriver.nvidia;
 in {
-  config = lib.mkIf (cfg.enable == true && cfg.type == "default") {
+  config = lib.mkIf (cfg.enable == true && cfg.type == "unstable") {
 
     nixpkgs.config.allowUnfree = true;
 

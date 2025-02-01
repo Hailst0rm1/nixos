@@ -3,7 +3,7 @@ let
   cfg = config.services.mattermost;
 in {
   config.services.mattermost = lib.mkIf cfg.enable {
-    package = pkgs.mattersmost;
+    package = pkgs.mattermost;
     siteUrl = "https://localhost:8065";
   };
 }

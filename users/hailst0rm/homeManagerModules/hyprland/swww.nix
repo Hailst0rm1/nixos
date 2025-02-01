@@ -1,6 +1,6 @@
 { pkgs, config, lib, ... }:
 let
-  startSwww = pkgs.writeShellScriptBin "startSwww" ''
+  startSwww = pkgs.writeShellScriptBin "start" ''
     # Wallpaper
     ${pkgs.swww}/bin/swww-daemon &
     set -e

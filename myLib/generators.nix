@@ -6,7 +6,7 @@
       evaluatedSystem = inputs.nixpkgs.lib.nixosSystem {
         specialArgs = {
           pkgs-unstable = import inputs.nixpkgs-unstable {
-            #system = "x86_64-linux"; # Not needed...?
+            system = "x86_64-linux"; # Not needed...?
             config.allowUnfree = true;
           };
           inherit inputs hostname;

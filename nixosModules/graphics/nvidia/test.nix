@@ -2,7 +2,7 @@
 let
   cfg = config.graphicDriver.nvidia;
 in {
-  config = lib.mkIf (cfg.enable == true && cfg.type == "default") {
+  config = lib.mkIf (cfg.enable == true && cfg.type == "test") {
 
     boot.kernelPackages = pkgs.linuxKernel.packages.linux_zen;
 

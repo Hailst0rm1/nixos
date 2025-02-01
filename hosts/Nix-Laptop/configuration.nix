@@ -77,7 +77,7 @@ in {
   # Hosted / Running services (nixosModules/services)
   services = {
     mattermost.enable = true;
-    ollama.enable = true;
+    ollama.enable = false;
   };
 
   # Allow unfree software
