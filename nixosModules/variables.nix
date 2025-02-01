@@ -1,6 +1,6 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 {
-  options.var = {
+  options = {
     username = lib.mkOption {
       type = lib.types.str;
       default = "hailst0rm";
@@ -15,17 +15,17 @@
 
     nixosDir = lib.mkOption {
       type = lib.types.str;
-      default = "${pkgs.lib.getEnv "HOME"}/.nixos";
+      default = "/home/${config.username}/.nixos";
       description = "The directory containing NixOS configurations.";
     };
 
-    system = lib.mkOption {
+    systemArch = lib.mkOption {
       type = lib.types.str;
       default = "x86_64-linux";
       description = "The target system architecture.";
     };
 
-    location = lib.mkOption {
+    myLocation = lib.mkOption {
       type = lib.types.str;
       default = "Stockholm";
       description = "Current physical location";

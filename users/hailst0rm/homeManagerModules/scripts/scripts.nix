@@ -36,7 +36,7 @@ in {
     ];
 
     # Additional settings
-    wayland.windowManager.hyprland.bind = lib.mkIf hyprlandEnabled [ "$mainMod, F1, exec, get-keybinds" ];
+    wayland.windowManager.hyprland.settings.bind = lib.mkIf hyprlandEnabled [ "$mainMod, F1, exec, get-keybinds" ];
   };
 }
 

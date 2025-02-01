@@ -63,17 +63,20 @@
   outputs = inputs @ { ... }: let
     config = {
       system = "x86_64-linux";  # Adjust according to your system architecture
-      username = "your-username";  # Replace with the actual username
+      #username = "your-username";  # Replace with the actual username
     };
     lib = inputs.nixpkgs.lib;
+    
     # Generator functions for Machines and VMs
     myLib = import ./myLib/generators.nix {inherit inputs config lib;};
+
   in
     with myLib; {
 
       nixosConfigurations = {
 
         # ===================== Physical Machines ===================== #
+
 
         # Home Workstation
         #Nix-Workstation = mkSystem { hostname = "Nix-Workstation"; system = "x86_64-linux"; };

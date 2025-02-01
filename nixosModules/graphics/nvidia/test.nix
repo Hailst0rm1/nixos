@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 let
-  cfg = config.graghicDriver.nvidia;
+  cfg = config.graphicDriver.nvidia;
 in {
   config = lib.mkIf (cfg.enable == true && cfg.type == "default") {
 

@@ -7,10 +7,6 @@
 }: {
 
   config = lib.mkIf (config.shell == "zsh") {
-    imports = [
-      ./oh-my-posh.nix
-      ./fastfetch.nix
-    ];
 
     home.file = {
       ".local/share/zsh/zinit".source = "${pkgs.zinit}/share/zinit";

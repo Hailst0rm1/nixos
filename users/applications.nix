@@ -12,7 +12,6 @@ in {
     firefox.enable = lib.mkEnableOption "Enable FireFox.";
     mattermost.enable = lib.mkEnableOption "Enable Mattermost.";
     obsidian.enable = lib.mkEnableOption "Enable Obsidian.";
-    ollama.enable = lib.mkEnableOption "Enable Ollama.";
     remmina.enable = lib.mkEnableOption "Enable Remmina";
     spotify.enable = lib.mkEnableOption "Enable Spotify.";
     zen-browser.enable = lib.mkEnableOption "Enable Zen Browser.";
@@ -52,28 +51,9 @@ in {
       (lib.mkIf games.ryujinx.enable [ pkgs-unstable.ryujinx-greemdev ])
     ];
 
-    ## Application configuration
-    services = {
-      mattermost = lib.mkIf cfg.mattermost.enable {
-        enable = true;
-        siteUrl = "https://localhost:8065";
-      };
-
-      ollama = lib.mkIf cfg.ollama.enable {
-        enable = true;
-        acceleration = "cuda";
-        package = pkgs-unstable.ollama;
-      };
-
-      remmina = lib.mkIf cfg.remmina.enable {
-        enable = true;
-        package = pkgs.remmina;
-      };
-    };
-
-    # Spotify binding
-    wayland.windowManager.hyprland = lib.mkIf (cfg.spotify.enable && config.importConfig.hyprland.enable){
-      bind = [ "$mainMod, S, exec, spotify --disable-gpu" ];
+    # Hyprland bindings
+    wayland.windowManager.hyprland.settings = lib.mkIf config.importConfig.hyprland.enable {
+      bind = lib.mkIf cfg.spotify.enable [ "$mainMod, S, exec, spotify --disable-gpu" ];
     };
   };
 }

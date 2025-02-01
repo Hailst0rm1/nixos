@@ -7,7 +7,7 @@
 let
   cfg = config.virtualisation.host.qemu;
 in {
-  options.config.virtualisation.host.qemu = lib.mkEnableOption "Enable qemu on machine.";
+  options.virtualisation.host.qemu = lib.mkEnableOption "Enable qemu on machine.";
 
   config = lib.mkIf cfg {
     virtualisation = {

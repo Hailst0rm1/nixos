@@ -8,26 +8,30 @@
   myLib = import ../../myLib/generators.nix;
 in {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    #myLib.validFiles ../../nixosModules
-    #lib.filter 
-      #(n: lib.strings.hasSuffix ".nix" n)
-      #(lib.filesystem.listFilesRecursive ../../nixosModules)
-  ];
+  ] ++ lib.filter 
+        (n: lib.strings.hasSuffix ".nix" n)
+        (lib.filesystem.listFilesRecursive ../../nixosModules);
+          
+
 
   # variables.nix
-  tnrsyuahrtsvar = {
-    username = "hailst0rm";
-    hostname = hostname;
-    laptop = true;
-    location = "Barkarby";
-  };
+  username = "hailst0rm";
+  hostname = hostname;
+  systemArch = "x86_64-linux";
+  laptop = true;
+  myLocation = "Barkarby";
 
   # desktop/default.nix
   # Gnome is default
   desktopEnvironment.name = "hyprland";
 
+  # Display manager are currently built in the other desktops beside hyprland
+  desktopEnvironment.displayManager = {
+    enable = true;
+    name = "sddm";
+  };
+  
   # graphic
   graphicDriver.nvidia = {
     enable = true;
@@ -46,7 +50,10 @@ in {
   
   system = {
     # TODO: Kernel
-    theme = "catppuccin-mocha";
+    theme = {
+      enable = true;
+      name = "catppuccin-mocha";
+    };
     bootloader = "systemd";
     keyboard.colemak-se = true;
     firewall.enable = true;
@@ -65,6 +72,12 @@ in {
       vmware = false;
       qemu = false;
     };
+  };
+
+  # Hosted / Running services (nixosModules/services)
+  services = {
+    mattermost.enable = true;
+    ollama.enable = true;
   };
 
   # Allow unfree software

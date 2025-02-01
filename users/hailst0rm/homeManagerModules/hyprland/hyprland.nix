@@ -136,9 +136,9 @@ in {
 
       	    # Applications
             "$mainMod, return, exec, ${config.terminal}"
-            "$mainMod, SPACE, exec, ${config.appLauncher}"
-            "$mainMod, R, exec, ${config.appLauncher} -show run"
-            "$mainMod, W, exec, ${config.appLauncher} -show window"
+            "$mainMod, SPACE, exec, ${cfg.appLauncher}"
+            "$mainMod, R, exec, ${cfg.appLauncher} -show run"
+            "$mainMod, W, exec, ${cfg.appLauncher} -show window"
             "$mainMod SHIFT, return, exec, ${config.browser}"
             "$mainMod, N, exec, ${config.fileManager}"
             "$mainMod, B, exec, ${config.terminal} btm"
@@ -255,9 +255,6 @@ in {
       # --Plugins
       hyprlandPlugins.hyprsplit
       hyprlandPlugins.hyprspace
-
-      # Resource usage
-      btm
 
       # ---Screenrecorder
       wl-screenrec

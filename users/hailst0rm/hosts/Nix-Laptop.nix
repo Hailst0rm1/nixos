@@ -4,9 +4,11 @@ let
   myLib = import ../../../myLib/generators.nix;
 in {
   imports = [
-    myLib.validFiles ../homeManagerModules
     ../../applications.nix
-  ];
+    ../../../nixosModules/variables.nix
+  ] ++ lib.filter 
+        (n: lib.strings.hasSuffix ".nix" n)
+        (lib.filesystem.listFilesRecursive ../homeManagerModules);
 
   programs = {
     home-manager.enable = true;
@@ -49,11 +51,10 @@ in {
     firefox.enable = true;
     mattermost.enable = true;
     obsidian.enable = true;
-    proton-all.enable = true;
+    proton.enableAll = true;
     remmina.enable = true;
     spotify.enable = true;
     zen-browser.enable = true;
-    proton.enableAll = true;
     games = {
       ryujinx.enable = true;
     };

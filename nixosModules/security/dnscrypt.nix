@@ -1,6 +1,6 @@
 { config, lib, ...}: {
 
-  option.security.dnscrypt.enable = lib.mkEnableOption "Enable dnscrypt";
+  options.security.dnscrypt.enable = lib.mkEnableOption "Enable dnscrypt";
 
   config = lib.mkIf config.security.dnscrypt.enable {
     # Enable Encrypted DNS. Use this module if you dont trust mullvad or if mullvad isnt suitable at the moment

@@ -1,7 +1,7 @@
 { lib, config, ... }: {
 
     config = lib.mkIf (config.importConfig.hyprland.panel == "waybar") {
-        wayland.windowManager.hyprland.exec-once = [ "waybar" ];
+        wayland.windowManager.hyprland.settings.exec-once = [ "waybar" ];
         home.file.".config/waybar/config.jsonc".text = ''
     {
         "layer": "top",

@@ -1,5 +1,5 @@
 { config, lib, ...}: {
-  option.security.completePolkit.enable = lib.mkEnableOption "Enable polkit";
+  options.security.completePolkit.enable = lib.mkEnableOption "Enable polkit";
 
   config = lib.mkIf config.security.completePolkit.enable {
 

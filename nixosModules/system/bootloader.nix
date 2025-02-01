@@ -5,7 +5,7 @@ in {
   options.system.bootloader = lib.mkOption {
     type = lib.types.str;
     default = "systemd";
-    description = "Select which bootloader you want."
+    description = "Select which bootloader you want.";
   };
 
   config = lib.mkIf (cfg == "systemd") {

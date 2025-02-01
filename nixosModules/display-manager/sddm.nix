@@ -2,7 +2,7 @@
 let
   cfg = config.desktopEnvironment.displayManager;
 in {
-  config = lib.mkIf (cfg == "sddm") {
+  config = lib.mkIf (cfg.enable && cfg.name == "sddm") {
     environment.systemPackages = [
       (pkgs.catppuccin-sddm.override {
         flavor = "mocha";

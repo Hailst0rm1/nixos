@@ -4,7 +4,7 @@
   lib,
   ...
 }: {
-  option.security.yubikey.enable = lib.mkEnableOption "Enable yubikey";
+  options.security.yubikey.enable = lib.mkEnableOption "Enable yubikey";
 
   config = lib.mkIf config.security.yubikey.enable {
 

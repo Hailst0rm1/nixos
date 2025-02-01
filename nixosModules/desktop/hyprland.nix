@@ -9,17 +9,7 @@ let
   cfg = config.desktopEnvironment.name;
 in {
 
-  options.desktopEnvironment.hyprland.displayManager = lib.mkOption {
-    type = lib.types.str;
-    default = "sddm";
-    description = "Select the display manager run by hyprland";
-  };
-
   config = lib.mkIf (cfg == "hyprland") {
-
-    imports = [
-      ../display-manager/${config.desktopEnvironment.hyprland.displayManager}.nix
-    ];
 
     nix.settings = {
       substituters = ["https://hyprland.cachix.org"];

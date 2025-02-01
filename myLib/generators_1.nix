@@ -1,32 +1,22 @@
-
 { inputs, ... }: {
   mkSystem = { hostname }:
     let
-      # Evaluate the system configuration first (including Home Manager)
-      evaluatedSystem = inputs.nixpkgs.lib.nixosSystem {
-        specialArgs = {
-          pkgs-unstable = import inputs.nixpkgs-unstable {
-            #system = "x86_64-linux"; # Not needed...?
-            config.allowUnfree = true;
-          };
-          inherit inputs hostname;
-        };
+      # Evaluate the NixOS system to extract config values
+      #evaluatedSystem = inputs.nixpkgs.lib.nixosSystem {
+        #modules = [ ../hosts/${hostname}/configuration.nix ];
+      #};
 
-        modules = [
-          ../hosts/${hostname}/configuration.nix
-          inputs.home-manager.nixosModules.home-manager  # Required for nixos evaluation
-        ];
-      };
-
-      # Extract values from the evaluated configuration
-      username = evaluatedSystem.config.username;
-      systemArch = evaluatedSystem.config.systemArch;
-      nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
-
+      # Extract values from evaluated configuration
+      #systemArch = evaluatedSystem.config.systemArch;
+      systemArch = "x86_64-linux";
+      #username = evaluatedSystem.config.username;
+      username = "hailst0rm";
+      #inherit (import ../hosts/${hostname}/configuration.nix) systemArch username;
     in
     inputs.nixpkgs.lib.nixosSystem {
       specialArgs = {
         pkgs-unstable = import inputs.nixpkgs-unstable {
+          #inherit systemArch;
           system = systemArch;
           config.allowUnfree = true;
         };
@@ -38,33 +28,30 @@
         # System configuration
         ../hosts/${hostname}/configuration.nix
 
-        # Pkgs Overlays
-        { nixpkgs.overlays = [ inputs.hyprpanel.overlay ]; }
+        {nixpkgs.overlays = [ inputs.hyprpanel.overlay ];}
 
         # Home Manager configuration
+        #./homeManager.nix
         inputs.home-manager.nixosModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
 
-          # Use dynamically extracted username
           home-manager.users.${username} = import ../users/${username}/hosts/${hostname}.nix;
 
-          # Pass extracted config values
+          # Custom args
           home-manager.extraSpecialArgs = {
             pkgs-unstable = import inputs.nixpkgs-unstable {
               system = systemArch;
+              #inherit systemArch;
               config.allowUnfree = true;
             };
 
-            inherit inputs nvidiaEnabled; # Add config here that HM may rely on
+            inherit inputs;
           };
         }
       ];
     };
-
-
-
 
   mkImage = {
     system,

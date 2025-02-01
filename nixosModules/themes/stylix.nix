@@ -6,27 +6,29 @@
   ...
 }:
 let
-  cfg = config.system;
+  cfg = config.system.theme;
 in {
-  options.system = {
-    theme = lib.mkOption = {
+  #imports = lib.optionals cfg.enable [ inputs.stylix.nixosModules.stylix ];
+  imports = [ inputs.stylix.nixosModules.stylix ];
+
+  options.system.theme = {
+    enable = lib.mkEnableOption "Enable stylix.";
+    name = lib.mkOption {
       type = lib.types.str;
-      default = null;
+      default = "catppuccin-mocha";
       description = "Choose stylix theme.";
     };
-    polarity = lib.mkOption = {
+    polarity = lib.mkOption {
       type = lib.types.str;
       default = "dark";
       description = "Dark or light theme.";
     };
   };
 
-  config = lib.mkIf (cfg.theme != null) {
-
-    imports = [inputs.stylix.nixosModules.stylix];
+  config = lib.mkIf cfg.enable {
     stylix = {
       enable = true;
-      base16Scheme = "${pkgs.base16-schemes}/share/themes/${cfg.theme}.yaml";
+      base16Scheme = "${pkgs.base16-schemes}/share/themes/${cfg.name}.yaml";
       image = ../wallpapers/nixos-logos.png;
       polarity = "${cfg.polarity}";
       opacity = {

@@ -1,8 +1,8 @@
-{ lib, pkgs, hyprpanel, config, ... }:
+{ inputs, lib, pkgs, config, nvidiaEnabled, ... }:
 let
   cfg = config.importConfig.hyprland;
 in {
-  imports = lib.mkIf (cfg.panel == "hyprpanel" || cfg.notifications == "hyprpanel") [ hyprpanel.homeManagerModules.hyprpanel ];
+  imports = [ inputs.hyprpanel.homeManagerModules.hyprpanel ];
 
   config = lib.mkIf (cfg.panel == "hyprpanel" || cfg.notifications == "hyprpanel") {
     programs.hyprpanel = {
@@ -44,10 +44,13 @@ in {
             right = [ "media" "volume" "kbinput" ] 
               ++ lib.optionals config.laptop [ "battery" ] 
               ++ [ "bluetooth" "network" "notifications" ];
+          };
           "1" = {
             left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
             middle = [ "clock" ];
-            right = [ "media" "volume" "kbinput" "battery" "bluetooth" "network" "notifications" ];
+            right = [ "media" "volume" "kbinput" ] 
+              ++ lib.optionals config.laptop [ "battery" ] 
+              ++ [ "bluetooth" "network" "notifications" ];
           };
         };
       };
@@ -69,12 +72,13 @@ in {
           time.military = true;
           weather.unit = "metric";
         	weather.key = "39a8319acbc241bebc492626252001";
-          weather.location = config.location;
+          weather.location = config.myLocation;
         };
 
         menus.dashboard.powermenu.avatar.image = "${../wallpapers/profile-pic.jpg}";
 
-        menus.dashboard.stats.enable_gpu = lib.mkDefault (config.graphicDriver.nvidia.enable);
+        menus.dashboard.stats.enable_gpu = lib.mkDefault (nvidiaEnabled);
+        #menus.dashboard.stats.enable_gpu = lib.mkDefault (graphics.config.graphicDriver.nvidia.enable);
         menus.power.lowBatteryNotification = lib.mkDefault (config.laptop);
         menus.dashboard.controls.enabled = false;
         menus.dashboard.shortcuts.enabled = false;
