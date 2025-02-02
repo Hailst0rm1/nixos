@@ -1,5 +1,5 @@
 { config, lib, pkgs, ... }: {
-    config = lib.mkIf (config.importConfig.hyprland.appLauncher == "rofi-wayland") {
+    config = lib.mkIf (config.importConfig.hyprland.appLauncher == "rofi") {
         home.packages = [ pkgs.rofi-wayland ];
 
         home.file.".config/rofi/config.rasi" = {

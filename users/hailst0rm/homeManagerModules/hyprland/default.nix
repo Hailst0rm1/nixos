@@ -19,7 +19,7 @@ in {
 
     appLauncher = lib.mkOption {
       type = lib.types.str;
-      default = "rofi-wayland";
+      default = "rofi";
       description = "The default application launcher for Hyprland.";
     };
 

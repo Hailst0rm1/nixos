@@ -6,7 +6,7 @@
       evaluatedSystem = inputs.nixpkgs.lib.nixosSystem {
         specialArgs = {
           pkgs-unstable = import inputs.nixpkgs-unstable {
-            system = "x86_64-linux"; # Not needed...?
+            system = "x86_64-linux"; # Required...
             config.allowUnfree = true;
           };
           inherit inputs hostname;
@@ -63,9 +63,7 @@
       ];
     };
 
-
-
-
+ # TODO: FIX LIKE SYSTEM
   mkImage = {
     system,
     hostname,
@@ -111,9 +109,4 @@
         }
       ];
     };
-
-  #getModules = dir: lib.filter
-    #(n: lib.strings.hasSuffix ".nix" n)
-    #(lib.filesystem.listFilesRecursive "${dir}");
-
 }

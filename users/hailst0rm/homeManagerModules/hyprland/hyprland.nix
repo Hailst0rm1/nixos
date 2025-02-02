@@ -136,7 +136,7 @@ in {
 
       	    # Applications
             "$mainMod, return, exec, ${config.terminal}"
-            "$mainMod, SPACE, exec, ${cfg.appLauncher}"
+            "$mainMod, SPACE, exec, ${cfg.appLauncher} -show drun"
             "$mainMod, R, exec, ${cfg.appLauncher} -show run"
             "$mainMod, W, exec, ${cfg.appLauncher} -show window"
             "$mainMod SHIFT, return, exec, ${config.browser}"
@@ -216,7 +216,8 @@ in {
     home.packages = with pkgs; [
 
       # Applauncher
-      (pkgs.${cfg.appLauncher})
+      #(pkgs.${cfg.appLauncher})
+      (if cfg.appLauncher == "rofi" then pkgs.rofi-wayland else pkgs.${cfg.appLauncher})
 
       # ---Clipboard
       wl-clipboard

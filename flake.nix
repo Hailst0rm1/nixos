@@ -61,15 +61,8 @@
   };
 
   outputs = inputs @ { ... }: let
-    config = {
-      system = "x86_64-linux";  # Adjust according to your system architecture
-      #username = "your-username";  # Replace with the actual username
-    };
-    lib = inputs.nixpkgs.lib;
-    
     # Generator functions for Machines and VMs
-    myLib = import ./myLib/generators.nix {inherit inputs config lib;};
-
+    myLib = import ./myLib/generators.nix {inherit inputs;};
   in
     with myLib; {
 
@@ -77,13 +70,10 @@
 
         # ===================== Physical Machines ===================== #
 
-
         # Home Workstation
-        #Nix-Workstation = mkSystem { hostname = "Nix-Workstation"; system = "x86_64-linux"; };
         Nix-Workstation = mkSystem { hostname = "Nix-Workstation"; };
 
         # Work Laptop
-        #Nix-Laptop = mkSystem { hostname = "Nix-Laptop"; system = "x86_64-linux"; };
         Nix-Laptop = mkSystem { hostname = "Nix-Laptop"; };
       
       };

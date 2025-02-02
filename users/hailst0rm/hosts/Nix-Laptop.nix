@@ -39,7 +39,7 @@ in {
       enable = true;
       panel = "hyprpanel";
       lockscreen = "hyprlock";
-      appLauncher = "rofi-wayland";
+      appLauncher = "rofi";
       notifications = "hyprpanel";
       wallpaper = "swww";
     };

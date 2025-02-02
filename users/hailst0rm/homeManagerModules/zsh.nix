@@ -60,9 +60,9 @@
         cl="clear";
         q = "exit";
         ":q" = "exit";
-        nix-test="sudo nixos-rebuild test --flake $USER/.nixos#${config.hostname} --show-trace";
-        nix-switch="sudo nixos-rebuild switch --flake $USER/.nixos#${config.hostname} --show-trace";
-        nix-boot="sudo nixos-rebuild boot --flake $USER/.nixos#${config.hostname} --show-trace";
+        nix-test="sudo nixos-rebuild test --flake $HOME/.nixos#${config.hostname} --show-trace";
+        nix-switch="sudo nixos-rebuild switch --flake $HOME/.nixos#${config.hostname} --show-trace";
+        nix-boot="sudo nixos-rebuild boot --flake $HOME/.nixos#${config.hostname} --show-trace";
 
         # Modern commands
         ls="lsd";
