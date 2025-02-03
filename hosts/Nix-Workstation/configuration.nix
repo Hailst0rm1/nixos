@@ -1,23 +1,101 @@
 {
-  username,
+  config,
+  hostname,
+  lib,
   ...
-}: {
+}: let
+  # Lib
+  myLib = import ../../myLib/generators.nix;
+in {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
+  ] ++ lib.filter 
+        (n: lib.strings.hasSuffix ".nix" n)
+        (lib.filesystem.listFilesRecursive ../../nixosModules);
+          
 
-    # Disk partitioning
-    #disko.nixosModules.disko
-    #./disks.nix
-    #{
-    #  _module.args.device = device;
-    #}
 
-    ../../nixosModules/default.nix
-    ../../nixosModules/graphics/nvidia
-    #../../nixosModules/virtualisation/vmwareguest.nix
-    #../../nixosModules/graphics/intel/default.nix
-  ];
+  # variables.nix
+  username = "hailst0rm";
+  hostname = hostname;
+  systemArch = "x86_64-linux";
+  laptop = false;
+  myLocation = "Barkarby";
+
+  # desktop/default.nix
+  # Gnome is default
+  desktopEnvironment.name = "hyprland";
+
+  # Display manager are currently built in the other desktops beside hyprland
+  desktopEnvironment.displayManager = {
+    enable = true;
+    name = "sddm";
+  };
+  
+  # graphic
+  graphicDriver.nvidia = {
+    enable = true;
+    type = "test";
+  };
+
+  security = {
+    dnscrypt.enable = false;
+    completePolkit.enable = false;
+    yubikey.enable = false;
+  };
+
+  # Bluetooth
+  hardware.bluetooth.enable = true;
+  hardware.bluetooth.powerOnBoot = false;
+  
+  system = {
+    # TODO: Kernel
+    theme = {
+      enable = true;
+      name = "catppuccin-mocha";
+    };
+    bootloader = "systemd";
+    keyboard.colemak-se = true;
+    firewall.enable = true;
+    automatic = {
+      upgrade = true;
+      cleanup = true;
+    };
+  };
+
+  virtualisation = {
+    host = {
+      vmware = true;
+      qemu = true;
+    };
+    guest = {
+      vmware = false;
+      qemu = false;
+    };
+  };
+
+  # Hosted / Running services (nixosModules/services)
+  services = {
+    mattermost.enable = true;
+    ollama.enable = false;
+  };
+
+  # Allow unfree software
+  nixpkgs.config.allowUnfree = true;
+
+  # Set your time zone.
+  time.timeZone = "Europe/Stockholm";
+
+  # Select internationalisation properties.
+  i18n.defaultLocale = "en_GB.UTF-8";
+
+  # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.users.${config.username} = {
+    isNormalUser = true;
+    extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
+    initialPassword = "t";
+  };
+    
 
   # # # # # # # # # # # !!!!!! # # # # # # # # # #
   # UNCOMMENT THIS SECTION WHILE INSTALLING      #
@@ -28,19 +106,6 @@
   #  services.login.u2fAuth = lib.mkForce false;
   #}
   # # # # # # # # # # # !!!!!! # # # # # # # # # #
-
-  # Set your time zone.
-  time.timeZone = "Europe/Stockholm";
-
-  # Select internationalisation properties.
-  i18n.defaultLocale = "en_GB.UTF-8";
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.${username} = {
-    isNormalUser = true;
-    extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
-    initialPassword = "t";
-  };
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
   # and migrated your data accordingly.
