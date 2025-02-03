@@ -18,9 +18,16 @@
         ];
       };
 
-      # Extract values from the evaluated configuration
+      # ---Extract values from the evaluated configuration
+
+      # Variables.nix
       username = evaluatedSystem.config.username;
+      nixosDir = evaluatedSystem.config.nixosDir;
       systemArch = evaluatedSystem.config.systemArch;
+      myLocation = evaluatedSystem.config.myLocation;
+      laptop = evaluatedSystem.config.laptop;
+
+      # Graphic driver
       nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
 
     in
@@ -57,7 +64,7 @@
               config.allowUnfree = true;
             };
 
-            inherit inputs nvidiaEnabled; # Add config here that HM may rely on
+            inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled; # Add config here that HM may rely on
           };
         }
       ];

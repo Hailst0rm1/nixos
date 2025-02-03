@@ -60,6 +60,10 @@
     };
 
     home.packages = with pkgs; [
+      # Code assistant
+      helix-gpt
+
+      
       # Formatting
       alejandra
 

@@ -5,10 +5,6 @@ let
     DIR="${config.home.homeDirectory}/.nixos/users/${config.username}/hosts/displays"
     FILE="$DIR/${config.hostname}.conf"
 
-    echo $DIR
-    echo "HELLO"
-    echo $FILE
-
     # Create the directory if it doesn't exist
     if [[ ! -d "$DIR" ]]; then
         mkdir -p "$DIR"

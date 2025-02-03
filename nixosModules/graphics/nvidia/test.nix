@@ -4,7 +4,7 @@ let
 in {
   config = lib.mkIf (cfg.enable == true && cfg.type == "test") {
 
-    boot.kernelPackages = pkgs.linuxKernel.packages.linux_zen;
+    #boot.kernelPackages = pkgs.linuxKernel.packages.linux_zen;
 
     # Load nvidia driver for Xorg and Wayland
     services.xserver.videoDrivers = ["nvidia"];

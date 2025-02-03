@@ -8,6 +8,7 @@ let
       BG=`find ${../wallpapers} -name "*.gif" | shuf -n1`
       if pgrep swww-daemon >/dev/null; then
         swww img "$BG" \
+          --resize crop \
           --transition-fps 60 \
           --transition-duration 2 \
           --transition-type random \

@@ -1,14 +1,23 @@
-{ config, lib, ... }:
+{ pkgs, config, lib, ... }:
 let
-  cfg = config.system.bootloader;
+  loader = config.system.bootloader;
+  kernel = config.system.kernel;
 in {
-  options.system.bootloader = lib.mkOption {
-    type = lib.types.str;
-    default = "systemd";
-    description = "Select which bootloader you want.";
+  options.system = {
+    bootloader = lib.mkOption {
+      type = lib.types.str;
+      default = "systemd";
+      description = "Select which bootloader you want.";
+    };
+    kernel = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "Select which kernel you want.";
+    };
   };
+     
 
-  config = lib.mkIf (cfg == "systemd") {
+  config = {
     boot = {
       # Pretty boot
       kernelParams = [
@@ -19,11 +28,16 @@ in {
         enable = true;
       };
 
+      kernelPackages = lib.mkIf (kernel == "zen") pkgs.linuxKernel.packages.linux_zen; 
+
       # Bootloader
       loader = {
+        systemd-boot.enable = lib.mkIf (loader == "systemd") true;
+        grub = {
+          enable = lib.mkIf (loader == "grub") true;
+          device = "nodev";
+        };
         timeout = 2;
-        systemd-boot.enable = true;
-        grub.device = "nodev";
         efi.canTouchEfiVariables = true;
       };
 

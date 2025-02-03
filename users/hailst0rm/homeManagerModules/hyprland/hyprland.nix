@@ -144,10 +144,10 @@ in {
             "$mainMod, B, exec, ${config.terminal} btm"
       	    ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
 
-    	    # Workspaces
-          "$mainMod, O, overview:toggle, all"
-          "$mainMod, D, split:swapactiveworkspaces, current +1"
-          "$mainMod, G, split:grabroguewindows"
+      	    # Workspaces
+            "$mainMod, O, overview:toggle, all"
+            "$mainMod, D, split:swapactiveworkspaces, current +1"
+            "$mainMod, G, split:grabroguewindows"
             "$mainMod, mouse_down, split:workspace, e+1"
             "$mainMod, mouse_up, split:workspace, e-1"
           ]
@@ -158,7 +158,7 @@ in {
           )}") [1 2 3 4 5 0]
           ++ map (n: "$mainMod, ${toString n}, split:workspace, ${toString (
             if n == 0
-            then 10
+            then 5
             else n
           )}") [1 2 3 4 5 0
         ];
@@ -273,6 +273,7 @@ in {
 
       # ---Wallpaper
       (pkgs.${cfg.wallpaper})
+      waypaper # GUI wallpaper picker
       ffmpeg_6 # Video converter
 
       # ---Other
