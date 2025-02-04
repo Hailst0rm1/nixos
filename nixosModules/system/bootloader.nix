@@ -6,7 +6,7 @@ in {
   options.system = {
     bootloader = lib.mkOption {
       type = lib.types.str;
-      default = "systemd";
+      default = "grub";
       description = "Select which bootloader you want.";
     };
     kernel = lib.mkOption {
@@ -33,12 +33,16 @@ in {
       # Bootloader
       loader = {
         systemd-boot.enable = lib.mkIf (loader == "systemd") true;
-        grub = {
-          enable = lib.mkIf (loader == "grub") true;
+        grub = lib.mkIf (loader == "grub") {
+          enable = true;
+          #theme = lib.mkForce "${pkgs.libsForQt5.breeze-grub}/grub/themes/breeze";
+          useOSProber = true;
+          efiSupport = true;
           device = "nodev";
         };
         timeout = 2;
         efi.canTouchEfiVariables = true;
+        efi.efiSysMountPoint = "/boot";
       };
 
       supportedFilesystems = ["ntfs"];

@@ -49,14 +49,14 @@ in {
   hardware.bluetooth.powerOnBoot = false;
   
   system = {
-    # TODO: Kernel
+    kernel = "zen";
+    bootloader = "grub";
+    keyboard.colemak-se = true;
+    firewall.enable = true;
     theme = {
       enable = true;
       name = "catppuccin-mocha";
     };
-    bootloader = "systemd";
-    keyboard.colemak-se = true;
-    firewall.enable = true;
     automatic = {
       upgrade = true;
       cleanup = true;
