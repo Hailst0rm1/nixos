@@ -58,6 +58,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Spotify theme
+    spicetify-nix.url = "github:Gerg-L/spicetify-nix";
+
+    # Discord plugins and theme
+    nixcord.url = "github:kaylorben/nixcord";
+
   };
 
   outputs = inputs @ { ... }: let

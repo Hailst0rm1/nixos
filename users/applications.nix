@@ -4,12 +4,17 @@ let
   cfg = config.applications;
   proton = config.applications.proton;
   games = config.applications.games;
+  spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.system};
 in {
+  imports = [ inputs.spicetify-nix.homeManagerModules.spicetify ];
+  
   options.applications = {
     bitwarden.enable = lib.mkEnableOption "Enable Bitwarden.";
     brave.enable = lib.mkEnableOption "Enable Brave browser.";
     discord.enable = lib.mkEnableOption "Enable Discord.";
     firefox.enable = lib.mkEnableOption "Enable FireFox.";
+    gpt4all.enable = lib.mkEnableOption "Enable gpt4all.";
+    libreOffice.enable = lib.mkEnableOption "Enable libreOffice.";
     mattermost.enable = lib.mkEnableOption "Enable Mattermost.";
     obsidian.enable = lib.mkEnableOption "Enable Obsidian.";
     remmina.enable = lib.mkEnableOption "Enable Remmina";
@@ -35,11 +40,14 @@ in {
       ## Applications
       (lib.mkIf cfg.bitwarden.enable [ pkgs.bitwarden-desktop ])
       (lib.mkIf cfg.brave.enable [ pkgs-unstable.brave ])
-      (lib.mkIf cfg.discord.enable [ pkgs-unstable.discord ])
+      #(lib.mkIf cfg.discord.enable [ pkgs-unstable.discord ])
       (lib.mkIf cfg.firefox.enable [ pkgs.firefox ])
+      (lib.mkIf cfg.gpt4all.enable [ pkgs-unstable.gpt4all ])
+      (lib.mkIf cfg.libreOffice.enable [ pkgs.libreoffice-qt6-fresh ])
       (lib.mkIf cfg.mattermost.enable [ pkgs.mattermost ])
       (lib.mkIf cfg.obsidian.enable [ pkgs-unstable.obsidian ])
-      (lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ])
+      (lib.mkIf cfg.remmina.enable [ pkgs-unstable.remmina ])
+      #(lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ]) # Uncomment if not using spicetify flake
       (lib.mkIf cfg.zen-browser.enable [ inputs.zen-browser.packages.${pkgs.system}.default ])
 
       ## Proton Applications (with enableAll option)
@@ -54,6 +62,18 @@ in {
     # Hyprland bindings
     wayland.windowManager.hyprland.settings = lib.mkIf config.importConfig.hyprland.enable {
       bind = lib.mkIf cfg.spotify.enable [ "$mainMod, S, exec, spotify --disable-gpu" ];
+    };
+
+    # Spotify theme settings
+    programs.spicetify = lib.mkIf cfg.spotify.enable {
+      enable = true;
+      enabledExtensions = with spicePkgs.extensions; [
+        adblockify
+        #hidePodcasts
+        shuffle # shuffle+ (special characters are sanitized out of extension names)
+      ];
+      #theme = spicePkgs.themes.catppuccin; # Uncomment if not using stylix
+      #colorScheme = "mocha"; # Uncomment if not using stylix
     };
   };
 }

@@ -42,6 +42,10 @@ in {
         size = 24;
       };
 
+      targets = {
+        grub.useImage = true;
+      };
+
       fonts = {
         serif = {
           package = pkgs.noto-fonts;

@@ -33,6 +33,7 @@
     pkgs.vim
     pkgs.curl
     pkgs.wget
+    pkgs.p7zip
     pkgs.unzip
     pkgs.zip
     pkgs.file

@@ -6,7 +6,7 @@ in {
   options.system = {
     bootloader = lib.mkOption {
       type = lib.types.str;
-      default = "grub";
+      default = "systemd";
       description = "Select which bootloader you want.";
     };
     kernel = lib.mkOption {

@@ -57,6 +57,7 @@ in {
     bitwarden.enable = true;
     discord.enable = true;
     firefox.enable = true;
+    libreOffice.enable = true;
     mattermost.enable = true;
     obsidian.enable = true;
     proton.enableAll = true;

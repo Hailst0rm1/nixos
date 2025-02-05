@@ -41,7 +41,7 @@ in {
   security = {
     dnscrypt.enable = false;
     completePolkit.enable = false;
-    yubikey.enable = false;
+    yubikey.enable = true;
   };
 
   # Bluetooth

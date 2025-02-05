@@ -1,4 +1,4 @@
-{ lib, config, ...}:
+{ lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, ...}:
 let
   # Lib 
   myLib = import ../../../myLib/generators.nix;
@@ -19,6 +19,14 @@ in {
     username = lib.mkDefault "${config.username}";
     homeDirectory = lib.mkDefault "/home/${config.username}";
   };
+
+  # NIXOS Variables.nix (inherited from system config)
+  username = username;
+  hostname = hostname;
+  nixosDir = nixosDir;
+  systemArch = systemArch;
+  myLocation = myLocation;
+  laptop = laptop;
 
   # Variables.nix (mainly used for zsh-environment)
   terminal = "ghostty";
@@ -49,6 +57,8 @@ in {
     bitwarden.enable = true;
     discord.enable = true;
     firefox.enable = true;
+    gpt4all.enable = true;
+    libreOffice.enable = true;
     mattermost.enable = true;
     obsidian.enable = true;
     proton.enableAll = true;

@@ -77,7 +77,6 @@
         du="dust";
         top="bottom";
         ps="procs";
-        man="tldr --pager";
         sed="sd";
         diff="difft";
       };
