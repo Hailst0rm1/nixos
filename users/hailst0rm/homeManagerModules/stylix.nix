@@ -10,9 +10,17 @@ in {
     stylix = {
       enable = true;
       autoEnable = true;
+      opacity = {
+        applications = 0.9;
+        desktop = 0.9;
+        popups = 0.9;
+        terminal = 0.9;
+      };
+
       targets = {
         ghostty.enable = true;
         helix.enable = false;
+        #nixcord.enable = true; On next release or when backported
       };
     };
   };

@@ -5,11 +5,11 @@
     programs.nixcord = {
       enable = true;  # enable Nixcord. Also installs discord package
       #quickCss = "some CSS";  # quickCSS file
-      #config = {
+      config = {
         #useQuickCss = true;   # use out quickCSS
-        #themeLinks = [        # or use an online theme
-          #"https://raw.githubusercontent.com/catppuccin/discord/refs/heads/main/themes/mocha.theme.css"
-        #];
+        themeLinks = [        # or use an online theme
+          "https://raw.githubusercontent.com/catppuccin/discord/refs/heads/main/themes/mocha.theme.css"
+        ];
         #frameless = true; # set some Vencord options
         #plugins = {
           #hideAttachments.enable = true;    # Enable a Vencord plugin
@@ -20,7 +20,7 @@
             #ignoredActivities = [ "someActivity" ];
           #};
         #};
-      #};
+      };
       #extraConfig = {
         # Some extra JSON config here
         # ...
