@@ -93,7 +93,7 @@ in {
         theme.bar = {
           transparent = true;
           enableShadow = false;
-          bar.buttons = {
+          buttons = {
           	enableBorders = true;
             borderSize = "0.05em";
           };

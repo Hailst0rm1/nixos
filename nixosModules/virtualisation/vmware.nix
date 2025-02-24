@@ -8,8 +8,7 @@ in{
     virtualisation.vmware.host.enable = true;
     virtualisation.vmware.host.package = pkgs.vmware-workstation;
 
-    # Dark theme
-    #environment.variables.GTK_THEME = "Adwaita:dark";
+    # Dark theme (applied in HM-stylix manually)
     environment.systemPackages = [ pkgs.gnome-themes-extra ];
   };
 }
