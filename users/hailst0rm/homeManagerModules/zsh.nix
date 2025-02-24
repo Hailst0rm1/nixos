@@ -72,12 +72,12 @@
         lgit="lazygit";
         ldocker="lazydocker";
         ljournal="lazyjournal";
-        grep="batgrep";
-        find="fd";
+        #grep="batgrep";
+        #find="fd";
         du="dust";
         top="bottom";
         ps="procs";
-        sed="sd";
+        #sed="sd";
         diff="difft";
       };
 
