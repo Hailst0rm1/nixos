@@ -1,4 +1,4 @@
-{ lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, ...}:
+{ pkgs, lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, ...}:
 let
   # Lib 
   myLib = import ../../../myLib/generators.nix;
@@ -74,5 +74,13 @@ in {
     get-commands.enable = true;
     get-alias.enable = true;
   };
+
+  
+
+   #xdg.desktopEntries.vmware-worksation {
+    #name = "VMWare Workstation Dark";
+    
+    #exec = "env GTK_THEME=Adwaita:dark ${pkgs.vmware-workstation}/bin/vmware %U";
+  
 }
 

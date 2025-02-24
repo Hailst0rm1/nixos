@@ -36,7 +36,7 @@ in {
         grub = lib.mkIf (loader == "grub") {
           enable = true;
           #theme = lib.mkForce "${pkgs.libsForQt5.breeze-grub}/grub/themes/breeze";
-          useOSProber = true;
+          #useOSProber = true;
           efiSupport = true;
           device = "nodev";
         };
