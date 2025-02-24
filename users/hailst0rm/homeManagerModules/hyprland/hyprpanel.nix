@@ -78,7 +78,6 @@ in {
         menus.dashboard.powermenu.avatar.image = "${../wallpapers/profile-pic.jpg}";
 
         menus.dashboard.stats.enable_gpu = lib.mkDefault (nvidiaEnabled);
-        #menus.dashboard.stats.enable_gpu = lib.mkDefault (graphics.config.graphicDriver.nvidia.enable);
         menus.power.lowBatteryNotification = lib.mkDefault (config.laptop);
         menus.dashboard.controls.enabled = false;
         menus.dashboard.shortcuts.enabled = false;
@@ -90,10 +89,14 @@ in {
         	orientation = "horizontal";
         };
 
-        theme.bar.transparent = true;
-        theme.bar.buttons = {
-        	enableBorders = true;
-          borderSize = "0.05em";
+        # Bar settings
+        theme.bar = {
+          transparent = true;
+          enableShadow = false;
+          bar.buttons = {
+          	enableBorders = true;
+            borderSize = "0.05em";
+          };
         };
 	
         theme.font = {
