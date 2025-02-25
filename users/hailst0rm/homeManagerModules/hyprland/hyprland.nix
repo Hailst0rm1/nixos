@@ -38,6 +38,13 @@ in {
         pkgs.hyprlandPlugins.hyprspace
       ];
 
+      extraConfig = ''
+        bind = $mainMod,V,submap,passthru
+        submap = passthru
+        bind = $mainMod,Escape,submap,reset
+        submap = reset
+      '';
+
       settings = {
         general = {
           gaps_in = 5;
@@ -150,6 +157,7 @@ in {
             "$mainMod, G, split:grabroguewindows"
             "$mainMod, mouse_down, split:workspace, e+1"
             "$mainMod, mouse_up, split:workspace, e-1"
+
           ]
           ++ map (n: "$mainMod SHIFT, ${toString n}, split:movetoworkspace, ${toString (
             if n == 0
