@@ -11,7 +11,8 @@
           "https://raw.githubusercontent.com/catppuccin/discord/refs/heads/main/themes/mocha.theme.css"
         ];
         #frameless = true; # set some Vencord options
-        #plugins = {
+        plugins = {
+          fakeNitro.enable = true;
           #hideAttachments.enable = true;    # Enable a Vencord plugin
           #ignoreActivities = {    # Enable a plugin and set some options
             #enable = true;
@@ -19,7 +20,7 @@
             #ignoreWatching = true;
             #ignoredActivities = [ "someActivity" ];
           #};
-        #};
+        };
       };
       #extraConfig = {
         # Some extra JSON config here

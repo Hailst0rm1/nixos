@@ -1,4 +1,3 @@
-
 { inputs, ... }: {
   mkSystem = { hostname }:
     let
