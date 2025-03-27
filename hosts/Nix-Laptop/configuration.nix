@@ -35,7 +35,7 @@ in {
   # graphic
   graphicDriver.nvidia = {
     enable = true;
-    type = "test";
+    type = "default";
   };
 
   security = {
