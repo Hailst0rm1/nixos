@@ -1,6 +1,11 @@
 { inputs, lib, pkgs, config, nvidiaEnabled, ... }:
 let
   cfg = config.importConfig.hyprland;
+  accent = "#89b4fa";
+  text = "#cdd6f4";
+  white = "#FFFFFF";
+  workspacesOccupied = "#94e2d5";
+  workspacesAvailable = "#585b70";
 in {
   imports = [ inputs.hyprpanel.homeManagerModules.hyprpanel ];
 
@@ -30,7 +35,63 @@ in {
       # Useful for overriding colors in your selected theme.
       # Default: {}
       override = {
-        theme.bar.buttons.style = "wave2";
+        theme.bar.buttons = {
+          #style = "wave2";
+          workspaces = {
+            active = "${accent}";
+            available = "${workspacesAvailable}";
+            occupied = "${workspacesOccupied}";
+          };
+          clock = {
+            icon = "${accent}";
+            text = "${text}";
+          };
+          bluetooth = {
+            icon = "${accent}";
+            text = "${text}";
+          };
+          media = {
+            icon = "${accent}";
+            text = "${text}";
+          };
+          network = {
+            icon = "${accent}";
+            text = "${text}";
+          };
+          notifications = {
+            icon = "${accent}";
+            text = "${text}";
+          };
+          volume = {
+            icon = "${accent}";
+            text = "${text}";
+          };
+          windowtitle = {
+            icon = "${accent}";
+            text = "${text}";
+          };
+          battery = {
+            icon = "${accent}";
+            text = "${text}";
+          };
+          dashboard = {
+            icon = "${white}";
+          };
+          modules = {
+            cpu = {
+              icon = "${accent}";
+              text = "${text}";
+            };
+            kbLayout = {
+              icon = "${accent}";
+              text = "${text}";
+            };
+            ram = {
+              icon = "${accent}";
+              text = "${text}";
+            };
+          };
+        };
       };
 
       # Configure bar layouts for monitors.
@@ -42,15 +103,17 @@ in {
             left = [ "dashboard" "workspaces" "windowtitle" ];
             middle = [ "clock" ];
             right = [ "media" "volume" "kbinput" ] 
-              ++ lib.optionals config.laptop [ "battery" ] 
-              ++ [ "bluetooth" "network" "notifications" ];
+              ++ [ "bluetooth" "network"]
+              ++ lib.optionals config.laptop [ "battery" ]
+              ++ [ "notifications" ];
           };
           "1" = {
             left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
             middle = [ "clock" ];
             right = [ "media" "volume" "kbinput" ] 
-              ++ lib.optionals config.laptop [ "battery" ] 
-              ++ [ "bluetooth" "network" "notifications" ];
+              ++ [ "bluetooth" "network"]
+              ++ lib.optionals config.laptop [ "battery" ]
+              ++ [ "notifications" ];
           };
         };
       };
@@ -94,8 +157,10 @@ in {
           transparent = true;
           enableShadow = false;
           buttons = {
-          	enableBorders = true;
+          	enableBorders = false;
             borderSize = "0.05em";
+            background_opacity = 80;
+            radius = "1em";
           };
         };
 	

@@ -20,9 +20,6 @@ in {
     nixpkgs.config.allowUnfree = true;
 
     boot = {
-      # Use stable kernel from nixos-unstable branch since its usually more up to date
-      # and has better compatibility with Nvidia drivers
-      kernelPackages = pkgs-unstable.linuxPackages;
 
       initrd.kernelModules = [
         "nvidia"
