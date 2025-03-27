@@ -11,10 +11,10 @@ in {
       enable = true;
       autoEnable = true;
       opacity = {
-        applications = 0.9;
-        desktop = 0.9;
-        popups = 0.9;
-        terminal = 0.9;
+        applications = lib.mkForce 0.2;
+        desktop = lib.mkForce 0.2;
+        popups = lib.mkForce 0.2;
+        terminal = lib.mkForce 0.2;
       };
 
       targets = {

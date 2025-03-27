@@ -74,5 +74,7 @@ in {
     get-commands.enable = true;
     get-alias.enable = true;
   };
+
+  redTools.enable = true;
 }
 

@@ -3,8 +3,8 @@
   #background = "${config.stylix.image}";
 
   hyprlock-blur = pkgs.writeShellScriptBin "hyprlock-blur" ''
-    MONITOR1="$(hyprctl -j workspaces | jq -r '.[0].monitor')"
-    MONITOR2="$(hyprctl -j workspaces | jq -r '.[1].monitor')"
+    MONITOR1="$(hyprctl -j monitors | jq -r '.[0].name')"
+    MONITOR2="$(hyprctl -j monitors | jq -r '.[1].name')"
 
     wait &&
     hyprlock 
@@ -19,15 +19,15 @@ in {
     ];
 
     home.sessionVariables = {
-      MONITOR1 = "$(hyprctl -j workspaces | jq -r '.[0].monitor')";
-      MONITOR2 = "$(hyprctl -j workspaces | jq -r '.[1].monitor')";
+      MONITOR1="$(hyprctl -j monitors | jq -r '.[0].name')";
+      MONITOR2="$(hyprctl -j monitors | jq -r '.[1].name')";
     };
 
     programs.zsh = {
       shellAliases = { hyprlock="hyprlock-blur"; };
       envExtra = ''
-        export MONITOR1="$(hyprctl -j workspaces | jq -r '.[0].monitor')"
-        export MONITOR2="$(hyprctl -j workspaces | jq -r '.[1].monitor')"
+        export MONITOR1="$(hyprctl -j monitors | jq -r '.[0].name')"
+        export MONITOR2="$(hyprctl -j monitors | jq -r '.[1].name')"
       '';
     };
 

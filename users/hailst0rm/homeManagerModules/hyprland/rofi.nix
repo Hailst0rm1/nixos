@@ -29,7 +29,7 @@
     * {
         bg-col:  #1e1e2e;
         bg-col-light: #1e1e2e;
-        border-col: #1e1e2e;
+        border-col: #89b4fa;
         selected-col: #1e1e2e;
         blue: #89b4fa;
         fg-col: #cdd6f4;
@@ -37,6 +37,7 @@
         grey: #6c7086;
 
         width: 600;
+        border-radius: 15px;
         font: "JetBrainsMono Nerd Font 14";
     }
 

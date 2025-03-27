@@ -1,11 +1,7 @@
 {
   pkgs,
-  pkgs-unstable,
   lib,
-  hostname,
-  username,
   config,
-  hyprland,
   ...
 }: let
   defaultDisplay = pkgs.WriteText "default-display" ''
@@ -51,7 +47,26 @@ in {
           gaps_out = 10;
           border_size = 3;
 
-          layout = "master";
+          #layout = "master";
+          layout = "dwindle";
+        };
+
+        decoration = {
+          active_opacity = 0.95;
+          inactive_opacity = 0.9;
+          rounding = 5;
+          blur = {
+            size = 8;
+            passes = 2;
+          };
+          shadow = {
+            enabled = true;
+            range = 5;
+            render_power = 3;
+            color = lib.mkForce "rgb(89b4fa)";
+            color_inactive = lib.mkForce "rgb(1e1e2e)";
+            # offset = 0, 0;
+          };
         };
 
       	env = [
@@ -75,10 +90,6 @@ in {
 	          num_workspaces = "5";
 	          persistent_workspaces = true;
 	        };
-        };
-
-        decoration = {
-          rounding = 5;
         };
 
         animations = {
@@ -106,6 +117,7 @@ in {
           # See https://wiki.hyprland.org/Configuring/Dwindle-Layout/ for more
           pseudotile = true; # master switch for pseudotiling. Enabling is bound to mainMod + P in the keybinds section below
           preserve_split = true; # you probably want this
+          smart_split = true;
         };
 
 	

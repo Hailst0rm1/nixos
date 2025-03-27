@@ -32,6 +32,12 @@ in {
       base16Scheme = "${pkgs.base16-schemes}/share/themes/${cfg.name}.yaml";
       image = ../wallpapers/nixos-logos.png;
       polarity = "${cfg.polarity}";
+      # opacity = {
+      #   applications = lib.mkForce 0.5;
+      #   desktop = lib.mkForce 0.5;
+      #   popups = lib.mkForce 0.5;
+      #   terminal = lib.mkForce 0.2;
+      # };
 
       cursor = {
         package = pkgs.bibata-cursors;

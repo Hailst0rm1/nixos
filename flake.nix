@@ -62,7 +62,10 @@
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
 
     # Discord plugins and theme
-    nixcord.url = "github:kaylorben/nixcord";
+    nixcord = {
+      url = "github:kaylorben/nixcord?rev=c1a2a14393dba951994442199b9adfe14bb78a99"; # Change back once bug fixed
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
 
   };
 
