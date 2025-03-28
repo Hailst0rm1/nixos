@@ -28,7 +28,7 @@
 
       oh-my-zsh = {
         enable = true;
-        plugins = [ "git" "sudo" "aws" "command-not-found"];
+        plugins = [ "git" "sudo" "aws" ];
       };
 
       envExtra = ''
@@ -114,7 +114,7 @@
       
       # Navigation
       bindkey '^a' end-of-line
-      bindkey '^[[105;5u' beginning-of-line #fix
+      bindkey '^[[105;5u' beginning-of-line
       bindkey '^b' backward-word
       bindkey '^w' forward-word
       bindkey '^h' backward-char
@@ -126,7 +126,7 @@
       #bindkey '^r' history-incremental-search-backward
 
       # Modifying
-      bindkey '^[^H' backward-kill-word # fix
+      bindkey '^[^H' backward-kill-word
       bindkey '^f' autosuggest-accept
       bindkey '^d' kill-line
       bindkey '^u' undo
