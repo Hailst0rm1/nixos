@@ -102,7 +102,7 @@ in {
           "*" = {
             left = [ "dashboard" "workspaces" "windowtitle" ];
             middle = [ "clock" ];
-            right = [ "media" "volume" "kbinput" ] 
+            right = [ "media" "kbinput" "volume" ] 
               ++ [ "bluetooth" "network"]
               ++ lib.optionals config.laptop [ "battery" ]
               ++ [ "notifications" ];
@@ -110,7 +110,7 @@ in {
           "1" = {
             left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
             middle = [ "clock" ];
-            right = [ "media" "volume" "kbinput" ] 
+            right = [ "media" "kbinput" "volume" ] 
               ++ [ "bluetooth" "network"]
               ++ lib.optionals config.laptop [ "battery" ]
               ++ [ "notifications" ];

@@ -39,7 +39,7 @@
         export VIDEO="${config.video}"
         export IMAGE="${config.image}"
         export OPENER="xdg-open"
-        #export LAUNCHER="cosmic-launcher"
+        export LAUNCHER="rofi"
         export FLAKE="${config.nixosDir}" # For nh
         export GIT_EXTERNAL_DIFF="difft" # Using difftastic for git diffs
         export ZINIT_HOME="$HOME/.local/share/zsh/zinit"
@@ -76,7 +76,7 @@
         #find="fd";
         du="dust";
         top="bottom";
-        ps="procs";
+        #ps="procs";
         #sed="sd";
         diff="difft";
       };
@@ -105,16 +105,34 @@
       zinit light Aloxaf/fzf-tab # Fzf window for commands
       #zinit light marlonrichert/zsh-autocomplete # Used for constant history box
       zinit light zsh-users/zsh-autosuggestions # Inline suggestion
-      zinit light jeffreytse/zsh-vi-mode # Vim bindings
+      # zinit light jeffreytse/zsh-vi-mode # Vim bindings
 
       # Oh-My-Posh
       eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ~/.config/oh-my-posh/.omp-zsh.toml)"
 
-      # Keybindings
-      bindkey '^K' history-search-backward
-      bindkey '^J' history-search-forward
-      bindkey '^F' autosuggest-accept
-      #bindkey '^R' history-incremental-search-backward
+      # === Keybindings ===
+      
+      # Navigation
+      bindkey '^a' end-of-line
+      bindkey '^[[105;5u' beginning-of-line #fix
+      bindkey '^b' backward-word
+      bindkey '^w' forward-word
+      bindkey '^h' backward-char
+      bindkey '^l' forward-char
+      
+      # History
+      bindkey '^k' history-search-backward
+      bindkey '^j' history-search-forward
+      #bindkey '^r' history-incremental-search-backward
+
+      # Modifying
+      bindkey '^[^H' backward-kill-word # fix
+      bindkey '^f' autosuggest-accept
+      bindkey '^d' kill-line
+      bindkey '^u' undo
+      #bindkey '^y' redo
+      
+      # === ===
 
       # Completion styling
       zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
@@ -133,6 +151,10 @@
       #zstyle ':autocomplete:history-search:*' list-lines 8  # int
       #zstyle ':autocomplete:*' min-input 1
 
+      # Load FZF Keybindings and Completions
+      source ~/.local/share/zsh/fzf/key-bindings.zsh
+      source ~/.local/share/zsh/fzf/completion.zsh
+
       # Replay deferred commands
       #zinit cdreplay -q
 
@@ -144,10 +166,6 @@
 
       # Load zsh-syntax-highlighting plugin at the end
       zinit light zsh-users/zsh-syntax-highlighting
-
-      # Load fzf (zsh-vim-function to set the correct binding)
-      zvm_after_init_commands+=("source ~/.local/share/zsh/fzf/key-bindings.zsh" "source ~/.local/share/zsh/fzf/completion.zsh")
-      #zvm_after_init_commands+=("source ~/.local/share/zsh/fzf/completion.zsh")
 
       '';
 
