@@ -132,6 +132,8 @@
       bindkey '^u' undo
       #bindkey '^y' redo
       
+      bindkey '^[[108;6u' clear-screen
+      
       # === ===
 
       # Completion styling

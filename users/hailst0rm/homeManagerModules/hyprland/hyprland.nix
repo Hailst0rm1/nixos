@@ -65,7 +65,6 @@ in {
             render_power = 3;
             color = lib.mkForce "rgb(89b4fa)";
             color_inactive = lib.mkForce "rgb(1e1e2e)";
-            # offset = 0, 0;
           };
         };
 
