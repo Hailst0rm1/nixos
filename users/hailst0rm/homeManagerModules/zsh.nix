@@ -113,26 +113,26 @@
       # === Keybindings ===
       
       # Navigation
-      bindkey '^a' end-of-line
-      bindkey '^[[105;5u' beginning-of-line
-      bindkey '^b' backward-word
-      bindkey '^w' forward-word
-      bindkey '^h' backward-char
-      bindkey '^l' forward-char
+      bindkey '^a' end-of-line # CTRL+A
+      bindkey '^[[105;5u' beginning-of-line # CTRL+I
+      bindkey '^b' backward-word # CTRL+B
+      bindkey '^w' forward-word # CTRL+W
+      bindkey '^h' backward-char # CTRL+H
+      bindkey '^l' forward-char # CTRL+L
       
       # History
-      bindkey '^k' history-search-backward
-      bindkey '^j' history-search-forward
-      #bindkey '^r' history-incremental-search-backward
+      bindkey '^k' history-search-backward # CTRL+K
+      bindkey '^j' history-search-forward # CTRL+J
+      #bindkey '^r' history-incremental-search-backward # CTRL+R
 
       # Modifying
-      bindkey '^[^H' backward-kill-word
-      bindkey '^f' autosuggest-accept
-      bindkey '^d' kill-line
-      bindkey '^u' undo
-      #bindkey '^y' redo
+      bindkey '^[^H' backward-kill-word # CTRL+ALT+Backspace
+      bindkey '^f' autosuggest-accept # CTRL+F
+      bindkey '^d' kill-line # CTRL+D
+      bindkey '^u' undo # CTRL+U
+      #bindkey '^y' redo # CTRL+Y
       
-      bindkey '^[[108;6u' clear-screen
+      bindkey '^[[108;6u' clear-screen # CTRL+SHIFT+L
       
       # === ===
 

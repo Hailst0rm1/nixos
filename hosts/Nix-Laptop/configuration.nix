@@ -13,6 +13,10 @@ in {
         (n: lib.strings.hasSuffix ".nix" n)
         (lib.filesystem.listFilesRecursive ../../nixosModules);
           
+  # === TEMPORARY ===
+  environment.etc.hosts.enable = false;
+  environment.etc.hosts.mode = "0700";
+  # ===
 
 
   # variables.nix
