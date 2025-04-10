@@ -27,9 +27,6 @@ in {
       # Default: false
       overwrite.enable = true;
 
-      # Import a theme from './themes/*.json'.
-      # Default: ""
-      theme = "catppuccin_mocha";
 
       # Override the final config with an arbitrary set.
       # Useful for overriding colors in your selected theme.
@@ -94,29 +91,6 @@ in {
         };
       };
 
-      # Configure bar layouts for monitors.
-      # See 'https://hyprpanel.com/configuration/panel.html'.
-      # Default: null
-      layout = {
-        "bar.layouts" = {
-          "*" = {
-            left = [ "dashboard" "workspaces" "windowtitle" ];
-            middle = [ "clock" ];
-            right = [ "media" "kbinput" "volume" ] 
-              ++ [ "bluetooth" "network"]
-              ++ lib.optionals config.laptop [ "battery" ]
-              ++ [ "notifications" ];
-          };
-          "1" = {
-            left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
-            middle = [ "clock" ];
-            right = [ "media" "kbinput" "volume" ] 
-              ++ [ "bluetooth" "network"]
-              ++ lib.optionals config.laptop [ "battery" ]
-              ++ [ "notifications" ];
-          };
-        };
-      };
 
       # Configure and theme almost all options from the GUI.
       # Options that require '{}' or '[]' are not yet implemented,
@@ -124,6 +98,35 @@ in {
       # See 'https://hyprpanel.com/configuration/settings.html'.
       # Default: <same as gui>
       settings = {
+
+        # Configure bar layouts for monitors.
+        # See 'https://hyprpanel.com/configuration/panel.html'.
+        # Default: null
+        layout = {
+          "bar.layouts" = {
+            "*" = {
+              left = [ "dashboard" "workspaces" "windowtitle" ];
+              middle = [ "clock" ];
+              right = [ "media" "kbinput" "volume" ] 
+                ++ [ "bluetooth" "network"]
+                ++ lib.optionals config.laptop [ "battery" ]
+                ++ [ "notifications" ];
+            };
+            "1" = {
+              left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
+              middle = [ "clock" ];
+              right = [ "media" "kbinput" "volume" ] 
+                ++ [ "bluetooth" "network"]
+                ++ lib.optionals config.laptop [ "battery" ]
+                ++ [ "notifications" ];
+            };
+          };
+        };
+        
+        # Import a theme from './themes/*.json'.
+        # Default: ""
+        theme.name = "catppuccin_mocha";
+
         bar.clock.format = "%a %b %d (w.%V) - %T";
         bar.launcher.autoDetectIcon = true;
         bar.network.label = false;

@@ -13,6 +13,10 @@ in {
         (n: lib.strings.hasSuffix ".nix" n)
         (lib.filesystem.listFilesRecursive ../../nixosModules);
           
+  # === TEMPORARY ===
+  environment.etc.hosts.enable = false;
+  environment.etc.hosts.mode = "0700";
+  # ===
 
 
   # variables.nix
@@ -35,13 +39,13 @@ in {
   # graphic
   graphicDriver.nvidia = {
     enable = true;
-    type = "test";
+    type = "default";
   };
 
   security = {
     dnscrypt.enable = false;
     completePolkit.enable = false;
-    yubikey.enable = false;
+    yubikey.enable = true;
   };
 
   # Bluetooth
@@ -49,14 +53,14 @@ in {
   hardware.bluetooth.powerOnBoot = false;
   
   system = {
-    theme = {
-      enable = true;
-      name = "catppuccin-mocha";
-    };
     kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     firewall.enable = true;
+    theme = {
+      enable = true;
+      name = "catppuccin-mocha";
+    };
     automatic = {
       upgrade = true;
       cleanup = true;
@@ -65,8 +69,8 @@ in {
 
   virtualisation = {
     host = {
-      vmware = true;
-      qemu = true;
+      vmware = false;
+      qemu = false;
     };
     guest = {
       vmware = false;
