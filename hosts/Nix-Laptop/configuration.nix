@@ -43,6 +43,7 @@ in {
   };
 
   security = {
+    firewall.enable = false; # Turn off for rev-shells etc
     dnscrypt.enable = false;
     completePolkit.enable = false;
     yubikey.enable = true;
@@ -56,7 +57,6 @@ in {
     kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
-    firewall.enable = true;
     theme = {
       enable = true;
       name = "catppuccin-mocha";
@@ -69,8 +69,8 @@ in {
 
   virtualisation = {
     host = {
-      vmware = true;
-      qemu = true;
+      vmware = false;
+      qemu = false;
     };
     guest = {
       vmware = false;

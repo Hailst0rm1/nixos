@@ -3,14 +3,21 @@
   config,
   ...
 }: {
-  options.system.firewall.enable = lib.mkEnableOption "Turn on the firewall";
+  options = {
+    security = {
+      firewall.enable = lib.mkEnableOption "Turn on the firewall";
+    };
+    system = {
+      
+    };
+  };
 
   config = {
     networking = {
       hostName = lib.mkDefault config.hostname;
       networkmanager.enable = true;
 
-      firewall = lib.mkIf config.system.firewall.enable {
+      firewall = lib.mkIf config.security.firewall.enable {
         enable = true;
       };
 
