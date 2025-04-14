@@ -27,6 +27,7 @@ in {
       # Default: false
       overwrite.enable = true;
 
+      #overlay.enable = true;
 
       # Override the final config with an arbitrary set.
       # Useful for overriding colors in your selected theme.
@@ -91,6 +92,32 @@ in {
         };
       };
 
+      # REMOVE ONCE STABLE AGAIN
+      # Configure bar layouts for monitors.
+      # See 'https://hyprpanel.com/configuration/panel.html'.
+      # Default: null
+      layout = {
+        "bar.layouts" = {
+          "*" = {
+            left = [ "dashboard" "workspaces" "windowtitle" ];
+            middle = [ "clock" ];
+            right = [ "media" "kbinput" "volume" ] 
+              ++ [ "bluetooth" "network"]
+              ++ lib.optionals config.laptop [ "battery" ]
+              ++ [ "notifications" ];
+          };
+          "1" = {
+            left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
+            middle = [ "clock" ];
+            right = [ "media" "kbinput" "volume" ] 
+              ++ [ "bluetooth" "network"]
+              ++ lib.optionals config.laptop [ "battery" ]
+              ++ [ "notifications" ];
+          };
+        };
+      };
+
+      theme = "catppuccin_mocha";
 
       # Configure and theme almost all options from the GUI.
       # Options that require '{}' or '[]' are not yet implemented,
@@ -99,55 +126,59 @@ in {
       # Default: <same as gui>
       settings = {
 
-        # Configure bar layouts for monitors.
-        # See 'https://hyprpanel.com/configuration/panel.html'.
-        # Default: null
-        layout = {
-          "bar.layouts" = {
-            "*" = {
-              left = [ "dashboard" "workspaces" "windowtitle" ];
-              middle = [ "clock" ];
-              right = [ "media" "kbinput" "volume" ] 
-                ++ [ "bluetooth" "network"]
-                ++ lib.optionals config.laptop [ "battery" ]
-                ++ [ "notifications" ];
-            };
-            "1" = {
-              left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
-              middle = [ "clock" ];
-              right = [ "media" "kbinput" "volume" ] 
-                ++ [ "bluetooth" "network"]
-                ++ lib.optionals config.laptop [ "battery" ]
-                ++ [ "notifications" ];
-            };
-          };
-        };
+        # # Configure bar layouts for monitors.
+        # # See 'https://hyprpanel.com/configuration/panel.html'.
+        # # Default: null
+        # layout = {
+        #   "bar.layouts" = {
+        #     "*" = {
+        #       left = [ "dashboard" "workspaces" "windowtitle" ];
+        #       middle = [ "clock" ];
+        #       right = [ "media" "kbinput" "volume" ] 
+        #         ++ [ "bluetooth" "network"]
+        #         ++ lib.optionals config.laptop [ "battery" ]
+        #         ++ [ "notifications" ];
+        #     };
+        #     "1" = {
+        #       left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
+        #       middle = [ "clock" ];
+        #       right = [ "media" "kbinput" "volume" ] 
+        #         ++ [ "bluetooth" "network"]
+        #         ++ lib.optionals config.laptop [ "battery" ]
+        #         ++ [ "notifications" ];
+        #     };
+        #   };
+        # };
         
         # Import a theme from './themes/*.json'.
         # Default: ""
-        theme.name = "catppuccin_mocha";
+        # theme.name = "catppuccin_mocha";
 
-        bar.clock.format = "%a %b %d (w.%V) - %T";
-        bar.launcher.autoDetectIcon = true;
-        bar.network.label = false;
-        bar.bluetooth.label = false;
-        bar.media.format = "{title}";
-        bar.media.show_active_only = true;
-
-        menus.clock = {
-          time.military = true;
-          weather.unit = "metric";
-        	weather.key = "39a8319acbc241bebc492626252001";
-          weather.location = config.myLocation;
+        bar = {
+          clock.format = "%a %b %d (w.%V) - %T";
+          launcher.autoDetectIcon = true;
+          network.label = false;
+          bluetooth.label = false;
+          media.format = "{title}";
+          media.show_active_only = true;
         };
 
-        menus.dashboard.powermenu.avatar.image = "${../wallpapers/profile-pic.jpg}";
-
-        menus.dashboard.stats.enable_gpu = lib.mkDefault (nvidiaEnabled);
-        menus.power.lowBatteryNotification = lib.mkDefault (config.laptop);
-        menus.dashboard.controls.enabled = false;
-        menus.dashboard.shortcuts.enabled = false;
-        menus.dashboard.directories.enabled = false;
+        menus = {
+          clock = {
+            time.military = true;
+            weather.unit = "metric";
+          	weather.key = "39a8319acbc241bebc492626252001";
+            weather.location = config.myLocation;
+          };
+          dashboard = {
+            powermenu.avatar.image = "${../wallpapers/profile-pic.jpg}";
+            stats.enable_gpu = lib.mkDefault (nvidiaEnabled);
+            controls.enabled = false;
+            shortcuts.enabled = false;
+            directories.enabled = false;
+          };
+          power.lowBatteryNotification = lib.mkDefault (config.laptop);
+        };
 
         theme.osd = {
           location = "bottom";

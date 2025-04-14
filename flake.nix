@@ -21,7 +21,8 @@
     # Hyprland
     hyprland.url = "github:hyprwm/Hyprland";
     hyprpanel = {
-      url = "github:Jas-SinghFSU/HyprPanel";
+      # url = "github:Jas-SinghFSU/HyprPanel";
+      url = "github:Jas-SinghFSU/HyprPanel?rev=94a00a49dae15c87e4234c9962295aed2b0dc45e";
       inputs.nixpkgs.follows = "nixpkgs";
     };
       
@@ -64,6 +65,7 @@
     # Discord plugins and theme
     nixcord = {
       url = "github:kaylorben/nixcord?rev=c1a2a14393dba951994442199b9adfe14bb78a99"; # Change back once bug fixed
+      # url = "github:kaylorben/nixcord";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
