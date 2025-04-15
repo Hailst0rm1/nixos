@@ -26,6 +26,9 @@ in {
   laptop = true;
   myLocation = "Barkarby";
 
+  # Red Teaming config
+  redTools.enable = true;
+
   # desktop/default.nix
   # Gnome is default
   desktopEnvironment.name = "hyprland";
@@ -43,7 +46,7 @@ in {
   };
 
   security = {
-    firewall.enable = false; # Turn off for rev-shells etc
+    firewall.enable = true; # Turn off for rev-shells etc
     dnscrypt.enable = false;
     completePolkit.enable = false;
     yubikey.enable = true;

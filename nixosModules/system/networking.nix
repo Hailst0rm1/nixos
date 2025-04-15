@@ -16,9 +16,11 @@
     networking = {
       hostName = lib.mkDefault config.hostname;
       networkmanager.enable = true;
+      nftables.enable = true;
 
       firewall = lib.mkIf config.security.firewall.enable {
         enable = true;
+        allowedTCPPorts = lib.mkIf config.redTools.enable [ 80 443 1337 4444 ];
       };
 
     # Configure network proxy if necessary

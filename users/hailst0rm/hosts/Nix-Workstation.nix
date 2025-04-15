@@ -1,4 +1,4 @@
-{ lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, ...}:
+{ lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, redTools, ...}:
 let
   # Lib 
   myLib = import ../../../myLib/generators.nix;
@@ -73,5 +73,7 @@ in {
     get-commands.enable = true;
     get-alias.enable = true;
   };
+
+  redTools.enable = redTools;
 }
 

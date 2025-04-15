@@ -25,7 +25,8 @@
       systemArch = evaluatedSystem.config.systemArch;
       myLocation = evaluatedSystem.config.myLocation;
       laptop = evaluatedSystem.config.laptop;
-
+      redTools = evaluatedSystem.config.redTools.enable;
+      
       # Graphic driver
       nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
 
@@ -63,7 +64,7 @@
               config.allowUnfree = true;
             };
 
-            inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled; # Add config here that HM may rely on
+            inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled redTools; # Add config here that HM may rely on
           };
         }
       ];

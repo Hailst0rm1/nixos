@@ -34,5 +34,6 @@
     };
 
     laptop = lib.mkEnableOption "Enable if computer is a laptop.";
+    redTools.enable =  lib.mkEnableOption "Enable for offensive tooling.";
   };
 }

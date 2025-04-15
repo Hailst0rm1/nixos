@@ -4,7 +4,7 @@
   pkgs-unstable,
   ...
 }: {
-  options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
+  # options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
 
   config = lib.mkIf config.redTools.enable (with pkgs-unstable; {
     home = {
