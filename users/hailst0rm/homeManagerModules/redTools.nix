@@ -35,6 +35,7 @@
         burpsuite # Webapp testing
         caido # Burp alternative in rust
         chromium # For Caido?
+        sqlmap # SQL Injection
     
 
         # === Resource Development ===

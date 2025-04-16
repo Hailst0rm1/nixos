@@ -39,6 +39,7 @@
     pkgs.file
     pkgs.jq
     pkgs.xclip
+    pkgs.dig
 
     # Git
     pkgs.git
