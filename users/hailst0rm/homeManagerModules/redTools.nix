@@ -8,6 +8,8 @@
 
   config = lib.mkIf config.redTools.enable (with pkgs-unstable; {
     home = {
+      sessionVariables = {
+      };
       packages = [
 
         # === Testing corner ===
@@ -17,6 +19,12 @@
         # Passive
         whois
         gitleaks # Find creds in git-applications
+        exiftool # Information via metadata on targets public resources
+        subfinder # Subdirectory finder
+        gau # Get-all-Urls - get known urls
+        theharvester # Emails, names, IPs, subdomains
+        waymore # Wayback explorer query and download
+        trufflehog # Find exposed credentials
     
         # Active
         nmap
@@ -26,16 +34,20 @@
         nbtscan # NetBIOS scan (port 139)
         net-snmp # Includes: snmpwalk (port UDP/161)
         exploitdb # Searchsploit, searchable vulnerability DB
+          libxml2 # ^Dependency
+        nuclei # Vulnerability scanner
 
         # Web
-        subfinder # Subdirectory finder
         gobuster # Directory busting
         ffuf # Fuzzing
         feroxbuster # Ffuf alternative
-        burpsuite # Webapp testing
+        # burpsuite # Webapp testing
         caido # Burp alternative in rust
-        chromium # For Caido?
+          chromium # For Caido
         sqlmap # SQL Injection
+        wpscan # Wordpress scanner
+        httpx # Check which hosts are alive, and fingerprint them
+        katana # Web crawler
     
 
         # === Resource Development ===
