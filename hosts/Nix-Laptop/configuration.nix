@@ -18,7 +18,6 @@ in {
   environment.etc.hosts.mode = "0700";
   # ===
 
-
   # variables.nix
   username = "hailst0rm";
   hostname = hostname;

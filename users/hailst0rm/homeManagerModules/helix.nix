@@ -60,10 +60,14 @@
     };
 
     home.packages = with pkgs; [
+      # Languages
+      (python313.withPackages (p: with p; [
+        psutil
+      ]))
+      
       # Code assistant
       helix-gpt
 
-      
       # Formatting
       alejandra
 
@@ -83,6 +87,7 @@
       nodePackages.vim-language-server # Vim
       nodePackages.yaml-language-server # YAML / JSON
       luajitPackages.lua-lsp # Lua
+
     ];
   };
 }

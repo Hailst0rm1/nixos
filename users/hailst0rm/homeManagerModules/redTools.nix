@@ -54,6 +54,13 @@
 
 
         # === Initial Access ===
+        metasploit
+
+        # === Execution ===
+        python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
+
+        # === Lateral Movement ===
+        samba4Full # Interact with SMB shares (smbclient)
 
         # === Wordlists ===
         wordlists # Note: This includes seclists
@@ -61,7 +68,6 @@
                   # <command> $(wordlists_path)/rockyou.txt # Use wordlist
                   # wordlists # Displays tree of all lists (can be used with pipe grep)
               
-
         # === Misc ===
         (writeShellScriptBin "cyberchef" '' # For encoding/encryption etc
           ${config.browser} "${cyberchef}/share/cyberchef/index.html"

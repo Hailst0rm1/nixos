@@ -226,7 +226,6 @@ in {
       # ---Optional
 
       # Tracking GPU Usage
-      python3 
       python313Packages.gpustat
     
       # To control screen/keyboard brightness
