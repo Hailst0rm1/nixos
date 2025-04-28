@@ -40,7 +40,7 @@ in {
   
   # graphic
   graphicDriver.nvidia = {
-    enable = true;
+    enable = false;
     type = "default";
   };
 
@@ -71,7 +71,7 @@ in {
 
   virtualisation = {
     host = {
-      vmware = false;
+      vmware = true;
       qemu = false;
     };
     guest = {

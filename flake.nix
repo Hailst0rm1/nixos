@@ -64,9 +64,10 @@
 
     # Discord plugins and theme
     nixcord = {
-      url = "github:kaylorben/nixcord?rev=c1a2a14393dba951994442199b9adfe14bb78a99"; # Change back once bug fixed
-      # url = "github:kaylorben/nixcord";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      # url = "github:kaylorben/nixcord?rev=c1a2a14393dba951994442199b9adfe14bb78a99"; # Change back once bug fixed
+      url = "github:kaylorben/nixcord";
+      # inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
   };

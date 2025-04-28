@@ -1,5 +1,5 @@
 { config, lib, inputs, ... }: {
-  imports = [ inputs.nixcord.homeManagerModules.nixcord ];
+  imports = [ inputs.nixcord.homeModules.nixcord ];
   
   config = lib.mkIf config.applications.discord.enable {
     programs.nixcord = {
