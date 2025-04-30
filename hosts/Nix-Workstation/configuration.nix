@@ -38,8 +38,8 @@ in {
   
   # graphic
   graphicDriver.nvidia = {
-    enable = true;
-    type = "default";
+    enable = false;
+    type = "test";
   };
 
   security = {
