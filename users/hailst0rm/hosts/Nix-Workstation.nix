@@ -74,6 +74,6 @@ in {
     get-alias.enable = true;
   };
 
-  redTools.enable = redTools;
+  redTools.enable = lib.mkDefault redTools;
 }
 
