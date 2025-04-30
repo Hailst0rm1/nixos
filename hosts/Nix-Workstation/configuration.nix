@@ -38,8 +38,8 @@ in {
   
   # graphic
   graphicDriver.nvidia = {
-    enable = false;
-    type = "test";
+    enable = true;
+    type = "default";
   };
 
   security = {
@@ -54,7 +54,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
   
   system = {
-    kernel = "zen";
+    # kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
