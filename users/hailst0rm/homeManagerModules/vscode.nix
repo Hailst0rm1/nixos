@@ -10,10 +10,7 @@ in {
     # Rust toolchain via rustup (more flexible than rustc/cargo from nixpkgs)
     home.packages = with pkgs; [
       rustup
-      rust-analyzer
       cargo-watch
-      clippy
-      rustfmt
       # Optional tools
       git
       gh   # GitHub CLI for auth with Copilot CLI

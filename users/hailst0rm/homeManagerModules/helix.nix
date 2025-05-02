@@ -79,7 +79,7 @@
       cmake-language-server # Cmake
       gopls # Go
       nil # Nix
-      rust-analyzer # Rust
+      # rust-analyzer # Rust
       omnisharp-roslyn # .NET
       marksman # Markdown
 
