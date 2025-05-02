@@ -42,7 +42,7 @@ in {
       (lib.mkIf cfg.bitwarden.enable [ pkgs.bitwarden-desktop ])
       (lib.mkIf cfg.brave.enable [ pkgs-unstable.brave ])
       (lib.mkIf cfg.discord.enable [ pkgs-unstable.discord ])
-      (lib.mkIf cfg.firefox.enable [ pkgs.firefox ])
+      (lib.mkIf cfg.firefox.enable [ pkgs-unstable.firefox ])
       (lib.mkIf cfg.gpt4all.enable [ pkgs-unstable.gpt4all ])
       (lib.mkIf cfg.libreOffice.enable [ pkgs.libreoffice-qt6-fresh ])
       (lib.mkIf cfg.mattermost.enable [ pkgs.mattermost ])

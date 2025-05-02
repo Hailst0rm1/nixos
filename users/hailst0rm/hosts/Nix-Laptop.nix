@@ -66,6 +66,7 @@ in {
     spotify.enable = true;
     zen-browser.enable = true;
     openconnect.enable = true;
+    vscode.enable = true;
     games = {
       ryujinx.enable = true;
     };
