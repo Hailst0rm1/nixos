@@ -65,6 +65,7 @@ in {
     remmina.enable = true;
     spotify.enable = true;
     zen-browser.enable = true;
+    openconnect.enable = true;
     games = {
       ryujinx.enable = true;
     };

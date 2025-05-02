@@ -20,6 +20,7 @@ in {
     remmina.enable = lib.mkEnableOption "Enable Remmina";
     spotify.enable = lib.mkEnableOption "Enable Spotify.";
     zen-browser.enable = lib.mkEnableOption "Enable Zen Browser.";
+    openconnect.enable = lib.mkEnableOption "Enable Openconnect.";
 
     ## Proton Applications
     proton = {
@@ -49,6 +50,7 @@ in {
       (lib.mkIf cfg.remmina.enable [ pkgs-unstable.remmina ])
       #(lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ]) # Uncomment if not using spicetify flake
       (lib.mkIf cfg.zen-browser.enable [ inputs.zen-browser.packages.${pkgs.system}.default ])
+      (lib.mkIf cfg.openconnect.enable [ pkgs-unstable.openconnect ])
 
       ## Proton Applications (with enableAll option)
       (lib.mkIf (proton.mail.enable || proton.enableAll) [ pkgs-unstable.protonmail-desktop ])
