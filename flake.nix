@@ -64,9 +64,7 @@
 
     # Discord plugins and theme
     nixcord = {
-      url = "github:kaylorben/nixcord?rev=48c997178f0061201e4c67149ba65d66b5740edb"; # Change back once bug fixed
-      # url = "github:kaylorben/nixcord";
-      # inputs.nixpkgs.follows = "nixpkgs-unstable";
+      url = "github:kaylorben/nixcord";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
