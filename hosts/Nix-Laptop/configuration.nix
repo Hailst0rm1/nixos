@@ -26,7 +26,7 @@ in {
   myLocation = "Barkarby";
 
   # Red Teaming config
-  redTools.enable = true;
+  cyber.redTools.enable = true;
 
   # desktop/default.nix
   # Gnome is default

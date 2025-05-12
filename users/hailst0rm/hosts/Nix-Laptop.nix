@@ -77,6 +77,9 @@ in {
     get-alias.enable = true;
   };
 
-  redTools.enable = lib.mkDefault redTools;
+  cyber = {
+    malwareAnalysis.enable = false;
+    redTools.enable = lib.mkDefault redTools;
+  };
 }
 

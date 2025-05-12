@@ -35,7 +35,10 @@ in {
     enable = true;
     name = "sddm";
   };
-  
+
+  # Red Teaming config
+  cyber.redTools.enable = true;
+
   # graphic
   graphicDriver.nvidia = {
     enable = true;

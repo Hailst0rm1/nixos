@@ -25,7 +25,7 @@
       systemArch = evaluatedSystem.config.systemArch;
       myLocation = evaluatedSystem.config.myLocation;
       laptop = evaluatedSystem.config.laptop;
-      redTools = evaluatedSystem.config.redTools.enable;
+      redTools = evaluatedSystem.config.cyber.redTools.enable;
       
       # Graphic driver
       nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
