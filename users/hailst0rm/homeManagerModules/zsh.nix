@@ -60,9 +60,7 @@
         cl="clear";
         q = "exit";
         ":q" = "exit";
-        nix-test="sudo nixos-rebuild test --flake $HOME/.nixos#${config.hostname} --show-trace";
-        nix-switch="sudo nixos-rebuild switch --flake $HOME/.nixos#${config.hostname} --show-trace";
-        nix-boot="sudo nixos-rebuild boot --flake $HOME/.nixos#${config.hostname} --show-trace";
+        nix-edit="yazi ${config.nixosDir}";
 
         # Modern commands
         ls="lsd";
@@ -84,93 +82,87 @@
       initExtra = ''
         ${pkgs-unstable.fastfetch}/bin/fastfetch
 
-        nix-edit () {
-          yazi ${config.nixosDir}
-        }
-
-       clean () {
+        clean () {
           echo "Deleting all but 5 NixOS generations..."
           sudo ${pkgs.nh}/bin/nh clean all -k 5
-       }
+        }
 
-      # Source/Load Zinit
-      source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null
+        # Source/Load Zinit
+        source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null
 
+        # Load completions
+        #autoload -Uz compinit && compinit
 
-      # Load completions
-      #autoload -Uz compinit && compinit
+        # Add in zsh plugins
+        zinit light zsh-users/zsh-completions # Command flag completions
+        zinit light Aloxaf/fzf-tab # Fzf window for commands
+        #zinit light marlonrichert/zsh-autocomplete # Used for constant history box
+        zinit light zsh-users/zsh-autosuggestions # Inline suggestion
+        # zinit light jeffreytse/zsh-vi-mode # Vim bindings
 
-      # Add in zsh plugins
-      zinit light zsh-users/zsh-completions # Command flag completions
-      zinit light Aloxaf/fzf-tab # Fzf window for commands
-      #zinit light marlonrichert/zsh-autocomplete # Used for constant history box
-      zinit light zsh-users/zsh-autosuggestions # Inline suggestion
-      # zinit light jeffreytse/zsh-vi-mode # Vim bindings
+        # Oh-My-Posh
+        eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ~/.config/oh-my-posh/.omp-zsh.toml)"
 
-      # Oh-My-Posh
-      eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ~/.config/oh-my-posh/.omp-zsh.toml)"
+        # === Keybindings ===
+    
+        # Navigation
+        bindkey '^a' end-of-line # CTRL+A
+        bindkey '^[[105;5u' beginning-of-line # CTRL+I
+        bindkey '^b' backward-word # CTRL+B
+        bindkey '^w' forward-word # CTRL+W
+        bindkey '^h' backward-char # CTRL+H
+        bindkey '^l' forward-char # CTRL+L
+    
+        # History
+        bindkey '^k' history-search-backward # CTRL+K
+        bindkey '^j' history-search-forward # CTRL+J
+        #bindkey '^r' history-incremental-search-backward # CTRL+R
 
-      # === Keybindings ===
-      
-      # Navigation
-      bindkey '^a' end-of-line # CTRL+A
-      bindkey '^[[105;5u' beginning-of-line # CTRL+I
-      bindkey '^b' backward-word # CTRL+B
-      bindkey '^w' forward-word # CTRL+W
-      bindkey '^h' backward-char # CTRL+H
-      bindkey '^l' forward-char # CTRL+L
-      
-      # History
-      bindkey '^k' history-search-backward # CTRL+K
-      bindkey '^j' history-search-forward # CTRL+J
-      #bindkey '^r' history-incremental-search-backward # CTRL+R
+        # Modifying
+        bindkey '^[^H' backward-kill-word # CTRL+ALT+Backspace
+        bindkey '^f' autosuggest-accept # CTRL+F
+        bindkey '^d' kill-line # CTRL+D
+        bindkey '^u' undo # CTRL+U
+        #bindkey '^y' redo # CTRL+Y
+    
+        bindkey '^[[108;6u' clear-screen # CTRL+SHIFT+L
+    
+        # === ===
 
-      # Modifying
-      bindkey '^[^H' backward-kill-word # CTRL+ALT+Backspace
-      bindkey '^f' autosuggest-accept # CTRL+F
-      bindkey '^d' kill-line # CTRL+D
-      bindkey '^u' undo # CTRL+U
-      #bindkey '^y' redo # CTRL+Y
-      
-      bindkey '^[[108;6u' clear-screen # CTRL+SHIFT+L
-      
-      # === ===
+        # Completion styling
+        zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+        zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
+        zstyle ':completion:*' menu no
+        zstyle ':completion:*' special-dirs false
+        zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'lsd -A --color always --icon always $realpath'
+        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'lsd -A --color always --icon always $realpath'
+        zstyle ':fzf-tab:*' fzf-flags --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+          --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+          --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
+          --color=selected-bg:#45475a \
+          --multi \
+          --bind=tab:accept
+        #zstyle ':autocomplete:*' default-context history-incremental-search-backward
+        #zstyle ':autocomplete:history-search:*' list-lines 8  # int
+        #zstyle ':autocomplete:*' min-input 1
 
-      # Completion styling
-      zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
-      zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
-      zstyle ':completion:*' menu no
-      zstyle ':completion:*' special-dirs false
-      zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'lsd -A --color always --icon always $realpath'
-      zstyle ':fzf-tab:complete:cd:*' fzf-preview 'lsd -A --color always --icon always $realpath'
-      zstyle ':fzf-tab:*' fzf-flags --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
-        --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
-        --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
-        --color=selected-bg:#45475a \
-        --multi \
-        --bind=tab:accept
-      #zstyle ':autocomplete:*' default-context history-incremental-search-backward
-      #zstyle ':autocomplete:history-search:*' list-lines 8  # int
-      #zstyle ':autocomplete:*' min-input 1
+        # Load FZF Keybindings and Completions
+        source ~/.local/share/zsh/fzf/key-bindings.zsh
+        source ~/.local/share/zsh/fzf/completion.zsh
 
-      # Load FZF Keybindings and Completions
-      source ~/.local/share/zsh/fzf/key-bindings.zsh
-      source ~/.local/share/zsh/fzf/completion.zsh
+        # Replay deferred commands
+        #zinit cdreplay -q
 
-      # Replay deferred commands
-      #zinit cdreplay -q
+        # See hidden files
+        setopt glob_dots
 
-      # See hidden files
-      setopt glob_dots
+        # Shell integrations / Smart cd
+        eval "$(zoxide init --cmd cd zsh)"
 
-      # Shell integrations / Smart cd
-      eval "$(zoxide init --cmd cd zsh)"
-
-      # Load zsh-syntax-highlighting plugin at the end
-      zinit light zsh-users/zsh-syntax-highlighting
+        # Load zsh-syntax-highlighting plugin at the end
+        zinit light zsh-users/zsh-syntax-highlighting
 
       '';
-
     };
   }; 
 }

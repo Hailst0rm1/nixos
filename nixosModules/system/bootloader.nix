@@ -45,7 +45,11 @@ in {
         efi.efiSysMountPoint = "/boot";
       };
 
-      supportedFilesystems = ["ntfs"];
+      supportedFilesystems = {
+        ntfs = true;
+        btrfs = true;
+        luks = true;
+      };
 
       extraModprobeConfig = ''
         options snd slots=snd-hda-intel

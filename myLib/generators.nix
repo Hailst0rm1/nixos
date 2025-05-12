@@ -31,44 +31,44 @@
       nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
 
     in
-    inputs.nixpkgs.lib.nixosSystem {
-      specialArgs = {
-        pkgs-unstable = import inputs.nixpkgs-unstable {
-          system = systemArch;
-          config.allowUnfree = true;
+      inputs.nixpkgs.lib.nixosSystem {
+        specialArgs = {
+          pkgs-unstable = import inputs.nixpkgs-unstable {
+            system = systemArch;
+            config.allowUnfree = true;
+          };
+
+          inherit inputs hostname;
         };
 
-        inherit inputs hostname;
-      };
+        modules = [
+          # System configuration
+          ../hosts/${hostname}/configuration.nix
 
-      modules = [
-        # System configuration
-        ../hosts/${hostname}/configuration.nix
+          # Pkgs Overlays
+          { nixpkgs.overlays = [ inputs.hyprpanel.overlay ]; }
 
-        # Pkgs Overlays
-        { nixpkgs.overlays = [ inputs.hyprpanel.overlay ]; }
+          # Home Manager configuration
+          inputs.home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
 
-        # Home Manager configuration
-        inputs.home-manager.nixosModules.home-manager
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
+            # Use dynamically extracted username
+            home-manager.users.${username} = import ../users/${username}/hosts/${hostname}.nix;
 
-          # Use dynamically extracted username
-          home-manager.users.${username} = import ../users/${username}/hosts/${hostname}.nix;
+            # Pass extracted config values (custom args passed to HM)
+            home-manager.extraSpecialArgs = {
+              pkgs-unstable = import inputs.nixpkgs-unstable {
+                system = systemArch;
+                config.allowUnfree = true;
+              };
 
-          # Pass extracted config values
-          home-manager.extraSpecialArgs = {
-            pkgs-unstable = import inputs.nixpkgs-unstable {
-              system = systemArch;
-              config.allowUnfree = true;
+              inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled redTools; # Add config here that HM may rely on
             };
-
-            inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled redTools; # Add config here that HM may rely on
-          };
-        }
-      ];
-    };
+          }
+        ];
+      };
 
  # TODO: FIX LIKE SYSTEM
   mkImage = {

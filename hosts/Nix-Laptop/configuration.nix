@@ -1,11 +1,22 @@
 {
+  inputs,
   config,
   hostname,
   lib,
   ...
 }: {
   imports = [
+    # Includes hardware config from hardware scan
     ./hardware-configuration.nix
+     
+    # Disk partitioning
+    inputs.disko.nixosModules.disko
+    ./disks.nix
+    {
+      _module.args.device = "nvme0n1"; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+    }
+
+    # Recursively imports all nixosModules
   ] ++ lib.filter 
         (n: lib.strings.hasSuffix ".nix" n)
         (lib.filesystem.listFilesRecursive ../../nixosModules);
@@ -82,8 +93,9 @@
 
   # Hosted / Running services (nixosModules/services)
   services = {
-    mattermost.enable = true;
+    mattermost.enable = false;
     ollama.enable = false;
+    open-webui = true; # UI for local AI
   };
 
   # Allow unfree software

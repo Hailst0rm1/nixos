@@ -4,7 +4,7 @@ let
 in {
   options.system.automatic = {
     upgrade = lib.mkEnableOption "Enable weekly system upgrades";
-    cleanup = lib.mkEnableOption "Enable automatic system cleanup every 10 days";
+    cleanup = lib.mkEnableOption "Enable automatic system cleanup every 30 days";
   };
   
   config = {
@@ -21,14 +21,14 @@ in {
     nix.gc = lib.mkIf cfg.upgrade {
       automatic = true;
       dates = "daily";
-      options = "--delete-older-than 10d";
+      options = "--delete-older-than 30d";
     };
 
     # Automatic system upgrades (weekly)
     system.autoUpgrade = lib.mkIf cfg.upgrade {
       enable = true;
       operation = "boot";
-      flake = "$HOME/.nixos";
+      flake = "${config.nixosDir}";
       flags = [ "--update-input" "nixpkgs" "--commit-lock-file" ];
       dates = "weekly";
     };
