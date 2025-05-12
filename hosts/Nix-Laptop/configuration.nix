@@ -95,7 +95,7 @@
   services = {
     mattermost.enable = false;
     ollama.enable = false;
-    open-webui = true; # UI for local AI
+    open-webui.enable = true; # UI for local AI
   };
 
   # Allow unfree software

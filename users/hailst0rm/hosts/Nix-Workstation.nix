@@ -70,11 +70,6 @@ in {
     };
   };
 
-  scripts = {
-    get-commands.enable = true;
-    get-alias.enable = true;
-  };
-
   cyber = {
     malwareAnalysis.enable = false;
     redTools.enable = lib.mkDefault redTools;

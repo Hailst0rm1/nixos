@@ -1,8 +1,4 @@
-{ pkgs, lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, redTools, ...}:
-let
-  # Lib 
-  myLib = import ../../../myLib/generators.nix;
-in {
+{ pkgs, lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, redTools, ...}: {
   imports = [
     ../../applications.nix
     ../../../nixosModules/variables.nix
@@ -70,11 +66,6 @@ in {
     games = {
       ryujinx.enable = true;
     };
-  };
-
-  scripts = {
-    get-commands.enable = true;
-    get-alias.enable = true;
   };
 
   cyber = {
