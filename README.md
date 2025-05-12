@@ -1,0 +1,3 @@
+# Hailst0rm NixOS
+
+Documentation coming...

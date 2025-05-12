@@ -4,7 +4,7 @@
   config,
   ...
 }: let
-  defaultDisplay = pkgs.WriteText "default-display" ''
+  defaultDisplay = pkgs.writeText "default-display" ''
     [ ",highrr,auto,1" ];
   '';
   

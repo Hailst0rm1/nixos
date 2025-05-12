@@ -3,10 +3,7 @@
   hostname,
   lib,
   ...
-}: let
-  # Lib
-  myLib = import ../../myLib/generators.nix;
-in {
+}: {
   imports = [
     ./hardware-configuration.nix
   ] ++ lib.filter 
@@ -14,8 +11,11 @@ in {
         (lib.filesystem.listFilesRecursive ../../nixosModules);
           
   # === TEMPORARY ===
+   
+  # Enables editing of hosts
   environment.etc.hosts.enable = false;
   environment.etc.hosts.mode = "0700";
+
   # ===
 
   # variables.nix
