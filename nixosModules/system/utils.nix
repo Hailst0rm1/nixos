@@ -63,8 +63,6 @@
     pkgs-unstable.difftastic # Diff: Side by side, UX
     pkgs-unstable.nh # Nixos-rebuild: Short + pretty
 
-
-
   ];
 
 }

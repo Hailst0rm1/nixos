@@ -36,6 +36,7 @@
   laptop = true;
   myLocation = "Barkarby";
 
+
   # Red Teaming config
   cyber.redTools.enable = true;
 
@@ -56,6 +57,7 @@
   };
 
   security = {
+    sops.enable = true;
     firewall.enable = true; # Turn off for rev-shells etc
     dnscrypt.enable = false;
     completePolkit.enable = false;
@@ -111,8 +113,10 @@
   users.users.${config.username} = {
     isNormalUser = true;
     extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
+    # hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
     initialPassword = "t";
   };
+
     
 
   # # # # # # # # # # # !!!!!! # # # # # # # # # #
