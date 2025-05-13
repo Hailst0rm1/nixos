@@ -1,6 +1,7 @@
 { config, lib, pkgs, pkgs-unstable, ...}: {
+  options.code.helix.enable = lib.mkEnableOption "Enable Helix";
 
-  config = lib.mkIf (config.editor == "hx" || config.editor == "helix" ) {
+  config = lib.mkIf (config.editor == "hx" || config.editor == "helix" || config.code.helix.enable ) {
     programs.helix = {
       enable = true;
       package = pkgs-unstable.helix;
@@ -57,37 +58,22 @@
           "C-u" = ["half_page_up" "align_view_center"];
         };
       };
+
+      extraPackages = with pkgs; [
+        # Code assistant
+        helix-gpt
+
+        # Nix Formatting
+        alejandra
+
+        # Debugging stuff
+        lldb
+
+        # Default Language servers
+        nil # Nix
+        nodePackages.yaml-language-server # YAML / JSON
+      ];
     };
 
-    home.packages = with pkgs; [
-      # Languages
-      (python313.withPackages (p: with p; [
-        psutil
-      ]))
-      
-      # Code assistant
-      helix-gpt
-
-      # Formatting
-      alejandra
-
-      # Debugging stuff
-      lldb
-
-      # Language servers
-      clang-tools # C-Style
-      cmake-language-server # Cmake
-      gopls # Go
-      nil # Nix
-      # rust-analyzer # Rust
-      omnisharp-roslyn # .NET
-      marksman # Markdown
-
-      nodePackages.typescript-language-server # Typescript
-      nodePackages.vim-language-server # Vim
-      nodePackages.yaml-language-server # YAML / JSON
-      luajitPackages.lua-lsp # Lua
-
-    ];
   };
 }

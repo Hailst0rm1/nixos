@@ -39,7 +39,7 @@
 
       # Rebuild with optional --show-trace and exit on failure
       echo "It is time to rebuild NixOS..."
-      sudo nixos-rebuild switch --flake ./#${hostname} ${show_trace_flag} || {
+      sudo nixos-rebuild switch --flake ./#${config.hostname} $show_trace_flag || {
         echo "Nixos-rebuild failed."
         notify-send -e "NixOS Rebuild Failed!" --icon=dialog-error
         popd
@@ -91,7 +91,7 @@
 
       # Rebuild with optional --show-trace and exit on failure
       echo "It is time to rebuild NixOS..."
-      sudo nixos-rebuild test --flake ./#${hostname} ${show_trace_flag} || {
+      sudo nixos-rebuild test --flake ./#${config.hostname} $show_trace_flag || {
         echo "Nixos-rebuild failed."
         notify-send -e "NixOS Rebuild Failed!" --icon=dialog-error
         popd
@@ -143,7 +143,7 @@
 
       # Rebuild with optional --show-trace and exit on failure
       echo "It is time to rebuild NixOS..."
-      sudo nixos-rebuild boot --flake ./#${hostname} ${show_trace_flag} || {
+      sudo nixos-rebuild boot --flake ./#${config.hostname} $show_trace_flag || {
         echo "Nixos-rebuild failed."
         notify-send -e "NixOS Rebuild Failed!" --icon=dialog-error
         popd

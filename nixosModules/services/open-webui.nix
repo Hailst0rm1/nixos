@@ -1,8 +1,8 @@
 { config, lib, ... }: 
 let
-  cfg = config.services.openWebui;
+  cfg = config.services.open-webui;
 in {
-  services.open-webui.enable = lib.mkIf cfg.enable {
+  services.open-webui = lib.mkIf cfg.enable {
     # environment = {
     #   OLLAMA_API_BASE_URL = "http://127.0.0.1:11434";
     #   # Disable authentication

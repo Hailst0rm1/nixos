@@ -49,6 +49,28 @@
     };
   };
 
+  # IDE for coding
+  code = {
+    helix = {
+      enable = true;
+      languages = {
+        cpp = false;
+        cSharp = false;
+        python = false;
+        rust = false;
+        web = false;
+      };
+    };
+    vscode = {
+      enable = true;
+      languages = {
+        cpp = false;
+        python = false;
+        rust = false;
+      };
+    };
+  };
+  
   applications = {
     bitwarden.enable = true;
     discord.enable = true;
@@ -62,7 +84,6 @@
     spotify.enable = true;
     zen-browser.enable = true;
     openconnect.enable = true;
-    vscode.enable = true;
     games = {
       ryujinx.enable = true;
     };
