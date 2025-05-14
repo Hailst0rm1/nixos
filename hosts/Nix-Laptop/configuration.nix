@@ -13,7 +13,7 @@
     inputs.disko.nixosModules.disko
     ./disks.nix
     {
-      _module.args.device = "sdb"; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+      _module.args.device = "sda"; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
     }
 
     # Recursively imports all nixosModules
