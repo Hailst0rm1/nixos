@@ -70,8 +70,8 @@
   
   system = {
     kernel = "zen";
-    # bootloader = "grub";
-    bootloader = "systemd";
+    bootloader = "grub";
+    # bootloader = "systemd";
     keyboard.colemak-se = true;
     theme = {
       enable = true;
