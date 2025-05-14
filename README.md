@@ -40,18 +40,18 @@ sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake github
 
 **External disk:**
 ```
-sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake github:hailst0rm/nixos#<hostname-for-config> --disk main /dev/sda
+sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake github:hailst0rm/nixos#<hostname-for-config> --disk x2000 /dev/sda
 ```
 
 **Current machine (new hardware, fresh install):**
 ```
-sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake github:hailst0rm/nixos#<hostname-for-config> --write-efi-boot-entries --disk main /dev/nvme0n1
+sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake github:hailst0rm/nixos#<hostname-for-config> --write-efi-boot-entries --disk x2000 /dev/nvme0n1
 ```
 - --write-efi-boot-entries : Write EFI boot entries to the NVRAM of the system for the installed system. Specify this option if you plan to boot from this disk on the current machine, but not if you plan to move the disk to another machine.
 
 **Update machine (same hardware):**
 ```
-sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake github:hailst0rm/nixos#<hostname-for-config> --write-efi-boot-entries --mode mount --disk main /dev/nvme0n1
+sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake github:hailst0rm/nixos#<hostname-for-config> --write-efi-boot-entries --mode mount --disk x2000 /dev/nvme0n1
 ```
 - --mode MODE - Specify the mode of operation. Valid modes are: format, mount.
   - Format will format the disk before installing.
