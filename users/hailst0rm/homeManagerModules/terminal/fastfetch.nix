@@ -6,7 +6,7 @@
       settings = {
         logo = {
           padding.top = 1;
-          source = "${./wallpapers/nixos-logo.png}";
+          source = "${../wallpapers/nixos-logo.png}";
           height = 22;
         };
         display = {
