@@ -38,11 +38,12 @@ in {
           #theme = lib.mkForce "${pkgs.libsForQt5.breeze-grub}/grub/themes/breeze";
           #useOSProber = true;
           efiSupport = true;
-          device = "nodev";
+          device = "/dev/sda";
+          # device = "nodev";
+          efiInstallAsRemovable = true;
         };
         timeout = 2;
         # efi.canTouchEfiVariables = true;
-        efi.efiSysMountPoint = "/boot";
       };
 
       supportedFilesystems = {
