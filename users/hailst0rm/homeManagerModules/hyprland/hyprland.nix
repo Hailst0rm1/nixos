@@ -252,6 +252,7 @@ in {
 
       # ---File manager
       (pkgs.${config.fileManager})
+      (if config.fileManager == "nautilus" then pkgs.file-roller else [] )
 
       # ---Gnome applications
       (pkgs.${config.image})
