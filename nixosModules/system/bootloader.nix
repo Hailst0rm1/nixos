@@ -41,7 +41,7 @@ in {
           device = "nodev";
         };
         timeout = 2;
-        efi.canTouchEfiVariables = true;
+        # efi.canTouchEfiVariables = true;
         efi.efiSysMountPoint = "/boot";
       };
 
@@ -56,9 +56,9 @@ in {
       '';
 
       # Yubikey FDE with systemd-cryptenroll
-      #initrd = {
-      #  systemd.enable = true;
-      #  luks.fido2Support = false;
+      initrd = {
+        systemd.enable = true;
+        luks.fido2Support = false;
       #  luks.devices = {
       #    "encrypted" = {
             # Make sure to verify UUID of the LUKS-partition (using the command blkid)
@@ -66,7 +66,7 @@ in {
       #      crypttabExtraOpts = ["fido2-device=auto"];
       #    };
       #  };
-      #};
+      };
     };
   };
 }
