@@ -57,7 +57,7 @@
   };
 
   security = {
-    sops.enable = true;
+    sops.enable = false;
     firewall.enable = true; # Turn off for rev-shells etc
     dnscrypt.enable = false;
     completePolkit.enable = false;
