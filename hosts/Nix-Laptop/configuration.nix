@@ -13,7 +13,7 @@
     inputs.disko.nixosModules.disko
     ./disks.nix
     {
-      _module.args.device = "sda"; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+      _module.args.device = "nvme0n1"; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
     }
 
     # Recursively imports all nixosModules
@@ -34,6 +34,7 @@
   hostname = hostname;
   systemArch = "x86_64-linux";
   laptop = true;
+  removableMedia = false;
   myLocation = "Barkarby";
 
 
@@ -71,7 +72,6 @@
   system = {
     kernel = "zen";
     bootloader = "grub";
-    # bootloader = "systemd";
     keyboard.colemak-se = true;
     theme = {
       enable = true;

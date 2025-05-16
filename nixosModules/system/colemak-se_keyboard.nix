@@ -41,6 +41,12 @@ in
   options.system.keyboard.colemak-se = lib.mkEnableOption "Enable the colemak-se layout";
 
   config = lib.mkIf config.system.keyboard.colemak-se {
+    # Colemak-SE for boot
+    console = lib.mkIf config.system.keyboard.colemak-se {
+      earlySetup = true;
+      useXkbConfig = true;
+    };
+
     environment.etc."X11/xkb/keymap.xkb".source = keymap;
 
     # Ensure home-manager doesn't interfere with XKB

@@ -18,6 +18,7 @@ in {
      
 
   config = {
+
     boot = {
       # Pretty boot
       kernelParams = [
@@ -38,12 +39,13 @@ in {
           #theme = lib.mkForce "${pkgs.libsForQt5.breeze-grub}/grub/themes/breeze";
           #useOSProber = true;
           efiSupport = true;
-          device = "/dev/sda";
-          # device = "nodev";
-          efiInstallAsRemovable = true;
+          enableCryptodisk = true;
+          device = "nodev";
+          efiInstallAsRemovable = lib.mkIf config.removableMedia true;
         };
+        efi.efiSysMountPoint = "/boot";
         timeout = 2;
-        # efi.canTouchEfiVariables = true;
+        efi.canTouchEfiVariables = lib.mkIf (!config.removableMedia) true;
       };
 
       supportedFilesystems = {

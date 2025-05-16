@@ -34,6 +34,9 @@
     };
 
     laptop = lib.mkEnableOption "Enable if computer is a laptop.";
+
+    removableMedia = lib.mkEnableOption "Enable if OS is installed on a removable media (USB/External device).";
+
     cyber.redTools.enable =  lib.mkEnableOption "Enable for offensive tooling.";
   };
 }
