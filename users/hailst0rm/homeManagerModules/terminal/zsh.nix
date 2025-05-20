@@ -85,6 +85,11 @@
           sudo ${pkgs.nh}/bin/nh clean all -k 5
         }
 
+        # Mkdir + cd dir
+        ckdir () {
+          mkdir -p "$1" && cd "$1"
+        }
+
         # Source/Load Zinit
         source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null
 

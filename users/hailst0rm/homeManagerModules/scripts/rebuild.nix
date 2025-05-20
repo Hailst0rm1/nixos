@@ -31,14 +31,13 @@
           exit 0
       fi
 
-
       # Autoformat the nix files with alejandra
       alejandra . &>/dev/null \
         || ( alejandra . ; echo "formatting failed!" && exit 1)
 
       # Show the changes
-      git add .
       git diff -U0
+      git add .
 
       # Rebuild with optional --show-trace and exit on failure
       echo "It is time to rebuild NixOS..."
@@ -90,8 +89,8 @@
         || ( alejandra . ; echo "formatting failed!" && exit 1)
 
       # Show the changes
-      git add .
       git diff -U0
+      git add .
 
       # Rebuild with optional --show-trace and exit on failure
       echo "It is time to rebuild NixOS..."
@@ -143,8 +142,8 @@
         || ( alejandra . ; echo "formatting failed!" && exit 1)
 
       # Show the changes
-      git add .
       git diff -U0
+      git add .
 
       # Rebuild with optional --show-trace and exit on failure
       echo "It is time to rebuild NixOS..."

@@ -7,6 +7,7 @@
 }: let
   device = "nvme0n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
 in {
+  # OBVIOUS CHANGE
   imports =
     [
       # Includes hardware config from hardware scan
@@ -62,7 +63,7 @@ in {
   };
 
   security = {
-    sops.enable = false;
+    sops.enable = true;
     firewall.enable = true; # Turn off for rev-shells etc
     dnscrypt.enable = false;
     completePolkit.enable = false;
