@@ -51,7 +51,7 @@
       echo "Build Complete! Commiting build..."
 
       # Commit all changes witih the generation metadata
-      git commit -am "$current"
+      git commit -am "${config.hostname}: $current"
 
       # Back to where you were
       popd
@@ -149,7 +149,7 @@
       echo "Build Complete! Commiting build..."
 
       # Commit all changes witih the generation metadata
-      git commit -am "$current"
+      git commit -am "${config.hostname}: $current"
 
       # Back to where you were
       popd
