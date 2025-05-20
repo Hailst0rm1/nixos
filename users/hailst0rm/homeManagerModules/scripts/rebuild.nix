@@ -37,6 +37,7 @@
         || ( alejandra . ; echo "formatting failed!" && exit 1)
 
       # Show the changes
+      git add .
       git diff -U0
 
       # Rebuild with optional --show-trace and exit on failure
@@ -89,6 +90,7 @@
         || ( alejandra . ; echo "formatting failed!" && exit 1)
 
       # Show the changes
+      git add .
       git diff -U0
 
       # Rebuild with optional --show-trace and exit on failure
@@ -141,6 +143,7 @@
         || ( alejandra . ; echo "formatting failed!" && exit 1)
 
       # Show the changes
+      git add .
       git diff -U0
 
       # Rebuild with optional --show-trace and exit on failure
