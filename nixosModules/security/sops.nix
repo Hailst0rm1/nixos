@@ -27,7 +27,7 @@
         generateKey = true;
       };
 
-      secrets."${config.username}-password".neededForUsers = true; # User password (doesn't work?)
+      secrets."${config.username}/user_password".neededForUsers = true; # User password (doesn't work?)
     };
   };
 }

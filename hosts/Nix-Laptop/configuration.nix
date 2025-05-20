@@ -120,9 +120,14 @@ in {
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.username} = {
     isNormalUser = true;
-    extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
-    initialPassword = "t";
-    hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
+    extraGroups = [
+      "sudo"
+      "docker"
+      "networkmanager"
+      "wheel"
+    ];
+    # initialPassword = "t";
+    hashedPasswordFile = config.sops.secrets."${config.username}/user_password".path;
   };
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
