@@ -25,10 +25,7 @@
 
       # Exit if no changes are made
       if git diff --quiet; then
-          echo "No changes detected in config. Exiting."
-          notify-send -e "NixOS Rebuild Failed!" --icon=software-update-available
-          popd
-          exit 0
+          echo "Warning: No changes detected in config."
       fi
 
       # Autoformat the nix files with alejandra
@@ -101,13 +98,7 @@
         exit 1
       }
 
-      # Get current generation metadata
-      current=$(nixos-rebuild list-generations | grep current)
-
-      echo "Build Complete! Commiting build..."
-
-      # Commit all changes witih the generation metadata
-      git commit -am "$current"
+      echo "Build Complete!"
 
       # Back to where you were
       popd
@@ -131,10 +122,8 @@
 
       # Exit if no changes are made
       if git diff --quiet; then
-          echo "No changes detected in config. Exiting."
+          echo "Warning: No changes detected in config."
           notify-send -e "NixOS Rebuild Failed!" --icon=software-update-available
-          popd
-          exit 0
       fi
 
       # Autoformat the nix files with alejandra
