@@ -1,6 +1,6 @@
 # Hailst0rm NixOS
 
----
+![./src/desktop.png]
 
 # Installation
 
@@ -27,13 +27,16 @@ configuration.nix:
 in {
 ```
 
-> [!Tip] Installation media
-> Depending on the size of the config for the workstation installation, the RAM for /tmpfs wont be enough, which you'll have to compensate for using swap. My setup:
-> - Create bootable USB (64GB): `dd bs=4M if=Downloads/nixos-gnome-installer-24.11.iso of=/dev/sdx status=progress oflag=sync`
-> - Create a swap partiotion of remaining space on USB: I did it via gnome-disks
-> - Now boot into the USB
-> - Activate swap partition: `swapon /dev/sdx2`
-> - Expand the root and nix-store: `mount -o remount,size=35G,noatime /nix/.rw-store && mount -o remount,size=25G,noatime /`
+## Installation media
+
+Depending on the size of the config for the workstation installation, the RAM for /tmpfs wont be enough, which you'll have to compensate for using swap.
+
+My setup:
+- Create bootable USB (64GB): `dd bs=4M if=Downloads/nixos-gnome-installer-24.11.iso of=/dev/sdx status=progress oflag=sync`
+- Create a swap partiotion of remaining space on USB: I did it via gnome-disks
+- Now boot into the USB
+- Activate swap partition: `swapon /dev/sdx2`
+- Expand the root and nix-store: `mount -o remount,size=35G,noatime /nix/.rw-store && mount -o remount,size=25G,noatime /`
 
 ## Disko-install (local installation)
 
