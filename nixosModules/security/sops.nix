@@ -17,13 +17,13 @@
 
     # Secrets
     sops = {
-      validateSopsFiles = false;
+      validateSopsFiles = true;
 
-      defaultSopsFile = "${config.nixosDir}/secrets/secrets.yaml";
+      defaultSopsFile = ../../secrets/secrets.yaml;
       defaultSopsFormat = "yaml";
       age.keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
 
-      secrets."${config.username}-password".neededForUsers = true; # User password
+      # secrets."${config.username}-password".neededForUsers = true; # User password
     };
   };
 }

@@ -12,6 +12,9 @@ in {
       # Includes hardware config from hardware scan
       ./hardware-configuration.nix
 
+      # Secrets
+      inputs.sops-nix.nixosModules.sops
+
       # Disk partitioning
       inputs.disko.nixosModules.disko
       ../../nixosModules/system/bootloader.nix
@@ -122,15 +125,10 @@ in {
     # initialPassword = "t";
   };
 
-  # # # # # # # # # # # !!!!!! # # # # # # # # # #
-  # UNCOMMENT THIS SECTION WHILE INSTALLING      #
-  #                                              #
-  #security.pam = {
-  #  u2f.enable = lib.mkForce false;
-  #  services.login.u2fAuth = lib.mkForce false;
-  #  services.login.u2fAuth = lib.mkForce false;
-  #}
-  # # # # # # # # # # # !!!!!! # # # # # # # # # #
+  # Secrets
+  sops = {
+    secrets."${config.username}-password".neededForUsers = true; # User password
+  };
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
   # and migrated your data accordingly.
