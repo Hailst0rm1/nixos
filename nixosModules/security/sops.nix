@@ -21,9 +21,13 @@
 
       defaultSopsFile = ../../secrets/secrets.yaml;
       defaultSopsFormat = "yaml";
-      age.keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
+      age = {
+        sshKeyPaths = ["/home/${config.username}/.ssh/sops"];
+        keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
+        generateKey = true;
+      };
 
-      # secrets."${config.username}-password".neededForUsers = true; # User password
+      secrets."${config.username}-password".neededForUsers = true; # User password (doesn't work?)
     };
   };
 }

@@ -117,18 +117,12 @@ in {
   # Select internationalisation properties.
   i18n.defaultLocale = "en_GB.UTF-8";
 
-  # Secrets
-  sops = {
-    secrets.hailst0rm-password.neededForUsers = true; # User password
-  };
-
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.username} = {
     isNormalUser = true;
     extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
-    # hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
-    hashedPasswordFile = config.sops.secrets.hailst0rm-password.path;
-    # initialPassword = "t";
+    initialPassword = "t";
+    hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
   };
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
