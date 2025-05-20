@@ -1,6 +1,6 @@
 # Hailst0rm NixOS
 
-![./src/desktop.png]
+![Desktop Preview](./src/desktop.png)
 
 # Installation
 
