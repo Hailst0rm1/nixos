@@ -1,7 +1,10 @@
-{ config, lib, ...}:
-let
+{
+  config,
+  lib,
+  ...
+}: let
   cfg = config.virtualisation.host.virtualbox;
-in{
+in {
   options.virtualisation.host.virtualbox = lib.mkEnableOption "Enable virtualbox host";
 
   config = lib.mkIf cfg {
@@ -10,7 +13,7 @@ in{
       enableExtensionPack = true;
       addNetworkInterface = true;
     };
-    
+
     # Add user to vboxusers
     users.extraGroups.vboxusers.members = [
       config.username
@@ -20,6 +23,5 @@ in{
     boot.blacklistedKernelModules = [
       "kvm-intel"
     ];
-
   };
 }

@@ -2,8 +2,7 @@
   config,
   lib,
   ...
-}:
-let
+}: let
   cfg = config.graphicDriver.nvidia;
 in {
   config = lib.mkIf (cfg.enable == true && cfg.type == "stable") {
@@ -47,4 +46,3 @@ in {
     };
   };
 }
-

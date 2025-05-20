@@ -5,9 +5,7 @@
   lib,
   ...
 }: {
-
   config = lib.mkIf (config.shell == "zsh") {
-
     home.file = {
       ".local/share/zsh/zinit".source = "${pkgs.zinit}/share/zinit";
       ".local/share/zsh/zinit".recursive = true;
@@ -28,7 +26,7 @@
 
       oh-my-zsh = {
         enable = true;
-        plugins = [ "git" "sudo" "aws" ];
+        plugins = ["git" "sudo" "aws"];
       };
 
       envExtra = ''
@@ -53,30 +51,30 @@
       '';
 
       shellAliases = {
-        sudo="sudo ";
-        ".."="cd ..";
-        c="wl-copy";
-        p="wl-paste";
-        cl="clear";
+        sudo = "sudo ";
+        ".." = "cd ..";
+        c = "wl-copy";
+        p = "wl-paste";
+        cl = "clear";
         q = "exit";
         ":q" = "exit";
-        nix-edit="yazi ${config.nixosDir}";
+        nix-edit = "yazi ${config.nixosDir}";
 
         # Modern commands
-        ls="lsd";
-        la="lsd -la";
-        tree="lsd --tree -a";
-        cat="bat -p";
-        lgit="lazygit";
-        ldocker="lazydocker";
-        ljournal="lazyjournal";
+        ls = "lsd";
+        la = "lsd -la";
+        tree = "lsd --tree -a";
+        cat = "bat -p";
+        lgit = "lazygit";
+        ldocker = "lazydocker";
+        ljournal = "lazyjournal";
         #grep="batgrep";
         #find="fd";
-        du="dust";
-        top="bottom";
+        du = "dust";
+        top = "bottom";
         #ps="procs";
         #sed="sd";
-        diff="difft";
+        diff = "difft";
       };
 
       initExtra = ''
@@ -104,7 +102,7 @@
         eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ~/.config/oh-my-posh/.omp-zsh.toml)"
 
         # === Keybindings ===
-    
+
         # Navigation
         bindkey '^a' end-of-line # CTRL+A
         bindkey '^[[105;5u' beginning-of-line # CTRL+I
@@ -112,7 +110,7 @@
         bindkey '^w' forward-word # CTRL+W
         bindkey '^h' backward-char # CTRL+H
         bindkey '^l' forward-char # CTRL+L
-    
+
         # History
         bindkey '^k' history-search-backward # CTRL+K
         bindkey '^j' history-search-forward # CTRL+J
@@ -124,9 +122,9 @@
         bindkey '^d' kill-line # CTRL+D
         bindkey '^u' undo # CTRL+U
         #bindkey '^y' redo # CTRL+Y
-    
+
         bindkey '^[[108;6u' clear-screen # CTRL+SHIFT+L
-    
+
         # === ===
 
         # Completion styling
@@ -164,5 +162,5 @@
 
       '';
     };
-  }; 
+  };
 }

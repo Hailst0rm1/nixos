@@ -1,7 +1,12 @@
-{ config, lib, pkgs, pkgs-unstable, ...}:
-let
+{
+  config,
+  lib,
+  pkgs,
+  pkgs-unstable,
+  ...
+}: let
   cfg = config.virtualisation.host.vmware;
-in{
+in {
   options.virtualisation.host.vmware = lib.mkEnableOption "Enable vmware host";
 
   config = lib.mkIf cfg {
@@ -9,6 +14,6 @@ in{
     virtualisation.vmware.host.package = pkgs-unstable.vmware-workstation;
 
     # Dark theme (applied in HM-stylix manually)
-    environment.systemPackages = [ pkgs.gnome-themes-extra ];
+    environment.systemPackages = [pkgs.gnome-themes-extra];
   };
 }

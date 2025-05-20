@@ -1,4 +1,10 @@
-{ config, lib, pkgs, pkgs-unstable, ... }: {
+{
+  config,
+  lib,
+  pkgs,
+  pkgs-unstable,
+  ...
+}: {
   config = lib.mkIf (config.terminal == "ghostty") {
     programs.ghostty = {
       enable = true;

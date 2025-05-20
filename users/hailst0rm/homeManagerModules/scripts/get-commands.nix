@@ -1,6 +1,9 @@
-{ pkgs, lib, config, ... }:
-
-let
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: let
   getCommandsScript = ''
     # Paths to the configuration files
     nixos_file="${config.home.homeDirectory}/.nixos/nixosModules/system/utils.nix"
@@ -24,7 +27,6 @@ in {
   options.scripts.get-commands.enable = lib.mkEnableOption "Enable get-commands script.";
 
   config = {
-    home.packages = lib.mkIf config.scripts.get-commands.enable [ getCommands ];
+    home.packages = lib.mkIf config.scripts.get-commands.enable [getCommands];
   };
 }
-

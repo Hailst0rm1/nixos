@@ -1,13 +1,11 @@
 {
-  pkgs, 
+  pkgs,
   config,
   lib,
   ...
-}:
-let
+}: let
   cfg = config.virtualisation.guest.vmware;
 in {
-
   options.virtualisation.guest.vmware = lib.mkEnableOption "Enable vmware guest.";
 
   config = lib.mkIf cfg {
@@ -25,4 +23,3 @@ in {
     };
   };
 }
-

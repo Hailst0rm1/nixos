@@ -6,4 +6,3 @@
   home.packages = [
   ];
 }
-

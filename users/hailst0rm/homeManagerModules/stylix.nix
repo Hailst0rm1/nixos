@@ -1,5 +1,9 @@
-{ pkgs-unstable, lib, config, ...}:
-let
+{
+  pkgs-unstable,
+  lib,
+  config,
+  ...
+}: let
   cfg = config.importConfig.stylix;
 in {
   options.importConfig.stylix = {
@@ -32,7 +36,7 @@ in {
       type = "Application";
       icon = "vmware-workstation";
       startupNotify = true;
-      categories = [ "System" ];
+      categories = ["System"];
       mimeType = [
         "application/x-vmware-vm"
         "application/x-vmware-team"

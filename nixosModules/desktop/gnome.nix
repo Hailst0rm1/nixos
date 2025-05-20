@@ -1,8 +1,10 @@
-{ config, lib, ...}:
-let
-  cfg = config.desktopEnvironment.name;
-in
 {
+  config,
+  lib,
+  ...
+}: let
+  cfg = config.desktopEnvironment.name;
+in {
   config = lib.mkIf (cfg == "gnome") {
     services.xserver = {
       enable = true;
@@ -21,4 +23,3 @@ in
     };
   };
 }
-

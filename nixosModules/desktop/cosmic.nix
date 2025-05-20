@@ -1,5 +1,9 @@
-{ inputs, lib, config, ...}:
-let
+{
+  inputs,
+  lib,
+  config,
+  ...
+}: let
   cfg = config.desktopEnvironment.name;
 in {
   imports = [inputs.nixos-cosmic.nixosModules.default];
@@ -14,4 +18,3 @@ in {
     services.displayManager.cosmic-greeter.enable = true;
   };
 }
-

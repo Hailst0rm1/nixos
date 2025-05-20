@@ -18,7 +18,7 @@
       enable = true;
       setSocketVariable = true;
     };
-  }; 
+  };
 
   # Zsh
   programs.zsh.enable = true;
@@ -26,7 +26,6 @@
   environment.pathsToLink = ["/share/zsh"];
 
   environment.systemPackages = [
-
     # Basic tooling
     pkgs.zsh
     pkgs.bash
@@ -49,7 +48,7 @@
     # Improved Version of Normal Tooling
     pkgs-unstable.bat # Cat: with syntax highlight + git
     pkgs-unstable.lsd # Ls: improved
-    pkgs-unstable.ripgrep # Grep: Fast recursive 
+    pkgs-unstable.ripgrep # Grep: Fast recursive
     pkgs-unstable.bat-extras.batgrep # Bat+Ripgrep
     pkgs-unstable.fd # Find: Fast & ux
     pkgs-unstable.zoxide # Cd: smart
@@ -62,8 +61,5 @@
     pkgs-unstable.sd # Sed: UX and fast
     pkgs-unstable.difftastic # Diff: Side by side, UX
     pkgs-unstable.nh # Nixos-rebuild: Short + pretty
-
   ];
-
 }
-

@@ -1,5 +1,8 @@
-{ config, lib, ...}:
-let
+{
+  config,
+  lib,
+  ...
+}: let
   cfg = config.virtualisation.guest.qemu;
 in {
   options.virtualisation.guest.qemu = lib.mkEnableOption "Enable qemu guest.";
@@ -14,4 +17,3 @@ in {
     };
   };
 }
-

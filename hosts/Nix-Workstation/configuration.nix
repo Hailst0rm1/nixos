@@ -7,17 +7,18 @@
   # Lib
   myLib = import ../../myLib/generators.nix;
 in {
-  imports = [
-    ./hardware-configuration.nix
-  ] ++ lib.filter 
-        (n: lib.strings.hasSuffix ".nix" n)
-        (lib.filesystem.listFilesRecursive ../../nixosModules);
-          
+  imports =
+    [
+      ./hardware-configuration.nix
+    ]
+    ++ lib.filter
+    (n: lib.strings.hasSuffix ".nix" n)
+    (lib.filesystem.listFilesRecursive ../../nixosModules);
+
   # === TEMPORARY ===
   environment.etc.hosts.enable = false;
   environment.etc.hosts.mode = "0700";
   # ===
-
 
   # variables.nix
   username = "hailst0rm";
@@ -55,7 +56,7 @@ in {
   # Bluetooth
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = false;
-  
+
   system = {
     # kernel = "zen";
     bootloader = "grub";
@@ -102,7 +103,6 @@ in {
     extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
     initialPassword = "t";
   };
-    
 
   # # # # # # # # # # # !!!!!! # # # # # # # # # #
   # UNCOMMENT THIS SECTION WHILE INSTALLING      #
@@ -120,4 +120,3 @@ in {
   # For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
   system.stateVersion = "24.05"; # Did you read the comment?
 }
-

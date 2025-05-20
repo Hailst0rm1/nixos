@@ -3,8 +3,7 @@
   config,
   lib,
   ...
-}:
-let
+}: let
   cfg = config.virtualisation.host.qemu;
 in {
   options.virtualisation.host.qemu = lib.mkEnableOption "Enable qemu on machine.";
@@ -52,4 +51,3 @@ in {
     services.spice-vdagentd.enable = true;
   };
 }
-

@@ -1,5 +1,4 @@
-{ lib, ... }:
-{
+{lib, ...}: {
   options.desktopEnvironment.displayManager = {
     enable = lib.mkEnableOption "Use a custom Display Manager.";
     name = lib.mkOption {

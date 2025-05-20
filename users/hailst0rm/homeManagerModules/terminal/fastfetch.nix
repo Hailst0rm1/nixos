@@ -1,4 +1,9 @@
-{ pkgs-unstable, lib, config, ... }: {
+{
+  pkgs-unstable,
+  lib,
+  config,
+  ...
+}: {
   config = lib.mkIf (config.shell == "zsh") {
     programs.fastfetch = {
       enable = true;

@@ -1,5 +1,8 @@
-{ config, lib, ... }: 
-let
+{
+  config,
+  lib,
+  ...
+}: let
   cfg = config.services.open-webui;
 in {
   services.open-webui = lib.mkIf cfg.enable {

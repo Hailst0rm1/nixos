@@ -2,10 +2,9 @@
   description = "Hailst0rm NixOS Configuration";
 
   inputs = {
+    # ===================== Flakes ===================== #
 
-   # ===================== Flakes ===================== #
-
-   # Home Manager manages dot files and user applications
+    # Home Manager manages dot files and user applications
     home-manager = {
       url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -25,7 +24,7 @@
       url = "github:Jas-SinghFSU/HyprPanel?rev=94a00a49dae15c87e4234c9962295aed2b0dc45e";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-      
+
     # Generators for building isos and VMs
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
@@ -81,34 +80,29 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
   };
 
-  outputs = inputs @ { ... }: let
+  outputs = inputs @ {...}: let
     # Generator functions for Machines and VMs
     myLib = import ./myLib/generators.nix {inherit inputs;};
   in
     with myLib; {
-
       nixosConfigurations = {
-
         # ===================== Physical Machines ===================== #
 
         # Home Workstation
-        Nix-Workstation = mkSystem { hostname = "Nix-Workstation"; };
+        Nix-Workstation = mkSystem {hostname = "Nix-Workstation";};
 
         # Work Laptop
-        Nix-Laptop = mkSystem { hostname = "Nix-Laptop"; };
-      
-      	# External SSD
-        Nix-ExtDisk = mkSystem { hostname = "Nix-ExtDisk"; };
-      
+        Nix-Laptop = mkSystem {hostname = "Nix-Laptop";};
+
+        # External SSD
+        Nix-ExtDisk = mkSystem {hostname = "Nix-ExtDisk";};
       };
 
-     # ===================== VM:s + ISO ===================== #
+      # ===================== VM:s + ISO ===================== #
 
       packages.x86_64-linux = {
-
         # Experimental VM for redteaming
         h4kn1x = mkImage {
           inherit system nixos-dir username;

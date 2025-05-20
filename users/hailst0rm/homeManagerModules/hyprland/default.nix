@@ -1,5 +1,9 @@
-{ pkgs, lib, config, ... }:
-let
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: let
   cfg = config.importConfig.hyprland;
 in {
   options.importConfig.hyprland = {

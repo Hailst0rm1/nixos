@@ -3,15 +3,13 @@
   lib,
   pkgs-unstable,
   ...
-}:
-let
+}: let
   cfg = config.graphicDriver.intel;
 in {
-
   options.graphicDriver.intel = {
     enable = lib.mkEnableOption "Download gpu drivers for intel";
   };
-  
+
   config = lib.mkIf cfg.enable {
     # Insert device ID for GPU found with:
     # nix-shell --extra-experimental-features "flakes" -p pciutils --run "lspci -nn | grep VGA"
@@ -32,4 +30,3 @@ in {
     };
   };
 }
-

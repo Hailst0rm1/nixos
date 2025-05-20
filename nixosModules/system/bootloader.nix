@@ -1,5 +1,10 @@
-{ device, pkgs, config, lib, ... }:
-let
+{
+  device,
+  pkgs,
+  config,
+  lib,
+  ...
+}: let
   loader = config.system.bootloader;
   kernel = config.system.kernel;
 in {
@@ -15,10 +20,8 @@ in {
       description = "Select which kernel you want.";
     };
   };
-     
 
   config = {
-
     boot = {
       # Pretty boot
       kernelParams = [
@@ -29,7 +32,7 @@ in {
         enable = true;
       };
 
-      kernelPackages = lib.mkIf (kernel == "zen") pkgs.linuxKernel.packages.linux_zen; 
+      kernelPackages = lib.mkIf (kernel == "zen") pkgs.linuxKernel.packages.linux_zen;
 
       # Bootloader
       loader = {
@@ -40,7 +43,10 @@ in {
           #useOSProber = true;
           efiSupport = true;
           enableCryptodisk = true;
-          device = if device != null then "/dev/${device}" else "nodev";
+          device =
+            if device != null
+            then "/dev/${device}"
+            else "nodev";
           efiInstallAsRemovable = lib.mkIf config.removableMedia true;
         };
         efi.efiSysMountPoint = "/boot";
@@ -57,7 +63,6 @@ in {
       extraModprobeConfig = ''
         options snd slots=snd-hda-intel
       '';
-
     };
   };
 }

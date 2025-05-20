@@ -1,14 +1,26 @@
-{ lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, redTools, ...}:
-let
-  # Lib 
+{
+  lib,
+  config,
+  username,
+  hostname,
+  nixosDir,
+  systemArch,
+  myLocation,
+  laptop,
+  redTools,
+  ...
+}: let
+  # Lib
   myLib = import ../../../myLib/generators.nix;
 in {
-  imports = [
-    ../../applications.nix
-    ../../../nixosModules/variables.nix
-  ] ++ lib.filter 
-        (n: lib.strings.hasSuffix ".nix" n)
-        (lib.filesystem.listFilesRecursive ../homeManagerModules);
+  imports =
+    [
+      ../../applications.nix
+      ../../../nixosModules/variables.nix
+    ]
+    ++ lib.filter
+    (n: lib.strings.hasSuffix ".nix" n)
+    (lib.filesystem.listFilesRecursive ../homeManagerModules);
 
   programs = {
     home-manager.enable = true;
@@ -74,6 +86,4 @@ in {
     malwareAnalysis.enable = false;
     redTools.enable = lib.mkDefault redTools;
   };
-
 }
-

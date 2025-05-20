@@ -3,8 +3,7 @@
   lib,
   pkgs-unstable,
   ...
-}:
-let
+}: let
   cfg = config.graphicDriver.nvidia;
 in {
   options.graphicDriver.nvidia = {
@@ -20,7 +19,6 @@ in {
     nixpkgs.config.allowUnfree = true;
 
     boot = {
-
       initrd.kernelModules = [
         "nvidia"
         "nvidia_modeset"

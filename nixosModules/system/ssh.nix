@@ -14,6 +14,4 @@
       LogLevel = "DEBUG";
     };
   };
-
 }
-

@@ -1,12 +1,16 @@
-{ pkgs, config, lib, ... }:
-let
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}: let
   cfg = config.desktopEnvironment.displayManager;
 in {
   config = lib.mkIf (cfg.enable && cfg.name == "sddm") {
     environment.systemPackages = [
       (pkgs.catppuccin-sddm.override {
         flavor = "mocha";
-        font  = "Rubik";
+        font = "Rubik";
         fontSize = "9";
         background = "${../wallpapers/mountain.jpg}";
         loginBackground = true;

@@ -21,4 +21,3 @@
     pkgs-unstable.gping # Graphical ping
   ];
 }
-

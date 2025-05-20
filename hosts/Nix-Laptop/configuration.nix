@@ -7,25 +7,27 @@
 }: let
   device = "nvme0n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
 in {
-  imports = [
-    # Includes hardware config from hardware scan
-    ./hardware-configuration.nix
-     
-    # Disk partitioning
-    inputs.disko.nixosModules.disko
-    ../../nixosModules/system/bootloader.nix
-    ./disks.nix
-    {
-      _module.args.device = device; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
-    }
+  imports =
+    [
+      # Includes hardware config from hardware scan
+      ./hardware-configuration.nix
 
-    # Recursively imports all nixosModules
-  ] ++ lib.filter 
-        (n: lib.strings.hasSuffix ".nix" n)
-        (lib.filesystem.listFilesRecursive ../../nixosModules);
-          
+      # Disk partitioning
+      inputs.disko.nixosModules.disko
+      ../../nixosModules/system/bootloader.nix
+      ./disks.nix
+      {
+        _module.args.device = device; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+      }
+
+      # Recursively imports all nixosModules
+    ]
+    ++ lib.filter
+    (n: lib.strings.hasSuffix ".nix" n)
+    (lib.filesystem.listFilesRecursive ../../nixosModules);
+
   # === TEMPORARY ===
-   
+
   # Enables editing of hosts
   environment.etc.hosts.enable = false;
   environment.etc.hosts.mode = "0700";
@@ -40,7 +42,6 @@ in {
   removableMedia = false;
   myLocation = "Barkarby";
 
-
   # Red Teaming config
   cyber.redTools.enable = true;
 
@@ -53,7 +54,7 @@ in {
     enable = true;
     name = "sddm";
   };
-  
+
   # graphic
   graphicDriver.nvidia = {
     enable = false;
@@ -61,7 +62,7 @@ in {
   };
 
   security = {
-    sops.enable = true;
+    sops.enable = false;
     firewall.enable = true; # Turn off for rev-shells etc
     dnscrypt.enable = false;
     completePolkit.enable = false;
@@ -71,7 +72,7 @@ in {
   # Bluetooth
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = false;
-  
+
   system = {
     kernel = "zen";
     bootloader = "grub";
@@ -121,8 +122,6 @@ in {
     initialPassword = "t";
   };
 
-    
-
   # # # # # # # # # # # !!!!!! # # # # # # # # # #
   # UNCOMMENT THIS SECTION WHILE INSTALLING      #
   #                                              #
@@ -139,4 +138,3 @@ in {
   # For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
   system.stateVersion = "24.05"; # Did you read the comment?
 }
-

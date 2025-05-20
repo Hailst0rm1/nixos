@@ -1,10 +1,24 @@
-{ pkgs, lib, config, username, hostname, nixosDir, systemArch, myLocation, laptop, redTools, ...}: {
-  imports = [
-    ../../applications.nix
-    ../../../nixosModules/variables.nix
-  ] ++ lib.filter 
-        (n: lib.strings.hasSuffix ".nix" n)
-        (lib.filesystem.listFilesRecursive ../homeManagerModules);
+{
+  pkgs,
+  lib,
+  config,
+  username,
+  hostname,
+  nixosDir,
+  systemArch,
+  myLocation,
+  laptop,
+  redTools,
+  ...
+}: {
+  imports =
+    [
+      ../../applications.nix
+      ../../../nixosModules/variables.nix
+    ]
+    ++ lib.filter
+    (n: lib.strings.hasSuffix ".nix" n)
+    (lib.filesystem.listFilesRecursive ../homeManagerModules);
 
   programs = {
     home-manager.enable = true;
@@ -70,7 +84,7 @@
       };
     };
   };
-  
+
   applications = {
     bitwarden.enable = true;
     discord.enable = true;
@@ -94,4 +108,3 @@
     redTools.enable = lib.mkDefault redTools;
   };
 }
-

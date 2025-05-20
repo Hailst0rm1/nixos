@@ -1,5 +1,9 @@
-{ config, lib, pkgs-unstable, ... }:
-let
+{
+  config,
+  lib,
+  pkgs-unstable,
+  ...
+}: let
   cfg = config.importConfig.yazi;
 in {
   options.importConfig.yazi.enable = lib.mkEnableOption "Enable Yazi file manager.";
@@ -12,7 +16,7 @@ in {
 
       settings = {
         manager = {
-          ratio = [ 2 2 4 ];
+          ratio = [2 2 4];
           show_hidden = true;
         };
       };
@@ -26,4 +30,3 @@ in {
     };
   };
 }
-

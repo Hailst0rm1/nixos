@@ -7,11 +7,10 @@
   options.security.yubikey.enable = lib.mkEnableOption "Enable yubikey";
 
   config = lib.mkIf config.security.yubikey.enable {
-
     # Yubikey required services and config
     services = {
       pcscd.enable = true; # Smart Card support needed for Authenticator app
-      udev.packages = [ pkgs.yubikey-personalization ];
+      udev.packages = [pkgs.yubikey-personalization];
       yubikey-agent.enable = true;
       # TODO Lock screen if yubikey is removed
     };

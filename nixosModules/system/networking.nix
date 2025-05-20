@@ -1,4 +1,4 @@
-{ 
+{
   lib,
   config,
   ...
@@ -8,7 +8,6 @@
       firewall.enable = lib.mkEnableOption "Turn on the firewall";
     };
     system = {
-      
     };
   };
 
@@ -20,14 +19,12 @@
 
       firewall = lib.mkIf config.security.firewall.enable {
         enable = true;
-        allowedTCPPorts = lib.mkIf config.cyber.redTools.enable [ 80 443 1337 4444 ];
+        allowedTCPPorts = lib.mkIf config.cyber.redTools.enable [80 443 1337 4444];
       };
 
-    # Configure network proxy if necessary
-    # proxy.default = "http://user:password@proxy:port/";
-    # proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+      # Configure network proxy if necessary
+      # proxy.default = "http://user:password@proxy:port/";
+      # proxy.noProxy = "127.0.0.1,localhost,internal.domain";
     };
-
   };
-
 }

@@ -1,5 +1,8 @@
-{ config, lib, ... }:
-let
+{
+  config,
+  lib,
+  ...
+}: let
   cfg = config.importConfig.git;
 in {
   options.importConfig.git.enable = lib.mkEnableOption "Enable Git configuration.";
@@ -12,4 +15,3 @@ in {
     };
   };
 }
-

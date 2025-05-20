@@ -11,11 +11,10 @@
       sessionVariables = {
       };
       packages = [
-
         # === Testing corner ===
 
         # === Reconnaissance ===
-   
+
         # Passive
         whois
         gitleaks # Find creds in git-applications
@@ -25,7 +24,7 @@
         theharvester # Emails, names, IPs, subdomains
         waymore # Wayback explorer query and download
         trufflehog # Find exposed credentials
-    
+
         # Active
         nmap
         nmap-formatter
@@ -34,7 +33,7 @@
         nbtscan # NetBIOS scan (port 139)
         net-snmp # Includes: snmpwalk (port UDP/161)
         exploitdb # Searchsploit, searchable vulnerability DB
-          libxml2 # ^Dependency
+        libxml2 # ^Dependency
         nuclei # Vulnerability scanner
 
         # Web
@@ -43,15 +42,13 @@
         feroxbuster # Ffuf alternative
         # burpsuite # Webapp testing
         caido # Burp alternative in rust
-          chromium # For Caido
+        chromium # For Caido
         sqlmap # SQL Injection
         wpscan # Wordpress scanner
         httpx # Check which hosts are alive, and fingerprint them
         katana # Web crawler
-    
 
         # === Resource Development ===
-
 
         # === Initial Access ===
         metasploit
@@ -64,16 +61,15 @@
 
         # === Wordlists ===
         wordlists # Note: This includes seclists
-                  # cd $(wordlists_path) # Go to wordlists
-                  # <command> $(wordlists_path)/rockyou.txt # Use wordlist
-                  # wordlists # Displays tree of all lists (can be used with pipe grep)
-              
+        # cd $(wordlists_path) # Go to wordlists
+        # <command> $(wordlists_path)/rockyou.txt # Use wordlist
+        # wordlists # Displays tree of all lists (can be used with pipe grep)
+
         # === Misc ===
-        (writeShellScriptBin "cyberchef" '' # For encoding/encryption etc
-          ${config.browser} "${cyberchef}/share/cyberchef/index.html"
+        (writeShellScriptBin "cyberchef" ''          # For encoding/encryption etc
+                   ${config.browser} "${cyberchef}/share/cyberchef/index.html"
         '')
       ];
     };
   });
 }
-

@@ -1,4 +1,9 @@
-{ pkgs, config, lib, ... }: {
+{
+  pkgs,
+  config,
+  lib,
+  ...
+}: {
   options.code.helix.languages.rust = lib.mkEnableOption "Enable Rust in Helix";
 
   config = lib.mkIf config.code.helix.languages.rust {
@@ -28,7 +33,7 @@
               "lalrpop"
               "rs"
             ];
-            language-servers = [ "rust-analyzer" ];
+            language-servers = ["rust-analyzer"];
           }
         ];
       };

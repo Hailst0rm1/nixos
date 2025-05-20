@@ -1,5 +1,11 @@
-{ inputs, lib, pkgs, config, nvidiaEnabled, ... }:
-let
+{
+  inputs,
+  lib,
+  pkgs,
+  config,
+  nvidiaEnabled,
+  ...
+}: let
   cfg = config.importConfig.hyprland;
   accent = "#89b4fa";
   text = "#cdd6f4";
@@ -7,11 +13,10 @@ let
   workspacesOccupied = "#94e2d5";
   workspacesAvailable = "#585b70";
 in {
-  imports = [ inputs.hyprpanel.homeManagerModules.hyprpanel ];
+  imports = [inputs.hyprpanel.homeManagerModules.hyprpanel];
 
   config = lib.mkIf (cfg.panel == "hyprpanel" || cfg.notifications == "hyprpanel") {
     programs.hyprpanel = {
-
       # Enable the module.
       # Default: false
       enable = true;
@@ -99,20 +104,22 @@ in {
       layout = {
         "bar.layouts" = {
           "*" = {
-            left = [ "dashboard" "workspaces" "windowtitle" ];
-            middle = [ "clock" ];
-            right = [ "media" "kbinput" "volume" ] 
-              ++ [ "bluetooth" "network"]
-              ++ lib.optionals config.laptop [ "battery" ]
-              ++ [ "notifications" ];
+            left = ["dashboard" "workspaces" "windowtitle"];
+            middle = ["clock"];
+            right =
+              ["media" "kbinput" "volume"]
+              ++ ["bluetooth" "network"]
+              ++ lib.optionals config.laptop ["battery"]
+              ++ ["notifications"];
           };
           "1" = {
-            left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
-            middle = [ "clock" ];
-            right = [ "media" "kbinput" "volume" ] 
-              ++ [ "bluetooth" "network"]
-              ++ lib.optionals config.laptop [ "battery" ]
-              ++ [ "notifications" ];
+            left = ["dashboard" "workspaces" "ram" "cpu" "windowtitle"];
+            middle = ["clock"];
+            right =
+              ["media" "kbinput" "volume"]
+              ++ ["bluetooth" "network"]
+              ++ lib.optionals config.laptop ["battery"]
+              ++ ["notifications"];
           };
         };
       };
@@ -125,7 +132,6 @@ in {
       # See 'https://hyprpanel.com/configuration/settings.html'.
       # Default: <same as gui>
       settings = {
-
         # # Configure bar layouts for monitors.
         # # See 'https://hyprpanel.com/configuration/panel.html'.
         # # Default: null
@@ -134,7 +140,7 @@ in {
         #     "*" = {
         #       left = [ "dashboard" "workspaces" "windowtitle" ];
         #       middle = [ "clock" ];
-        #       right = [ "media" "kbinput" "volume" ] 
+        #       right = [ "media" "kbinput" "volume" ]
         #         ++ [ "bluetooth" "network"]
         #         ++ lib.optionals config.laptop [ "battery" ]
         #         ++ [ "notifications" ];
@@ -142,14 +148,14 @@ in {
         #     "1" = {
         #       left = [ "dashboard" "workspaces" "ram" "cpu" "windowtitle" ];
         #       middle = [ "clock" ];
-        #       right = [ "media" "kbinput" "volume" ] 
+        #       right = [ "media" "kbinput" "volume" ]
         #         ++ [ "bluetooth" "network"]
         #         ++ lib.optionals config.laptop [ "battery" ]
         #         ++ [ "notifications" ];
         #     };
         #   };
         # };
-        
+
         # Import a theme from './themes/*.json'.
         # Default: ""
         # theme.name = "catppuccin_mocha";
@@ -167,12 +173,12 @@ in {
           clock = {
             time.military = true;
             weather.unit = "metric";
-          	weather.key = "39a8319acbc241bebc492626252001";
+            weather.key = "39a8319acbc241bebc492626252001";
             weather.location = config.myLocation;
           };
           dashboard = {
             powermenu.avatar.image = "${../wallpapers/profile-pic.jpg}";
-            stats.enable_gpu = lib.mkDefault (nvidiaEnabled);
+            stats.enable_gpu = lib.mkDefault nvidiaEnabled;
             controls.enabled = false;
             shortcuts.enabled = false;
             directories.enabled = false;
@@ -182,8 +188,8 @@ in {
 
         theme.osd = {
           location = "bottom";
-        	margins = "0px 0px 10px 0px";
-        	orientation = "horizontal";
+          margins = "0px 0px 10px 0px";
+          orientation = "horizontal";
         };
 
         # Bar settings
@@ -191,13 +197,13 @@ in {
           transparent = true;
           enableShadow = false;
           buttons = {
-          	enableBorders = false;
+            enableBorders = false;
             borderSize = "0.05em";
             background_opacity = 80;
             radius = "1em";
           };
         };
-	
+
         theme.font = {
           name = "${config.stylix.fonts.monospace.name}";
           size = "14px";
@@ -222,19 +228,17 @@ in {
       wl-clipboard
       upower
       gvfs
-    
+
       # ---Optional
 
       # Tracking GPU Usage
       python313Packages.gpustat
-    
+
       # To control screen/keyboard brightness
       brightnessctl
 
       # Power
       power-profiles-daemon
-
     ];
-
   };
 }

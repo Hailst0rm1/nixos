@@ -1,4 +1,9 @@
-{ lib, config, pkgs, ... }: {
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}: {
   config = lib.mkIf config.importConfig.hyprland.enable {
     gtk = {
       enable = true;

@@ -1,12 +1,15 @@
-{ config, lib, ...}:
-let
+{
+  config,
+  lib,
+  ...
+}: let
   cfg = config.system.automatic;
 in {
   options.system.automatic = {
     upgrade = lib.mkEnableOption "Enable weekly system upgrades";
     cleanup = lib.mkEnableOption "Enable automatic system cleanup every 30 days";
   };
-  
+
   config = {
     # Enable flakes
     nix.settings = {
@@ -29,9 +32,8 @@ in {
       enable = true;
       operation = "boot";
       flake = "${config.nixosDir}";
-      flags = [ "--update-input" "nixpkgs" "--commit-lock-file" ];
+      flags = ["--update-input" "nixpkgs" "--commit-lock-file"];
       dates = "weekly";
     };
   };
 }
-

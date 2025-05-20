@@ -1,5 +1,8 @@
-{ config, lib, ...}: {
-
+{
+  config,
+  lib,
+  ...
+}: {
   options.security.dnscrypt.enable = lib.mkEnableOption "Enable dnscrypt";
 
   config = lib.mkIf config.security.dnscrypt.enable {

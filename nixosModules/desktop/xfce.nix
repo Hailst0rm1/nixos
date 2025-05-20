@@ -1,5 +1,8 @@
-{ config, lib, ...}:
-let
+{
+  config,
+  lib,
+  ...
+}: let
   cfg = config.desktopEnvironment.name;
 in {
   config = lib.mkIf (cfg == "xfce") {
@@ -15,4 +18,3 @@ in {
     };
   };
 }
-

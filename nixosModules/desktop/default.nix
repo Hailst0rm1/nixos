@@ -1,4 +1,4 @@
-{ lib, ... }: {
+{lib, ...}: {
   options.desktopEnvironment.name = lib.mkOption {
     type = lib.types.str;
     default = "gnome";

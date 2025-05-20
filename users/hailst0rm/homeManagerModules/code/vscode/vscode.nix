@@ -1,11 +1,14 @@
-{ config, pkgs, lib, ... }:
-let
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: let
   cfg = config.code.vscode;
 in {
   options.code.vscode.enable = lib.mkEnableOption "Enable VS Code";
 
   config = lib.mkIf cfg.enable {
-
     # VS Code setup
     programs.vscode = {
       enable = true;
@@ -31,8 +34,8 @@ in {
         "editor.inlineSuggest.enabled" = true;
         "editor.codeActionsOnSave" = {
           "source.fixAll" = true;
-        "editor.cursorSmoothCaretAnimation" = "on";
-        "editor.wordWrap" = "on";
+          "editor.cursorSmoothCaretAnimation" = "on";
+          "editor.wordWrap" = "on";
         };
       };
     };

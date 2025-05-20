@@ -1,16 +1,13 @@
 {
   inputs,
-  pkgs, 
-  lib, 
+  pkgs,
+  lib,
   config,
   ...
-}:
-let
+}: let
   cfg = config.desktopEnvironment.name;
 in {
-
   config = lib.mkIf (cfg == "hyprland") {
-
     nix.settings = {
       substituters = ["https://hyprland.cachix.org"];
       trusted-public-keys = ["hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="];
@@ -33,7 +30,7 @@ in {
     };
 
     programs.gnome-disks.enable = true; # Gnome disks program
-    programs.dconf.enable = true; 
+    programs.dconf.enable = true;
     #programs.xfconf.enable = true;
 
     # Automount
@@ -57,7 +54,7 @@ in {
       enable = true;
       xdgOpenUsePortal = true;
       config = {
-        common.default = [ "gtk" ];
+        common.default = ["gtk"];
         hyprland.default = [
           "gtk"
           "hyprland"

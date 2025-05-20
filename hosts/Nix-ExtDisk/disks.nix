@@ -1,39 +1,36 @@
 {
-  device ? "sda",  # The target disk device (e.g. "sda", "nvme0n1"); can be overridden
-  pkgs,            # Nixpkgs set, required for accessing utilities like 'gum'
+  device ? "sda", # The target disk device (e.g. "sda", "nvme0n1"); can be overridden
+  pkgs, # Nixpkgs set, required for accessing utilities like 'gum'
   lib,
   ...
-}:
-let
-  luksLabel = "luks-x2000-${device}";  # Label for the LUKS-encrypted partition
-in
-{
+}: let
+  luksLabel = "luks-x2000-${device}"; # Label for the LUKS-encrypted partition
+in {
   # Define the LUKS device to unlock at boot via systemd
   # boot.initrd.luks.devices.x2000-encrypted = {
   #   device = "/dev/disk/by-partlabel/${luksLabel}";  # LUKS device identified by partition label
   #   crypttabExtraOpts = [ "fido2-device=auto" ];     # Use FIDO2 device (e.g. YubiKey) for unlocking
-  # 
+  #
   # };
 
-    boot.initrd = {
-        # Yubikey FDE with systemd-cryptenroll
-        systemd.enable = true;
-        luks.fido2Support = false;
-    };
-
+  boot.initrd = {
+    # Yubikey FDE with systemd-cryptenroll
+    systemd.enable = true;
+    luks.fido2Support = false;
+  };
 
   disko.devices = {
     disk = {
       x2000 = {
-        type = "disk";  # This is a physical disk
-        device = "/dev/${device}";  # Device path for the disk
+        type = "disk"; # This is a physical disk
+        device = "/dev/${device}"; # Device path for the disk
 
         content = {
-          type = "gpt";  # Use GPT partitioning scheme
+          type = "gpt"; # Use GPT partitioning scheme
 
           partitions = {
             MBR = {
-              type = "EF02";  # BIOS boot partition (GRUB bootloader support in legacy mode)
+              type = "EF02"; # BIOS boot partition (GRUB bootloader support in legacy mode)
               size = "1M";
               priority = 1;
               # NOTE: Can be removed if UEFI-only system
@@ -41,28 +38,28 @@ in
 
             ESP-x2000 = {
               label = "boot-x2000-${device}";
-              name = "ESP-x2000-${device}";            
-              size = "2G";        # Size of EFI System Partition
-              type = "EF00";      # GPT partition type for EFI system
+              name = "ESP-x2000-${device}";
+              size = "2G"; # Size of EFI System Partition
+              type = "EF00"; # GPT partition type for EFI system
 
               content = {
                 type = "filesystem";
-                format = "vfat";  # Required format for EFI
+                format = "vfat"; # Required format for EFI
                 mountpoint = "/boot";
 
                 mountOptions = [
                   "defaults"
-                  "umask=0077"  # Restrict permissions for security
+                  "umask=0077" # Restrict permissions for security
                 ];
               };
             };
 
             luks-x2000 = {
               label = luksLabel;
-              size = "100%";  # Use all remaining space for encrypted volume
+              size = "100%"; # Use all remaining space for encrypted volume
 
               content = {
-                type = "luks";  # Encrypt with LUKS
+                type = "luks"; # Encrypt with LUKS
                 name = "x2000-encrypted-${device}";
 
                 postCreateHook = ''
@@ -86,15 +83,15 @@ in
                 '';
 
                 extraOpenArgs = [
-                  "--allow-discards"           # Enable TRIM (important for SSDs)
-                  "--perf-no_read_workqueue"  # Performance tweaks
+                  "--allow-discards" # Enable TRIM (important for SSDs)
+                  "--perf-no_read_workqueue" # Performance tweaks
                   "--perf-no_write_workqueue"
                 ];
 
                 settings = {
                   crypttabExtraOpts = [
-                    "fido2-device=auto"  # Use FIDO2 to unlock at boot
-                    "token-timeout=15"   # Time before timeout for token
+                    "fido2-device=auto" # Use FIDO2 to unlock at boot
+                    "token-timeout=15" # Time before timeout for token
                   ];
                 };
 
@@ -102,8 +99,9 @@ in
                 content = {
                   type = "btrfs";
                   extraArgs = [
-                    "-L" "fsroot"  # Label the filesystem
-                    "-f"          # Force creation
+                    "-L"
+                    "fsroot" # Label the filesystem
+                    "-f" # Force creation
                   ];
 
                   subvolumes = {
@@ -111,8 +109,8 @@ in
                       mountpoint = "/";
                       mountOptions = [
                         "subvol=root"
-                        "compress=zstd"  # Enable compression
-                        "noatime"        # Improve performance
+                        "compress=zstd" # Enable compression
+                        "noatime" # Improve performance
                       ];
                     };
 
@@ -126,7 +124,7 @@ in
                     };
 
                     "/persist" = {
-                      mountpoint = "/persist";  # Often used for persistent config or secrets
+                      mountpoint = "/persist"; # Often used for persistent config or secrets
                       mountOptions = [
                         "subvol=persist"
                         "compress=zstd"
@@ -135,7 +133,7 @@ in
                     };
 
                     "/log" = {
-                      mountpoint = "/var/log";  # Separate log volume to avoid cluttering root
+                      mountpoint = "/var/log"; # Separate log volume to avoid cluttering root
                       mountOptions = [
                         "subvol=log"
                         "compress=zstd"
@@ -145,7 +143,7 @@ in
 
                     "/swap" = {
                       mountpoint = "/swap";
-                      swap.swapfile.size = "96G";  # Size of the swapfile (adjust to your needs)
+                      swap.swapfile.size = "96G"; # Size of the swapfile (adjust to your needs)
                     };
                   };
                 };

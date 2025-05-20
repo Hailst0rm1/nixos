@@ -1,4 +1,9 @@
-{ config, pkgs, lib, ... }: {
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}: {
   options.code.vscode.languages.rust = lib.mkEnableOption "Enable Rust for VS Code";
 
   config = lib.mkIf config.code.vscode.languages.rust {
@@ -19,7 +24,7 @@
         "rust-analyzer.checkOnSave.command" = "clippy";
       };
     };
-    
+
     # Optional: set up environment variables
     home.sessionVariables = {
       CARGO_HOME = "${config.home.homeDirectory}/.cargo";

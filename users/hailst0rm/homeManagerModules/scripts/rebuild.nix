@@ -6,13 +6,14 @@
 }: {
   # Shell script to handle rebuilds in a more convenient way
   home.packages = with pkgs; [
-    # pre requisite for notification at the end
+    # Prerequisites
     libnotify
+    alejandra
 
     # Switch
     (writeShellScriptBin "nix-switch" ''
       #!/usr/bin/env sh
-      
+
       # cd to your config dir
       pushd ${config.nixosDir}
 
@@ -29,6 +30,7 @@
           popd
           exit 0
       fi
+
 
       # Autoformat the nix files with alejandra
       alejandra . &>/dev/null \
@@ -64,7 +66,7 @@
     # Test
     (writeShellScriptBin "nix-test" ''
       #!/usr/bin/env sh
-      
+
       # cd to your config dir
       pushd ${config.nixosDir}
 
@@ -116,7 +118,7 @@
     # Boot
     (writeShellScriptBin "nix-boot" ''
       #!/usr/bin/env sh
-      
+
       # cd to your config dir
       pushd ${config.nixosDir}
 
@@ -164,6 +166,5 @@
       # Notify all OK!
       notify-send -e "NixOS Rebuilt OK!" --icon=software-update-available
     '')
-
   ];
 }

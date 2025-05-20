@@ -1,5 +1,9 @@
-{ config, lib, pkgs, ... }:
-let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   cfg = config.services.mattermost;
 in {
   config.services.mattermost = lib.mkIf cfg.enable {

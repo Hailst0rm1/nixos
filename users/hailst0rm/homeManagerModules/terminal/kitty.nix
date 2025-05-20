@@ -1,5 +1,8 @@
-{ config, lib, ...}: {
-
+{
+  config,
+  lib,
+  ...
+}: {
   config = lib.mkIf (config.terminal == "kitty") {
     programs.kitty = {
       enable = true;
@@ -24,4 +27,3 @@
     };
   };
 }
-

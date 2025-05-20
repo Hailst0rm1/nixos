@@ -1,6 +1,9 @@
-{ pkgs, lib, config, ... }:
-
-let
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: let
   displaysScript = ''
     DIR="${config.home.homeDirectory}/.nixos/users/${config.username}/hosts/displays"
     FILE="$DIR/${config.hostname}.conf"
@@ -42,7 +45,6 @@ let
   hyprlandEnabled = config.importConfig.hyprland.enable;
 in {
   config = {
-    home.packages = lib.mkIf hyprlandEnabled [ displays ];
+    home.packages = lib.mkIf hyprlandEnabled [displays];
   };
 }
-

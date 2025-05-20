@@ -1,7 +1,13 @@
-{ config, lib, pkgs, pkgs-unstable, ...}: {
+{
+  config,
+  lib,
+  pkgs,
+  pkgs-unstable,
+  ...
+}: {
   options.code.helix.enable = lib.mkEnableOption "Enable Helix";
 
-  config = lib.mkIf (config.editor == "hx" || config.editor == "helix" || config.code.helix.enable ) {
+  config = lib.mkIf (config.editor == "hx" || config.editor == "helix" || config.code.helix.enable) {
     programs.helix = {
       enable = true;
       package = pkgs-unstable.helix;
@@ -28,15 +34,15 @@
           };
 
           cursor-shape = {
-        	  normal = "block";
-        	  insert = "bar";
-        	  select = "underline";
-        	};
+            normal = "block";
+            insert = "bar";
+            select = "underline";
+          };
 
-        	indent-guides = {
-        	  render = true;
-        	  character = "╎";
-        	};
+          indent-guides = {
+            render = true;
+            character = "╎";
+          };
 
           gutters = ["diagnostics" "line-numbers" "spacer" "diff"];
           statusline = {
@@ -74,6 +80,5 @@
         nodePackages.yaml-language-server # YAML / JSON
       ];
     };
-
   };
 }

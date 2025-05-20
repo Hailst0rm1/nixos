@@ -1,6 +1,4 @@
-{ lib, ... }:
-
-{
+{lib, ...}: {
   options = {
     terminal = lib.mkOption {
       type = lib.types.str;
