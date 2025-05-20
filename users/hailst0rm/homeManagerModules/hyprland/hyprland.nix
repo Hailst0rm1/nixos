@@ -1,0 +1,304 @@
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}: let
+  defaultDisplay = pkgs.writeText "default-display" ''
+    [ ",highrr,auto,1" ];
+  '';
+  
+  startScript = pkgs.writeShellScriptBin "start" ''
+
+    ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
+
+    systemctl --user import-environment PATH &
+    systemctl --user restart xdg-desktop-portal.service &
+
+  '';
+  
+  cfg = config.importConfig.hyprland;
+in {
+
+  config = lib.mkIf cfg.enable {
+
+    home.sessionVariables.NIXOS_OZONE_WL = "1";
+
+    wayland.windowManager.hyprland = {
+      enable = true;
+      xwayland.enable = true;
+      systemd.enable = true;
+
+      plugins = [
+	      pkgs.hyprlandPlugins.hyprsplit
+        pkgs.hyprlandPlugins.hyprspace
+      ];
+
+      extraConfig = ''
+        bind = $mainMod,V,submap,passthru
+        submap = passthru
+        bind = $mainMod,Escape,submap,reset
+        submap = reset
+      '';
+
+      settings = {
+        general = {
+          gaps_in = 5;
+          gaps_out = 10;
+          border_size = 3;
+
+          layout = "master";
+          #layout = "dwindle";
+        };
+
+        decoration = {
+          active_opacity = 0.95;
+          inactive_opacity = 0.9;
+          rounding = 5;
+          blur = {
+            size = 8;
+            passes = 2;
+          };
+          shadow = {
+            enabled = true;
+            range = 5;
+            render_power = 3;
+            color = lib.mkForce "rgb(89b4fa)";
+            color_inactive = lib.mkForce "rgb(1e1e2e)";
+          };
+        };
+
+      	env = [
+      	  "ELECTRON_ENABLE_WAYLAND,1"
+      	  "ELECTRON_OZONE_PLATFORM_HINT,auto"
+      	];
+
+        input = {
+          kb_layout = config.keyboard;
+          kb_options = "grp:win_space_toggle";
+        };
+
+        # Use "displays" (scripts/displays.sh) to configure displays dynamically
+        # This will load the configuration if one is set using "displays" - otherwise use default value
+        monitor = let
+          configFile = ../../hosts/displays/${config.hostname}.conf;
+        in if builtins.pathExists configFile then import configFile else defaultDisplay;
+
+      	plugin = {
+          hyprsplit = {
+	          num_workspaces = "5";
+	          persistent_workspaces = true;
+	        };
+        };
+
+        animations = {
+          enabled = true;
+
+          bezier = [
+            "overshot, 0.05, 0.9, 0.1, 1.05"
+            "smoothOut, 0.5, 0, 0.99, 0.99"
+            "smoothIn, 0.5, -0.5, 0.68, 1.5"
+          ];
+          animation = [
+            "windows, 1, 5, overshot, slide"
+            "windowsOut, 1, 3, smoothOut"
+            "windowsIn, 1, 3, smoothOut"
+            "windowsMove, 1, 4, smoothIn, slide"
+            "border, 1, 5, default"
+            "borderangle, 1, 8, default"
+            "fade, 1, 5, smoothIn"
+            "fadeDim, 1, 5, smoothIn"
+            "workspaces, 1, 6, default"
+          ];
+        };
+
+        dwindle = {
+          # See https://wiki.hyprland.org/Configuring/Dwindle-Layout/ for more
+          pseudotile = true; # master switch for pseudotiling. Enabling is bound to mainMod + P in the keybinds section below
+          preserve_split = true; # you probably want this
+          smart_split = true;
+        };
+
+	
+        "$mainMod" = "ALT";
+        #"$mainMod" = "SUPER";
+
+        bind =
+          [
+            # Navigation
+            "$mainMod, left, movefocus, l"
+            "$mainMod, right, movefocus, r"
+            "$mainMod, up, movefocus, u"
+            "$mainMod, down, movefocus, d"
+
+            "$mainMod, h, movefocus, l"
+            "$mainMod, l, movefocus, r"
+            "$mainMod, k, movefocus, u"
+            "$mainMod, j, movefocus, d"
+
+            "$mainMod SHIFT, h, movewindow, l"
+            "$mainMod SHIFT, l, movewindow, r"
+            "$mainMod SHIFT, k, movewindow, u"
+            "$mainMod SHIFT, j, movewindow, d"
+
+      	    # Windows
+            "$mainMod, Q, killactive,"
+            "$mainMod SHIFT, M, exit,"
+            "$mainMod SHIFT, F, togglefloating,"
+            "$mainMod, F, fullscreen,"
+            "$mainMod, G, togglegroup,"
+            "$mainMod, E, changegroupactive, b"
+            "$mainMod, I, changegroupactive, f"
+            "$mainMod, P, pseudo, # dwindle"
+            "$mainMod SHIFT, J, togglesplit, # dwindle"
+
+      	    # Applications
+            "$mainMod, return, exec, ${config.terminal}"
+            "$mainMod, SPACE, exec, ${cfg.appLauncher} -show drun"
+            "$mainMod, R, exec, ${cfg.appLauncher} -show run"
+            "$mainMod, W, exec, ${cfg.appLauncher} -show window"
+            "$mainMod SHIFT, return, exec, ${config.browser}"
+            "$mainMod, N, exec, ${config.fileManager}"
+            "$mainMod, B, exec, ${config.terminal} -e btm"
+      	    ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
+
+      	    # Workspaces
+            "$mainMod, O, overview:toggle, all"
+            "$mainMod, D, split:swapactiveworkspaces, current +1"
+            "$mainMod, G, split:grabroguewindows"
+            "$mainMod, mouse_down, split:workspace, e+1"
+            "$mainMod, mouse_up, split:workspace, e-1"
+
+          ]
+          ++ map (n: "$mainMod SHIFT, ${toString n}, split:movetoworkspace, ${toString (
+            if n == 0
+            then 5
+            else n
+          )}") [1 2 3 4 5 0]
+          ++ map (n: "$mainMod, ${toString n}, split:workspace, ${toString (
+            if n == 0
+            then 5
+            else n
+          )}") [1 2 3 4 5 0
+        ];
+
+        binde = [
+
+      	  # Resize windows
+          "$mainMod SHIFT, h, moveactive, -20 0"
+          "$mainMod SHIFT, l, moveactive, 20 0"
+          "$mainMod SHIFT, k, moveactive, 0 -20"
+          "$mainMod SHIFT, j, moveactive, 0 20"
+
+          "$mainMod CTRL, l, resizeactive, 30 0"
+          "$mainMod CTRL, h, resizeactive, -30 0"
+          "$mainMod CTRL, k, resizeactive, 0 -10"
+          "$mainMod CTRL, j, resizeactive, 0 10"
+        ];
+
+        bindm = [
+          # Move/resize windows with mainMod + LMB/RMB and dragging
+          "$mainMod, mouse:272, movewindow"
+          "$mainMod, mouse:273, resizewindow"
+        ];
+
+      	bindl = [
+        	  ",switch:on:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, disable\""
+        	  ",switch:off:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, 1920x1200,0x0,1\""
+        	  ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+        	  ", XF86AudioPlay, exec, playerctl play-pause"
+        	  ", XF86AudioPrev, exec, playerctl previous"
+        	  ", XF86AudioNext, exec, playerctl next"
+        	  ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle" 
+        	  ", XF86KbdLightOnOff, exec, toggle-backlit-keys"
+      	];
+
+        bindel = [
+        	  ", XF86MonBrightnessUp, exec, brightnessctl set +5%"
+        	  ", XF86MonBrightnessDown, exec, brightnessctl set 5%-"
+        	  ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
+        	  ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+        ];
+
+        exec-once = [
+          "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
+          "lxqt-policykit-agent"
+          "${pkgs.bash}/bin/bash ${startScript}/bin/start"
+        ];
+
+        misc = {
+         disable_hyprland_logo = true;
+         disable_splash_rendering = true;
+        };	  
+      };
+    };
+
+    home.packages = with pkgs; [
+
+      # Applauncher
+      #(pkgs.${cfg.appLauncher})
+      (if cfg.appLauncher == "rofi" then pkgs.rofi-wayland else pkgs.${cfg.appLauncher})
+
+      # ---Clipboard
+      wl-clipboard
+      #xclip
+      clipnotify
+
+      # ---Colour picker
+      hyprpicker
+
+      # ---Display settings
+      nwg-displays
+
+      # ---File manager
+      (pkgs.${config.fileManager})
+      (if config.fileManager == "nautilus" then pkgs.file-roller else [] )
+
+      # ---Gnome applications
+      (pkgs.${config.image})
+      (pkgs.${config.video})
+      gedit # Text editor
+      gnome-calculator
+      gnome-music 
+
+      # ---Lockscreen
+      (pkgs.${cfg.lockscreen})
+
+      # ---Networkmanager
+      networkmanagerapplet
+
+      # ---Notifications
+      (pkgs.${cfg.notifications})
+
+      # ---OSD
+      # Add config in hyprland/default.nix?
+      #swayosd
+      
+      # --Plugins
+      hyprlandPlugins.hyprsplit
+      hyprlandPlugins.hyprspace
+
+      # ---Screenrecorder
+      wl-screenrec
+
+      # ---Screenshot
+      grim
+      slurp
+      hyprshot
+
+      # ---Topbar
+      (pkgs.${cfg.panel})
+
+      # ---Terminal
+      (pkgs.${config.terminal})
+
+      # ---Wallpaper
+      (pkgs.${cfg.wallpaper})
+      waypaper # GUI wallpaper picker
+      ffmpeg_6 # Video converter
+
+      # ---Other
+      playerctl
+    ];
+  };
+}
