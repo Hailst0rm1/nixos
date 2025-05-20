@@ -7,7 +7,6 @@
 }: let
   device = "nvme0n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
 in {
-  # OBVIOUS CHANGE
   imports =
     [
       # Includes hardware config from hardware scan
@@ -119,8 +118,8 @@ in {
   users.users.${config.username} = {
     isNormalUser = true;
     extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
-    # hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
-    initialPassword = "t";
+    hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
+    # initialPassword = "t";
   };
 
   # # # # # # # # # # # !!!!!! # # # # # # # # # #
