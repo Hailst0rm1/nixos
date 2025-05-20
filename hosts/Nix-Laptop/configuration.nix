@@ -121,7 +121,8 @@ in {
   users.users.${config.username} = {
     isNormalUser = true;
     extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
-    hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
+    # hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
+    hashedPasswordFile = config.sops.secrets.hailst0rm-password.path;
     # initialPassword = "t";
   };
 
