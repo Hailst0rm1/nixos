@@ -18,8 +18,8 @@
     # Format the output: command followed by comment
     formatted=$(echo "$packages" | sed -E 's/\s*#\s*/ - /' | sed -E 's/ *$//')
 
-    # Display the formatted list in rofi
-    echo "$formatted" | rofi -dmenu -theme-str 'window {width: 50%;} listview {columns: 1;}'
+    # Display the formatted list
+    echo "$formatted"
   '';
 
   getCommands = pkgs.writeScriptBin "get-commands" getCommandsScript;

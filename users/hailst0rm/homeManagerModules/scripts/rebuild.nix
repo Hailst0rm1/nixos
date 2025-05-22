@@ -50,8 +50,11 @@
 
       echo "Build Complete! Commiting build..."
 
+      # Prompt user for an additional commit message
+      read -rp "Enter a short description of the change (optional): " user_msg
+
       # Commit all changes witih the generation metadata
-      git commit -am "${config.hostname}: $current"
+      git commit -am "${config.hostname}: $user_msg - $current"
 
       # Back to where you were
       popd
@@ -148,8 +151,11 @@
 
       echo "Build Complete! Commiting build..."
 
+      # Prompt user for an additional commit message
+      read -rp "Enter a short description of the change (optional): " user_msg
+
       # Commit all changes witih the generation metadata
-      git commit -am "${config.hostname}: $current"
+      git commit -am "${config.hostname}: $user_msg - $current"
 
       # Back to where you were
       popd
