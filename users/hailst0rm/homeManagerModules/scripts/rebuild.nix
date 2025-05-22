@@ -4,6 +4,7 @@
   config,
   ...
 }: {
+  # Test
   # Shell script to handle rebuilds in a more convenient way
   home.packages = with pkgs; [
     # Prerequisites
