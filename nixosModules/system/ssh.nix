@@ -18,11 +18,21 @@ in {
   # Enable the OpenSSH daemon.
   services.openssh = lib.mkIf config.services.openssh.enable {
     settings = {
-      PasswordAuthentication = true;
+      # Harden
+      PasswordAuthentication = false;
       PubkeyAuthentication = true;
       PermitRootLogin = "no";
-      LogLevel = "DEBUG";
+      # Automatically remove stale sockets
+      StreamLocalBindUnlink = "yes";
+      # Allow forwarding ports to everywhere
+      GatewayPorts = "clientspecified";
     };
+  };
+
+  # yubikey login / sudo
+  security.pam = {
+    rssh.enable = true;
+    services.sudo.rssh = true;
   };
 
   # Allows these users to SSH into the machine (All the public keys in ./keys)

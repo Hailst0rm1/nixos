@@ -8,8 +8,7 @@
 
   options.importConfig.sops.enable = lib.mkEnableOption "Enable User-level sops-nix.";
 
-  # config = lib.mkIf config.importConfig.sops.enable {
-  config = {
+  config = lib.mkIf config.importConfig.sops.enable {
     sops = {
       age.keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
 
@@ -28,6 +27,9 @@
         };
         "keys/ssh/yubic" = {
           path = "/home/${config.username}/.ssh/yubic";
+        };
+        "keys/yubikey/${config.username}" = {
+          path = "/home/${config.username}/.config/Yubico/u2f_keys";
         };
       };
     };

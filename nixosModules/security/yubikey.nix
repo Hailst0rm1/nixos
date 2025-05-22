@@ -19,15 +19,15 @@
     security.pam = {
       # MAKE SURE to generate authFile BEFORE enabling this module
       # Generate the file using:
-      # `nix-shell -p pam_u2f`
-      # `pamu2fcfg > u2f_keys`
-      # `sudo mv u2f_keys /etc/Yubico/`
+      # `pamu2fcfg -u username > ~/u2f_keys`
+      # If you have more than one: `pamu2fcfg -n >> ~/u2f_keys`
+      # Then you can move them into sops secrets
       sshAgentAuth.enable = true;
       u2f = {
         enable = lib.mkDefault true;
         settings = {
           authFile = "/home/${config.username}/.config/Yubico/u2f_keys";
-          cue = false; # Tells user they need to press the button if true
+          cue = true; # Tells user they need to press the button if true
         };
       };
       services = {
