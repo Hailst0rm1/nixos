@@ -11,7 +11,7 @@ in {
     programs.git = {
       enable = true;
       userName = "hailst0rm";
-      userEmail = "kevin@hailstormsec.com";
+      userEmail = "kevin.ponton@pm.me";
     };
   };
 }

@@ -17,17 +17,18 @@
 
     # Secrets
     sops = {
-      validateSopsFiles = true;
+      validateSopsFiles = false;
 
       defaultSopsFile = ../../secrets/secrets.yaml;
       defaultSopsFormat = "yaml";
       age = {
-        sshKeyPaths = ["/home/${config.username}/.ssh/sops"];
-        keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
+        # Automatically import host SSH-keys as Age-keys
+        sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
+        keyFile = "/var/lib/sops-nix/key.txt";
         generateKey = true;
       };
 
-      secrets."${config.username}/user_password".neededForUsers = true; # User password (doesn't work?)
+      secrets."passwords/${config.username}".neededForUsers = true; # User password
     };
   };
 }

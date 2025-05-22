@@ -53,6 +53,7 @@
     git.enable = true;
     yazi.enable = true;
     stylix.enable = true;
+    sops.enable = true;
     hyprland = {
       enable = true;
       panel = "hyprpanel";

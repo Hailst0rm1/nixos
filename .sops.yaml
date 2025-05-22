@@ -1,7 +1,19 @@
 keys:
-  - &primary age1ys972rn52p43vfmuvy4sgf5wkkxuy367jzzzcjn77hnz9kxd9vns9a9nyn
+  - &master age1taay9m94a34sumrxpjfsgpddtcpuqlyyyyltpzz74l39ud7su42sm8duc5
+  - &users:
+     - &hailst0rm 
+     - &testuser
+  - &hosts:
+    - &Nix-Laptop age1ugkxk0lxn78vq45jkd9q3xtskj4vewswrfyc3n9h4g98wtzps9kqpfvfmf
+    - &Nix-Workstation
+    - &Nix-ExtDisk
 creation_rules:
   - path_regex: secrets/secrets.yaml$
     key_groups:
     - age:
-      - *primary
+      - *master
+      - *hailst0rm
+      - *testuser
+      - *Nix-Laptop
+      - *Nix-Workstation
+      - *Nix-ExtDisk

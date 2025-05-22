@@ -38,6 +38,7 @@ in {
   # ===
 
   # variables.nix
+  # systemUsers = [ "hailst0rm" "testuser" ];
   username = "hailst0rm";
   hostname = hostname;
   systemArch = "x86_64-linux";
@@ -103,6 +104,7 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
+    openssh.enable = false;
     mattermost.enable = false;
     ollama.enable = false;
     open-webui.enable = false; # UI for local AI
@@ -117,17 +119,20 @@ in {
   # Select internationalisation properties.
   i18n.defaultLocale = "en_GB.UTF-8";
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.${config.username} = {
-    isNormalUser = true;
-    extraGroups = [
-      "sudo"
-      "docker"
-      "networkmanager"
-      "wheel"
-    ];
-    # initialPassword = "t";
-    hashedPasswordFile = config.sops.secrets."${config.username}/user_password".path;
+  # Define a user account.
+  users = {
+    mutableUsers = lib.mkIf config.security.sops.enable false; # All config, even password, is dedicated by nixconf
+    users.${config.username} = {
+      isNormalUser = true;
+      extraGroups = [
+        "sudo"
+        "docker"
+        "networkmanager"
+        "wheel"
+      ];
+      initialPassword = lib.mkIf (!config.security.sops.enable) "t";
+      hashedPasswordFile = lib.mkIf config.security.sops.enable config.sops.secrets."passwords/${config.username}".path;
+    };
   };
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,

@@ -84,7 +84,7 @@
 
   outputs = inputs @ {...}: let
     # Generator functions for Machines and VMs
-    myLib = import ./myLib/generators.nix {inherit inputs;};
+    myLib = import ./lib/generators.nix {inherit inputs;};
   in
     with myLib; {
       nixosConfigurations = {
@@ -104,39 +104,39 @@
 
       packages.x86_64-linux = {
         # Experimental VM for redteaming
-        h4kn1x = mkImage {
-          inherit system nixos-dir username;
-          hostname = "h4kn1x";
-          desktop = "xfce+i3";
-          format = "vmware";
-          diskSize = builtins.toString (50 * 1024);
-        };
+        # h4kn1x = mkImage {
+        #   inherit system nixos-dir username;
+        #   hostname = "h4kn1x";
+        #   desktop = "xfce+i3";
+        #   format = "vmware";
+        #   diskSize = builtins.toString (50 * 1024);
+        # };
 
-        # .iso for Yubikey and GPG key setup on air gapped host.
-        crypt0n1x = mkImage {
-          inherit system nixos-dir username;
-          hostname = "crypt0n1x";
-          desktop = "none+i3";
-          format = "iso";
-          diskSize = "auto";
-        };
+        # # .iso for Yubikey and GPG key setup on air gapped host.
+        # crypt0n1x = mkImage {
+        #   inherit system nixos-dir username;
+        #   hostname = "crypt0n1x";
+        #   desktop = "none+i3";
+        #   format = "iso";
+        #   diskSize = "auto";
+        # };
 
-        # Custom installer
-        st4ll1x = mkImage {
-          inherit system nixos-dir username;
-          hostname = "st4ll1x";
-          desktop = "none+i3";
-          format = "iso";
-          diskSize = "auto";
-        };
-        # Custom installer
-        k1t = mkImage {
-          inherit system nixos-dir username;
-          hostname = "k1t";
-          desktop = "none";
-          format = "vmware";
-          diskSize = builtins.toString (50 * 1024);
-        };
+        # # Custom installer
+        # st4ll1x = mkImage {
+        #   inherit system nixos-dir username;
+        #   hostname = "st4ll1x";
+        #   desktop = "none+i3";
+        #   format = "iso";
+        #   diskSize = "auto";
+        # };
+        # # Custom installer
+        # k1t = mkImage {
+        #   inherit system nixos-dir username;
+        #   hostname = "k1t";
+        #   desktop = "none";
+        #   format = "vmware";
+        #   diskSize = builtins.toString (50 * 1024);
+        # };
       };
     };
 }

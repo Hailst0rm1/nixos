@@ -11,7 +11,7 @@
   ...
 }: let
   # Lib
-  myLib = import ../../../myLib/generators.nix;
+  myLib = import ../../../lib/generators.nix;
 in {
   imports =
     [

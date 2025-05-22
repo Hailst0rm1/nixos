@@ -8,10 +8,16 @@
 # and in HM config so that they are defined in config
 {
   options = {
+    # systemUsers = lib.mkOption {
+    #   type = lib.types.listOf lib.types.str;
+    #   default = [ "hailst0rm" ];
+    #   description = "The users for the system.";
+    # };
+
     username = lib.mkOption {
       type = lib.types.str;
       default = "hailst0rm";
-      description = "The default username.";
+      description = "The username of the user.";
     };
 
     hostname = lib.mkOption {
