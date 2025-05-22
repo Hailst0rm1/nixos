@@ -8,12 +8,13 @@
 
   options.importConfig.sops.enable = lib.mkEnableOption "Enable User-level sops-nix.";
 
-  config = lib.mkIf config.importConfig.sops.enable {
+  # config = lib.mkIf config.importConfig.sops.enable {
+  config = {
     sops = {
       age.keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
 
       defaultSopsFile = ../../../secrets/secrets.yaml; # Maybe make userspecific? secrets/hailst0rm.yaml?
-      validateSopsFiles = false;
+      validateSopsFiles = true;
 
       secrets = {
         "keys/ssh/${config.username}" = {

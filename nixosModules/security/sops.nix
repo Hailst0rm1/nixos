@@ -17,7 +17,7 @@
 
     # Secrets
     sops = {
-      validateSopsFiles = false;
+      validateSopsFiles = true;
 
       defaultSopsFile = ../../secrets/secrets.yaml;
       defaultSopsFormat = "yaml";
