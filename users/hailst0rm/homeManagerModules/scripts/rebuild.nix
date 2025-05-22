@@ -4,7 +4,6 @@
   config,
   ...
 }: {
-  # Test
   # Shell script to handle rebuilds in a more convenient way
   home.packages = with pkgs; [
     # Prerequisites
@@ -55,7 +54,7 @@
       read -rp "Enter a short description of the change (optional): " user_msg
 
       # Commit all changes witih the generation metadata
-      git commit -am "${config.hostname}: $user_msg - $current"
+      git commit -am "${config.hostname}: $user_msg ($current)"
 
       # Back to where you were
       popd
@@ -156,7 +155,7 @@
       read -rp "Enter a short description of the change (optional): " user_msg
 
       # Commit all changes witih the generation metadata
-      git commit -am "${config.hostname}: $user_msg - $current"
+      git commit -am "${config.hostname}: $user_msg ($current)"
 
       # Back to where you were
       popd

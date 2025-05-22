@@ -90,6 +90,12 @@
           mkdir -p "$1" && cd "$1"
         }
 
+        # Pushes config to git wherever you are
+        nix-push() {
+          git -C ~/.nixos push "$@"
+        }
+
+
         # Source/Load Zinit
         source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null
 

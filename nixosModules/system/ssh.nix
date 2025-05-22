@@ -12,6 +12,8 @@ in {
     # For yubikey
     extraConfig = ''
       AddKeysToAgent yes
+      Host github.com
+      IdentityFile ~/.ssh/github
     '';
   };
 
