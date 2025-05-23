@@ -12,6 +12,8 @@
       };
       packages = [
         # === Testing corner ===
+        # wireshark
+        pkgs.wineWowPackages.wayland
 
         # === Reconnaissance ===
 
@@ -49,6 +51,7 @@
         katana # Web crawler
 
         # === Resource Development ===
+        pkgsCross.mingwW64.buildPackages.gcc
 
         # === Initial Access ===
         metasploit
