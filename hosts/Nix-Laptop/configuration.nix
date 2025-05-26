@@ -60,10 +60,11 @@ in {
   };
 
   # graphic
-  graphicDriver.nvidia = {
-    enable = false;
-    type = "default";
-  };
+  graphicDriver.intel.enable = true;
+  # graphicDriver.nvidia = {
+  #   enable = false;
+  #   type = "default";
+  # };
 
   security = {
     sops.enable = true;

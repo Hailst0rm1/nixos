@@ -62,6 +62,9 @@
         # === Lateral Movement ===
         #samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
 
+        # === Credential Access ===
+        thc-hydra
+
         # === Wordlists ===
         wordlists # Note: This includes seclists
         # cd $(wordlists_path) # Go to wordlists
