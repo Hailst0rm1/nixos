@@ -64,6 +64,7 @@
 
         # === Credential Access ===
         thc-hydra
+        freerdp # Hydra dependency
 
         # === Wordlists ===
         wordlists # Note: This includes seclists
@@ -73,7 +74,7 @@
 
         # === Misc ===
         (writeShellScriptBin "cyberchef" ''          # For encoding/encryption etc
-                   ${config.browser} "${cyberchef}/share/cyberchef/index.html"
+          ${config.browser} "${cyberchef}/share/cyberchef/index.html"
         '')
       ];
     };
