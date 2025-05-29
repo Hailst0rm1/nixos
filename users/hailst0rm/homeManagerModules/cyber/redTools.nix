@@ -8,6 +8,9 @@
 
   config = lib.mkIf config.cyber.redTools.enable (with pkgs-unstable; {
     home = {
+      file = {
+        "wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
+      };
       sessionVariables = {
       };
       packages = [
@@ -63,8 +66,26 @@
         #samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
 
         # === Credential Access ===
-        thc-hydra
-        freerdp # Hydra dependency
+        # (thc-hydra.overrideAttrs (old: {
+        #   buildInputs = old.buildInputs ++ [ pkgs.freerdp ];
+        # }))
+        # (thc-hydra.overrideAttrs (old: {
+        #   buildInputs = old.buildInputs ++ [freerdp3];
+        # }))
+        (thc-hydra.overrideAttrs (old: {
+          pname = "thc-hydra";
+          version = "unstable-2025-05-27"; # Update to current date or appropriate version label
+
+          src = fetchFromGitHub {
+            owner = "vanhauser-thc";
+            repo = "thc-hydra";
+            rev = "e4367b2f1326a43f1618b5eee59aaec8ade1442b";
+            sha256 = "sha256-2EwULcI2sfMQzMN2Cxsd4NlOvu5s/J3gvKQZr10jPj0="; # Replace with actual hash
+          };
+
+          buildInputs = old.buildInputs ++ [freerdp3];
+        }))
+        freerdp
 
         # === Wordlists ===
         wordlists # Note: This includes seclists
