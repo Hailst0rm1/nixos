@@ -86,6 +86,9 @@
           buildInputs = old.buildInputs ++ [freerdp3];
         }))
         freerdp
+        hashcat # GPU cracker
+        hashcat-utils
+        john # CPU cracker
 
         # === Wordlists ===
         wordlists # Note: This includes seclists
