@@ -9,7 +9,8 @@
   config = lib.mkIf config.cyber.redTools.enable (with pkgs-unstable; {
     home = {
       file = {
-        "wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
+        "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
+        "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
       };
       sessionVariables = {
       };
