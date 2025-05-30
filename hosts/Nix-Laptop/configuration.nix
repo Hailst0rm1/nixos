@@ -62,13 +62,13 @@ in {
   # graphic
   graphicDriver.intel.enable = true;
   # graphicDriver.nvidia = {
-  #   enable = false;
-  #   type = "default";
+  #   enable = true;
+  #   type = "unstable";
   # };
 
   security = {
     sops.enable = true;
-    firewall.enable = true; # Turn off for rev-shells etc
+    firewall.enable = true;
     dnscrypt.enable = false;
     completePolkit.enable = false;
     yubikey.enable = true;
@@ -79,7 +79,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    kernel = "zen";
+    # kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
