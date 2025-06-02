@@ -6,7 +6,7 @@
 
     # Home Manager manages dot files and user applications
     home-manager = {
-      url = "github:nix-community/home-manager/release-24.11";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -32,7 +32,7 @@
     };
 
     # NixOS official package source
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
 
     # Source so that we can use some packages from unstable as well
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -42,7 +42,7 @@
 
     # Stylix is used for theming
     stylix = {
-      url = "github:danth/stylix/release-24.11";
+      url = "github:danth/stylix/release-25.05";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         home-manager.follows = "home-manager";

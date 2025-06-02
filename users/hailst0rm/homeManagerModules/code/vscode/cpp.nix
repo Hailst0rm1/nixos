@@ -9,9 +9,11 @@
   config = lib.mkIf config.code.vscode.languages.cpp {
     # VS Code setup
     programs.vscode = {
-      extensions = with pkgs.vscode-extensions; [
-        ms-vscode.cpptools
-      ];
+      profiles.default = {
+        extensions = with pkgs.vscode-extensions; [
+          ms-vscode.cpptools
+        ];
+      };
     };
   };
 }

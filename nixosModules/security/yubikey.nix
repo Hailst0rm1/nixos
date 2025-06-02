@@ -42,7 +42,7 @@
     environment.systemPackages = with pkgs; [
       yubioath-flutter # Yubikey authenticator gui
       yubikey-manager # Yubikey manager cli
-      yubikey-manager-qt # Yubikey manager gui
+      # yubikey-manager-qt # Yubikey manager gui
       pam_u2f # yubikey with sudo
     ];
   };

@@ -77,7 +77,7 @@
         diff = "difft";
       };
 
-      initExtra = ''
+      initContent = ''
         ${pkgs-unstable.fastfetch}/bin/fastfetch
 
         clean () {

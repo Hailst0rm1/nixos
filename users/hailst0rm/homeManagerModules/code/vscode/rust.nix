@@ -16,12 +16,14 @@
 
     # VS Code setup
     programs.vscode = {
-      extensions = with pkgs.vscode-extensions; [
-        rust-lang.rust-analyzer
-      ];
-      userSettings = {
-        "rust-analyzer.cargo.allFeatures" = true;
-        "rust-analyzer.checkOnSave.command" = "clippy";
+      profiles.default = {
+        extensions = with pkgs.vscode-extensions; [
+          rust-lang.rust-analyzer
+        ];
+        userSettings = {
+          "rust-analyzer.cargo.allFeatures" = true;
+          "rust-analyzer.checkOnSave.command" = "clippy";
+        };
       };
     };
 
