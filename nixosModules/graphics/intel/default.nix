@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs-unstable,
+  pkgs,
   ...
 }: let
   cfg = config.graphicDriver.intel;
@@ -22,7 +23,7 @@ in {
 
     hardware.graphics = {
       enable = true;
-      extraPackages = with pkgs-unstable; [
+      extraPackages = with pkgs; [
         intel-media-driver
         intel-vaapi-driver
         libvdpau-va-gl
