@@ -37,6 +37,9 @@
     # Source so that we can use some packages from unstable as well
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    # A collection of NixOS modules covering hardware quirks.
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
     # Stylix is used for theming
     stylix = {
       url = "github:danth/stylix/release-24.11";

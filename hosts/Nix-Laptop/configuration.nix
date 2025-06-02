@@ -12,6 +12,13 @@ in {
       # Includes hardware config from hardware scan
       ./hardware-configuration.nix
 
+      # NixOS-Hardware
+      # List: https://github.com/NixOS/nixos-hardware/blob/master/flake.nix
+      inputs.nixos-hardware.nixosModules.common-cpu-intel
+      # inputs.nixos-hardware.nixosModules.common-gpu-nvidia
+      inputs.nixos-hardware.nixosModules.common-gpu-intel
+      inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
+
       # Secrets
       inputs.sops-nix.nixosModules.sops
 
@@ -60,7 +67,7 @@ in {
   };
 
   # graphic
-  graphicDriver.intel.enable = true;
+  # graphicDriver.intel.enable = true;
   # graphicDriver.nvidia = {
   #   enable = true;
   #   type = "unstable";

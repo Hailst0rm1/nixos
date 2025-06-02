@@ -85,6 +85,12 @@
           }
           {
             type = "command";
+            key = "   Model";
+            keyColor = "blue";
+            text = "echo $(cat /sys/class/dmi/id/sys_vendor) $(cat /sys/class/dmi/id/product_name)";
+          }
+          {
+            type = "command";
             key = "   CPU";
             keyColor = "blue";
             text = "echo $(lscpu | grep 'Model name' | cut -f31 -d ' ') $(lscpu | grep 'Model name' | cut -f32 -d ' ') $(lscpu | grep 'Model name' | cut -f33 -d ' ')";
