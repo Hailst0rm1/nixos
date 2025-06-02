@@ -17,7 +17,8 @@ in {
   config = lib.mkIf cfg.enable {
     # Insert device ID for GPU found with:
     # nix-shell --extra-experimental-features "flakes" -p pciutils --run "lspci -nn | grep VGA"
-    boot.kernelParams = ["i915.force_probe=a7a0"];
+    boot.kernelParams = ["i915.force_probe=7d55"];
+    # boot.kernelParams = ["i915.force_probe=a7a0"];
 
     hardware.graphics = {
       enable = true;
