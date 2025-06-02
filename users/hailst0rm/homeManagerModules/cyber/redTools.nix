@@ -90,6 +90,7 @@
         hashcat # GPU cracker
         hashcat-utils
         john # CPU cracker
+        hashid # Identify hash type (-m for hashcat mode value)
 
         # === Wordlists ===
         wordlists # Note: This includes seclists
