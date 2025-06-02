@@ -68,10 +68,10 @@ in {
 
   # graphic
   # graphicDriver.intel.enable = true;
-  # graphicDriver.nvidia = {
-  #   enable = true;
-  #   type = "unstable";
-  # };
+  graphicDriver.nvidia = {
+    enable = true;
+    type = "default";
+  };
 
   security = {
     sops.enable = true;
@@ -86,7 +86,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    kernel = "zen";
+    # kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
@@ -94,8 +94,8 @@ in {
       name = "catppuccin-mocha";
     };
     automatic = {
-      upgrade = true;
-      cleanup = true;
+      upgrade = false;
+      cleanup = false;
     };
   };
 
