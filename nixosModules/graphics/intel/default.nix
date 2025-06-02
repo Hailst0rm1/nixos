@@ -22,9 +22,14 @@ in {
     hardware.graphics = {
       enable = true;
       extraPackages = with pkgs-unstable; [
-        intel-compute-runtime
-        vpl-gpu-rt
+        intel-media-driver
+        intel-vaapi-driver
+        libvdpau-va-gl
         intel-ocl
+
+        # intel-compute-runtime
+        # vpl-gpu-rt
+        # intel-ocl
       ];
     };
 
