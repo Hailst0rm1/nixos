@@ -11,6 +11,7 @@
       file = {
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
+        "cyber/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
       };
       sessionVariables = {
       };
@@ -67,15 +68,9 @@
         #samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
 
         # === Credential Access ===
-        # (thc-hydra.overrideAttrs (old: {
-        #   buildInputs = old.buildInputs ++ [ pkgs.freerdp ];
-        # }))
-        # (thc-hydra.overrideAttrs (old: {
-        #   buildInputs = old.buildInputs ++ [freerdp3];
-        # }))
         (thc-hydra.overrideAttrs (old: {
           pname = "thc-hydra";
-          version = "unstable-2025-05-27"; # Update to current date or appropriate version label
+          version = "unstable"; # Update to current date or appropriate version label
 
           src = fetchFromGitHub {
             owner = "vanhauser-thc";
@@ -84,9 +79,8 @@
             sha256 = "sha256-2EwULcI2sfMQzMN2Cxsd4NlOvu5s/J3gvKQZr10jPj0="; # Replace with actual hash
           };
 
-          buildInputs = old.buildInputs ++ [freerdp3];
+          buildInputs = old.buildInputs ++ [pkgs-unstable.freerdp];
         }))
-        freerdp
         hashcat # GPU cracker
         hashcat-utils
         john # CPU cracker
