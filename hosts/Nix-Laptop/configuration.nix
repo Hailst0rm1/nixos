@@ -43,6 +43,13 @@ in {
   environment.etc.hosts.enable = false;
   environment.etc.hosts.mode = "0700";
 
+  boot = {
+    kernelParams = lib.mkForce [
+      "i915.enable_psr=1"
+      "nvidia_drm.modeset=0"
+    ];
+  };
+
   # ===
 
   # variables.nix
