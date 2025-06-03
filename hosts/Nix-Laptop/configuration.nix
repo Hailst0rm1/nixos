@@ -87,7 +87,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    # kernel = "zen";
+    kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
