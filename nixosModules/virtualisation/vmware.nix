@@ -17,8 +17,9 @@ in {
 
     # Add VMware kernel modules for zen
     # boot.extraModulePackages = lib.mkIf (config.system.kernel == "zen") [
-    #   pkgs.linuxKernel.packages.linux_zen.vmware
-    # ];
+    boot.kernelModules = lib.mkIf (config.system.kernel == "zen") [
+      pkgs.linuxKernel.packages.linux_zen.vmware
+    ];
 
     # Dark theme (applied in HM-stylix manually)
     environment.systemPackages = [pkgs.gnome-themes-extra];
