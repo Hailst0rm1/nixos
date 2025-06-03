@@ -30,11 +30,6 @@
             text = "hostnamectl | grep 'Operating System' | cut -f2 -d ':'";
           }
           {
-            type = "os";
-            key = "   OS";
-            keyColor = "red";
-          }
-          {
             type = "kernel";
             key = "   Kernel";
             keyColor = "red";
