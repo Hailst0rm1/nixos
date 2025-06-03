@@ -29,5 +29,5 @@
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   # Added
-  boot.kernelParams = ["vga=0" "video=1920x1080"];
+  boot.kernelParams = ["vga=0" "video=1920x1080"]; # Force plymouth to stay centered
 }

@@ -13,6 +13,8 @@ in {
     virtualisation.vmware.host.enable = true;
     virtualisation.vmware.host.package = pkgs-unstable.vmware-workstation;
 
+    boot.kernelParams = ["transparent_hugepage=never"];
+
     # Dark theme (applied in HM-stylix manually)
     environment.systemPackages = [pkgs.gnome-themes-extra];
   };
