@@ -14,11 +14,11 @@ in {
 
       # NixOS-Hardware - Seem to not work properly on this system?
       # List: https://github.com/NixOS/nixos-hardware/blob/master/flake.nix
-      inputs.nixos-hardware.nixosModules.common-cpu-intel
-      # inputs.nixos-hardware.nixosModules.common-gpu-nvidia-disable
-      inputs.nixos-hardware.nixosModules.common-gpu-intel
-      inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
-      # inputs.nixos-hardware.nixosModules.dell-precision-5530
+      # inputs.nixos-hardware.nixosModules.common-cpu-intel
+      # inputs.nixos-hardware.nixosModules.common-gpu-nvidia
+      # inputs.nixos-hardware.nixosModules.common-gpu-intel
+      # inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
+      inputs.nixos-hardware.nixosModules.dell-precision-5530
 
       # Secrets
       inputs.sops-nix.nixosModules.sops
