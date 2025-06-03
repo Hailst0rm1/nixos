@@ -11,7 +11,7 @@
       file = {
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
-        "cyber/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
+        "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
       };
       sessionVariables = {
       };
@@ -70,16 +70,16 @@
         # === Credential Access ===
         (thc-hydra.overrideAttrs (old: {
           pname = "thc-hydra";
-          version = "unstable"; # Update to current date or appropriate version label
+          version = "rdp-fix";
 
           src = fetchFromGitHub {
             owner = "vanhauser-thc";
             repo = "thc-hydra";
-            rev = "e4367b2f1326a43f1618b5eee59aaec8ade1442b";
-            sha256 = "sha256-2EwULcI2sfMQzMN2Cxsd4NlOvu5s/J3gvKQZr10jPj0="; # Replace with actual hash
+            rev = "c57df67aebb4ef4a96d148f8694644250eb1cfb5";
+            sha256 = "sha256-5lZ+Y6lx1H9xJZjZk103IW2ym5KcB6fMfJ8MbW5fNBQ=";
           };
 
-          buildInputs = old.buildInputs ++ [pkgs-unstable.freerdp];
+          buildInputs = old.buildInputs ++ [freerdp];
         }))
         hashcat # GPU cracker
         hashcat-utils
