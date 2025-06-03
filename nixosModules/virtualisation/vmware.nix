@@ -16,8 +16,8 @@ in {
     boot.kernelParams = ["transparent_hugepage=never"];
 
     # Add VMware kernel modules for zen
-    # boot.extraModulePackages = lib.mkIf (config.system.kernel == "zen") [
-    boot.extraModulePackages = [
+    boot.extraModulePackages = lib.mkIf (config.system.kernel == "zen") [
+      # boot.extraModulePackages = [
       pkgs.linuxKernel.packages.linux_zen.vmware
     ];
 
