@@ -17,7 +17,7 @@ in {
 
     # Add VMware kernel modules for zen
     # boot.extraModulePackages = lib.mkIf (config.system.kernel == "zen") [
-    boot.kernelModules = lib.mkIf (config.system.kernel == "zen") [
+    boot.extraModulePackages = [
       pkgs.linuxKernel.packages.linux_zen.vmware
     ];
 
