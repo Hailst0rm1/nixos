@@ -67,7 +67,7 @@ in {
   };
 
   # graphic
-  graphicDriver.intel.enable = true;
+  # graphicDriver.intel.enable = true;
   # graphicDriver.nvidia = {
   #   enable = true;
   #   type = "default";
