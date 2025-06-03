@@ -18,7 +18,7 @@ in {
       # inputs.nixos-hardware.nixosModules.common-gpu-nvidia-disable
       # inputs.nixos-hardware.nixosModules.common-gpu-intel
       # inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
-      inputs.nixos-hardware.nixosModules.dell-precision-5530
+      # inputs.nixos-hardware.nixosModules.dell-precision-5530
 
       # Secrets
       inputs.sops-nix.nixosModules.sops
@@ -87,7 +87,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    kernel = "zen";
+    # kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
