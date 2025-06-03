@@ -102,7 +102,7 @@ in {
 
   virtualisation = {
     host = {
-      vmware = true;
+      vmware = false; # Broken?
       qemu = false;
     };
     guest = {
