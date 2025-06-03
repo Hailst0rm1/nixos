@@ -12,8 +12,8 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
 
-  boot.initrd.availableKernelModules = ["i915" "xhci_pci" "thunderbolt" "nvme" "uas" "usbhid" "sd_mod" "rtsx_pci_sdmmc"];
-  boot.initrd.kernelModules = ["i915"];
+  boot.initrd.availableKernelModules = ["xhci_pci" "thunderbolt" "nvme" "uas" "usbhid" "sd_mod" "rtsx_pci_sdmmc"];
+  boot.initrd.kernelModules = [];
   boot.kernelModules = ["kvm-intel"];
   boot.extraModulePackages = [];
 
@@ -29,5 +29,5 @@
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   # Added
-  boot.kernelParams = ["i915.force_probe=a7a0"];
+  boot.kernelParams = ["vga=0" "video=1920x1080"];
 }
