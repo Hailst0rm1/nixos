@@ -85,7 +85,7 @@
     };
   };
 
-  outputs = inputs @ {...}: let
+  outputs = inputs @ {self, ...}: let
     # Generator functions for Machines and VMs
     myLib = import ./lib/generators.nix {inherit inputs;};
   in

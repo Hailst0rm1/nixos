@@ -1,9 +1,13 @@
 {
+  inputs,
   config,
   lib,
   pkgs-unstable,
   ...
-}: {
+}: let
+  nixosDir = inputs.self;
+  thc-hydra = pkgs-unstable.callPackage "${nixosDir}/pkgs/thc-hydra/package.nix" {};
+in {
   # options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
 
   config = lib.mkIf config.cyber.redTools.enable (with pkgs-unstable; {
@@ -68,19 +72,7 @@
         #samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
 
         # === Credential Access ===
-        (thc-hydra.overrideAttrs (new: old: {
-          pname = "thc-hydra";
-          version = "rdp-fix";
-
-          src = fetchFromGitHub {
-            owner = "vanhauser-thc";
-            repo = "thc-hydra";
-            rev = "6aaeee97a33e0724e2481de662974d967ea8befe";
-            sha256 = "sha256-WnpIH+3vQ4lxsWapxfPPKJ5MhwavuHKJ7/qWvX8xKGQ=";
-          };
-
-          buildInputs = old.buildInputs ++ [freerdp];
-        }))
+        thc-hydra # Brute force
         hashcat # GPU cracker
         hashcat-utils
         john # CPU cracker

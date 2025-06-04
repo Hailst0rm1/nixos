@@ -11,6 +11,11 @@ in {
     # Yubikey FDE with systemd-cryptenroll
     systemd.enable = true;
     luks.fido2Support = false;
+
+    # luks.devices."x2000-encrypted-${device}" = {
+    #   device = "/dev/disk/by-partlabel/${luksLabel}";  # LUKS device identified by partition label
+    #   crypttabExtraOpts = [ "fido2-device=auto" ];     # Use FIDO2 device (e.g. YubiKey) for unlocking
+    # };
   };
 
   disko.devices = {

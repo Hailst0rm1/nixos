@@ -1,7 +1,7 @@
 {
-  pkgs,
-  lib,
   config,
+  inputs,
+  lib,
   ...
 }:
 # IMPORTANT: If you add changes here, you also need to add them in generators.nix so that HM inherits them
