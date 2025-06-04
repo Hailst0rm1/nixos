@@ -68,15 +68,15 @@
         #samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
 
         # === Credential Access ===
-        (thc-hydra.overrideAttrs (old: {
+        (thc-hydra.overrideAttrs (new: old: {
           pname = "thc-hydra";
           version = "rdp-fix";
 
           src = fetchFromGitHub {
             owner = "vanhauser-thc";
             repo = "thc-hydra";
-            rev = "c57df67aebb4ef4a96d148f8694644250eb1cfb5";
-            sha256 = "sha256-5lZ+Y6lx1H9xJZjZk103IW2ym5KcB6fMfJ8MbW5fNBQ=";
+            rev = "6aaeee97a33e0724e2481de662974d967ea8befe";
+            sha256 = "sha256-WnpIH+3vQ4lxsWapxfPPKJ5MhwavuHKJ7/qWvX8xKGQ=";
           };
 
           buildInputs = old.buildInputs ++ [freerdp];
