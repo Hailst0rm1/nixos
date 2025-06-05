@@ -70,6 +70,7 @@ in {
 
         # === Lateral Movement ===
         #samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
+        netexec
 
         # === Credential Access ===
         thc-hydra # Brute force
