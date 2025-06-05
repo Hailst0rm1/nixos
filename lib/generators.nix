@@ -44,7 +44,19 @@
         ../hosts/${hostname}/configuration.nix
 
         # Pkgs Overlays
-        {nixpkgs.overlays = [inputs.hyprpanel.overlay];}
+        {
+          nixpkgs.overlays =
+            [
+              inputs.hyprpanel.overlay
+            ]
+            ++ (
+              inputs.nixpkgs.lib.mapAttrsToList
+              (name: _: import ../overlays/${name})
+              (inputs.nixpkgs.lib.filterAttrs
+                (name: type: inputs.nixpkgs.lib.hasSuffix ".nix" name && type == "regular")
+                (builtins.readDir ../overlays))
+            );
+        }
 
         # Home Manager configuration
         inputs.home-manager.nixosModules.home-manager

@@ -9,6 +9,7 @@
 
   home.packages = [
     pkgs.openvpn
+    # pkgs.python312
     pkgs.python313
     # Advanced tooling
     pkgs-unstable.lazydocker # Docker TUI
