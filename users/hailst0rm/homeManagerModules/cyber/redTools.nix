@@ -79,6 +79,8 @@
     john # CPU cracker
     hashid # Identify hash type (-m for hashcat mode value)
     # responder # Rogue authentication server to obtain hashes
+    python312Packages.impacket # ntmlrelayx.py: Relays ntml requests
+    mimikatz
 
     # === Wordlists ===
     wordlists # Note: This includes seclists
