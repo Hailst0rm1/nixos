@@ -77,7 +77,7 @@
       fi
 
       # Exit if no changes are made
-      if git diff --quiet; then
+      if git diff HEAD --quiet; then
           echo "No changes detected in config. Exiting."
           notify-send -e "NixOS Rebuild Failed!" --icon=software-update-available
           popd
@@ -89,7 +89,7 @@
         || ( alejandra . ; echo "formatting failed!" && exit 1)
 
       # Show the changes
-      git diff -U0
+      git diff HEAD -U0
       git add .
 
       # Rebuild with optional --show-trace and exit on failure
