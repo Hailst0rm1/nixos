@@ -1,59 +1,31 @@
 {
-  inputs,
   config,
   hostname,
   lib,
   ...
 }: let
-  device = "nvme1n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+  # Lib
+  myLib = import ../../lib/generators.nix;
 in {
   imports =
     [
-      # Includes hardware config from hardware scan
       ./hardware-configuration.nix
-
-      # NixOS-Hardware - Seem to not work properly on this system?
-      # List: https://github.com/NixOS/nixos-hardware/blob/master/flake.nix
-      inputs.nixos-hardware.nixosModules.common-cpu-intel
-      inputs.nixos-hardware.nixosModules.common-gpu-nvidia
-      inputs.nixos-hardware.nixosModules.common-pc-ssd
-
-      # Secrets
-      inputs.sops-nix.nixosModules.sops
-
-      # Disk partitioning
-      inputs.disko.nixosModules.disko
-      ../../nixosModules/system/bootloader.nix
-      ./disks.nix
-      {
-        _module.args.device = device; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
-      }
-
-      # Recursively imports all nixosModules
     ]
     ++ lib.filter
     (n: lib.strings.hasSuffix ".nix" n)
     (lib.filesystem.listFilesRecursive ../../nixosModules);
 
   # === TEMPORARY ===
-
-  # Enables editing of hosts
   environment.etc.hosts.enable = false;
   environment.etc.hosts.mode = "0700";
-
   # ===
 
   # variables.nix
-  # systemUsers = [ "hailst0rm" "testuser" ];
   username = "hailst0rm";
   hostname = hostname;
   systemArch = "x86_64-linux";
   laptop = false;
-  removableMedia = false;
   myLocation = "Barkarby";
-
-  # Red Teaming config
-  cyber.redTools.enable = false;
 
   # desktop/default.nix
   # Gnome is default
@@ -65,16 +37,17 @@ in {
     name = "sddm";
   };
 
+  # Red Teaming config
+  cyber.redTools.enable = true;
+
   # graphic
-  # graphicDriver.intel.enable = true;
-  # graphicDriver.nvidia = {
-  #   enable = true;
-  #   type = "default";
-  # };
+  graphicDriver.nvidia = {
+    enable = true;
+    type = "default";
+  };
 
   security = {
-    sops.enable = true;
-    firewall.enable = true;
+    firewall.enable = true; # Turn off for rev-shells etc
     dnscrypt.enable = false;
     completePolkit.enable = false;
     yubikey.enable = true;
@@ -85,7 +58,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    kernel = "zen";
+    # kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
@@ -93,14 +66,14 @@ in {
       name = "catppuccin-mocha";
     };
     automatic = {
-      upgrade = false;
+      upgrade = true;
       cleanup = true;
     };
   };
 
   virtualisation = {
     host = {
-      vmware = false; # Broken?
+      vmware = false;
       qemu = false;
     };
     guest = {
@@ -111,10 +84,8 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
-    openssh.enable = false;
-    mattermost.enable = false;
+    mattermost.enable = true;
     ollama.enable = false;
-    open-webui.enable = false; # UI for local AI
   };
 
   # Allow unfree software
@@ -126,21 +97,22 @@ in {
   # Select internationalisation properties.
   i18n.defaultLocale = "en_GB.UTF-8";
 
-  # Define a user account.
-  users = {
-    mutableUsers = lib.mkIf config.security.sops.enable false; # All config, even password, is dedicated by nixconf
-    users.${config.username} = {
-      isNormalUser = true;
-      extraGroups = [
-        "sudo"
-        "docker"
-        "networkmanager"
-        "wheel"
-      ];
-      initialPassword = lib.mkIf (!config.security.sops.enable) "t";
-      hashedPasswordFile = lib.mkIf config.security.sops.enable config.sops.secrets."passwords/${config.username}".path;
-    };
+  # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.users.${config.username} = {
+    isNormalUser = true;
+    extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
+    initialPassword = "t";
   };
+
+  # # # # # # # # # # # !!!!!! # # # # # # # # # #
+  # UNCOMMENT THIS SECTION WHILE INSTALLING      #
+  #                                              #
+  #security.pam = {
+  #  u2f.enable = lib.mkForce false;
+  #  services.login.u2fAuth = lib.mkForce false;
+  #  services.login.u2fAuth = lib.mkForce false;
+  #}
+  # # # # # # # # # # # !!!!!! # # # # # # # # # #
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
   # and migrated your data accordingly.

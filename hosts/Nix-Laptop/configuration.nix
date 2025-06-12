@@ -96,7 +96,7 @@ in {
     };
     automatic = {
       upgrade = false;
-      cleanup = false;
+      cleanup = true;
     };
   };
 
