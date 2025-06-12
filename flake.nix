@@ -101,6 +101,9 @@
 
         # External SSD
         Nix-ExtDisk = mkSystem {hostname = "Nix-ExtDisk";};
+
+        # Nix-Installer
+        Nix-Installer = mkSystem {hostname = "Nix-Installer";};
       };
 
       # ===================== VM:s + ISO ===================== #

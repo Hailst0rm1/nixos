@@ -50,7 +50,7 @@ in {
           efiInstallAsRemovable = lib.mkIf config.removableMedia true;
         };
         efi.efiSysMountPoint = "/boot";
-        timeout = 2;
+        timeout = lib.mkDefault 2;
         efi.canTouchEfiVariables = lib.mkIf (!config.removableMedia) true;
       };
 

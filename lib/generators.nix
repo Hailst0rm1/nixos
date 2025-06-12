@@ -1,7 +1,9 @@
-{inputs, ...}: {
+{inputs, ...}: let
+  lib = inputs.nixpkgs.lib;
+in {
   mkSystem = {hostname}: let
     # Evaluate the system configuration first (including Home Manager)
-    evaluatedSystem = inputs.nixpkgs.lib.nixosSystem {
+    evaluatedSystem = lib.nixosSystem {
       specialArgs = {
         pkgs-unstable = import inputs.nixpkgs-unstable {
           system = "x86_64-linux"; # Required...
@@ -16,7 +18,7 @@
       ];
     };
 
-    # ---Extract values from the evaluated configuration
+    # --- Extract values from the evaluated configuration
 
     # Variables.nix
     username = evaluatedSystem.config.username;
@@ -28,37 +30,11 @@
 
     # Graphic driver
     nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
-  in
-    inputs.nixpkgs.lib.nixosSystem {
-      specialArgs = {
-        pkgs-unstable = import inputs.nixpkgs-unstable {
-          system = systemArch;
-          config.allowUnfree = true;
-        };
 
-        inherit inputs hostname;
-      };
-
-      modules = [
-        # System configuration
-        ../hosts/${hostname}/configuration.nix
-
-        # Pkgs Overlays
-        {
-          nixpkgs.overlays =
-            [
-              inputs.hyprpanel.overlay
-            ]
-            ++ (
-              inputs.nixpkgs.lib.mapAttrsToList
-              (name: _: import ../overlays/${name})
-              (inputs.nixpkgs.lib.filterAttrs
-                (name: type: inputs.nixpkgs.lib.hasSuffix ".nix" name && type == "regular")
-                (builtins.readDir ../overlays))
-            );
-        }
-
-        # Home Manager configuration
+    # --- Home Manager configuration
+    homeManager =
+      []
+      ++ lib.optionals (builtins.pathExists ../users/${username}/hosts/${hostname}.nix) [
         inputs.home-manager.nixosModules.home-manager
         {
           home-manager.useGlobalPkgs = true;
@@ -78,52 +54,89 @@
           };
         }
       ];
-    };
 
-  # TODO: FIX LIKE SYSTEM
-  mkImage = {
-    system,
-    hostname,
-    username,
-    desktop,
-    nixos-dir,
-    format,
-    diskSize,
-  }:
-    inputs.nixos-generators.nixosGenerate {
-      inherit system format;
-
+    # --- Overlays
+    overlays =
+      []
+      ++ (
+        lib.mapAttrsToList
+        (name: _: import ../overlays/${name})
+        (lib.filterAttrs
+          (name: type: lib.hasSuffix ".nix" name && type == "regular")
+          (builtins.readDir ../overlays))
+      );
+  in
+    lib.nixosSystem {
       specialArgs = {
         pkgs-unstable = import inputs.nixpkgs-unstable {
-          inherit system;
+          system = systemArch;
           config.allowUnfree = true;
         };
 
-        inherit inputs;
+        inherit inputs hostname;
       };
 
-      modules = [
-        # System configuration
-        ../hosts/${hostname}/configuration.nix
+      modules =
+        [
+          # System configuration
+          ../hosts/${hostname}/configuration.nix
 
-        # Home Manager configuration
-        inputs.home-manager.nixosModules.home-manager
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-
-          home-manager.users.${username} = import ../users/${username}/hosts/${hostname}.nix;
-
-          # Custom args
-          home-manager.extraSpecialArgs = {
-            pkgs-unstable = import inputs.nixpkgs-unstable {
-              inherit system;
-              config.allowUnfree = true;
-            };
-
-            inherit hostname username desktop nixos-dir;
-          };
-        }
-      ];
+          # Pkgs Overlays
+          {
+            nixpkgs.overlays =
+              [
+                inputs.hyprpanel.overlay
+              ]
+              ++ overlays;
+          }
+        ]
+        ++ homeManager;
     };
+
+  # TODO: FIX LIKE SYSTEM
+  # mkImage = {
+  #   system,
+  #   hostname,
+  #   username,
+  #   desktop,
+  #   nixos-dir,
+  #   format,
+  #   diskSize,
+  # }:
+  #   inputs.nixos-generators.nixosGenerate {
+  #     inherit system format;
+
+  #     specialArgs = {
+  #       pkgs-unstable = import inputs.nixpkgs-unstable {
+  #         inherit system;
+  #         config.allowUnfree = true;
+  #       };
+
+  #       inherit inputs;
+  #     };
+
+  #     modules = [
+  #       # System configuration
+  #       ../hosts/${hostname}/configuration.nix
+
+  #       # Home Manager configuration
+  #       inputs.home-manager.nixosModules.home-manager
+  #       {
+  #         home-manager.useGlobalPkgs = true;
+  #         home-manager.useUserPackages = true;
+
+  #         home-manager.users.${username} = import ../users/${username}/hosts/${hostname}.nix;
+
+  #         # Custom args
+  #         home-manager.extraSpecialArgs = {
+  #           pkgs-unstable = import inputs.nixpkgs-unstable {
+  #             inherit system;
+  #             config.allowUnfree = true;
+  #           };
+
+  #           inherit hostname username desktop nixos-dir;
+  #         };
+  #       }
+  #     ];
+  #   };
 }

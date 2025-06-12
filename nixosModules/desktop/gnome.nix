@@ -12,14 +12,14 @@ in {
       displayManager.gdm.enable = true;
     };
 
-    # Disable power settings for screen as default
-    systemd = {
-      targets = {
-        sleep.enable = false;
-        suspend.enable = false;
-        hibernate.enable = false;
-        hybrid-sleep.enable = false;
-      };
-    };
+    # # Disable power settings for screen as default
+    # systemd = {
+    #   targets = {
+    #     sleep.enable = false;
+    #     suspend.enable = false;
+    #     hibernate.enable = false;
+    #     hybrid-sleep.enable = false;
+    #   };
+    # };
   };
 }

@@ -52,9 +52,9 @@ in {
     environment.etc."X11/xkb/keymap.xkb".source = keymap;
 
     # Ensure home-manager doesn't interfere with XKB
-    home-manager.users."${config.username}" = {
-      home.keyboard = null;
-    };
+    # home-manager.users."${config.username}" = {
+    #   home.keyboard = null;
+    # };
 
     services.xserver = {
       enable = true;
