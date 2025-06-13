@@ -73,7 +73,7 @@ in {
   # };
 
   security = {
-    sops.enable = true;
+    sops.enable = false;
     firewall.enable = true;
     dnscrypt.enable = false;
     completePolkit.enable = false;
