@@ -3,53 +3,58 @@
   config,
   hostname,
   lib,
-  modulesPath,
   ...
 }: {
-  imports = [
-    "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
-    ../../nixosModules/system/colemak-se_keyboard.nix
-    ../../nixosModules/variables.nix
-    ../../nixosModules/system/utils.nix
-    ../../nixosModules/themes/stylix.nix
-    # ../../nixosModules/desktop/default.nix
-    ../../nixosModules/display-manager/default.nix
-    ../../nixosModules/graphics/nvidia/default.nix
-
-    # inputs.nixos-hardware.nixosModules.common-cpu-intel
-    # inputs.nixos-hardware.nixosModules.common-gpu-nvidia
-    # inputs.nixos-hardware.nixosModules.common-pc-ssd
-  ];
-
-  nixpkgs.hostPlatform = "x86_64-linux";
+  imports =
+    [
+      # Recursively imports all nixosModules
+    ]
+    ++ lib.filter
+    (n: lib.strings.hasSuffix ".nix" n)
+    (lib.filesystem.listFilesRecursive ../../nixosModules);
 
   # variables.nix
-  username = "";
+  username = "hailst0rm";
   hostname = hostname;
-  # systemArch = "x86_64-linux";
+  systemArch = "x86_64-linux";
+  removableMedia = true;
+  myLocation = "Barkarby";
+
+  nixpkgs.hostPlatform = config.systemArch;
 
   # desktop/default.nix
   # Gnome is default
-  # desktopEnvironment.name = "gnome";
+  desktopEnvironment.name = "gnome";
 
   # Display manager are currently built in the other desktops beside hyprland
-  desktopEnvironment.displayManager = {
-    enable = true;
-    name = "sddm";
-  };
+  # desktopEnvironment.displayManager = {
+  #   enable = true;
+  #   name = "sddm";
+  # };
 
-  services.openssh.enable = false;
+  # graphic
+  # graphicDriver.intel.enable = true;
+  # graphicDriver.nvidia = {
+  #   enable = true;
+  #   type = "default";
+  # };
 
   # Bluetooth
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
+    # bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
-      enable = false;
+      enable = true;
       name = "catppuccin-mocha";
     };
+  };
+
+  # Hosted / Running services (nixosModules/services)
+  services = {
+    openssh.enable = false;
   };
 
   # Allow unfree software
@@ -60,6 +65,20 @@
 
   # Select internationalisation properties.
   i18n.defaultLocale = "en_GB.UTF-8";
+
+  # Define a user account.
+  users = {
+    users.${config.username} = {
+      isNormalUser = true;
+      extraGroups = [
+        "sudo"
+        "docker"
+        "networkmanager"
+        "wheel"
+      ];
+      initialPassword = "t";
+    };
+  };
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
   # and migrated your data accordingly.

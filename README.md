@@ -32,11 +32,12 @@ in {
 Depending on the size of the config for the workstation installation, the RAM for /tmpfs wont be enough, which you'll have to compensate for using swap.
 
 My setup:
-- Create bootable USB (64GB): `dd bs=4M if=Downloads/nixos-gnome-installer-24.11.iso of=/dev/sdx status=progress oflag=sync`
-- Create a swap partiotion of remaining space on USB: I did it via gnome-disks
-- Now boot into the USB
-- Activate swap partition: `swapon /dev/sdx2`
-- Expand the root and nix-store: `mount -o remount,size=35G,noatime /nix/.rw-store && mount -o remount,size=25G,noatime /`
+1. Create custom installer .iso from thir repo: `nix run nixpkgs#nixos-generators -- --format iso --flake github:hailst0rm1/nixos#Nix-Installer -o result`
+1. Create bootable USB (64GB): `dd bs=4M if=result/iso/nixos-minimal-25.05.20250602.10d7f8d-x86_64-linux.iso of=/dev/sdx status=progress oflag=sync` (double check `of=` with `lsblk`)
+2. Create a swap partiotion of remaining space on USB: I did it via gnome-disks
+3. Now boot into the USB
+4. Activate swap partition: `swapon /dev/sdx2`
+5. Expand the root and nix-store: `mount -o remount,size=35G,noatime /nix/.rw-store && mount -o remount,size=25G,noatime /`
 
 ## Disko-install (local installation)
 
@@ -69,6 +70,13 @@ sudo nix run 'github:nix-community/disko/latest#disko-install' --extra-experimen
   - Format will format the disk before installing.
   - Mount will mount the disk before installing.
     - Mount is useful for updating an existing system without losing data.
+
+### VMWare error
+
+VMWare changed their download link to be behind a loginpage, thus we have to download it and manually put it into the nix-store:
+
+1. Repo: https://github.com/liberodark/vmware/releases
+2. Run: `nix-store --add-fixed sha256 VMWARE.BUNDLE`
 
 ## Nixos-anywhere (remote install via ssh) - NOT TESTED NOR FINISHED
 
