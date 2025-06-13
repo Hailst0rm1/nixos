@@ -13,6 +13,7 @@
     ../../nixosModules/system/utils.nix
     ../../nixosModules/themes/stylix.nix
     # ../../nixosModules/desktop/default.nix
+    ../../nixosModules/display-manager/default.nix
     ../../nixosModules/graphics/nvidia/default.nix
 
     # inputs.nixos-hardware.nixosModules.common-cpu-intel
@@ -30,6 +31,12 @@
   # desktop/default.nix
   # Gnome is default
   # desktopEnvironment.name = "gnome";
+
+  # Display manager are currently built in the other desktops beside hyprland
+  desktopEnvironment.displayManager = {
+    enable = true;
+    name = "sddm";
+  };
 
   services.openssh.enable = false;
 
