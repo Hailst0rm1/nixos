@@ -15,7 +15,7 @@ in {
       # NixOS-Hardware - Seem to not work properly on this system?
       # List: https://github.com/NixOS/nixos-hardware/blob/master/flake.nix
       inputs.nixos-hardware.nixosModules.common-cpu-intel
-      inputs.nixos-hardware.nixosModules.common-gpu-nvidia
+      # inputs.nixos-hardware.nixosModules.common-gpu-nvidia
       inputs.nixos-hardware.nixosModules.common-pc-ssd
 
       # Secrets
@@ -85,7 +85,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    # kernel = "zen";
+    kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
