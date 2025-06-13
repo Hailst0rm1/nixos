@@ -5,7 +5,7 @@
   lib,
   ...
 }: let
-  device = "nvme1n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+  device = "nvme0n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
 in {
   imports =
     [
@@ -67,10 +67,10 @@ in {
 
   # graphic
   # graphicDriver.intel.enable = true;
-  # graphicDriver.nvidia = {
-  #   enable = true;
-  #   type = "default";
-  # };
+  graphicDriver.nvidia = {
+    enable = true;
+    type = "default";
+  };
 
   security = {
     sops.enable = false;
@@ -85,7 +85,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    kernel = "zen";
+    # kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
