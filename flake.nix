@@ -102,6 +102,9 @@
         # External SSD
         Nix-ExtDisk = mkSystem {hostname = "Nix-ExtDisk";};
 
+        # Nix-Minimal
+        Nix-Minimal = mkSystem {hostname = "Nix-Minimal";};
+
         # Nix-Installer
         Nix-Installer = mkSystem {hostname = "Nix-Installer";};
       };
