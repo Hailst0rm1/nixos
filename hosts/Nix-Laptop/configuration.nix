@@ -6,6 +6,7 @@
   ...
 }: let
   device = "nvme0n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+  diskoConfig = "default";
 in {
   imports =
     [
@@ -26,7 +27,7 @@ in {
       # Disk partitioning
       inputs.disko.nixosModules.disko
       ../../nixosModules/system/bootloader.nix
-      ./disks.nix
+      ../../disko/${diskoConfig}.nix
       {
         _module.args.device = device; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
       }
