@@ -4,6 +4,7 @@ keys:
      - &hailst0rm age157g7epkrpckjv6axncdcc8cktcfft43ntu5kqwmtc9t0mhuraglsgk76zm
   - &hosts:
     - &Nix-Laptop age1ugkxk0lxn78vq45jkd9q3xtskj4vewswrfyc3n9h4g98wtzps9kqpfvfmf
+    - &Nix-Workstation age1w6cuzu3nca36jjs9yxnlgxe58nveezmr3sk2p6u0uec5dx4jjq2qwm0u3j
 creation_rules:
   - path_regex: secrets/secrets.yaml$
     key_groups:
@@ -11,3 +12,4 @@ creation_rules:
       - *master
       - *hailst0rm
       - *Nix-Laptop
+      - *Nix-Workstation

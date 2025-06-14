@@ -23,7 +23,7 @@
       defaultSopsFormat = "yaml";
       age = {
         # Automatically import host SSH-keys as Age-keys
-        sshKeyPaths = ["/etc/ssh/ssh_host_ed25519_key"];
+        sshKeyPaths = lib.mkIf config.services.openssh.enable ["/etc/ssh/ssh_host_ed25519_key"];
         keyFile = "/var/lib/sops-nix/key.txt";
         generateKey = true;
       };
