@@ -39,7 +39,8 @@ in {
   username = "hailst0rm";
   hostname = hostname;
   systemArch = "x86_64-linux";
-  removableMedia = true;
+  removableMedia = false;
+  laptop = false;
   myLocation = "Barkarby";
 
   # desktop/default.nix
