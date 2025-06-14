@@ -28,9 +28,9 @@
         "keys/ssh/yubic" = {
           path = "/home/${config.username}/.ssh/yubic";
         };
-        "keys/yubikey/${config.username}" = {
-          path = "/home/${config.username}/.config/Yubico/u2f_keys";
-        };
+        # "keys/yubikey/${config.username}/${config.hostname}" = {
+        #   path = "/home/${config.username}/.config/Yubico/u2f_keys";
+        # };
       };
     };
   };

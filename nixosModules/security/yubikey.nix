@@ -22,11 +22,12 @@
       # `pamu2fcfg -u username > ~/u2f_keys`
       # If you have more than one: `pamu2fcfg -n >> ~/u2f_keys`
       # Then you can move them into sops secrets
+      # Warning: They are generated PER HOST
       sshAgentAuth.enable = true;
       u2f = {
         enable = lib.mkDefault true;
         settings = {
-          authFile = config.sops.secrets."keys/yubikey/${config.username}".path;
+          authFile = config.sops.secrets."keys/yubikey/${config.hostname}".path;
           # authFile = "/home/${config.username}/.config/Yubico/u2f_keys";
           cue = true; # Tells user they need to press the button if true
         };
