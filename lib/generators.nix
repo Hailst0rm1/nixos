@@ -27,6 +27,7 @@ in {
     myLocation = evaluatedSystem.config.myLocation;
     laptop = evaluatedSystem.config.laptop;
     redTools = evaluatedSystem.config.cyber.redTools.enable;
+    sops = evaluatedSystem.config.security.sops.enable;
 
     # Graphic driver
     nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
@@ -50,7 +51,7 @@ in {
               config.allowUnfree = true;
             };
 
-            inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled redTools; # Add config here that HM may rely on
+            inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled redTools sops; # Add config here that HM may rely on
           };
         }
       ];

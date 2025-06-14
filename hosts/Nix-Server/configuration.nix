@@ -129,6 +129,7 @@ in {
   i18n.defaultLocale = "en_GB.UTF-8";
 
   # Define a user account.
+  # Define a user account.
   users = {
     mutableUsers = lib.mkIf config.security.sops.enable false; # All config, even password, is dedicated by nixconf
     users.${config.username} = {
@@ -142,6 +143,7 @@ in {
       initialPassword = lib.mkIf (!config.security.sops.enable) "t";
       hashedPasswordFile = lib.mkIf config.security.sops.enable config.sops.secrets."passwords/${config.username}".path;
     };
+    users.root.hashedPassword = "$6$hj1dq/o8R3.U36Qh$UBNAolzIrKQZJWUdEgtjLDETjkiBHXPwKRUWxrp801bgw.3u72fDzYtOmd8hz8y/fiz.pUenfIJuImCld1ucB1";
   };
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,

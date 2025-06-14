@@ -16,7 +16,7 @@ in {
       # Disk partitioning
       inputs.disko.nixosModules.disko
       ../../nixosModules/system/bootloader.nix
-      ../../disko/${diskoConfig}.nix 
+      ../../disko/${diskoConfig}.nix
       {
         _module.args.device = device; # Sets the installation disk on disko-install
       }
@@ -116,22 +116,22 @@ in {
   i18n.defaultLocale = "en_GB.UTF-8";
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.${config.username} = {
-    isNormalUser = true;
-    extraGroups = ["docker" "sudo" "networkmanager" "wheel"]; # Enable ‘sudo’ for the user.
-    # hashedPasswordFile = config.sops.secrets."${config.username}-password".path;
-    initialPassword = "t";
+  # Define a user account.
+  users = {
+    mutableUsers = lib.mkIf config.security.sops.enable false; # All config, even password, is dedicated by nixconf
+    users.${config.username} = {
+      isNormalUser = true;
+      extraGroups = [
+        "sudo"
+        "docker"
+        "networkmanager"
+        "wheel"
+      ];
+      initialPassword = lib.mkIf (!config.security.sops.enable) "t";
+      hashedPasswordFile = lib.mkIf config.security.sops.enable config.sops.secrets."passwords/${config.username}".path;
+    };
+    users.root.hashedPassword = "$6$hj1dq/o8R3.U36Qh$UBNAolzIrKQZJWUdEgtjLDETjkiBHXPwKRUWxrp801bgw.3u72fDzYtOmd8hz8y/fiz.pUenfIJuImCld1ucB1";
   };
-
-  # # # # # # # # # # # !!!!!! # # # # # # # # # #
-  # UNCOMMENT THIS SECTION WHILE INSTALLING      #
-  #                                              #
-  #security.pam = {
-  #  u2f.enable = lib.mkForce false;
-  #  services.login.u2fAuth = lib.mkForce false;
-  #  services.login.u2fAuth = lib.mkForce false;
-  #}
-  # # # # # # # # # # # !!!!!! # # # # # # # # # #
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
   # and migrated your data accordingly.

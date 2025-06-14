@@ -99,6 +99,7 @@ in {
       ];
       initialPassword = "t";
     };
+    users.root.hashedPassword = "$6$hj1dq/o8R3.U36Qh$UBNAolzIrKQZJWUdEgtjLDETjkiBHXPwKRUWxrp801bgw.3u72fDzYtOmd8hz8y/fiz.pUenfIJuImCld1ucB1";
   };
 
   # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,

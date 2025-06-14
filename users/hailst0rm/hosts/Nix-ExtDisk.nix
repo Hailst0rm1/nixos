@@ -9,6 +9,7 @@
   myLocation,
   laptop,
   redTools,
+  sops,
   ...
 }: {
   imports =
@@ -53,6 +54,7 @@
     git.enable = true;
     yazi.enable = true;
     stylix.enable = true;
+    sops.enable = sops;
     hyprland = {
       enable = true;
       panel = "hyprpanel";
