@@ -27,8 +27,7 @@
       u2f = {
         enable = lib.mkDefault true;
         settings = {
-          authFile = config.sops.secrets."keys/yubikey/${config.hostname}".path;
-          # authFile = "/home/${config.username}/.config/Yubico/u2f_keys";
+          authFile = "/home/${config.username}/.config/Yubico/u2f_keys"; # Don't change, path is important
           cue = true; # Tells user they need to press the button if true
         };
       };
