@@ -74,33 +74,37 @@ sudo nix run 'github:nix-community/disko/latest#disko-install' --extra-experimen
   - Mount will mount the disk before installing.
     - Mount is useful for updating an existing system without losing data.
 
-## Method 2: Disko + NixOS install
+## Method 2: Disko-Install with minimal installation
 
 **Use case:** This is meant for when you have a large configuration that you don't want to crash during the installation process - or is not certain if it will boot after a finished installation.
 
 Download disko config:
 ```shell
-wget https://raw.githubusercontent.com/Hailst0rm1/nixos/refs/heads/master/disko/default.nix -O disko.nix
+git clone https://github.com/hailst0rm1/nixos
 ```
-> Change from `default` if another disko config
 
-
+Only generate hardware config:
 ```shell
-  sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --argstr device <target-disk> disko.nix
+sudo nixos-generate-config --no-filesystems --show-hardware-config >> nixos/hosts/Nix-Minimal/hardware-configuration.nix
 ```
+
+Change device in `hosts/Nix-Minimal/configuration.nix`
 > Get `target-disk` with `lsblk` to determine correct disk
 
-Import minimal configuration:
+Run installation:
 ```shell
-mv disko.nix /mnt/etc/nixos
-sudo nixos-generate-config --show-hardware-config >> /mnt/etc/nixos/hardware-configuration.nix
-wget https://raw.githubusercontent.com/Hailst0rm1/nixos/refs/heads/master/disko/minimal.nix -O /mnt/etc/nixos/configuration.nix
+sudo nix run 'github:nix-community/disko/latest#disko-install' --extra-experimental-features "flakes nix-command" --cores 8 -j 1 -- --flake nixos#Nix-Minimal --write-efi-boot-entries --disk x2000-<device> /dev/<device> --mode format
+sudo nix run 'github:nix-community/disko/latest#disko-install' --extra-experimental-features "flakes nix-command" --cores 8 -j 1 -- --flake nixos#Nix-Minimal --write-efi-boot-entries --disk x2000-<device> /dev/<device> --mode mount
 ```
+> Note: The script isn't perfect - for me, the best approach was running format mode first allows me to set the passwords/yubis, then let it fail. Then run with mount to install the files.
 
-Finish the installation and reboot:
+- --write-efi-boot-entries : Write EFI boot entries to the NVRAM of the system for the installed system. Specify this option if you plan to boot from this disk on the current machine, but not if you plan to move the disk to another machine.
+
+Now reboot and finish the installation:
 ```shell
-nixos-install
-reboot
+git clone https://github.com/hailst0rm1/nixos
+mv nixos .nixos
+sudo nixos-rebuild boot --cores 8 -j 1 --flake .nixos#<Hostname>
 ```
 
 
