@@ -42,8 +42,6 @@ in {
   removableMedia = true;
   myLocation = "Barkarby";
 
-  nixpkgs.hostPlatform = config.systemArch;
-
   # desktop/default.nix
   # Gnome is default
   desktopEnvironment.name = "gnome";
@@ -66,7 +64,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    # bootloader = "grub";
+    bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
       enable = true;
