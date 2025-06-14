@@ -39,7 +39,10 @@ My setup:
 4. Activate swap partition: `swapon /dev/sdx2`
 5. Expand the root and nix-store: `mount -o remount,size=35G,noatime /nix/.rw-store && mount -o remount,size=25G,noatime /`
 
-## Disko-install (local installation)
+## Method 1: Disko-install
+
+**Warning:** This method formats the disk and installs your entire nixos configuration in one step. This is meant for *local installation* that are *minimal enough* not to crash the installation. For a more safe method where you *format the disk first* and finish the installation on the targeted hardware, look at Method 2.
+
 
 ```shell
 sudo nix run 'github:nix-community/disko/latest#disko-install' --extra-experimental-features "flakes nix-command" --cores 8 -j 1 -- --flake github:hailst0rm1/nixos#<Hostname-in-Flake> --write-efi-boot-entries --disk x2000-<device> /dev/<device>
@@ -71,14 +74,41 @@ sudo nix run 'github:nix-community/disko/latest#disko-install' --extra-experimen
   - Mount will mount the disk before installing.
     - Mount is useful for updating an existing system without losing data.
 
-### VMWare error
+## Method 2: Disko + NixOS install
 
-VMWare changed their download link to be behind a loginpage, thus we have to download it and manually put it into the nix-store:
+**Use case:** This is meant for when you have a large configuration that you don't want to crash during the installation process - or is not certain if it will boot after a finished installation.
 
-1. Repo: https://github.com/liberodark/vmware/releases
-2. Run: `nix-store --add-fixed sha256 VMWARE.BUNDLE`
+Download disko config:
+```shell
+wget https://raw.githubusercontent.com/Hailst0rm1/nixos/refs/heads/master/disko/default.nix -o disko.nix
+```
+> Change from `default` if another disko config
 
-## Nixos-anywhere (remote install via ssh) - NOT TESTED NOR FINISHED
+
+```shell
+  sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount --argstr device <target-disk> disko.nix
+```
+> Get `target-disk` with `lsblk` to determine correct disk
+
+Import minimal configuration:
+```shell
+mv disko.nix /mnt/etc/nixos
+sudo nixos-generate-config --show-hardware-config >> /mnt/etc/nixos/hardware-configuration.nix
+wget https://raw.githubusercontent.com/Hailst0rm1/nixos/refs/heads/master/disko/minimal.nix -o /mnt/etc/nixos/configuration.nix
+```
+
+Finish the installation and reboot:
+```shell
+nixos-install
+reboot
+```
+
+
+## Method 3: Nixos-anywhere 
+
+**Warning:** This method has not yet been tested by me.
+
+**Use case:** Remote install via SSH - e.g. install to a cloud provider.
 
 ```
 nix run github:nix-community/nixos-anywhere -- --flake <path to configuration>#<configuration name> --target-host root@<ip address>
@@ -88,6 +118,12 @@ nix run github:nix-community/nixos-anywhere -- --flake <path to configuration>#<
 - [Secrets](https://github.com/nix-community/nixos-anywhere/blob/main/docs/howtos/secrets.md)
 - [Copy files to installation](https://github.com/nix-community/nixos-anywhere/blob/main/docs/howtos/extra-files.md)
 
+## VMWare error
+
+VMWare changed their download link to be behind a loginpage, thus we have to download it and manually put it into the nix-store:
+
+1. Repo: https://github.com/liberodark/vmware/releases
+2. Run: `nix-store --add-fixed sha256 VMWARE.BUNDLE`
 
 # Secrets (sops-nix)
 
