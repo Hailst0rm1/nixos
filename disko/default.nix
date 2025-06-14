@@ -1,7 +1,6 @@
 {
   device ? "sda", # The target disk device (e.g. "sda", "nvme0n1"); can be overridden
-  pkgs, # Nixpkgs set, required for accessing utilities like 'gum'
-  lib,
+  pkgs ? import <nixpkgs> {}, # Nixpkgs set, required for accessing utilities like 'gum'
   ...
 }: let
   luksLabel = "luks-x2000-${device}"; # Label for the LUKS-encrypted partition
