@@ -80,7 +80,7 @@ sudo nix run 'github:nix-community/disko/latest#disko-install' --extra-experimen
 
 Download disko config:
 ```shell
-wget https://raw.githubusercontent.com/Hailst0rm1/nixos/refs/heads/master/disko/default.nix -o disko.nix
+wget https://raw.githubusercontent.com/Hailst0rm1/nixos/refs/heads/master/disko/default.nix -O disko.nix
 ```
 > Change from `default` if another disko config
 
@@ -94,7 +94,7 @@ Import minimal configuration:
 ```shell
 mv disko.nix /mnt/etc/nixos
 sudo nixos-generate-config --show-hardware-config >> /mnt/etc/nixos/hardware-configuration.nix
-wget https://raw.githubusercontent.com/Hailst0rm1/nixos/refs/heads/master/disko/minimal.nix -o /mnt/etc/nixos/configuration.nix
+wget https://raw.githubusercontent.com/Hailst0rm1/nixos/refs/heads/master/disko/minimal.nix -O /mnt/etc/nixos/configuration.nix
 ```
 
 Finish the installation and reboot:
