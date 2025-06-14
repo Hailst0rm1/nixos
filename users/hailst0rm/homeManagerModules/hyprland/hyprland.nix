@@ -1,5 +1,6 @@
 {
   pkgs,
+  pkgs-unstable,
   lib,
   config,
   ...
@@ -305,7 +306,7 @@ in {
       (pkgs.${config.terminal})
 
       # ---Wallpaper
-      (pkgs.${cfg.wallpaper})
+      (pkgs-unstable.${cfg.wallpaper})
       waypaper # GUI wallpaper picker
       ffmpeg_6 # Video converter
 
