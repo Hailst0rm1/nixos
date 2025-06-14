@@ -5,7 +5,7 @@
   lib,
   ...
 }: let
-  device = "sda"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`{
+  device = "sda"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
   diskoConfig = "default"; # Change this if you have another disko config
 in {
   imports =
