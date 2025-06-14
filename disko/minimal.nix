@@ -48,8 +48,18 @@ in {
     grub = {
       enable = true;
       efiSupport = true;
+      enableCryptodisk = true;
     };
     efi.canTouchEfiVariables = true;
+    efi.efiSysMountPoint = "/boot";
+    supportedFilesystems = {
+      ntfs = true;
+      btrfs = true;
+      luks = true;
+    };
+    extraModprobeConfig = ''
+      options snd slots=snd-hda-intel
+    '';
   };
 
   networking.hostName = "nixos"; # Define your hostname.
