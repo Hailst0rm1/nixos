@@ -1,5 +1,6 @@
 { config, lib, pkgs, ... }:let
   username = "hailst0rm";
+  device = "nvme0n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
   keymap = pkgs.writeText "keymap.xkb" ''
     partial alphanumeric_keys
     xkb_symbols "colemak-se" {
@@ -40,7 +41,11 @@ in {
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
        "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/master.tar.gz"}/module.nix"
-      ./disko.nix
+      ./disko.nix 
+      {
+        _module.args.device = device; # Sets the installation disk on disko-install
+      }
+
     ];
 
   # Use the grub boot loader
