@@ -29,6 +29,7 @@
       };
 
       secrets."passwords/${config.username}".neededForUsers = true; # User password
+      secrets."keys/yubikey/${config.username}" = {};
     };
   };
 }
