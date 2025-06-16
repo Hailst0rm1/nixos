@@ -37,7 +37,11 @@
         export VIDEO="${config.video}"
         export IMAGE="${config.image}"
         export OPENER="xdg-open"
-        export LAUNCHER="rofi"
+        export LAUNCHER="${
+          if config.importConfig.hyprland.enable
+          then config.importConfig.hyprland.appLauncher
+          else ""
+        }"
         export FLAKE="${config.nixosDir}" # For nh
         export GIT_EXTERNAL_DIFF="difft" # Using difftastic for git diffs
         export ZINIT_HOME="$HOME/.local/share/zsh/zinit"
