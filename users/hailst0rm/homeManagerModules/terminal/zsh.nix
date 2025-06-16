@@ -95,6 +95,10 @@
           git -C ~/.nixos push "$@"
         }
 
+        # Pull config to git wherever you are
+        nix-pull() {
+          git -C ~/.nixos pull "$@"
+        }
 
         # Source/Load Zinit
         source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null

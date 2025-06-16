@@ -41,7 +41,7 @@ in {
     };
 
     services.tumbler.enable = true; # Thumbnail generation for file-managers
-    services.gnome.gnome-keyring.enable = true;
+    # services.gnome.gnome-keyring.enable = true;
 
     # Hyprpanel dependencies
     services.gvfs.enable = true;
