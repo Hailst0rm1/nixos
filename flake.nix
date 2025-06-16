@@ -88,11 +88,16 @@
   outputs = inputs @ {self, ...}: let
     # Generator functions for Machines and VMs
     myLib = import ./lib/generators.nix {inherit inputs;};
+    system = "x86_64-linux";
   in
     with myLib; {
-      nixosConfigurations = {
-        # ===================== Physical Machines ===================== #
+      # ===================== DevShells (nix develop) ===================== #
 
+      devShells.${system} = import ./shell.nix {pkgs = inputs.nixpkgs.legacyPackages.${system};};
+
+      # ===================== Physical Machines ===================== #
+
+      nixosConfigurations = {
         # Home Workstation
         Nix-Workstation = mkSystem {hostname = "Nix-Workstation";};
 
