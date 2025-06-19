@@ -81,12 +81,13 @@ in {
         hashcat-utils
         john # CPU cracker
         hashid # Identify hash type (-m for hashcat mode value)
-        # responder # Rogue authentication server to obtain hashes
         python312Packages.impacket # ntmlrelayx.py: Relays ntml requests
         mimikatz
         (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
 
         # === Wordlists ===
+        cewl # Wordlist generator based on website
+        crunch # Easy wordlist generator
         wordlists # Note: This includes seclists
         # cd $(wordlists_path) # Go to wordlists
         # <command> $(wordlists_path)/rockyou.txt # Use wordlist
