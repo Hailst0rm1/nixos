@@ -57,132 +57,162 @@
             };
           };
         };
-        keys.normal = {
-          # Quick iteration on config changes
-          "C-o" = ":config-open";
-          "C-r" = ":config-reload";
+        keys = {
+          normal = {
+            # Faster navigation
+            "C-j" = ["goto_next_paragraph" "collapse_selection"];
+            "C-k" = ["goto_prev_paragraph" "collapse_selection"];
 
-          # Some nice Helix stuff
-          "C-h" = "select_prev_sibling";
-          "C-j" = "shrink_selection";
-          "C-k" = "expand_selection";
-          "C-l" = "select_next_sibling";
+            # Newlines without insert
+            "C-o" = ["open_below" "normal_mode"];
+            "C-O" = ["open_above" "normal_mode"];
 
-          # Personal preference
-          "o" = ["open_below" "normal_mode"];
-          "O" = ["open_above" "normal_mode"];
+            # Keep helix g-movement but make "h" non-whitespace
+            # Also add half page
+            "g" = {
+              "h" = ["goto_first_nonwhitespace" "collapse_selection"];
+              "k" = "page_cursor_half_up";
+              "j" = "page_cursor_half_down";
+            };
 
-          # Muscle memory
-          "{" = ["goto_prev_paragraph" "collapse_selection"];
-          "}" = ["goto_next_paragraph" "collapse_selection"];
-          "0" = "goto_line_start";
-          "$" = "goto_line_end";
-          "^" = "goto_first_nonwhitespace";
-          "G" = "goto_file_end";
-          "%" = "match_brackets";
-          "V" = ["select_mode" "extend_to_line_bounds"];
-          "C" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "delete_selection" "insert_mode"];
-          "D" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "delete_selection"];
-          "S" = "surround_add"; # Would be nice to be able to do something after this but it isn't chainable
+            # Personal preferenses
+            "m" = "match_brackets";
+            "S" = "surround_add"; # Would be nice to be able to do something after this but it isn't chainable
+            "Q" = "replay_macro";
 
-          # Clipboards over registers ye ye
-          "x" = "delete_selection";
-          "p" = ["paste_clipboard_after" "collapse_selection"];
-          "P" = ["paste_clipboard_before" "collapse_selection"];
-          # Would be nice to add ya and yi, but the surround commands can't be chained
-          "Y" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "collapse_selection"];
+            # Clipboards over registers
+            "x" = "delete_selection";
+            "p" = ["paste_clipboard_after" "collapse_selection"];
+            "P" = ["paste_clipboard_before" "collapse_selection"];
 
-          # Uncanny valley stuff, this makes w and b behave as they do Vim
-          "w" = ["move_next_word_start" "move_char_right" "collapse_selection"];
-          "W" = ["move_next_long_word_start" "move_char_right" "collapse_selection"];
-          "e" = ["move_next_word_end" "collapse_selection"];
-          "E" = ["move_next_long_word_end" "collapse_selection"];
-          "b" = ["move_prev_word_start" "collapse_selection"];
-          "B" = ["move_prev_long_word_start" "collapse_selection"];
+            # Search for word under cursor
+            "*" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_next"];
+            "#" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_prev"];
 
-          # Consider commenting these out to explore native Helix selection movement
-          "i" = ["insert_mode" "collapse_selection"];
-          "a" = ["append_mode" "collapse_selection"];
+            # Restoring VIM functionality
+            "V" = ["select_mode" "extend_to_line_bounds"];
+            "C" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "delete_selection" "insert_mode"];
+            "D" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "delete_selection"];
+            "Y" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "collapse_selection"];
+            "w" = ["move_next_word_start" "move_char_right" "collapse_selection"];
+            "W" = ["move_next_long_word_start" "move_char_right" "collapse_selection"];
+            "e" = ["move_next_word_end" "collapse_selection"];
+            "E" = ["move_next_long_word_end" "collapse_selection"];
+            "b" = ["move_prev_word_start" "collapse_selection"];
+            "B" = ["move_prev_long_word_start" "collapse_selection"];
+            "f" = ["find_next_char" "collapse_selection"];
+            "F" = ["find_prev_char" "collapse_selection"];
+            "t" = ["find_till_char" "collapse_selection"];
+            "T" = ["till_prev_char" "collapse_selection"];
+            "u" = ["undo" "collapse_selection"];
+            "esc" = ["collapse_selection" "keep_primary_selection"];
+            "/" = ["search" "select_mode"];
+            "?" = ["rsearch" "select_mode"];
+            "%" = ["select_all" "select_mode"];
+            # Consider commenting these out to explore native Helix selection movement
+            "i" = ["insert_mode" "collapse_selection"];
+            "a" = ["append_mode" "collapse_selection"];
+            "q" = "record_macro";
 
-          # Undoing the 'd' + motion commands restores the selection which is annoying
-          "u" = ["undo" "collapse_selection"];
+            d = {
+              "d" = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "delete_selection"];
+              "t" = ["extend_till_char"];
+              "s" = ["surround_delete"];
+              "i" = ["select_textobject_inner"];
+              "a" = ["select_textobject_around"];
+              "j" = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
+              "k" = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
 
-          # Escape the madness! No more fighting with the cursor! Or with multiple cursors!
-          "esc" = ["collapse_selection" "keep_primary_selection"];
+              # Never want to delete half word (diw -> dw / diW -> dW)
+              "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "delete_selection"];
+              "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "delete_selection"];
 
-          # Search for word under cursor
-          "*" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_next"];
-          "#" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_prev"];
+              # dip -> dp
+              "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard" "delete_selection"];
+            };
 
-          # Make j and k behave as they do Vim when soft-wrap is enabled
-          "j" = "move_line_down";
-          "k" = "move_line_up";
+            c = {
+              "c" = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "change_selection"];
+              "t" = ["extend_till_char"];
+              "s" = ["surround_delete"];
+              "i" = ["select_textobject_inner"];
+              "a" = ["select_textobject_around"];
+              "j" = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "change_selection" "normal_mode"];
+              "k" = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "change_selection" "normal_mode"];
 
-          d = {
-            d = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "delete_selection"];
-            t = ["extend_till_char"];
-            s = ["surround_delete"];
-            i = ["select_textobject_inner"];
-            a = ["select_textobject_around"];
-            j = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
-            down = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
-            k = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
-            up = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
-            G = ["select_mode" "extend_to_line_bounds" "goto_last_line" "extend_to_line_bounds" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
-            w = ["move_next_word_start" "yank_main_selection_to_clipboard" "delete_selection"];
-            W = ["move_next_long_word_start" "yank_main_selection_to_clipboard" "delete_selection"];
-            g.g = ["select_mode" "extend_to_line_bounds" "goto_file_start" "extend_to_line_bounds" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
+              # Never want to change half word (ciw -> cw / ciW -> cW)
+              "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "change_selection"];
+              "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "change_selection"];
+
+              # cip -> cp
+              "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard" "change_selection"];
+            };
+
+            y = {
+              "y" = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "normal_mode" "collapse_selection"];
+              "i" = ["select_textobject_inner"];
+              "a" = ["select_textobject_around"];
+              "j" = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
+              "k" = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
+
+              # Never want to change half word (ciw -> cw / ciW -> cW)
+              "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
+              "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
+
+              # yip -> yp
+              "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard"];
+            };
           };
 
-          y = {
-            y = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "normal_mode" "collapse_selection"];
-            j = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-            down = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-            k = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-            up = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-            G = ["select_mode" "extend_to_line_bounds" "goto_last_line" "extend_to_line_bounds" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-            w = ["move_next_word_start" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-            W = ["move_next_long_word_start" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-            g.g = ["select_mode" "extend_to_line_bounds" "goto_file_start" "extend_to_line_bounds" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
+          insert = {
+            "esc" = ["collapse_selection" "normal_mode"];
+            "C-c" = ["collapse_selection" "normal_mode"];
           };
-        };
 
-        insert = {
-          esc = ["collapse_selection" "normal_mode"];
-        };
+          select = {
+            # Personal preferences
+            "m" = "match_brackets";
+            "S" = "surround_add";
 
-        select = {
-          # Muscle memory
-          "{" = ["extend_to_line_bounds" "goto_prev_paragraph"];
-          "}" = ["extend_to_line_bounds" "goto_next_paragraph"];
-          "0" = "goto_line_start";
-          "$" = "goto_line_end";
-          "^" = "goto_first_nonwhitespace";
-          "G" = "goto_file_end";
-          "D" = ["extend_to_line_bounds" "delete_selection" "normal_mode"];
-          "C" = ["goto_line_start" "extend_to_line_bounds" "change_selection"];
-          "%" = "match_brackets";
-          "S" = "surround_add";
-          "u" = ["switch_to_lowercase" "collapse_selection" "normal_mode"];
-          "U" = ["switch_to_uppercase" "collapse_selection" "normal_mode"];
+            # Faster navigation
+            "C-j" = ["goto_next_paragraph"];
+            "C-k" = ["goto_prev_paragraph"];
 
-          i = "select_textobject_inner";
-          a = "select_textobject_around";
+            # Keep helix g-movement but make "h" non-whitespace
+            "g" = {
+              "h" = "goto_first_nonwhitespace";
+              "k" = "page_cursor_half_up";
+              "j" = "page_cursor_half_down";
+            };
 
-          tab = ["insert_mode" "collapse_selection"];
-          "C-a" = ["append_mode" "collapse_selection"];
+            # Restore VIM functionality (kinda)
+            "D" = ["extend_to_line_bounds" "delete_selection" "normal_mode"];
+            "Y" = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "goto_line_start" "collapse_selection" "normal_mode"];
+            "C" = ["goto_line_start" "extend_to_line_bounds" "change_selection"];
+            "u" = ["switch_to_lowercase" "collapse_selection" "normal_mode"];
+            "U" = ["switch_to_uppercase" "collapse_selection" "normal_mode"];
+            "k" = ["extend_line_up" "extend_to_line_bounds"];
+            "j" = ["extend_line_down" "extend_to_line_bounds"];
+            "d" = ["yank_main_selection_to_clipboard" "delete_selection"];
+            "x" = ["yank_main_selection_to_clipboard" "delete_selection"];
+            "y" = ["yank_main_selection_to_clipboard" "normal_mode" "flip_selections" "collapse_selection"];
+            "p" = "replace_selections_with_clipboard";
+            "P" = "paste_clipboard_before";
 
-          k = ["extend_line_up" "extend_to_line_bounds"];
-          j = ["extend_line_down" "extend_to_line_bounds"];
+            "i" = "select_textobject_inner";
+            "a" = "select_textobject_around";
 
-          d = ["yank_main_selection_to_clipboard" "delete_selection"];
-          x = ["yank_main_selection_to_clipboard" "delete_selection"];
-          y = ["yank_main_selection_to_clipboard" "normal_mode" "flip_selections" "collapse_selection"];
-          Y = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "goto_line_start" "collapse_selection" "normal_mode"];
-          p = "replace_selections_with_clipboard";
-          P = "paste_clipboard_before";
+            "tab" = ["insert_mode" "collapse_selection"];
+            "C-a" = ["append_mode" "collapse_selection"];
 
-          esc = ["collapse_selection" "keep_primary_selection" "normal_mode"];
+            # Add remove selection with "v"
+            "esc" = ["collapse_selection" "keep_primary_selection" "normal_mode"];
+            "v" = ["collapse_selection" "keep_primary_selection" "normal_mode"];
+
+            # Search like in vim
+            "n" = ["collapse_selection" "search_next"];
+            "N" = ["collapse_selection" "search_prev"];
+          };
         };
       };
 

@@ -22,6 +22,7 @@
           "super+shift+j=adjust_selection:down"
           "ctrl+p=paste_from_clipboard"
           "ctrl+y=copy_to_clipboard"
+          "super+shift+o=new_split:right"
         ];
       };
     };
