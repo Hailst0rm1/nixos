@@ -59,13 +59,13 @@
         };
         keys = {
           normal = {
-            # Faster navigation
+            # Faster navigation: Move paragraphs with Ctrl
             "C-j" = ["goto_next_paragraph" "collapse_selection"];
             "C-k" = ["goto_prev_paragraph" "collapse_selection"];
 
             # Newlines without insert
-            "C-o" = ["open_below" "normal_mode"];
-            "C-O" = ["open_above" "normal_mode"];
+            "o" = ["open_below" "normal_mode"];
+            "O" = ["open_above" "normal_mode"];
 
             # Keep helix g-movement but make "h" non-whitespace
             # Also add half page
@@ -84,10 +84,6 @@
             "x" = "delete_selection";
             "p" = ["paste_clipboard_after" "collapse_selection"];
             "P" = ["paste_clipboard_before" "collapse_selection"];
-
-            # Search for word under cursor
-            "*" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_next"];
-            "#" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_prev"];
 
             # Restoring VIM functionality
             "V" = ["select_mode" "extend_to_line_bounds"];
@@ -113,60 +109,70 @@
             "i" = ["insert_mode" "collapse_selection"];
             "a" = ["append_mode" "collapse_selection"];
             "q" = "record_macro";
+            # Search for word under cursor
+            "*" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_next"];
+            "#" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_prev"];
 
             d = {
               "d" = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "delete_selection"];
               "t" = ["extend_till_char"];
               "s" = ["surround_delete"];
-              "i" = ["select_textobject_inner"];
               "a" = ["select_textobject_around"];
               "j" = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
               "k" = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "delete_selection" "normal_mode"];
 
-              # Never want to delete half word (diw -> dw / diW -> dW)
-              "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "delete_selection"];
-              "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "delete_selection"];
-
-              # dip -> dp
-              "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard" "delete_selection"];
+              "i" = {
+                "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "delete_selection"];
+                "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "delete_selection"];
+                "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard" "delete_selection"];
+                "b" = ["match_brackets" "collapse_selection" "select_mode" "match_brackets" "yank_main_selection_to_clipboard" "delete_selection"];
+              };
             };
 
             c = {
               "c" = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "change_selection"];
               "t" = ["extend_till_char"];
               "s" = ["surround_delete"];
-              "i" = ["select_textobject_inner"];
               "a" = ["select_textobject_around"];
               "j" = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "change_selection" "normal_mode"];
               "k" = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "change_selection" "normal_mode"];
 
-              # Never want to change half word (ciw -> cw / ciW -> cW)
-              "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "change_selection"];
-              "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "change_selection"];
-
-              # cip -> cp
-              "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard" "change_selection"];
+              "i" = {
+                "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "change_selection"];
+                "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "change_selection"];
+                "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard" "change_selection"];
+                "b" = ["match_brackets" "collapse_selection" "select_mode" "match_brackets" "yank_main_selection_to_clipboard" "change_selection"];
+              };
             };
 
             y = {
               "y" = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "normal_mode" "collapse_selection"];
-              "i" = ["select_textobject_inner"];
-              "a" = ["select_textobject_around"];
               "j" = ["select_mode" "extend_to_line_bounds" "extend_line_below" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
+              "a" = ["select_textobject_around"];
               "k" = ["select_mode" "extend_to_line_bounds" "extend_line_above" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
 
-              # Never want to change half word (ciw -> cw / ciW -> cW)
-              "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-              "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
-
-              # yip -> yp
-              "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard"];
+              "i" = {
+                "w" = ["move_prev_word_start" "collapse_selection" "move_next_word_start" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
+                "W" = ["move_prev_long_word_start" "collapse_selection" "move_next_long_word_start" "yank_main_selection_to_clipboard" "collapse_selection" "normal_mode"];
+                "p" = ["goto_prev_paragraph" "collapse_selection" "select_mode" "goto_next_paragraph" "yank_main_selection_to_clipboard"];
+                "b" = ["match_brackets" "collapse_selection" "select_mode" "match_brackets" "yank_main_selection_to_clipboard"];
+              };
             };
           };
 
           insert = {
             "esc" = ["collapse_selection" "normal_mode"];
             "C-c" = ["collapse_selection" "normal_mode"];
+            "C-n" = ["collapse_selection" "normal_mode"];
+            "C-a" = ["goto_line_end"];
+            "C-i" = ["goto_first_nonwhitespace"];
+            "C-b" = ["move_prev_word_start"];
+            "C-w" = ["move_next_word_start"];
+            "C-l" = ["move_char_right"];
+            "C-h" = ["move_char_left"];
+            "C-d" = ["delete_char_forward"];
+            "C-u" = ["undo"];
+            "C-y" = ["redo"];
           };
 
           select = {
