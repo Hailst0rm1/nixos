@@ -19,7 +19,7 @@ in {
     home.packages = [hyprlock-blur];
 
     wayland.windowManager.hyprland.settings.bind = [
-      "SUPER, L, exec, hyprlock-blur"
+      "SUPER, ESCAPE, exec, hyprlock-blur"
     ];
 
     home.sessionVariables = {
