@@ -67,13 +67,15 @@
             "o" = ["open_below" "normal_mode"];
             "O" = ["open_above" "normal_mode"];
 
-            # Keep helix g-movement but make "h" non-whitespace
-            # Also add half page
+            # Add half page
             "g" = {
-              "h" = ["goto_first_nonwhitespace" "collapse_selection"];
               "k" = "page_cursor_half_up";
               "j" = "page_cursor_half_down";
             };
+
+            # Make beginning/end of line more intuitive with H/L
+            "H" = ["goto_first_nonwhitespace" "collapse_selection"];
+            "L" = ["goto_line_end"];
 
             # Personal preferenses
             "m" = "match_brackets";
@@ -186,10 +188,13 @@
 
             # Keep helix g-movement but make "h" non-whitespace
             "g" = {
-              "h" = "goto_first_nonwhitespace";
               "k" = "page_cursor_half_up";
               "j" = "page_cursor_half_down";
             };
+
+            # Make beginning/end of line more intuitive with H/L
+            "H" = "goto_first_nonwhitespace";
+            "L" = "goto_line_end";
 
             # Restore VIM functionality (kinda)
             "D" = ["extend_to_line_bounds" "delete_selection" "normal_mode"];
