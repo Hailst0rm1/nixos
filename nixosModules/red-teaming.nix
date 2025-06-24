@@ -21,8 +21,8 @@
         pen-200 = {
           enable = true;
           type = "socks5";
-          host = "192.168.173.63";
-          port = 1337;
+          host = "127.0.0.1";
+          port = 443;
         };
       };
     };
