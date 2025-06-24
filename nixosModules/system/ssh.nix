@@ -2,9 +2,7 @@
   config,
   lib,
   ...
-}: let
-  pubKeys = lib.filesystem.listFilesRecursive ./keys;
-in {
+}: {
   programs.ssh = {
     startAgent = true;
     enableAskPassword = false;
@@ -38,5 +36,11 @@ in {
   };
 
   # Allows these users to SSH into the machine (All the public keys in ./keys)
-  users.users.${config.username}.openssh.authorizedKeys.keys = lib.mkIf config.services.openssh.enable lib.lists.forEach pubKeys (key: builtins.readFile key);
+  # users.users.${config.username}.openssh.authorizedKeys.keys = lib.mkIf config.services.openssh.enable lib.lists.forEach ./keys (key: builtins.readFile key);
+  users.users.${config.username}.openssh.authorizedKeys.keys = lib.mkIf config.services.openssh.enable (
+    lib.forEach (builtins.attrNames (builtins.readDir ./keys)) (
+      keyFile:
+        builtins.readFile (./keys + "/${keyFile}")
+    )
+  );
 }
