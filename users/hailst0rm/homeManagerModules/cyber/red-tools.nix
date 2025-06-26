@@ -18,6 +18,7 @@ in {
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
+        "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
       };
       sessionVariables = {
       };
@@ -84,6 +85,9 @@ in {
         python312Packages.impacket # ntmlrelayx.py: Relays ntml requests
         mimikatz
         (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
+
+        # === Command & Control (C2) ===
+        ligolo-ng #  Tunneling/pivoting tool that uses a TUN interface
 
         # === Wordlists ===
         cewl # Wordlist generator based on website

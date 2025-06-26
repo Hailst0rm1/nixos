@@ -63,6 +63,7 @@
         q = "exit";
         ":q" = "exit";
         nix-edit = "yazi ${config.nixosDir}";
+        yz = "yazi";
 
         # Modern commands
         ls = "lsd";
