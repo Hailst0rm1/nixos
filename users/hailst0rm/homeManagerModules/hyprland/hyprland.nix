@@ -63,7 +63,7 @@ in {
             enabled = true;
             range = 5;
             render_power = 3;
-            color = lib.mkForce "rgb(${cfg.accentColourHex})";
+            color = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";
             color_inactive = lib.mkForce "rgb(1e1e2e)";
           };
         };
