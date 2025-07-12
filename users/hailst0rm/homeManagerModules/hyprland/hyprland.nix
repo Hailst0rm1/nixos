@@ -63,7 +63,7 @@ in {
             enabled = true;
             range = 5;
             render_power = 3;
-            color = lib.mkForce "rgb(89b4fa)";
+            color = lib.mkForce "rgb(${cfg.accentColourHex})";
             color_inactive = lib.mkForce "rgb(1e1e2e)";
           };
         };
@@ -156,6 +156,7 @@ in {
 
             # Applications
             "$mainMod, return, exec, ${config.terminal}"
+            "$mainMod, P, exec, hyprpicker -alq"
             "$mainMod, SPACE, exec, ${cfg.appLauncher} -show drun"
             "$mainMod, R, exec, ${cfg.appLauncher} -show run"
             "$mainMod, W, exec, ${cfg.appLauncher} -show window"

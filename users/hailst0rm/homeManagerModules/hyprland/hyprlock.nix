@@ -38,8 +38,8 @@ in {
     home.file.".config/hypr/hyprlock.conf".text = ''
       source = $HOME/.config/hypr/mocha.conf
 
-      $accent = $blue
-      $accentAlpha = $blueAlpha
+      $accent = $$${config.importConfig.hyprland.accentColour}
+      $accentAlpha = $$${config.importConfig.hyprland.accentColour}Alpha
       $font = ${font_family}
 
       # GENERAL

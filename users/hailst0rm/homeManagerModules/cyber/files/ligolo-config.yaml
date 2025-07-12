@@ -3,10 +3,9 @@ agent:
         autobind: true
         interface: ligolo
 interface:
-    ligolosample:
+    ligolo:
         routes:
-            - 10.254.0.0/24
-            - 10.255.0.0/24
+            - 10.4.133.0/24
 web:
     behindreverseproxy: false
     corsallowedorigin:

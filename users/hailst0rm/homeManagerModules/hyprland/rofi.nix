@@ -34,7 +34,7 @@
         * {
             bg-col:  #1e1e2e;
             bg-col-light: #1e1e2e;
-            border-col: #89b4fa;
+            border-col: ${config.importConfig.hyprland.accentColourHex};
             selected-col: #1e1e2e;
             blue: #89b4fa;
             fg-col: #cdd6f4;

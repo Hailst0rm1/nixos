@@ -19,11 +19,11 @@
 
     # Hyprland
     hyprland.url = "github:hyprwm/Hyprland";
-    hyprpanel = {
-      # url = "github:Jas-SinghFSU/HyprPanel";
-      url = "github:Jas-SinghFSU/HyprPanel?rev=94a00a49dae15c87e4234c9962295aed2b0dc45e";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # hyprpanel = {
+    #   # url = "github:Jas-SinghFSU/HyprPanel";
+    #   url = "github:Jas-SinghFSU/HyprPanel?rev=94a00a49dae15c87e4234c9962295aed2b0dc45e";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
     # Generators for building isos and VMs
     nixos-generators = {

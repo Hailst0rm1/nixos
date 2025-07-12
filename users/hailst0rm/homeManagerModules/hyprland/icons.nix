@@ -10,7 +10,7 @@
       iconTheme.name = "Papirus-Dark";
       iconTheme.package = pkgs.catppuccin-papirus-folders.override {
         flavor = "mocha";
-        accent = "blue";
+        accent = "${config.importConfig.hyprland.accentColour}";
       };
     };
   };

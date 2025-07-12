@@ -86,7 +86,7 @@ in {
           {
             nixpkgs.overlays =
               [
-                inputs.hyprpanel.overlay
+                # inputs.hyprpanel.overlay
               ]
               ++ overlays;
           }
