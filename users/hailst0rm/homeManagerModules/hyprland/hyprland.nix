@@ -49,6 +49,8 @@ in {
 
           layout = "master";
           #layout = "dwindle";
+
+          "col.active_border" = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";
         };
 
         decoration = {

@@ -36,7 +36,7 @@
             bg-col-light: #1e1e2e;
             border-col: ${config.importConfig.hyprland.accentColourHex};
             selected-col: #1e1e2e;
-            blue: #89b4fa;
+            accent: ${config.importConfig.hyprland.accentColourHex};
             fg-col: #cdd6f4;
             fg-col2: #f38ba8;
             grey: #6c7086;
@@ -70,7 +70,7 @@
         }
 
         prompt {
-            background-color: @blue;
+            background-color: @accent;
             padding: 6px;
             text-color: @bg-col;
             border-radius: 3px;
@@ -127,7 +127,7 @@
 
         button selected {
           background-color: @bg-col;
-          text-color: @blue;
+          text-color: @accent;
         }
 
         message {
@@ -140,7 +140,7 @@
         textbox {
             padding: 6px;
             margin: 20px 0px 0px 20px;
-            text-color: @blue;
+            text-color: @accent;
             background-color: @bg-col-light;
         }
       '';
