@@ -1,4 +1,5 @@
 {
+  pkgs,
   lib,
   config,
   nvidiaEnabled,
@@ -474,5 +475,29 @@ in {
         "theme.notification.background" = "${mantle}";
       };
     };
+    home.packages = with pkgs; [
+      # ---Forced
+      ags
+      wireplumber
+      libgtop
+      bluez
+      bluez-tools
+      networkmanager
+      dart-sass
+      wl-clipboard
+      upower
+      gvfs
+
+      # ---Optional
+
+      # Tracking GPU Usage
+      python313Packages.gpustat
+
+      # To control screen/keyboard brightness
+      brightnessctl
+
+      # Power
+      power-profiles-daemon
+    ];
   };
 }

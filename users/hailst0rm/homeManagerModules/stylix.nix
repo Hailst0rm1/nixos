@@ -25,6 +25,7 @@ in {
         ghostty.enable = true;
         helix.enable = false;
         neovim.enable = false;
+        # yazi.enable = false;
         #nixcord.enable = true; On next release or when backported
       };
     };

@@ -306,7 +306,7 @@ in {
       (pkgs.${cfg.panel})
 
       # ---Terminal
-      (pkgs.${config.terminal})
+      #(pkgs.${config.terminal})
 
       # ---Wallpaper
       (pkgs-unstable.${cfg.wallpaper})
