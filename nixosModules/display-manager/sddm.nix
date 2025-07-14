@@ -12,7 +12,7 @@ in {
         flavor = "mocha";
         font = "Rubik";
         fontSize = "9";
-        background = "${../wallpapers/mountain.jpg}";
+        background = "${config.nixosDir}/assets/images/mountain.jpg}";
         loginBackground = true;
       })
     ];

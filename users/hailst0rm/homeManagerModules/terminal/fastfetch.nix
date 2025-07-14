@@ -11,7 +11,7 @@
       settings = {
         logo = {
           padding.top = 1;
-          source = "${../wallpapers/nixos-logo.png}";
+          source = "${config.nixosDir}/assets/images/nixos-logo.png";
           height = 22;
         };
         display = {

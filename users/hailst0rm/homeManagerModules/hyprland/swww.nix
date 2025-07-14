@@ -4,12 +4,39 @@
   lib,
   ...
 }: let
+  accent = config.importConfig.hyprland.accentColour;
+
+  # Mapping accent color name to category
+  accentMap = {
+    rosewater = "pink";
+    flamingo = "pink";
+    pink = "pink";
+    mauve = "pink";
+    lavender = "pink";
+
+    red = "red";
+    maroon = "red";
+    peach = "red";
+
+    yellow = "yellow";
+
+    green = "green";
+    teal = "green";
+
+    sky = "blue";
+    sapphire = "blue";
+    blue = "blue";
+  };
+
+  # Look up the category (fail with helpful error if undefined)
+  accentCategory = lib.attrByPath [accent] (throw "Unknown accentColour: ${accent}") accentMap;
+
   startSwww = pkgs.writeShellScriptBin "start" ''
     # Wallpaper
     swww-daemon &
     set -e
     while true; do
-      BG=`find ${../wallpapers} -name "*.gif" | shuf -n1`
+      BG=`find ${config.nixosDir}/assets/wallpapers/${accentCategory} -name "*.gif" | shuf -n1`
       if pgrep swww-daemon >/dev/null; then
         swww img "$BG" \
           --transition-fps 60 \

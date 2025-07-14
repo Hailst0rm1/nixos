@@ -57,7 +57,7 @@
     sops.enable = sops;
     hyprland = {
       enable = true;
-      accentColour = "mauve";
+      accentColour = "yellow";
       panel = "hyprpanel";
       lockscreen = "hyprlock";
       appLauncher = "rofi";

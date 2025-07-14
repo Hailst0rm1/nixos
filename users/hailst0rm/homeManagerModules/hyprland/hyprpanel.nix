@@ -67,7 +67,7 @@ in {
             weather.location = config.myLocation;
           };
           dashboard = {
-            powermenu.avatar.image = "${../wallpapers/nixos-logo.png}";
+            powermenu.avatar.image = "${config.nixosDir}/assets/images/nixos-logo.png";
             stats.enable_gpu = lib.mkDefault nvidiaEnabled;
             controls.enabled = false;
             shortcuts.enabled = false;

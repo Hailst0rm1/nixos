@@ -28,7 +28,7 @@ in {
     stylix = {
       enable = true;
       base16Scheme = "${pkgs.base16-schemes}/share/themes/${cfg.name}.yaml";
-      image = ../wallpapers/nixos-logos.png;
+      image = ../../assets/images/nixos-logos.png;
       polarity = "${cfg.polarity}";
       # opacity = {
       #   applications = lib.mkForce 0.5;
