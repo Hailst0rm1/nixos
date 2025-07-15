@@ -6,6 +6,7 @@
   ...
 }: let
   device = "nvme0n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+  diskoConfig = "server";
 in {
   imports =
     [
@@ -14,11 +15,11 @@ in {
 
       # NixOS-Hardware - Seem to not work properly on this system?
       # List: https://github.com/NixOS/nixos-hardware/blob/master/flake.nix
-      # inputs.nixos-hardware.nixosModules.common-cpu-intel
+      inputs.nixos-hardware.nixosModules.common-cpu-intel
       # inputs.nixos-hardware.nixosModules.common-gpu-nvidia
-      # inputs.nixos-hardware.nixosModules.common-gpu-intel
-      # inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
-      inputs.nixos-hardware.nixosModules.dell-precision-5530
+      inputs.nixos-hardware.nixosModules.common-gpu-intel
+      inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
+      # inputs.nixos-hardware.nixosModules.dell-precision-5530
 
       # Secrets
       inputs.sops-nix.nixosModules.sops
@@ -26,7 +27,7 @@ in {
       # Disk partitioning
       inputs.disko.nixosModules.disko
       ../../nixosModules/system/bootloader.nix
-      ./disks.nix
+      ../../disko/${diskoConfig}.nix
       {
         _module.args.device = device; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
       }
@@ -37,11 +38,7 @@ in {
     (n: lib.strings.hasSuffix ".nix" n)
     (lib.filesystem.listFilesRecursive ../../nixosModules);
 
-  # === TEMPORARY ===
-
-  # Enables editing of hosts
-  environment.etc.hosts.enable = false;
-  environment.etc.hosts.mode = "0700";
+  # === System Specific ===
 
   # ===
 
@@ -55,15 +52,15 @@ in {
   myLocation = "Barkarby";
 
   # Red Teaming config
-  cyber.redTools.enable = true;
+  cyber.redTools.enable = false;
 
   # desktop/default.nix
   # Gnome is default
-  desktopEnvironment.name = "hyprland";
+  desktopEnvironment.name = "";
 
   # Display manager are currently built in the other desktops beside hyprland
   desktopEnvironment.displayManager = {
-    enable = true;
+    enable = false;
     name = "sddm";
   };
 
@@ -88,10 +85,10 @@ in {
 
   system = {
     kernel = "zen";
-    bootloader = "grub";
+    bootloader = "systemd";
     keyboard.colemak-se = true;
     theme = {
-      enable = true;
+      enable = false;
       name = "catppuccin-mocha";
     };
     automatic = {
@@ -113,7 +110,7 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
-    openssh.enable = false;
+    openssh.enable = true;
     mattermost.enable = false;
     ollama.enable = false;
     open-webui.enable = false; # UI for local AI
@@ -129,7 +126,6 @@ in {
   i18n.defaultLocale = "en_GB.UTF-8";
 
   # Define a user account.
-  # Define a user account.
   users = {
     mutableUsers = lib.mkIf config.security.sops.enable false; # All config, even password, is dedicated by nixconf
     users.${config.username} = {
@@ -140,8 +136,8 @@ in {
         "networkmanager"
         "wheel"
       ];
-      initialPassword = lib.mkIf (!config.security.sops.enable) "t";
-      hashedPasswordFile = lib.mkIf config.security.sops.enable config.sops.secrets."passwords/${config.username}".path;
+      initialPassword = "t";
+      # hashedPasswordFile = lib.mkIf config.security.sops.enable config.sops.secrets."passwords/${config.username}".path;
     };
     users.root.hashedPassword = "$6$hj1dq/o8R3.U36Qh$UBNAolzIrKQZJWUdEgtjLDETjkiBHXPwKRUWxrp801bgw.3u72fDzYtOmd8hz8y/fiz.pUenfIJuImCld1ucB1";
   };

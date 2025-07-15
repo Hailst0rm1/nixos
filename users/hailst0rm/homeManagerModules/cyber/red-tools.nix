@@ -18,8 +18,16 @@ in {
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
-        "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
+        # "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
       };
+
+      # Allows me to bypass read-only fs
+      activation.copyLigoloConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+        mkdir -p "${config.home.homeDirectory}/cyber/ligolo"
+        cp -f ${builtins.toPath ./files/ligolo-config.yaml} "${config.home.homeDirectory}/ligolo.yaml"
+        chmod 666 "${config.home.homeDirectory}/ligolo.yaml"
+      '';
+
       sessionVariables = {
       };
       packages = with pkgs-unstable; [
@@ -67,6 +75,8 @@ in {
 
         # === Initial Access ===
         metasploit
+        ruby # Dependency
+        postgresql_18 # Dependency for MSFDB
 
         # === Execution ===
         python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
@@ -75,6 +85,7 @@ in {
         samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
         evil-winrm # WinRM shell for hacking/pentesting
         (pkgs.netexec)
+        ligolo-ng #  Tunneling/pivoting tool that uses a TUN interface
 
         # === Credential Access ===
         thc-hydra # Brute force
@@ -87,7 +98,6 @@ in {
         (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
 
         # === Command & Control (C2) ===
-        ligolo-ng #  Tunneling/pivoting tool that uses a TUN interface
 
         # === Wordlists ===
         cewl # Wordlist generator based on website

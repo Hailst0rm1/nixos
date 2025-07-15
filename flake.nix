@@ -118,6 +118,9 @@
 
         # Nix-Installer
         Nix-Installer = mkSystem {hostname = "Nix-Installer";};
+
+        # Nix-Server
+        Nix-Server = mkSystem {hostname = "Nix-Server";};
       };
 
       # ===================== VM:s + ISO ===================== #
