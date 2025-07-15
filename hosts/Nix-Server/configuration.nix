@@ -25,12 +25,12 @@ in {
       inputs.sops-nix.nixosModules.sops
 
       # Disk partitioning
-      inputs.disko.nixosModules.disko
-      ../../nixosModules/system/bootloader.nix
-      ../../disko/${diskoConfig}.nix
-      {
-        _module.args.device = device; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
-      }
+      # inputs.disko.nixosModules.disko
+      # ../../nixosModules/system/bootloader.nix
+      # ../../disko/${diskoConfig}.nix
+      # {
+      #   _module.args.device = device; # Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+      # }
 
       # Recursively imports all nixosModules
     ]
