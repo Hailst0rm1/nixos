@@ -19,11 +19,6 @@
 
     # Hyprland
     hyprland.url = "github:hyprwm/Hyprland";
-    # hyprpanel = {
-    #   # url = "github:Jas-SinghFSU/HyprPanel";
-    #   url = "github:Jas-SinghFSU/HyprPanel?rev=94a00a49dae15c87e4234c9962295aed2b0dc45e";
-    #   inputs.nixpkgs.follows = "nixpkgs";
-    # };
 
     # Generators for building isos and VMs
     nixos-generators = {
@@ -45,7 +40,7 @@
       url = "github:danth/stylix/release-25.05";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        home-manager.follows = "home-manager";
+        # home-manager.follows = "home-manager";
       };
     };
 
@@ -81,12 +76,6 @@
     # Secrets management
     sops-nix = {
       url = "github:Mic92/sops-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # Neovim
-    nvf = {
-      url = "github:notashelf/nvf";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

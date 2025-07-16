@@ -7,7 +7,6 @@
 }: let
   cfg = config.system.theme;
 in {
-  #imports = lib.optionals cfg.enable [ inputs.stylix.nixosModules.stylix ];
   imports = [inputs.stylix.nixosModules.stylix];
 
   options.system.theme = {
