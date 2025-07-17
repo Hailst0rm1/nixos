@@ -18,6 +18,7 @@ in {
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
+        "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
         # "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
       };
 

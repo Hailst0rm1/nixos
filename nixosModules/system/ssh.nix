@@ -19,7 +19,7 @@
   services.openssh = lib.mkIf config.services.openssh.enable {
     settings = {
       # Harden
-      PasswordAuthentication = false;
+      PasswordAuthentication = lib.mkIf config.security.sops.enable false;
       PubkeyAuthentication = true;
       PermitRootLogin = "no";
       # Automatically remove stale sockets
