@@ -160,7 +160,7 @@ When you're done, you can access your secrets under `secrets/secrets.yaml`.
 
 # Yubikeys
 
-The repo supports ssh and sudo using yubikeys
+The repo supports ssh and sudo using yubikeys.
 
 Set pin:
 ```shell
@@ -175,6 +175,7 @@ ssh-keygen -t ed25519-sk -N "" -C "yubikey A" -f ~/.ssh/id_yubic
 - Put the public keys in `nixosModules/system/keys/` - this is to allow ssh to the host from our yubikeys
 
 Sudo:
+> NOTE: These are unique for each host and must be done for each installation.
 ```
 # First key
 pamu2fcfg -u <username> > ~/u2f_keys
@@ -182,4 +183,4 @@ pamu2fcfg -u <username> > ~/u2f_keys
 # If you have more than one, run this for the remaining ones
 pamu2fcfg -n >> ~/u2f_keys
 ```
-> Then make an entry under `keys/yubikey/<username>` with the contents of `u2f_keys` in secrets.yaml - sops will then import it correctly.
+> Then make an entry under `keys/yubikey/<hostname>` with the contents of `u2f_keys` in secrets.yaml - sops will then import it correctly.
