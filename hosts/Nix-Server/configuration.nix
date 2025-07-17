@@ -136,6 +136,7 @@ in {
     mattermost.enable = false;
     ollama.enable = false;
     open-webui.enable = false; # UI for local AI
+    cloudflared.enable = true;
   };
 
   # Allow unfree software
