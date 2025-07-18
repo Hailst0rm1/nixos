@@ -107,6 +107,6 @@ in
           else "client";
       };
 
-      environment.systemPackages = [pkgs-unstable.tailscale];
+      environment.systemPackages = [pkgs.tailscale];
     };
   }
