@@ -68,7 +68,7 @@ in
 
         script = with pkgs; ''
           # wait for tailscaled to settle
-          sleep 10
+          sleep 5
 
           # check if we are already authenticated to tailscale
           status="$(${tailscale}/bin/tailscale status -json | ${jq}/bin/jq -r .BackendState)"

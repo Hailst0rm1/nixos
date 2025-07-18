@@ -145,6 +145,7 @@ in {
       exitNode = "";
       exitNodeAllowLanAccess = false;
     };
+    ghost.enable = true;
   };
 
   # Allow unfree software

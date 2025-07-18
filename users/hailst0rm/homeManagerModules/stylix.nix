@@ -7,7 +7,7 @@
 }: let
   cfg = config.importConfig.stylix;
 in {
-  # imports = [inputs.stylix.homeModules.stylix];
+  imports = [inputs.stylix.homeModules.stylix];
 
   options.importConfig.stylix = {
     enable = lib.mkEnableOption "Enable user stylix config.";
