@@ -54,7 +54,7 @@
     done
   '';
 in {
-  config = lib.mkIf (config.importConfig.hyprland.wallpaper == "swww") {
+  config = lib.mkIf (config.importConfig.hyprland.enable && config.importConfig.hyprland.wallpaper == "swww") {
     services.hyprpaper.enable = lib.mkForce false;
 
     wayland.windowManager.hyprland.settings.exec-once = [

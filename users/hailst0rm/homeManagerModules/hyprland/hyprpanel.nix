@@ -22,7 +22,7 @@
   crust = "#11111b";
   white = "#ffffff";
 in {
-  config = lib.mkIf (cfg.panel == "hyprpanel" || cfg.notifications == "hyprpanel") {
+  config = lib.mkIf (cfg.enable && (cfg.panel == "hyprpanel" || cfg.notifications == "hyprpanel")) {
     programs.hyprpanel = {
       enable = true;
 

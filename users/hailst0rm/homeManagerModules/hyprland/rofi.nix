@@ -4,7 +4,7 @@
   pkgs,
   ...
 }: {
-  config = lib.mkIf (config.importConfig.hyprland.appLauncher == "rofi") {
+  config = lib.mkIf (config.importConfig.hyprland.enable && config.importConfig.hyprland.appLauncher == "rofi") {
     home.packages = [pkgs.rofi-wayland];
 
     home.file.".config/rofi/config.rasi" = {

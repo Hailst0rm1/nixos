@@ -15,7 +15,7 @@
     hyprlock
   '';
 in {
-  config = lib.mkIf (config.importConfig.hyprland.lockscreen == "hyprlock") {
+  config = lib.mkIf (config.importConfig.hyprland.enable && config.importConfig.hyprland.lockscreen == "hyprlock") {
     home.packages = [hyprlock-blur];
 
     wayland.windowManager.hyprland.settings.bind = [

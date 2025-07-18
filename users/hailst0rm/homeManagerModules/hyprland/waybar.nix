@@ -3,7 +3,7 @@
   config,
   ...
 }: {
-  config = lib.mkIf (config.importConfig.hyprland.panel == "waybar") {
+  config = lib.mkIf (config.importConfig.hyprland.enable && config.importConfig.hyprland.panel == "waybar") {
     wayland.windowManager.hyprland.settings.exec-once = ["waybar"];
     home.file.".config/waybar/config.jsonc".text = ''
       {

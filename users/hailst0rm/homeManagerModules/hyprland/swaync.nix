@@ -3,7 +3,7 @@
   lib,
   ...
 }: {
-  config = lib.mkIf (config.importConfig.hyprland.notifications == "swaync") {
+  config = lib.mkIf (config.importConfig.hyprland.enable && config.importConfig.hyprland.notifications == "swaync") {
     wayland.windowManager.hyprland.settings.exec-once = ["swaync -s ~/.config/swaync/style.css"];
 
     home.file.".config/swaync/style.css".text = ''
