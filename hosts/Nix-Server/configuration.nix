@@ -137,6 +137,14 @@ in {
     ollama.enable = false;
     open-webui.enable = false; # UI for local AI
     cloudflared.enable = true;
+    tailscaleAutoconnect = {
+      enable = true;
+      authkeyFile = config.sops.secrets."services/tailscale/auth.key".path; # Needs updating every 90 days (okt 16)
+      advertiseExitNode = true;
+      loginServer = "https://login.tailscale.com";
+      exitNode = "";
+      exitNodeAllowLanAccess = false;
+    };
   };
 
   # Allow unfree software

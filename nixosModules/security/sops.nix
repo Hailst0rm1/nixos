@@ -31,6 +31,7 @@
       secrets."passwords/${config.username}".neededForUsers = true; # User password
       secrets."keys/yubikey/${config.hostname}" = {};
       secrets."services/cloudflared/creds" = lib.mkIf config.services.cloudflared.enable {};
+      secrets."services/tailscale/auth.key" = lib.mkIf config.services.tailscaleAutoconnect.enable {};
     };
   };
 }
