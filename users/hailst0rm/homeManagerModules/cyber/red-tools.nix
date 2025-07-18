@@ -83,7 +83,7 @@ in {
         python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
 
         # === Lateral Movement ===
-        samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
+        # samba4Full # Interact with SMB shares (smbclient) (CEPH TAKES 10 YEARS TO BUILD)
         evil-winrm # WinRM shell for hacking/pentesting
         (pkgs.netexec)
         ligolo-ng #  Tunneling/pivoting tool that uses a TUN interface
