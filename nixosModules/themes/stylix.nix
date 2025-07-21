@@ -26,24 +26,25 @@ in {
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = {
     stylix = {
       enable = true;
+      autoEnable = cfg.enable;
       base16Scheme = "${pkgs.base16-schemes}/share/themes/${cfg.name}.yaml";
       image = ../../assets/images/nixos-logos.png;
       polarity = "${cfg.polarity}";
 
-      cursor = {
+      cursor = lib.mkIf cfg.enable {
         package = pkgs.bibata-cursors;
         name = "Bibata-Modern-Ice";
         size = 24;
       };
 
-      targets = {
+      targets = lib.mkIf cfg.enable {
         grub.useImage = true;
       };
 
-      fonts = {
+      fonts = lib.mkIf cfg.enable {
         serif = {
           package = pkgs.noto-fonts;
           name = "Noto Serif";

@@ -7,8 +7,6 @@
 }: let
   cfg = config.importConfig.stylix;
 in {
-  # imports = [inputs.stylix.homeModules.stylix];
-
   options.importConfig.stylix = {
     enable = lib.mkEnableOption "Enable user stylix config.";
   };
@@ -16,15 +14,15 @@ in {
   config = lib.mkIf cfg.enable {
     stylix = {
       enable = true;
-      autoEnable = true;
-      opacity = {
+      autoEnable = cfg.enable;
+      opacity = lib.mkIf cfg.enable {
         applications = lib.mkForce 0.5;
         desktop = lib.mkForce 0.5;
         popups = lib.mkForce 0.5;
         terminal = lib.mkForce 0.5;
       };
 
-      targets = {
+      targets = lib.mkIf cfg.enable {
         ghostty.enable = true;
         helix.enable = false;
         neovim.enable = false;
@@ -33,7 +31,7 @@ in {
       };
     };
 
-    xdg.desktopEntries.vmware-workstation = {
+    xdg.desktopEntries.vmware-workstation = lib.mkIf cfg.enable {
       name = "VMware Workstation";
       comment = "Run and manage virtual machines";
       exec = "env GTK_THEME=Adwaita:dark ${pkgs-unstable.vmware-workstation}/bin/vmware %U";

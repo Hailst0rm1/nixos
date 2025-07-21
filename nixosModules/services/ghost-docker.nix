@@ -6,8 +6,9 @@
 }: let
   ghost = config.services.ghost;
   domainUnderscore = builtins.replaceStrings ["."] ["_"] ghost.domain;
-  dataDir = "/var/www/${domainUnderscore}";
-  mysqlData = "/var/lib/mysql-ghost";
+  dataDir = "/var/lib/ghost/content";
+  # dataDir = "/var/www/${domainUnderscore}";
+  mysqlData = "/var/lib/mysql";
 
   port = "2368";
 in
@@ -34,28 +35,31 @@ in
 
     config = mkIf ghost.enable {
       virtualisation.oci-containers.containers = {
-        db = {
-          image = "mysql:8.0";
-          autoStart = true;
-          environment = {
-            MYSQL_ROOT_PASSWORD = "example"; # Use a secure secret in production
-          };
-          volumes = [
-            "${mysqlData}:/var/lib/mysql"
-          ];
-        };
+        # db = {
+        #   image = "mysql:8.0";
+        #   autoStart = true;
+        #   environment = {
+        #     MYSQL_ROOT_PASSWORD = "example"; # Use a secure secret in production
+        #     MYSQL_DATABASE = "ghost";
+        #     MYSQL_USER = "ghost";
+        #     MYSQL_PASSWORD = "example";
+        #   };
+        #   volumes = [
+        #     "${mysqlData}:/var/lib/mysql"
+        #   ];
+        # };
 
         ghost = {
           image = "ghost:latest";
           autoStart = true;
           ports = [
-            "127.0.0.1:${port}:2368"
+            "${port}:2368"
           ];
           environment = {
-            url = "http://localhost:${port}";
+            url = "https://pontonsecurity.com";
             database__client = "mysql";
-            database__connection__host = "db"; # name of the mysql container
-            database__connection__user = "root";
+            database__connection__host = "host.containers.internal";
+            database__connection__user = "ghost";
             database__connection__password = "example";
             database__connection__database = "ghost";
           };
@@ -65,9 +69,30 @@ in
         };
       };
 
-      systemd.tmpfiles.rules = [
-        "d ${dataDir} 0755 ghost ghost - -"
-      ];
+      services.mysql = {
+        enable = true;
+        package = pkgs.mysql80;
+        # ensureDatabases = [ "ghost" ];
+        initialScript = pkgs.writeText "mysql-init.sql" ''
+          CREATE DATABASE IF NOT EXISTS ghost;
+          CREATE USER IF NOT EXISTS 'ghost'@'localhost' IDENTIFIED BY 'example';
+          GRANT ALL PRIVILEGES ON ghost.* TO 'ghost'@'localhost';
+          FLUSH PRIVILEGES;
+        '';
+        # ensureUsers = [
+        #   {
+        #     name = "ghost";
+        #     ensurePermissions = {
+        #       "ghost.*" = "ALL PRIVILEGES";
+        #     };
+        #   }
+        # ];
+        settings = {
+          mysqld = {
+            bind-address = "127.0.0.1"; # only accessible locally
+          };
+        };
+      };
 
       users.users.ghost = {
         isSystemUser = true;
@@ -131,7 +156,7 @@ in
           '';
 
           locations."/" = {
-            proxyPass = "http://127.0.0.1:2369";
+            proxyPass = "http://127.0.0.1:${port}";
             extraConfig = ''
               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
               proxy_set_header X-Forwarded-Proto $scheme;

@@ -10,16 +10,6 @@
     trusted-public-keys = ["devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="];
   };
 
-  # Docker
-  virtualisation.docker = {
-    enable = true;
-    package = pkgs.docker;
-    # rootless = {
-    #   enable = true;
-    #   setSocketVariable = true;
-    # };
-  };
-
   # Zsh
   programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;

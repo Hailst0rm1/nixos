@@ -132,6 +132,7 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
+    podman.enable = true;
     openssh.enable = true;
     mattermost.enable = false;
     ollama.enable = false;

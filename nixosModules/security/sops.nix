@@ -32,8 +32,14 @@
       secrets."keys/yubikey/${config.hostname}" = {};
       secrets."services/cloudflared/creds" = lib.mkIf config.services.cloudflared.enable {};
       secrets."services/tailscale/auth.key" = lib.mkIf config.services.tailscaleAutoconnect.enable {};
-      secrets."services/ghost/pontonsecurity/cert.pem" = lib.mkIf config.services.ghost.enable {};
-      secrets."services/ghost/pontonsecurity/cert.key" = lib.mkIf config.services.ghost.enable {};
+      secrets."services/ghost/pontonsecurity/cert.pem" = lib.mkIf config.services.ghost.enable {
+        group = "nginx";
+        mode = "0440";
+      };
+      secrets."services/ghost/pontonsecurity/cert.key" = lib.mkIf config.services.ghost.enable {
+        group = "nginx";
+        mode = "0440";
+      };
     };
   };
 }
