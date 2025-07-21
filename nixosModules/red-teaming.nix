@@ -16,6 +16,11 @@
       firewall.enable = false;
     };
 
+    # For bloodhound
+    services.neo4j = {
+      enable = true;
+    };
+
     # Replace with lingolo-ng
     # Configure proxy using proxychains for red-teaming lateral movement
     programs.proxychains = lib.mkIf config.cyber.redTools.enable {
