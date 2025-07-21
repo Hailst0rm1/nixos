@@ -7,7 +7,10 @@
 }: let
   cfg = config.system.theme;
 in {
-  imports = [inputs.stylix.nixosModules.stylix];
+  imports = [
+    inputs.stylix.nixosModules.stylix
+    # inputs.stylix.homeModules.stylix
+  ];
 
   options.system.theme = {
     enable = lib.mkEnableOption "Enable stylix.";

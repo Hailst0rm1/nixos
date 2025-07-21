@@ -145,7 +145,12 @@ in {
       exitNode = "";
       exitNodeAllowLanAccess = false;
     };
-    ghost.enable = true;
+    ghost = {
+      enable = true;
+      domain = "pontonsecurity.com";
+      sslCertPath = config.sops.secrets."services/ghost/pontonsecurity/cert.pem".path;
+      sslCertKeyPath = config.sops.secrets."services/ghost/pontonsecurity/cert.key".path;
+    };
   };
 
   # Allow unfree software
