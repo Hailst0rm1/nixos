@@ -98,6 +98,9 @@ in {
         mimikatz
         (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
 
+        # === Discovery ===
+        bloodhound
+
         # === Command & Control (C2) ===
 
         # === Wordlists ===
