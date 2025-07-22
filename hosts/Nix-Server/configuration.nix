@@ -132,39 +132,269 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
+    domain = "pontonsecurity.com";
     homepage-dashboard = {
       enable = true;
+      icon = ../../assets/images/pontonsecurity_transparent.png;
+      background = ../../assets/images/mountain.jpg;
+      # colour = "gray";
 
-      # https://gethomepage.dev/configs/services/
-      # Template:
-      # "Group" = {
-      #   "Service" = {
-      #     description = "";
-      #     icon = "";
-      #     href = "https://";
-      #   };
-      # };
-      myServices = [
+      settings.layout = [
         {
-          "Website" = {
-            "Ponton Security" = {
-              description = "The business website.";
-              icon = "sh-ghost.svg";
-              href = "https://pontonsecurity.com";
-              siteMonitor = "https://pontonsecurity.com";
-            };
-            "Admin Panel: Ponton Security" = {
-              description = "The admin panel for the website.";
-              icon = "sh-ghost.svg";
-              href = "https://admin.pontonsecurity.com";
-            };
+          Business = {
+            style = "row";
+            columns = 4;
+            icon = "mdi-briefcase-variant.svg";
+          };
+        }
+        {
+          Cyber = {
+            style = "row";
+            columns = 4;
+            icon = "mdi-shield-bug.svg";
+          };
+        }
+        {
+          Admin = {
+            style = "row";
+            columns = 4;
+            icon = "mdi-server.svg";
+          };
+        }
+        {
+          Other = {
+            style = "row";
+            columns = 4;
+            icon = "mdi-dots-grid.svg";
           };
         }
       ];
+
+      # https://gethomepage.dev/configs/services/
+      services = [
+        {
+          Business = [
+            {
+              "Ponton Security" = {
+                description = "Business website";
+                icon = "sh-ghost.png";
+                href = "https://pontonsecurity.com";
+                siteMonitor = "https://pontonsecurity.com";
+              };
+            }
+            {
+              "Admin Panel: Ponton Security" = {
+                description = "Website admin panel";
+                icon = "sh-ghost.png";
+                href = "https://admin.pontonsecurity.com";
+              };
+            }
+          ];
+        }
+        {
+          Cyber = [
+            {
+              "Ponton Security" = {
+                description = "Business website";
+                icon = "sh-ghost.png";
+                href = "https://pontonsecurity.com";
+                siteMonitor = "https://pontonsecurity.com";
+              };
+            }
+            {
+              "Admin Panel: Ponton Security" = {
+                description = "Website admin panel";
+                icon = "sh-ghost.png";
+                href = "https://admin.pontonsecurity.com";
+              };
+            }
+          ];
+        }
+        {
+          Admin = [
+            {
+              "Firewalla" = {
+                description = "Home Firewall";
+                icon = "sh-firewalla.svg";
+                href = "https://my.firewalla.com/#/dashboard";
+              };
+            }
+            {
+              "AltaLabs" = {
+                description = "Home switch + AP";
+                icon = "sh-watchyourlan.png";
+                href = "https://manage.alta.inc";
+              };
+            }
+            {
+              "Router" = {
+                description = "ISP Router";
+                icon = "sh-watchyourlan.png";
+                href = "http://192.168.0.1";
+              };
+            }
+            {
+              "Tailscale" = {
+                description = "Internal VPN";
+                icon = "sh-tailscale.svg";
+                href = "https://login.tailscale.com/admin/machines";
+              };
+            }
+            {
+              "Cloudflare" = {
+                description = "Domain and DNS";
+                icon = "sh-cloudflare.svg";
+                href = "https://dash.cloudflare.com/";
+              };
+            }
+            {
+              "Zero Trust" = {
+                description = "Access and applications";
+                icon = "sh-cloudflare.svg";
+                href = "https://one.dash.cloudflare.com";
+              };
+            }
+          ];
+        }
+        {
+          Other = [
+            {
+              "Vaultwarden" = {
+                description = "Password Manages";
+                icon = "sh-vaultwarden.svg";
+                href = "https://vault.pontonsecurity.com";
+                siteMonitor = "https://vault.pontonsecurity.com";
+              };
+            }
+            {
+              "Admin Panel: Ponton Security" = {
+                description = "Website admin panel";
+                icon = "sh-ghost.png";
+                href = "https://admin.pontonsecurity.com";
+              };
+            }
+          ];
+        }
+      ];
+
+      bookmarks = [
+        {
+          Utilities = [
+            {
+              "Proton Drive" = [
+                {
+                  icon = "sh-proton-drive.svg";
+                  href = "https://drive.proton.me";
+                }
+              ];
+            }
+            {
+              "Proton Mail" = [
+                {
+                  icon = "sh-proton-mail.svg";
+                  href = "https://mail.proton.me";
+                }
+              ];
+            }
+            {
+              "Google Maps" = [
+                {
+                  icon = "sh-google-maps.svg";
+                  href = "https://maps.google.com/";
+                }
+              ];
+            }
+            {
+              "Google Calendar" = [
+                {
+                  icon = "sh-google-calendar.svg";
+                  href = "https://calendar.google.com";
+                }
+              ];
+            }
+            {
+              "Budget" = [
+                {
+                  icon = "sh-google-sheets.svg";
+                  href = "https://docs.google.com/spreadsheets/d/1fxOANLsHROOpEToCqeHe_TY7ScNmveNOAwyqX4ajX6Y/edit?usp=sharing";
+                }
+              ];
+            }
+          ];
+        }
+        {
+          Developer = [
+            {
+              Github = [
+                {
+                  icon = "sh-github.svg";
+                  href = "https://github.com/";
+                }
+              ];
+            }
+          ];
+        }
+        {
+          Entertainment = [
+            {
+              YouTube = [
+                {
+                  icon = "sh-youtube.svg";
+                  href = "https://youtube.com/";
+                }
+              ];
+            }
+            {
+              Twitch = [
+                {
+                  icon = "sh-twitch.svg";
+                  href = "https://twitch.com/";
+                }
+              ];
+            }
+            {
+              F1 = [
+                {
+                  icon = "si-f1.svg";
+                  href = "https://https://f1tv.formula1.com/";
+                }
+              ];
+            }
+          ];
+        }
+        {
+          Icons = [
+            {
+              "Material Design Icons" = [
+                {
+                  icon = "mdi-emoticon-happy.svg";
+                  href = "https://pictogrammers.com/library/mdi/";
+                }
+              ];
+            }
+            {
+              "Simple Icons" = [
+                {
+                  icon = "si-simpleicons.svg";
+                  href = "https://simpleicons.org";
+                }
+              ];
+            }
+            {
+              "Selfh.st" = [
+                {
+                  icon = "sh-selfh-st.svg";
+                  href = "https://selfh.st/icons/";
+                }
+              ];
+            }
+          ];
+        }
+      ];
     };
+
     vaultwarden = {
       enable = true;
-      domain = "pontonsecurity.com";
     };
     podman.enable = true;
     openssh.enable = true;
@@ -182,7 +412,6 @@ in {
     };
     ghost = {
       enable = true;
-      domain = "pontonsecurity.com";
       sslCertFile = config.sops.secrets."services/ghost/pontonsecurity/cert.pem".path;
       sslCertKeyFile = config.sops.secrets."services/ghost/pontonsecurity/cert.key".path;
     };

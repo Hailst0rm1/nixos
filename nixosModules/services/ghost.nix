@@ -6,21 +6,15 @@
 }: let
   # TODO: password in sops that isn't accessed in /run (?)# TODO: password in sops that isn't accessed in /run (?)
   ghost = config.services.ghost;
-  domainUnderscore = builtins.replaceStrings ["."] ["_"] ghost.domain;
+  domainUnderscore = builtins.replaceStrings ["."] ["_"] domain;
   dataDir = "/var/lib/ghost/content";
+  domain = config.services.domain;
 
   port = "2368";
 in
   with lib; {
     options.services.ghost = {
       enable = mkEnableOption "Enable ghost blog service.";
-
-      domain = mkOption {
-        type = types.str;
-        default = "";
-        description = "Domain user for ghost, e.g. example.com";
-      };
-
       sslCertFile = mkOption {
         type = types.str;
         description = "The ssl cert.pem file path.";
@@ -50,21 +44,21 @@ in
           ];
           extraOptions = ["--network=host"];
           environment = {
-            url = "https://${ghost.domain}";
-            admin__url = "https://admin.${ghost.domain}";
+            url = "https://${domain}";
+            admin__url = "https://admin.${domain}";
             database__client = "mysql";
             database__connection__host = "127.0.0.1";
             database__connection__user = "ghost";
             database__connection__password = "Wheat%Sedation%Rebalance9";
             database__connection__database = domainUnderscore;
-            # mail__from = "noreply@mail.${ghost.domain}";
-            # # mail__from = "Ponton Security <noreply@mail.${ghost.domain}>";
+            # mail__from = "noreply@mail.${domain}";
+            # # mail__from = "Ponton Security <noreply@mail.${domain}>";
             # mail__transport = "SMTP";
             # mail__options__service = "Mailgun";
             # mail__options__host = "smtp.eu.mailgun.org";
             # mail__options__port = "465";
             # mail__options__secure = "true";
-            # mail__options__auth__user = "noreply@mail.${ghost.domain}";
+            # mail__options__auth__user = "noreply@mail.${domain}";
             # mail__options__auth__pass = "";
           };
           volumes = [
@@ -101,7 +95,7 @@ in
         # recommendedOptimisation = true;
         # recommendedProxySettings = true;
         # recommendedTlsSettings = true;
-        virtualHosts."${ghost.domain}" = {
+        virtualHosts."${domain}" = {
           enableACME = false;
           forceSSL = true;
           http2 = true;
@@ -111,7 +105,7 @@ in
 
           root = "${dataDir}/system/nginx-root";
 
-          serverAliases = ["*.${ghost.domain}"];
+          serverAliases = ["*.${domain}"];
 
           extraConfig = ''
             client_max_body_size 100m;

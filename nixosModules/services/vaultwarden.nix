@@ -5,16 +5,16 @@
   ...
 }: {
   options.services.vaultwarden = with lib; {
-    domain = mkOption {
-      type = types.str;
-      default = "";
-      description = "Domain user for ghost, e.g. example.com";
-    };
+    # domain = mkOption {
+    #   type = types.str;
+    #   default = "";
+    #   description = "Domain user for ghost, e.g. example.com";
+    # };
   };
 
   config.services.vaultwarden = lib.mkIf config.services.vaultwarden.enable {
     config = {
-      DOMAIN = "https://vault.${config.services.vaultwarden.domain}";
+      DOMAIN = "https://vault.${config.services.domain}";
       SIGNUPS_ALLOWED = false;
       ROCKET_ADDRESS = "127.0.0.1";
       ROCKET_PORT = 8222;
