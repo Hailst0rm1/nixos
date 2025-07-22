@@ -4,11 +4,10 @@
   lib,
   ...
 }: let
+  # TODO: password in sops that isn't accessed in /run (?)# TODO: password in sops that isn't accessed in /run (?)
   ghost = config.services.ghost;
   domainUnderscore = builtins.replaceStrings ["."] ["_"] ghost.domain;
   dataDir = "/var/lib/ghost/content";
-  # dataDir = "/var/www/${domainUnderscore}";
-  mysqlData = "/var/lib/mysql";
 
   port = "2368";
 in
@@ -22,77 +21,19 @@ in
         description = "Domain user for ghost, e.g. example.com";
       };
 
-      sslCertPath = mkOption {
+      sslCertFile = mkOption {
         type = types.str;
         description = "The ssl cert.pem file path.";
       };
 
-      sslCertKeyPath = mkOption {
+      sslCertKeyFile = mkOption {
         type = types.str;
         description = "The ssl private key cert.key file path.";
       };
     };
 
     config = mkIf ghost.enable {
-      virtualisation.oci-containers.containers = {
-        # db = {
-        #   image = "mysql:8.0";
-        #   autoStart = true;
-        #   environment = {
-        #     MYSQL_ROOT_PASSWORD = "example"; # Use a secure secret in production
-        #     MYSQL_DATABASE = "ghost";
-        #     MYSQL_USER = "ghost";
-        #     MYSQL_PASSWORD = "example";
-        #   };
-        #   volumes = [
-        #     "${mysqlData}:/var/lib/mysql"
-        #   ];
-        # };
-
-        ghost = {
-          image = "ghost:latest";
-          autoStart = true;
-          ports = [
-            "${port}:2368"
-          ];
-          environment = {
-            url = "https://pontonsecurity.com";
-            database__client = "mysql";
-            database__connection__host = "host.containers.internal";
-            database__connection__user = "ghost";
-            database__connection__password = "example";
-            database__connection__database = "ghost";
-          };
-          volumes = [
-            "${dataDir}:/var/lib/ghost/content"
-          ];
-        };
-      };
-
-      services.mysql = {
-        enable = true;
-        package = pkgs.mysql80;
-        # ensureDatabases = [ "ghost" ];
-        initialScript = pkgs.writeText "mysql-init.sql" ''
-          CREATE DATABASE IF NOT EXISTS ghost;
-          CREATE USER IF NOT EXISTS 'ghost'@'localhost' IDENTIFIED BY 'example';
-          GRANT ALL PRIVILEGES ON ghost.* TO 'ghost'@'localhost';
-          FLUSH PRIVILEGES;
-        '';
-        # ensureUsers = [
-        #   {
-        #     name = "ghost";
-        #     ensurePermissions = {
-        #       "ghost.*" = "ALL PRIVILEGES";
-        #     };
-        #   }
-        # ];
-        settings = {
-          mysqld = {
-            bind-address = "127.0.0.1"; # only accessible locally
-          };
-        };
-      };
+      networking.firewall.allowedTCPPorts = [80 443];
 
       users.users.ghost = {
         isSystemUser = true;
@@ -100,39 +41,58 @@ in
       };
       users.groups.ghost = {};
 
-      environment.etc."${domainUnderscore}-ghost.json".text = ''
-        {
-          "url": "https://${ghost.domain}",
-          "server": {
-            "port": 2369,
-            "host": "127.0.0.1"
-          },
-          "database": {
-            "client": "mysql",
-            "connection": {
-              "host": "localhost",
-              "user": "ghost",
-              "password": "",
-              "database": "${domainUnderscore}"
-            }
-          },
-          "admin": {
-            "url": "https://admin.${ghost.domain}"
-          },
-          "logging": {
-            "transports": [
-              "file",
-              "stdout"
-            ]
-          },
-          "process": "systemd",
-          "paths": {
-            "contentPath": "${dataDir}/content"
-          }
-        }
-      '';
+      virtualisation.oci-containers.containers = {
+        ghost = {
+          image = "ghost:latest";
+          autoStart = true;
+          ports = [
+            "${port}:2368"
+          ];
+          extraOptions = ["--network=host"];
+          environment = {
+            url = "https://${ghost.domain}";
+            admin__url = "https://admin.${ghost.domain}";
+            database__client = "mysql";
+            database__connection__host = "127.0.0.1";
+            database__connection__user = "ghost";
+            database__connection__password = "Wheat%Sedation%Rebalance9";
+            database__connection__database = domainUnderscore;
+            # mail__from = "noreply@mail.${ghost.domain}";
+            # # mail__from = "Ponton Security <noreply@mail.${ghost.domain}>";
+            # mail__transport = "SMTP";
+            # mail__options__service = "Mailgun";
+            # mail__options__host = "smtp.eu.mailgun.org";
+            # mail__options__port = "465";
+            # mail__options__secure = "true";
+            # mail__options__auth__user = "noreply@mail.${ghost.domain}";
+            # mail__options__auth__pass = "";
+          };
+          volumes = [
+            "${dataDir}:/var/lib/ghost/content"
+          ];
+        };
+      };
 
-      # Optional: firewall rule or Nginx reverse proxy could go here
+      # Create dataDir directory
+      systemd.tmpfiles.rules = [
+        "d ${dataDir} 0755 ghost ghost - -"
+      ];
+
+      services.mysql = {
+        enable = true;
+        package = pkgs.mysql80;
+        initialScript = pkgs.writeText "mysql-init.sql" ''
+          CREATE DATABASE IF NOT EXISTS ${domainUnderscore};
+          CREATE USER IF NOT EXISTS 'ghost'@'localhost' IDENTIFIED BY 'Wheat%Sedation%Rebalance9';
+          GRANT ALL PRIVILEGES ON ${domainUnderscore}.* TO 'ghost'@'localhost';
+          FLUSH PRIVILEGES;
+        '';
+        settings = {
+          mysqld = {
+            bind-address = "127.0.0.1"; # only accessible locally
+          };
+        };
+      };
 
       # Sets up the Nginx web proxy
       services.nginx = {
@@ -146,10 +106,12 @@ in
           forceSSL = true;
           http2 = true;
 
-          sslCertificate = ghost.sslCertPath;
-          sslCertificateKey = ghost.sslCertKeyPath;
+          sslCertificate = ghost.sslCertFile;
+          sslCertificateKey = ghost.sslCertKeyFile;
 
           root = "${dataDir}/system/nginx-root";
+
+          serverAliases = ["*.${ghost.domain}"];
 
           extraConfig = ''
             client_max_body_size 100m;

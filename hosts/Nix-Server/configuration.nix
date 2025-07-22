@@ -132,6 +132,40 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
+    homepage-dashboard = {
+      enable = true;
+
+      # https://gethomepage.dev/configs/services/
+      # Template:
+      # "Group" = {
+      #   "Service" = {
+      #     description = "";
+      #     icon = "";
+      #     href = "https://";
+      #   };
+      # };
+      myServices = [
+        {
+          "Website" = {
+            "Ponton Security" = {
+              description = "The business website.";
+              icon = "sh-ghost.svg";
+              href = "https://pontonsecurity.com";
+              siteMonitor = "https://pontonsecurity.com";
+            };
+            "Admin Panel: Ponton Security" = {
+              description = "The admin panel for the website.";
+              icon = "sh-ghost.svg";
+              href = "https://admin.pontonsecurity.com";
+            };
+          };
+        }
+      ];
+    };
+    vaultwarden = {
+      enable = true;
+      domain = "pontonsecurity.com";
+    };
     podman.enable = true;
     openssh.enable = true;
     mattermost.enable = false;
@@ -149,8 +183,8 @@ in {
     ghost = {
       enable = true;
       domain = "pontonsecurity.com";
-      sslCertPath = config.sops.secrets."services/ghost/pontonsecurity/cert.pem".path;
-      sslCertKeyPath = config.sops.secrets."services/ghost/pontonsecurity/cert.key".path;
+      sslCertFile = config.sops.secrets."services/ghost/pontonsecurity/cert.pem".path;
+      sslCertKeyFile = config.sops.secrets."services/ghost/pontonsecurity/cert.key".path;
     };
   };
 
