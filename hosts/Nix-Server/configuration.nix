@@ -323,6 +323,18 @@ in {
           ];
         }
         {
+          AI = [
+            {
+              ChatGPT = [
+                {
+                  icon = "sh-openai.svg";
+                  href = "https://chatgpt.com";
+                }
+              ];
+            }
+          ];
+        }
+        {
           Developer = [
             {
               Github = [
@@ -362,39 +374,29 @@ in {
             }
           ];
         }
-        {
-          Icons = [
-            {
-              "Material Design Icons" = [
-                {
-                  icon = "mdi-emoticon-happy.svg";
-                  href = "https://pictogrammers.com/library/mdi/";
-                }
-              ];
-            }
-            {
-              "Simple Icons" = [
-                {
-                  icon = "si-simpleicons.svg";
-                  href = "https://simpleicons.org";
-                }
-              ];
-            }
-            {
-              "Selfh.st" = [
-                {
-                  icon = "sh-selfh-st.svg";
-                  href = "https://selfh.st/icons/";
-                }
-              ];
-            }
-          ];
-        }
       ];
     };
 
     vaultwarden = {
+      enable = false;
+      adminToken = "$argon2id$v=19$m=65540,t=3,p=4$D/pg3E3rtnry4H1z6OqWA1EVHJZ7aN8rU5nnBQJ+Vf8$Vv7Nb4yvCkMCTWzSKchfuCcQoNDEKqNwE5WPx616TlY"; # Same as bitwarden
+      allowSignup = true; # Set to false after account creation
+      yubicoClient = "";
+      yubicoKey = "";
+    };
+    gitlab = {
       enable = true;
+      databasePasswordFile = config.sops.secrets."services/gitlab/db-password".path;
+      initialRootPasswordFile = config.sops.secrets."services/gitlab/root-password".path;
+      secrets = {
+        secretFile = config.sops.secrets."services/gitlab/secret".path;
+        otpFile = config.sops.secrets."services/gitlab/otp".path;
+        dbFile = config.sops.secrets."services/gitlab/db".path;
+        jwsFile = config.sops.secrets."services/gitlab/jws".path;
+        activeRecordPrimaryKeyFile = config.sops.secrets."services/gitlab/recordPrimary".path;
+        activeRecordDeterministicKeyFile = config.sops.secrets."services/gitlab/recordDeterministic".path;
+        activeRecordSaltFile = config.sops.secrets."services/gitlab/recordSalt".path;
+      };
     };
     podman.enable = true;
     openssh.enable = true;

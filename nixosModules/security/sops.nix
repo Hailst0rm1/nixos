@@ -40,6 +40,43 @@
         group = "nginx";
         mode = "0440";
       };
+
+      secrets."services/gitlab/db-password" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
+      secrets."services/gitlab/root-password" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
+      secrets."services/gitlab/secret" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
+      secrets."services/gitlab/otp" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
+      secrets."services/gitlab/db" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
+      secrets."services/gitlab/jws" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
+      secrets."services/gitlab/recordPrimary" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
+      secrets."services/gitlab/recordDeterministic" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
+      secrets."services/gitlab/recordSalt" = lib.mkIf config.services.gitlab.enable {
+        group = "git";
+        mode = "0440";
+      };
     };
   };
 }
