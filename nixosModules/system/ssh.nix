@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs-unstable,
   ...
 }: {
   programs.ssh = {
@@ -16,6 +17,7 @@
 
       Host git.${config.services.domain}
         HostName git.${config.services.domain}
+        ProxyCommand ${pkgs-unstable.cloudflared}/bin/cloudflared access ssh --hostname %h
         User git
         IdentityFile ~/.ssh/id_hailst0rm
         IdentitiesOnly yes
@@ -42,6 +44,9 @@
     rssh.enable = true;
     services.sudo.rssh = true;
   };
+
+  # Required for SSH over cloudflare tunnel
+  environment.systemPackages = [pkgs-unstable.cloudflared];
 
   # Allows these users to SSH into the machine (All the public keys in ./keys)
   # users.users.${config.username}.openssh.authorizedKeys.keys = lib.mkIf config.services.openssh.enable lib.lists.forEach ./keys (key: builtins.readFile key);
