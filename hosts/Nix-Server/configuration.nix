@@ -403,7 +403,10 @@ in {
     mattermost.enable = false;
     ollama.enable = false;
     open-webui.enable = false; # UI for local AI
-    cloudflared.enable = true;
+    cloudflare = {
+      enable = true;
+      deviceType = "server";
+    };
     tailscaleAutoconnect = {
       enable = true;
       authkeyFile = config.sops.secrets."services/tailscale/auth.key".path; # Needs updating every 90 days (okt 16)
