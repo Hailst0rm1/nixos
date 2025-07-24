@@ -90,8 +90,8 @@ in {
         background = {
           image = "/images/${backgroundFile}";
           blur = "sm";
-          saturate = "50";
-          brightness = "50";
+          saturate = "75";
+          brightness = "75";
           opacity = "50";
         };
         theme = "dark";

@@ -148,7 +148,7 @@ in {
           };
         }
         {
-          Cyber = {
+          Developing = {
             style = "row";
             columns = 4;
             icon = "mdi-shield-bug.svg";
@@ -166,6 +166,21 @@ in {
             style = "row";
             columns = 4;
             icon = "mdi-dots-grid.svg";
+          };
+        }
+        {
+          Utilities = {
+            icon = "mdi-wrench.svg";
+          };
+        }
+        {
+          Cyber = {
+            icon = "mdi-shield-bug.svg";
+          };
+        }
+        {
+          Entertainment = {
+            icon = "mdi-folder-play.svg";
           };
         }
       ];
@@ -187,31 +202,67 @@ in {
                 description = "Website admin panel";
                 icon = "sh-ghost.png";
                 href = "https://admin.pontonsecurity.com";
+                siteMonitor = "https://admin.pontonsecurity.com";
               };
             }
           ];
         }
         {
-          Cyber = [
+          Developing = [
             {
-              "Ponton Security" = {
-                description = "Business website";
-                icon = "sh-ghost.png";
-                href = "https://pontonsecurity.com";
-                siteMonitor = "https://pontonsecurity.com";
+              "GitLab" = {
+                description = "Business Code Repository";
+                icon = "sh-gitlab.svg";
+                href = "https://gitlab.pontonsecurity.com";
+                siteMonitor = "https://gitlab.pontonsecurity.com";
               };
             }
             {
-              "Admin Panel: Ponton Security" = {
-                description = "Website admin panel";
-                icon = "sh-ghost.png";
-                href = "https://admin.pontonsecurity.com";
+              "GitHub" = {
+                description = "Public Code Repository";
+                icon = "sh-github.svg";
+                href = "https://github.com";
+              };
+            }
+            {
+              "Nix Packages" = {
+                description = "NixOS Package Repository";
+                icon = "sh-nixos.svg";
+                href = "https://search.nixos.org/packages?channel=unstable";
+              };
+            }
+            {
+              "Nix Options" = {
+                description = "MyNixOS Settings Collection";
+                icon = "sh-nixos.svg";
+                href = "https://mynixos.com/search";
               };
             }
           ];
         }
         {
           Admin = [
+            {
+              "Cloudflare" = {
+                description = "Domain and DNS";
+                icon = "sh-cloudflare.svg";
+                href = "https://dash.cloudflare.com/";
+              };
+            }
+            {
+              "Zero Trust" = {
+                description = "Access and applications";
+                icon = "sh-cloudflare.svg";
+                href = "https://one.dash.cloudflare.com";
+              };
+            }
+            {
+              "Tailscale" = {
+                description = "Internal VPN";
+                icon = "sh-tailscale.svg";
+                href = "https://login.tailscale.com/admin/machines";
+              };
+            }
             {
               "Firewalla" = {
                 description = "Home Firewall";
@@ -233,44 +284,23 @@ in {
                 href = "http://192.168.0.1";
               };
             }
-            {
-              "Tailscale" = {
-                description = "Internal VPN";
-                icon = "sh-tailscale.svg";
-                href = "https://login.tailscale.com/admin/machines";
-              };
-            }
-            {
-              "Cloudflare" = {
-                description = "Domain and DNS";
-                icon = "sh-cloudflare.svg";
-                href = "https://dash.cloudflare.com/";
-              };
-            }
-            {
-              "Zero Trust" = {
-                description = "Access and applications";
-                icon = "sh-cloudflare.svg";
-                href = "https://one.dash.cloudflare.com";
-              };
-            }
           ];
         }
         {
           Other = [
             {
               "Vaultwarden" = {
-                description = "Password Manages";
+                description = "Password Manager";
                 icon = "sh-vaultwarden.svg";
                 href = "https://vault.pontonsecurity.com";
                 siteMonitor = "https://vault.pontonsecurity.com";
               };
             }
             {
-              "Admin Panel: Ponton Security" = {
-                description = "Website admin panel";
-                icon = "sh-ghost.png";
-                href = "https://admin.pontonsecurity.com";
+              "ChatGPT" = {
+                description = "Online AI Chatbot";
+                icon = "sh-openai.svg";
+                href = "https://chatgpt.com";
               };
             }
           ];
@@ -281,40 +311,45 @@ in {
         {
           Utilities = [
             {
-              "Proton Drive" = [
-                {
-                  icon = "sh-proton-drive.svg";
-                  href = "https://drive.proton.me";
-                }
-              ];
-            }
-            {
-              "Proton Mail" = [
-                {
-                  icon = "sh-proton-mail.svg";
-                  href = "https://mail.proton.me";
-                }
-              ];
-            }
-            {
-              "Google Maps" = [
-                {
-                  icon = "sh-google-maps.svg";
-                  href = "https://maps.google.com/";
-                }
-              ];
-            }
-            {
               "Google Calendar" = [
                 {
+                  description = "";
                   icon = "sh-google-calendar.svg";
                   href = "https://calendar.google.com";
                 }
               ];
             }
             {
+              "Proton Mail" = [
+                {
+                  description = "";
+                  icon = "sh-proton-mail.svg";
+                  href = "https://mail.proton.me";
+                }
+              ];
+            }
+            {
+              "Proton Drive" = [
+                {
+                  description = "";
+                  icon = "sh-proton-drive.svg";
+                  href = "https://drive.proton.me";
+                }
+              ];
+            }
+            {
+              "Google Maps" = [
+                {
+                  description = "";
+                  icon = "sh-google-maps.svg";
+                  href = "https://maps.google.com/";
+                }
+              ];
+            }
+            {
               "Budget" = [
                 {
+                  description = "";
                   icon = "sh-google-sheets.svg";
                   href = "https://docs.google.com/spreadsheets/d/1fxOANLsHROOpEToCqeHe_TY7ScNmveNOAwyqX4ajX6Y/edit?usp=sharing";
                 }
@@ -323,22 +358,11 @@ in {
           ];
         }
         {
-          AI = [
-            {
-              ChatGPT = [
-                {
-                  icon = "sh-openai.svg";
-                  href = "https://chatgpt.com";
-                }
-              ];
-            }
-          ];
-        }
-        {
-          Developer = [
+          Cyber = [
             {
               Github = [
                 {
+                  description = "";
                   icon = "sh-github.svg";
                   href = "https://github.com/";
                 }
@@ -351,6 +375,7 @@ in {
             {
               YouTube = [
                 {
+                  description = "";
                   icon = "sh-youtube.svg";
                   href = "https://youtube.com/";
                 }
@@ -359,6 +384,7 @@ in {
             {
               Twitch = [
                 {
+                  description = "";
                   icon = "sh-twitch.svg";
                   href = "https://twitch.com/";
                 }
@@ -367,8 +393,9 @@ in {
             {
               F1 = [
                 {
+                  description = "";
                   icon = "si-f1.svg";
-                  href = "https://https://f1tv.formula1.com/";
+                  href = "https://f1tv.formula1.com/";
                 }
               ];
             }
