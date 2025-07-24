@@ -39,7 +39,9 @@ in {
     (lib.filesystem.listFilesRecursive ../../nixosModules);
 
   # === System Specific ===
-
+  networking.extraHosts = ''
+    100.84.181.70 git.pontonsecurity.com
+  '';
   # ===
 
   # variables.nix
@@ -111,7 +113,7 @@ in {
   # Hosted / Running services (nixosModules/services)
   services = {
     cloudflare = {
-      enable = true;
+      enable = false;
       deviceType = "client";
     };
     podman.enable = false;

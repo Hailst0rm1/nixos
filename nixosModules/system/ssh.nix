@@ -16,7 +16,6 @@
         IdentityFile ~/.ssh/github
 
       Host git.${config.services.domain}
-        HostName nix-server
         User git
         IdentityFile ~/.ssh/id_hailst0rm
         IdentitiesOnly yes
