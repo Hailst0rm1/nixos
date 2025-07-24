@@ -110,6 +110,10 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
+    cloudflare = {
+      enable = true;
+      deviceType = "client";
+    };
     podman.enable = false;
     openssh.enable = false;
     mattermost.enable = false;
