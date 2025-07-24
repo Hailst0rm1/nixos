@@ -16,8 +16,7 @@
         IdentityFile ~/.ssh/github
 
       Host git.${config.services.domain}
-        HostName git.${config.services.domain}
-        ProxyCommand ${pkgs-unstable.cloudflared}/bin/cloudflared access ssh --hostname %h
+        HostName nix-server
         User git
         IdentityFile ~/.ssh/id_hailst0rm
         IdentitiesOnly yes
