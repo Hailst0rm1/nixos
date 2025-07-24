@@ -19,13 +19,18 @@ in {
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
         "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
+        # "cyber/postex-tools/SharpHound.ps1".source = "${pkgs-unstable.bloodhound}/resources/app/Collectors/SharpHound.ps1";
         # "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
       };
 
       # Allows me to bypass read-only fs
-      activation.copyLigoloConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      activation.copyTools = lib.hm.dag.entryAfter ["writeBoundary"] ''
         mkdir -p "${config.home.homeDirectory}/cyber/ligolo"
+        mkdir -p "${config.home.homeDirectory}/cyber/postex-tools"
+
         cp -f ${builtins.toPath ./files/ligolo-config.yaml} "${config.home.homeDirectory}/ligolo.yaml"
+        cp -f ${pkgs-unstable.bloodhound}/lib/BloodHound/resources/app/Collectors/SharpHound.ps1 "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.ps1"
+
         chmod 666 "${config.home.homeDirectory}/ligolo.yaml"
       '';
 

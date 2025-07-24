@@ -15,6 +15,10 @@
     # For bloodhound
     services.neo4j = {
       enable = true;
+      bolt = {
+        tlsLevel = "DISABLED"; # Disable Bolt encryption to avoid the SSL policy error
+      };
+      https.enable = false;
     };
 
     # Replaced with lingolo-ng
