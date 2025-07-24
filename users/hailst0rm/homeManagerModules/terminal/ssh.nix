@@ -9,6 +9,7 @@ in {
 
   config = lib.mkIf cfg.enable {
     programs.ssh = {
+      enable = true;
       extraConfig = ''
         Host github.com
           IdentityFile ~/.ssh/github
@@ -16,6 +17,14 @@ in {
         Host git.pontonsecurity.com
           User git
           IdentityFile ~/.ssh/id_hailst0rm
+          IdentitiesOnly yes
+          PreferredAuthentications publickey
+
+        Host nix-server
+          HostName nix-server
+          User hailst0rm
+          IdentityFile ~/.ssh/yubia
+          IdentityFile ~/.ssh/yubic
           IdentitiesOnly yes
           PreferredAuthentications publickey
       '';
