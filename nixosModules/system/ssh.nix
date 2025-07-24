@@ -11,15 +11,6 @@
     # For yubikey
     extraConfig = ''
       AddKeysToAgent yes
-
-      Host github.com
-        IdentityFile ~/.ssh/github
-
-      Host git.${config.services.domain}
-        User git
-        IdentityFile ~/.ssh/id_hailst0rm
-        IdentitiesOnly yes
-        PreferredAuthentications publickey
     '';
   };
 
