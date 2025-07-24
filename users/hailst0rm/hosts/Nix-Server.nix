@@ -52,6 +52,7 @@
   # Import configuration for other tools
   importConfig = {
     git.enable = true;
+    ssh.enable = true;
     yazi.enable = true;
     stylix.enable = false;
     sops.enable = sops;
