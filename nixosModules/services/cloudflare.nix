@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   pkgs-unstable,
   ...
 }: {
@@ -26,7 +27,10 @@
       };
     };
 
-    services.cloudflare-warp.enable = true;
+    services.cloudflare-warp = {
+      enable = true;
+      package = pkgs-unstable.cloudflare-warp;
+    };
 
     environment.systemPackages = [pkgs-unstable.cloudflared pkgs-unstable.cloudflare-warp];
   };
