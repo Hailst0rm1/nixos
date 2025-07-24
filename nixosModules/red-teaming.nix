@@ -4,10 +4,6 @@
   ...
 }: {
   config = lib.mkIf config.cyber.redTools.enable {
-    # Enables editing of hosts file
-    environment.etc.hosts.enable = false;
-    environment.etc.hosts.mode = "0700";
-
     # Enable OpenSSH for tunneling etc.
     services.openssh.enable = lib.mkForce true;
 
@@ -21,7 +17,7 @@
       enable = true;
     };
 
-    # Replace with lingolo-ng
+    # Replaced with lingolo-ng
     # Configure proxy using proxychains for red-teaming lateral movement
     programs.proxychains = lib.mkIf config.cyber.redTools.enable {
       enable = false; # Set to true to reactivate

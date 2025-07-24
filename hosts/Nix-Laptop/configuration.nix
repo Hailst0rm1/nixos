@@ -39,9 +39,6 @@ in {
     (lib.filesystem.listFilesRecursive ../../nixosModules);
 
   # === System Specific ===
-  networking.extraHosts = ''
-    100.84.181.70 git.pontonsecurity.com
-  '';
   # ===
 
   # variables.nix
@@ -112,10 +109,12 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
+    domain = "pontonsecurity.com";
     cloudflare = {
       enable = false;
       deviceType = "client";
     };
+    gitlab.serverIp = "100.84.181.70";
     podman.enable = false;
     openssh.enable = false;
     mattermost.enable = false;
@@ -126,7 +125,8 @@ in {
       authkeyFile = config.sops.secrets."services/tailscale/auth.key".path; # Needs updating every 90 days (okt 16)
       advertiseExitNode = false;
       loginServer = "https://login.tailscale.com";
-      exitNode = "nix-server";
+      exitNode = "100.84.181.70";
+      # exitNode = "nix-server";
       exitNodeAllowLanAccess = true;
     };
   };
