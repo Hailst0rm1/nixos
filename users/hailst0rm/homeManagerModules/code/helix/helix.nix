@@ -170,6 +170,7 @@
             "C-i" = ["goto_first_nonwhitespace"];
             "C-b" = ["move_prev_word_start"];
             "C-w" = ["move_next_word_start"];
+            "C-e" = ["move_next_word_end"];
             "C-l" = ["move_char_right"];
             "C-h" = ["move_char_left"];
             "C-d" = ["delete_char_forward"];

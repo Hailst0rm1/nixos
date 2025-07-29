@@ -66,7 +66,7 @@ in {
     };
 
     environment.systemPackages = with pkgs; [
-      kitty
+      # kitty
       gnome-icon-theme
       qt6.qtwayland
       libsForQt5.qt5.qtwayland
