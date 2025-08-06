@@ -106,6 +106,11 @@ in {
         bloodhound
 
         # === Command & Control (C2) ===
+        #
+
+        # === Cloud ===
+        awscli2
+        pacu # AWS Exploitation framework
 
         # === Wordlists ===
         cewl # Wordlist generator based on website
