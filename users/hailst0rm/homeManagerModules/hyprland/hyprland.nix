@@ -78,6 +78,13 @@ in {
         input = {
           kb_layout = config.keyboard;
           kb_options = "grp:win_space_toggle";
+          touchpad = {
+            middle_button_emulation = true;
+          };
+        };
+
+        gestures = {
+          workspace_swipe = true;
         };
 
         # Use "displays" (scripts/displays.sh) to configure displays dynamically
