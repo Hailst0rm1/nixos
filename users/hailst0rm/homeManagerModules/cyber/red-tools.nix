@@ -9,6 +9,8 @@
   # Custom packages
   nixosDir = inputs.self;
   thc-hydra = pkgs-unstable.callPackage "${nixosDir}/pkgs/thc-hydra/package.nix" {};
+  autorecon = pkgs-unstable.callPackage "${nixosDir}/pkgs/autorecon/package.nix" {};
+  ipmap = builtins.readFile ./files/ipmap.sh;
 in {
   # options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
 
@@ -19,6 +21,7 @@ in {
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
         "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
+        ".config/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
         # "cyber/postex-tools/SharpHound.ps1".source = "${pkgs-unstable.bloodhound}/resources/app/Collectors/SharpHound.ps1";
         # "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
       };
@@ -54,17 +57,24 @@ in {
         trufflehog # Find exposed credentials
 
         # Active
+        autorecon # Automatic recon
+        enum4linux-ng # ^Dependency: Enum samba & Windows
+        redis # ^Dependency
         nmap
         nmap-formatter
         rustscan # Fast nmap
         dnsrecon # DNS recon
         nbtscan # NetBIOS scan (port 139)
         net-snmp # Includes: snmpwalk (port UDP/161)
+        onesixtyone # SNMP Scanner (port UDP/161)
         exploitdb # Searchsploit, searchable vulnerability DB
         libxml2 # ^Dependency
+        smbmap # SMB Scanner (tcp/445)
         nuclei # Vulnerability scanner
 
         # Web
+        whatweb # Web scanner (meta)
+        nikto # Another web scanner
         gobuster # Directory busting
         ffuf # Fuzzing
         feroxbuster # Ffuf alternative
@@ -75,6 +85,7 @@ in {
         wpscan # Wordpress scanner
         httpx # Check which hosts are alive, and fingerprint them
         katana # Web crawler
+        sslscan # Tests SSL
 
         # === Resource Development ===
         pkgsCross.mingwW64.buildPackages.gcc
@@ -83,6 +94,7 @@ in {
         metasploit
         ruby # Dependency
         postgresql_18 # Dependency for MSFDB
+        swaks # SMTP Swiss Army Knife
 
         # === Execution ===
         python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
@@ -124,6 +136,7 @@ in {
         (writeShellScriptBin "cyberchef" ''          # For encoding/encryption etc
           ${config.browser} "${cyberchef}/share/cyberchef/index.html"
         '')
+        (writeShellScriptBin "ipmap" ipmap) # Map ip to hostname
       ];
     };
   };

@@ -1,0 +1,37 @@
+# Configure regular AutoRecon options at the top of this file.
+
+nmap-append = '-T5 --min-rate=5000 --min-parallelism=5000'
+verbose = 1
+ignore-plugin-checks = 1
+
+
+# Configure global options here.
+[global]
+username-wordlist = '/home/hailst0rm/cyber/wordlists/seclists/Usernames/cirt-default-usernames.txt'
+password-wordlist = '/home/hailst0rm/cyber/wordlists/rockyou.txt'
+
+# Configure plugin options here.
+[dirbuster]
+threads = 50
+recursive = 'True'
+ext = 'html,txt,xml,php,aspx,pdf,js,doc,docx,jpg,png,config,asp,jsp'
+wordlist = [
+	# '/home/hailst0rm/cyber/wordlists/seclists/Discovery/Web-Content/common.txt',
+	# '/home/hailst0rm/cyber/wordlists/seclists/Discovery/Web-Content/big.txt',
+	'/home/hailst0rm/cyber/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt'
+]
+
+[enum4linux]
+tool = 'enum4linux-ng'
+
+[onesixtyone]
+community-strings = '/home/hailst0rm/cyber/wordlists/seclists/Discovery/SNMP/common-snmp-community-strings-onesixtyone.txt'
+
+[subdomain]
+wordlist = [
+  '/home/hailst0rm/cyber/wordlists/seclists/Discovery/DNS/subdomains-top1million-110000.txt'
+]
+threads = 50
+
+[wpscan]
+api-token = 'uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I'
