@@ -13,7 +13,7 @@ password-wordlist = '/home/hailst0rm/cyber/wordlists/rockyou.txt'
 # Configure plugin options here.
 [dirbuster]
 threads = 50
-recursive = 'True'
+recursive = true
 ext = 'html,txt,xml,php,aspx,pdf,js,doc,docx,jpg,png,config,asp,jsp'
 wordlist = [
 	# '/home/hailst0rm/cyber/wordlists/seclists/Discovery/Web-Content/common.txt',
@@ -32,6 +32,3 @@ wordlist = [
   '/home/hailst0rm/cyber/wordlists/seclists/Discovery/DNS/subdomains-top1million-110000.txt'
 ]
 threads = 50
-
-[wpscan]
-api-token = 'uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I'
