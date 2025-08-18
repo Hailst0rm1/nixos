@@ -10,6 +10,8 @@
   nixosDir = inputs.self;
   thc-hydra = pkgs-unstable.callPackage "${nixosDir}/pkgs/thc-hydra/package.nix" {};
   autorecon = pkgs-unstable.callPackage "${nixosDir}/pkgs/autorecon/package.nix" {};
+  httpuploadexfil = pkgs-unstable.callPackage "${nixosDir}/pkgs/httpuploadexfil/package.nix" {};
+  wes-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/wes-ng/package.nix" {};
   # ipcrawler = pkgs-unstable.callPackage "${nixosDir}/pkgs/ipcrawler/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
 
@@ -45,6 +47,66 @@
       install -m755 $src $out/Rubeus.exe
     '';
   };
+  winpeasPs1 = pkgs.stdenv.mkDerivation {
+    pname = "winpeasPs1";
+    version = "2025-08-17_96b7bda";
+
+    src = pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/peass-ng/PEASS-ng/master/winPEAS/winPEASps1/winPEAS.ps1";
+      sha256 = "sha256-IvT8mdVmRY8Pd31akowJZ3TS644bGjb/uE0A5WLVEaQ=";
+    };
+
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/winpeas.ps1
+    '';
+  };
+  winpeasExe = pkgs.stdenv.mkDerivation {
+    pname = "winpeasExe";
+    version = "20250801-03e73bf3";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20250801-03e73bf3/winPEASx64.exe";
+      sha256 = "sha256-oCHgU0CdyaY64JGLVS/0yox4YjzUXCQQJAfG+XODW4Y=";
+    };
+
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/winpeas.exe
+    '';
+  };
+  privescCheck = pkgs.stdenv.mkDerivation {
+    pname = "privescCheck";
+    version = "2025-08-17_f0d437d";
+
+    src = pkgs.fetchurl {
+      url = "https://raw.githubusercontent.com/itm4n/PrivescCheck/refs/heads/master/PrivescCheck.ps1";
+      sha256 = "sha256-hJnTztTpYp57CFebjL07GsYnLeetlWnz2SSheG0wOd4=";
+    };
+
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/PrivescCheck.ps1
+    '';
+  };
+  linpeas = pkgs.stdenv.mkDerivation {
+    pname = "linpeas";
+    version = "20250801-03e73bf3";
+
+    src = pkgs.fetchurl {
+      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20250801-03e73bf3/linpeas_fat.sh";
+      sha256 = "sha256-5CMVpLqSZtOjysfWLYbM8TphGYDbjUv2lWKpreTiEFY=";
+    };
+
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/linpeas
+    '';
+  };
 in {
   # options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
 
@@ -70,16 +132,18 @@ in {
 
         cp -f ${pkgs-unstable.bloodhound}/lib/BloodHound/resources/app/Collectors/SharpHound.ps1 "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.ps1"
         cp -f ${rubeus}/Rubeus.exe "${config.home.homeDirectory}/cyber/postex-tools/Rubeus.exe"
+        cp -f ${winpeasPs1}/winpeas.ps1 "${config.home.homeDirectory}/cyber/postex-tools/winpeas.ps1"
+        cp -f ${winpeasExe}/winpeas.exe "${config.home.homeDirectory}/cyber/postex-tools/winpeas.exe"
+        cp -f ${linpeas}/linpeas "${config.home.homeDirectory}/cyber/postex-tools/linpeas"
+        cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
 
       '';
 
-      sessionVariables = {
-      };
       packages = with pkgs-unstable; [
         # === Testing corner ===
         # wireshark
         wineWowPackages.wayland
-        ligolo-mp
+        wes-ng
 
         # === Reconnaissance ===
 
@@ -137,10 +201,14 @@ in {
         # === Execution ===
         python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
 
+        # === Privilege Escalation ===
+        linux-exploit-suggester # Takes with
+
         # === Lateral Movement ===
         evil-winrm # WinRM shell for hacking/pentesting
         (pkgs.netexec)
-        ligolo-ng #  Tunneling/pivoting tool that uses a TUN interface
+        # ligolo-ng #  Tunneling/pivoting tool that uses a TUN interface
+        ligolo-mp #  Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
 
         # === Credential Access ===
         thc-hydra # Brute force
@@ -154,9 +222,13 @@ in {
 
         # === Discovery ===
         bloodhound
+        bloodhound-py # Bloodhound ingestor (remote SharpHound)
 
         # === Command & Control (C2) ===
         #
+
+        # === Exfiltration ===
+        httpuploadexfil # Like Python server, but upload
 
         # === Cloud ===
         awscli2
