@@ -14,6 +14,8 @@
   wes-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/wes-ng/package.nix" {};
   # ipcrawler = pkgs-unstable.callPackage "${nixosDir}/pkgs/ipcrawler/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
+  listeners = builtins.readFile ./files/listeners.sh;
+  atm = builtins.readFile ./files/atm.sh;
 
   ligolo-mp = pkgs.stdenv.mkDerivation {
     pname = "ligolo-mp";
@@ -117,7 +119,12 @@ in {
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
         "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
+        "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
         "cyber/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
+        "cyber/AutoRecon/Plugins" = {
+          source = ./files/AutoRecon-Plugins;
+          recursive = true;
+        };
         # "cyber/postex-tools/SharpHound.ps1".source = "${pkgs-unstable.bloodhound}/resources/app/Collectors/SharpHound.ps1";
         # "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
       };
@@ -126,16 +133,15 @@ in {
       activation.copyTools = lib.hm.dag.entryAfter ["writeBoundary"] ''
         mkdir -p "${config.home.homeDirectory}/cyber/postex-tools"
 
-        # mkdir -p "${config.home.homeDirectory}/cyber/ligolo"
-        # cp -f ${builtins.toPath ./files/ligolo-config.yaml} "${config.home.homeDirectory}/ligolo.yaml"
-        # chmod 666 "${config.home.homeDirectory}/ligolo.yaml"
-
         cp -f ${pkgs-unstable.bloodhound}/lib/BloodHound/resources/app/Collectors/SharpHound.ps1 "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.ps1"
         cp -f ${rubeus}/Rubeus.exe "${config.home.homeDirectory}/cyber/postex-tools/Rubeus.exe"
         cp -f ${winpeasPs1}/winpeas.ps1 "${config.home.homeDirectory}/cyber/postex-tools/winpeas.ps1"
         cp -f ${winpeasExe}/winpeas.exe "${config.home.homeDirectory}/cyber/postex-tools/winpeas.exe"
         cp -f ${linpeas}/linpeas "${config.home.homeDirectory}/cyber/postex-tools/linpeas"
         cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
+        cp -f ${builtins.toPath ./files/PrivEsc.ps1} "${config.home.homeDirectory}/cyber/postex-tools/PrivEsc.ps1"
+        cp -f ${builtins.toPath ./files/Connect.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Connect.ps1"
+        cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
 
       '';
 
@@ -211,6 +217,7 @@ in {
         ligolo-mp #  Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
 
         # === Credential Access ===
+        (writeShellScriptBin "atm" atm) # CUSTOM: netexec credential gathering automation
         thc-hydra # Brute force
         hashcat # GPU cracker
         hashcat-utils
@@ -248,6 +255,7 @@ in {
           ${config.browser} "${cyberchef}/share/cyberchef/index.html"
         '')
         (writeShellScriptBin "ipmap" ipmap) # Map ip to hostname
+        (writeShellScriptBin "listeners" listeners) # Start web/msf/exfil/routing servers
         go # Required by ligolo-mp
       ];
     };

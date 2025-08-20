@@ -1,9 +1,11 @@
 # Configure regular AutoRecon options at the top of this file.
 
-nmap-append = '-T5 --min-rate=5000 --min-parallelism=5000'
+nmap = '-vv --reason -Pn -T5 --min-rate=5000 --min-parallelism=5000'
 verbose = 1
 ignore-plugin-checks = 1
 
+# This includes all default plugins
+tags = 'default,unsafe'
 
 # Configure global options here.
 [global]
