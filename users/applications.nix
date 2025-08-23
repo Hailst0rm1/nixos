@@ -33,6 +33,7 @@ in {
       mail.enable = lib.mkEnableOption "Enable ProtonMail Desktop.";
       vpn.enable = lib.mkEnableOption "Enable ProtonVPN GUI.";
       pass.enable = lib.mkEnableOption "Enable ProtonPass.";
+      authenticator.enable = lib.mkEnableOption "Enable Proton Authenticator.";
     };
 
     ## Games
@@ -61,6 +62,7 @@ in {
       (lib.mkIf (proton.mail.enable || proton.enableAll) [pkgs-unstable.protonmail-desktop])
       (lib.mkIf (proton.vpn.enable || proton.enableAll) [pkgs.protonvpn-gui])
       (lib.mkIf (proton.pass.enable || proton.enableAll) [pkgs-unstable.proton-pass])
+      (lib.mkIf (proton.authenticator.enable || proton.enableAll) [pkgs-unstable.proton-authenticator])
 
       ## Games
       (lib.mkIf games.ryujinx.enable [pkgs-unstable.ryujinx-greemdev])

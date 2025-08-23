@@ -69,8 +69,8 @@
     version = "20250801-03e73bf3";
 
     src = pkgs.fetchurl {
-      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20250801-03e73bf3/winPEASx64.exe";
-      sha256 = "sha256-oCHgU0CdyaY64JGLVS/0yox4YjzUXCQQJAfG+XODW4Y=";
+      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20250801-03e73bf3/winPEASany_ofs.exe";
+      sha256 = "sha256-lR9CLMQd2JrjCUSidJ1YW1CiGJlZ8o8bUivjODyusFE=";
     };
 
     phases = ["installPhase"];
@@ -214,8 +214,9 @@ in {
         # === Lateral Movement ===
         evil-winrm # WinRM shell for hacking/pentesting
         (pkgs.netexec)
-        # ligolo-ng #  Tunneling/pivoting tool that uses a TUN interface
-        ligolo-mp #  Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
+        # ligolo-ng # Tunneling/pivoting tool that uses a TUN interface
+        ligolo-mp # Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
+        garble # Ligolo-mp dependency: Obfuscation
 
         # === Credential Access ===
         (writeShellScriptBin "atm" atm) # CUSTOM: netexec credential gathering automation

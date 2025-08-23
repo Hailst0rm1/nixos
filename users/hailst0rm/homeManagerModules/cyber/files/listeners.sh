@@ -7,10 +7,16 @@ NC="\033[0m" # No Color
 ghostty -e "echo -e '${GREEN}[+] Starting Python HTTP server... (~/cyber/postex-tools)${NC}'; sudo python -m http.server 80 -d ~/cyber/postex-tools" &>/dev/null &
 
 # Start Ligolo-MP agent
+sudo mkdir -p /root/.ligolo-mp-server/assets/go/bin
+sudo ln -sf $(which go) /root/.ligolo-mp-server/assets/go/bin/go
+sudo ln -sf $(which gofmt) /root/.ligolo-mp-server/assets/go/bin/gofmt 
+sudo ln -sf $(which garble) /root/.ligolo-mp-server/assets/go/bin/garble 
 ghostty -e "echo -e '${GREEN}[+] Starting Ligolo-MP server...${NC}'; sudo ligolo-mp --agent-addr 0.0.0.0:8000" &>/dev/null &
 
 # Start HTTP exfil server
-ghostty -e "echo -e '${GREEN}[+] Starting HTTP Exfiltration server... (~/Documents/Exfiltration)${NC}'; sudo httpuploadexfil :8080 ~/Documents/Exfiltration" &>/dev/null &
+EXFIL_DIR="/home/hailst0rm/Documents/Exfiltration"
+mkdir -p $EXFIL_DIR
+ghostty -e "echo -e '${GREEN}[+] Starting HTTP Exfiltration server... ($(echo $EXFIL_DIR))${NC}'; sudo httpuploadexfil :8080 $EXFIL_DIR" &>/dev/null &
 
 # Start Metasploit listeners
 ghostty -e "echo -e '${GREEN}[+] Starting Metasploit Reverse Shell listener... (Windows, port 443)${NC}'; sudo msfconsole --resource ~/cyber/metasploit/win-revtcp-listener.rc" &>/dev/null &
