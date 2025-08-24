@@ -53,6 +53,17 @@ in {
           "col.active_border" = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";
         };
 
+        group = {
+          "col.border_active" = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";
+          groupbar = {
+            font_size = 11;
+            font_weight_active = "bold";
+            font_weight_inactive = "bold";
+            keep_upper_gap = false;
+            "col.active" = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";
+          };
+        };
+
         decoration = {
           active_opacity = 0.95;
           inactive_opacity = 0.9;
