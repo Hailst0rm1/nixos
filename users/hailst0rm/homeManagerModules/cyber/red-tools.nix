@@ -16,6 +16,7 @@
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
+  var = builtins.readFile ./files/var.sh;
 
   ligolo-mp = pkgs.stdenv.mkDerivation {
     pname = "ligolo-mp";
@@ -259,6 +260,7 @@ in {
         '')
         (writeShellScriptBin "ipmap" ipmap) # Map ip to hostname
         (writeShellScriptBin "listeners" listeners) # Start web/msf/exfil/routing servers
+        (writeShellScriptBin "var" var) # Easily modify variables
         go # Required by ligolo-mp
       ];
     };

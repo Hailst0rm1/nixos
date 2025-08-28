@@ -1,86 +1,74 @@
-#!/usr/bin/env bash  # Use bash as default; compatible with zsh via sourcing
+#!/usr/bin/env zsh
 
 ENV_FILE="$HOME/.config/.my_vars.env"
 
-# ANSI colors (works in Bash and Zsh)
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m'
-
-# Make sure the script is being sourced
-sourced=0
-# Bash check
-if [ -n "$BASH_VERSION" ]; then
-    [[ "${BASH_SOURCE[0]}" != "$0" ]] && sourced=1
-# Zsh check
-elif [ -n "$ZSH_VERSION" ]; then
-    case $ZSH_EVAL_CONTEXT in *:file) sourced=0;; *) sourced=1;; esac
-fi
-
-if [[ $sourced -eq 0 ]]; then
-    echo -e "${RED}[!]${NC} Error: This script must be sourced, not executed." >&2
-    return 1 2>/dev/null || exit 1
-fi
+# Colors
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+CYAN=$'\033[0;36m'
+BOLD=$'\033[1m'
+NC=$'\033[0m'
 
 # Load existing values
-[ -f "$ENV_FILE" ] && source "$ENV_FILE"
+[[ -f "$ENV_FILE" ]] && source "$ENV_FILE"
 
-# Declare associative array
-if [ -n "$BASH_VERSION" ]; then
-    declare -A vars
-else
-    typeset -A vars
-fi
-
-vars=(
-    [DC_IP]="$DC_IP"
-    [DOMAIN]="$DOMAIN"
-    [USER]="$USER"
-    [PASSWORD]="$PASSWORD"
-    [DC_HOST]="$DC_HOST"
-    [NT_HASH]="$NT_HASH"
+# Associative array
+typeset -A vars=(
+    TARGET "$TARGET"
+    CIDR "$CIDR"
+    DC "$DC"
+    DOMAIN "$DOMAIN"
+    USER "$USER"
+    PASSWORD "$PASSWORD"
+    DC_HOST "$DC_HOST"
+    NT_HASH "$NT_HASH"
 )
 
-ordered_keys=(DC_IP DOMAIN USER PASSWORD DC_HOST NT_HASH)
+# Ordered keys
+ordered_keys=( TARGET CIDR DC DOMAIN USER PASSWORD DC_HOST NT_HASH )
 
-# Print variables
 print_vars() {
-    echo -e "\n${BOLD}${CYAN}Variables:${NC}\n"
-    local i=1 key
-    for key in "${ordered_keys[@]}"; do
-        printf " %2d) %-10s : %s\n" "$i" "$key" "${vars[$key]}"
-        ((i++))
+    print -P "\n${BOLD}${CYAN}Variables:${NC}\n"
+    local i=1
+    for key in $ordered_keys; do
+        printf " %2d) %-10s : %s\n" $i "$key" "${vars[$key]}"
+        (( i++ ))
     done
-    echo ""
+    print ""
 }
 
-# Convert index → key
 get_key_by_index() {
-    echo "${ordered_keys[$1-1]}"
+    echo "${ordered_keys[$1]}"
 }
 
 # Parse flags
-while [ $# -gt 0 ]; do
+while [[ $# -gt 0 ]]; do
     case "$1" in
         -s|--source)
-            if [ -f "$ENV_FILE" ]; then
-                source "$ENV_FILE"
-                echo -e "${GREEN}Sourced $ENV_FILE${NC}"
-            else
-                echo -e "${RED}Env file not found${NC}"
-            fi
+            [[ -f "$ENV_FILE" ]] && source "$ENV_FILE" && print -P "${GREEN}Sourced $ENV_FILE${NC}" || print -P "${RED}Env file not found${NC}"
             print_vars
             return 0
             ;;
         -l|--list)
+            [[ -f "$ENV_FILE" ]] && source "$ENV_FILE"
             print_vars
             return 0
             ;;
+        -d|--delete-all)
+            # Unset all vars and clear file
+            set +o nomatch 2>/dev/null
+            for key in $ordered_keys; do
+                unset "$key"
+                unset vars[$key]
+            done
+            set -o nomatch 2>/dev/null
+            "" > "$ENV_FILE" 2>/dev/null
+            print -P "${GREEN}All variables deleted and $ENV_FILE cleared.${NC}"
+            return 0
+            ;;
         -*)
-            echo -e "${RED}Unknown option: $1${NC}"
+            print -P "${RED}Unknown option: $1${NC}"
             return 1
             ;;
         *)
@@ -92,37 +80,26 @@ done
 # Interactive menu
 while true; do
     print_vars
-
-    # Prompt safely for both Bash and Zsh
-    if [ -n "$BASH_VERSION" ]; then
-        read -rp "${YELLOW}Selection (number or 'exit'): ${NC}" sel
-    else
-        read "sel?${YELLOW}Selection (number or 'exit'): ${NC}"
-    fi
-
+    read -r "sel?${YELLOW}Selection (number or 'exit'): ${NC}"
     [[ "$sel" == "exit" ]] && break
 
-    if [[ "$sel" =~ ^[0-9]+$ ]] && (( sel >= 1 && sel <= ${#ordered_keys[@]} )); then
-        key=$(get_key_by_index "$sel")
-
-        if [ -n "$BASH_VERSION" ]; then
-            read -rp "${YELLOW}Enter value for $key: ${NC}" val
-        else
-            read "val?${YELLOW}Enter value for $key: ${NC}"
-        fi
+    # zsh-safe numeric check
+    if [[ "$sel" = [1-9]* ]] && (( sel >= 1 && sel <= ${#ordered_keys[@]} )); then
+        key=$(get_key_by_index $sel)
+        read -r "val?${YELLOW}Enter value for $key: ${NC}"
 
         export "$key=$val"
         vars[$key]="$val"
 
-        # Save to file
+        # Persist to file
         grep -v "^$key=" "$ENV_FILE" 2>/dev/null > "$ENV_FILE.tmp"
         echo "$key='$val'" >> "$ENV_FILE.tmp"
         mv "$ENV_FILE.tmp" "$ENV_FILE"
 
-        echo -e "${GREEN}$key set.${NC}\n"
+        print -P "${GREEN}$key set.${NC}\n"
     else
-        echo -e "${RED}Invalid selection${NC}\n"
+        print -P "${RED}Invalid selection${NC}\n"
     fi
 done
 
-echo -e "${CYAN}Variables saved to $ENV_FILE. Source it in future shells to load.${NC}"
+print -P "${CYAN}Variables saved to $ENV_FILE. Source it in future shells to load.${NC}"

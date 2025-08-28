@@ -61,6 +61,7 @@
         p = "wl-paste";
         cl = "clear";
         q = "exit";
+        s = "source";
         ":q" = "exit";
         nix-edit = "yazi ${config.nixosDir}";
         yz = "yazi";
