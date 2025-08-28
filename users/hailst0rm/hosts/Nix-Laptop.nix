@@ -100,6 +100,7 @@
     proton.enableAll = true;
     remmina.enable = true;
     spotify.enable = true;
+    youtube-music.enable = true;
     zen-browser.enable = false;
     openconnect.enable = true;
     games = {

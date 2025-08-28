@@ -29,6 +29,7 @@
     pkgs.jq
     pkgs.xclip
     pkgs.dig
+    pkgs.expect
 
     # Git
     pkgs.git

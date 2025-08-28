@@ -24,6 +24,7 @@ in {
     obsidian.enable = lib.mkEnableOption "Enable Obsidian.";
     remmina.enable = lib.mkEnableOption "Enable Remmina";
     spotify.enable = lib.mkEnableOption "Enable Spotify.";
+    youtube-music.enable = lib.mkEnableOption "Enable youtube-music.";
     zen-browser.enable = lib.mkEnableOption "Enable Zen Browser.";
     openconnect.enable = lib.mkEnableOption "Enable Openconnect.";
 
@@ -55,6 +56,7 @@ in {
       (lib.mkIf cfg.obsidian.enable [pkgs-unstable.obsidian])
       (lib.mkIf cfg.remmina.enable [pkgs-unstable.remmina])
       #(lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ]) # Uncomment if not using spicetify flake
+      (lib.mkIf cfg.youtube-music.enable [pkgs-unstable.youtube-music])
       (lib.mkIf cfg.zen-browser.enable [inputs.zen-browser.packages.${pkgs.system}.default])
       (lib.mkIf cfg.openconnect.enable [pkgs-unstable.openconnect])
 

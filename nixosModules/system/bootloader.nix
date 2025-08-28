@@ -27,6 +27,7 @@ in {
       kernelParams = [
         "splash"
         "quiet"
+        "transparent_hugepage=never" # Keep splash during yubi-auth
       ];
       plymouth = {
         enable = true;

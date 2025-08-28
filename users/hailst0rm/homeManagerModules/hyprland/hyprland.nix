@@ -171,6 +171,11 @@ in {
             "$mainMod, G, togglegroup,"
             "$mainMod, E, changegroupactive, b"
             "$mainMod, I, changegroupactive, f"
+            "$mainMod CONTROL SHIFT, H, moveintogroup, l"
+            "$mainMod CONTROL SHIFT, L, moveintogroup, r"
+            "$mainMod CONTROL SHIFT, K, moveintogroup, u"
+            "$mainMod CONTROL SHIFT, J, moveintogroup, d"
+            "$mainMod CONTROL SHIFT, I, moveoutofgroup, r"
             "$mainMod, P, pseudo, # dwindle"
             "$mainMod SHIFT, J, togglesplit, # dwindle"
 
