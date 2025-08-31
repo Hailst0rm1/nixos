@@ -33,83 +33,6 @@
       install -m755 $src $out/bin/ligolo-mp
     '';
   };
-
-  # Postex-Tools
-  rubeus = pkgs.stdenv.mkDerivation {
-    pname = "rubeus";
-    version = "4.8.1-compiled";
-
-    src = pkgs.fetchurl {
-      url = "https://raw.githubusercontent.com/r3motecontrol/Ghostpack-CompiledBinaries/master/dotnet%20v4.8.1%20compiled%20binaries/Rubeus.exe";
-      sha256 = "sha256-QKS15U/szlLJ2O9bL6OXOj3XSMW87de94RVKpKk2wuE=";
-    };
-
-    phases = ["installPhase"];
-    installPhase = ''
-      mkdir -p $out
-      install -m755 $src $out/Rubeus.exe
-    '';
-  };
-  winpeasPs1 = pkgs.stdenv.mkDerivation {
-    pname = "winpeasPs1";
-    version = "2025-08-17_96b7bda";
-
-    src = pkgs.fetchurl {
-      url = "https://raw.githubusercontent.com/peass-ng/PEASS-ng/master/winPEAS/winPEASps1/winPEAS.ps1";
-      sha256 = "sha256-IvT8mdVmRY8Pd31akowJZ3TS644bGjb/uE0A5WLVEaQ=";
-    };
-
-    phases = ["installPhase"];
-    installPhase = ''
-      mkdir -p $out
-      install -m755 $src $out/winpeas.ps1
-    '';
-  };
-  winpeasExe = pkgs.stdenv.mkDerivation {
-    pname = "winpeasExe";
-    version = "20250801-03e73bf3";
-
-    src = pkgs.fetchurl {
-      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20250801-03e73bf3/winPEASany_ofs.exe";
-      sha256 = "sha256-lR9CLMQd2JrjCUSidJ1YW1CiGJlZ8o8bUivjODyusFE=";
-    };
-
-    phases = ["installPhase"];
-    installPhase = ''
-      mkdir -p $out
-      install -m755 $src $out/winpeas.exe
-    '';
-  };
-  privescCheck = pkgs.stdenv.mkDerivation {
-    pname = "privescCheck";
-    version = "2025-08-17_f0d437d";
-
-    src = pkgs.fetchurl {
-      url = "https://raw.githubusercontent.com/itm4n/PrivescCheck/refs/heads/master/PrivescCheck.ps1";
-      sha256 = "sha256-hJnTztTpYp57CFebjL07GsYnLeetlWnz2SSheG0wOd4=";
-    };
-
-    phases = ["installPhase"];
-    installPhase = ''
-      mkdir -p $out
-      install -m755 $src $out/PrivescCheck.ps1
-    '';
-  };
-  linpeas = pkgs.stdenv.mkDerivation {
-    pname = "linpeas";
-    version = "20250801-03e73bf3";
-
-    src = pkgs.fetchurl {
-      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20250801-03e73bf3/linpeas_fat.sh";
-      sha256 = "sha256-5CMVpLqSZtOjysfWLYbM8TphGYDbjUv2lWKpreTiEFY=";
-    };
-
-    phases = ["installPhase"];
-    installPhase = ''
-      mkdir -p $out
-      install -m755 $src $out/linpeas
-    '';
-  };
 in {
   # options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
 
@@ -130,23 +53,6 @@ in {
         # "cyber/postex-tools/SharpHound.ps1".source = "${pkgs-unstable.bloodhound}/resources/app/Collectors/SharpHound.ps1";
         # "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
       };
-
-      # Allows me to bypass read-only fs
-      activation.copyTools = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        mkdir -p "${config.home.homeDirectory}/cyber/postex-tools"
-
-        cp -f ${pkgs-unstable.bloodhound}/lib/BloodHound/resources/app/Collectors/SharpHound.ps1 "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.ps1"
-        cp -f ${rubeus}/Rubeus.exe "${config.home.homeDirectory}/cyber/postex-tools/Rubeus.exe"
-        cp -f ${pkgs-unstable.mimikatz}/share/windows/mimikatz/x64/mimikatz.exe "${config.home.homeDirectory}/cyber/postex-tools/mimikatz.exe"
-        cp -f ${winpeasPs1}/winpeas.ps1 "${config.home.homeDirectory}/cyber/postex-tools/winpeas.ps1"
-        cp -f ${winpeasExe}/winpeas.exe "${config.home.homeDirectory}/cyber/postex-tools/winpeas.exe"
-        cp -f ${linpeas}/linpeas "${config.home.homeDirectory}/cyber/postex-tools/linpeas"
-        cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
-        cp -f ${builtins.toPath ./files/PrivEsc.ps1} "${config.home.homeDirectory}/cyber/postex-tools/PrivEsc.ps1"
-        cp -f ${builtins.toPath ./files/Connect.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Connect.ps1"
-        cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
-
-      '';
 
       packages = with pkgs-unstable; [
         # === Testing corner ===
@@ -228,7 +134,6 @@ in {
         john # CPU cracker
         hashid # Identify hash type (-m for hashcat mode value)
         python312Packages.impacket # ntmlrelayx.py: Relays ntml requests
-        mimikatz
         (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
 
         # === Discovery ===

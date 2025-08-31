@@ -25,4 +25,30 @@
       mkdir -p "$TMPDIR"
     '';
   };
+
+  python = pkgs.mkShell {
+    buildInputs = [
+      (pkgs.python3.withPackages (ps:
+        with ps; [
+          requests
+          numpy
+          pandas
+          matplotlib
+          impacket
+          # add more as you need
+        ]))
+    ];
+
+    # Optional helpers
+    nativeBuildInputs = with pkgs; [
+      git
+      curl
+      wget
+    ];
+
+    shellHook = ''
+      echo "🐍 Python dev shell ready!"
+      python --version
+    '';
+  };
 }

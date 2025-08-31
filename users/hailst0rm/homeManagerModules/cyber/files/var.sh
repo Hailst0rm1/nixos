@@ -25,10 +25,11 @@ typeset -A vars=(
     PASSWORD "$PASSWORD"
     DC_HOST "$DC_HOST"
     NT_HASH "$NT_HASH"
+    AES_KEY "$AES_KEY"
 )
 
 # Ordered keys
-ordered_keys=( OUTDIR TARGET TARGETS CIDR DC DOMAIN USER PASSWORD DC_HOST NT_HASH )
+ordered_keys=( OUTDIR TARGET TARGETS CIDR DC DOMAIN USER PASSWORD DC_HOST NT_HASH AES_KEY)
 
 print_vars() {
     print -P "\n${BOLD}${CYAN}Variables:${NC}\n"
