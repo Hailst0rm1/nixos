@@ -121,7 +121,7 @@ in {
 
         # === Lateral Movement ===
         evil-winrm # WinRM shell for hacking/pentesting
-        (pkgs.netexec)
+        netexec
         # ligolo-ng # Tunneling/pivoting tool that uses a TUN interface
         ligolo-mp # Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
         garble # Ligolo-mp dependency: Obfuscation

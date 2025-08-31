@@ -96,8 +96,7 @@ in {
         cp -f ${linpeas}/linpeas "${config.home.homeDirectory}/cyber/postex-tools/linpeas"
         cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
         cp -f ${sigmaPotato}/SigmaPotato.exe "${config.home.homeDirectory}/cyber/postex-tools/SigmaPotato.exe"
-        cp -f ${builtins.toPath ./files/PrivEsc.ps1} "${config.home.homeDirectory}/cyber/postex-tools/PrivEsc.ps1"
-        cp -f ${builtins.toPath ./files/Connect.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Connect.ps1"
+        cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"
         cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
 
       '';

