@@ -37,6 +37,16 @@ in {
   # options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
 
   config = lib.mkIf config.cyber.redTools.enable {
+    programs.zsh.initContent = ''
+      # Encode, print, and save payload in variable 'encoded'
+      psencode() {
+        local payload="$*"
+        local command
+        command=$(echo -n "$payload" | iconv -t UTF-16LE | base64 -w 0)
+        encoded="powershell -nop -w hidden -e $command"
+        echo "[+] Saved as \$encoded:\n$encoded"
+      }
+    '';
     home = {
       file = {
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";

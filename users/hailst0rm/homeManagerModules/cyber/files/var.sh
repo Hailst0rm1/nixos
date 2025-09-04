@@ -16,6 +16,7 @@ NC=$'\033[0m'
 # Associative array
 typeset -A vars=(
     OUTDIR "$OUTDIR"
+    C2 "$C2"
     TARGET "$TARGET"
     TARGETS "$TARGETS"
     CIDR "$CIDR"
@@ -28,7 +29,7 @@ typeset -A vars=(
 )
 
 # Ordered keys
-ordered_keys=( OUTDIR TARGET TARGETS CIDR DC DOMAIN USER PASSWORD NT_HASH AES_KEY)
+ordered_keys=( OUTDIR C2 TARGET TARGETS CIDR DC DOMAIN USER PASSWORD NT_HASH AES_KEY)
 
 print_vars() {
     print -P "\n${BOLD}${CYAN}Variables:${NC}\n"

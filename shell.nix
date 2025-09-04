@@ -35,6 +35,7 @@
           pandas
           matplotlib
           impacket
+          beautifulsoup4
           # add more as you need
         ]))
     ];
