@@ -37,16 +37,6 @@ in {
   # options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
 
   config = lib.mkIf config.cyber.redTools.enable {
-    programs.zsh.initContent = ''
-      # Encode, print, and save payload in variable 'encoded'
-      psencode() {
-        local payload="$*"
-        local command
-        command=$(echo -n "$payload" | iconv -t UTF-16LE | base64 -w 0)
-        encoded="powershell -nop -w hidden -e $command"
-        echo "[+] Saved as \$encoded:\n$encoded"
-      }
-    '';
     home = {
       file = {
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
@@ -68,7 +58,6 @@ in {
         # === Testing corner ===
         # wireshark
         wineWowPackages.wayland
-        wes-ng
 
         # === Reconnaissance ===
 
@@ -127,7 +116,8 @@ in {
         python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
 
         # === Privilege Escalation ===
-        linux-exploit-suggester # Takes with
+        wes-ng # Windows-exploit-suggester
+        linux-exploit-suggester
 
         # === Lateral Movement ===
         evil-winrm # WinRM shell for hacking/pentesting

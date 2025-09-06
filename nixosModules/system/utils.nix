@@ -52,5 +52,6 @@
     pkgs-unstable.sd # Sed: UX and fast
     pkgs-unstable.difftastic # Diff: Side by side, UX
     pkgs-unstable.nh # Nixos-rebuild: Short + pretty
+    pkgs-unstable.nix-init # Generate nix package from URL
   ];
 }

