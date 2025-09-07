@@ -63,6 +63,20 @@
     '';
   };
 
+  pspy = pkgs.stdenv.mkDerivation {
+    pname = "pspy";
+    version = "latest";
+    src = pkgs.fetchurl {
+      url = "https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy64";
+      sha256 = "sha256-yT8ppcwTR725DhShJCTmRpyM/qmiC4ALwkl1XwBDo7s=";
+    };
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/pspy
+    '';
+  };
+
   sigmaPotato = pkgs.stdenv.mkDerivation {
     pname = "sigmaPotato";
     version = "v1.2.6";
@@ -90,6 +104,7 @@ in {
         cp -f ${pkgs-unstable.mimikatz}/share/windows/mimikatz/x64/mimikatz.exe "${config.home.homeDirectory}/cyber/postex-tools/mimikatz.exe"
         cp -f ${winpeasExe}/winpeas.exe "${config.home.homeDirectory}/cyber/postex-tools/winpeas.exe"
         cp -f ${linpeas}/linpeas "${config.home.homeDirectory}/cyber/postex-tools/linpeas"
+        cp -f ${pspy}/pspy "${config.home.homeDirectory}/cyber/postex-tools/pspy"
         cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
         cp -f ${sigmaPotato}/SigmaPotato.exe "${config.home.homeDirectory}/cyber/postex-tools/SigmaPotato.exe"
         cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"

