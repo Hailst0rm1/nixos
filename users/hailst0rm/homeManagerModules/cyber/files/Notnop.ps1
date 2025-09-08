@@ -151,7 +151,7 @@ function Invoke-Collection {
 function Invoke-PrivEsc {
     param(
         [Parameter(Mandatory=$true)]
-        [string]$C2
+        [string]$C2,
 
         [int]$Uport = 8080,
         [int]$Dport = 80

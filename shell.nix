@@ -30,6 +30,7 @@
     buildInputs = [
       (pkgs.python3.withPackages (ps:
         with ps; [
+          pip
           requests
           numpy
           pandas
@@ -45,9 +46,17 @@
       git
       curl
       wget
+      zlib
     ];
 
     shellHook = ''
+      export TMPDIR=/tmp
+      export "LD_LIBRARY_PATH=${pkgs.zlib}/lib:$LD_LIBRARY_PATH"
+      export VENV_DIR=$(mktemp -d)
+      python -m venv $VENV_DIR
+      source $VENV_DIR/bin/activate
+      echo "Virtual environment is ready and activated in $VENV_DIR."
+      pip install pyside2
       echo "🐍 Python dev shell ready!"
       python --version
     '';
