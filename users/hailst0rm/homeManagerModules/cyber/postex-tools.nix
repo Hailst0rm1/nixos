@@ -95,7 +95,7 @@ in {
     home = {
       # Allows me to bypass read-only fs
       activation.copyTools = lib.hm.dag.entryAfter ["writeBoundary"] ''
-        mkdir -p "${config.home.homeDirectory}/cyber/postex-tools"
+        mkdir -p "${config.home.homeDirectory}/cyber/postex-tools/payloads"
         mkdir -p "${config.home.homeDirectory}/cyber/wordlists-custom"
 
         cp -f ${builtins.toPath ./files/common-ssh-key-names.txt} "${config.home.homeDirectory}/cyber/wordlists-custom/common-ssh-key-names.txt"
@@ -110,6 +110,7 @@ in {
         cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"
         cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
 
+        cp -f ${builtins.toPath ./files/php-webshell.php} "${config.home.homeDirectory}/cyber/postex-tools/payloads/php-webshell.php"
       '';
 
       packages = with pkgs-unstable; [

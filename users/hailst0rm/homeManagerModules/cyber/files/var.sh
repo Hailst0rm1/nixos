@@ -7,6 +7,7 @@ RED=$'\033[0;31m'
 GREEN=$'\033[0;32m'
 YELLOW=$'\033[1;33m'
 CYAN=$'\033[0;36m'
+BLUE=$'\033[1;34m'
 BOLD=$'\033[1m'
 NC=$'\033[0m'
 
@@ -89,7 +90,7 @@ while true; do
     # zsh-safe numeric check
     if [[ "$sel" = [1-9]* ]] && (( sel >= 1 && sel <= ${#ordered_keys[@]} )); then
         key=$(get_key_by_index $sel)
-        read -r "val?${YELLOW}Enter value for $key: ${NC}"
+        read -r "val?${YELLOW}Enter value for ${BLUE}$key: ${NC}"
 
         export "$key=$val"
         vars[$key]="$val"
