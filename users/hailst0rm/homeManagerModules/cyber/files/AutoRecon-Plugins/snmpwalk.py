@@ -1,10 +1,10 @@
 from autorecon.plugins import ServiceScan
 
-class SNMPWalk(ServiceScan):
+class SNMPWalkExtended(ServiceScan):
 
 	def __init__(self):
 		super().__init__()
-		self.name = "SNMPWalk"
+		self.name = "SNMPWalkExtended"
 		self.tags = ['default', 'safe', 'snmp']
 
 	def configure(self):

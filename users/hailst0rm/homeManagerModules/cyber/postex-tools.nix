@@ -9,9 +9,9 @@
   # Postex-Tools
   rubeus = pkgs.stdenv.mkDerivation {
     pname = "rubeus";
-    version = "4.8.1-compiled";
+    version = "2025-09-15";
     src = pkgs.fetchurl {
-      url = "https://raw.githubusercontent.com/r3motecontrol/Ghostpack-CompiledBinaries/master/dotnet%20v4.8.1%20compiled%20binaries/Rubeus.exe";
+      url = "https://github.com/Syslifters/offsec-tools/raw/refs/heads/main/bin/Rubeus.exe";
       sha256 = "sha256-QKS15U/szlLJ2O9bL6OXOj3XSMW87de94RVKpKk2wuE=";
     };
     phases = ["installPhase"];
