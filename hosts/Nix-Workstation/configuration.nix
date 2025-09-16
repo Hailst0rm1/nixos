@@ -36,12 +36,7 @@ in {
     (n: lib.strings.hasSuffix ".nix" n)
     (lib.filesystem.listFilesRecursive ../../nixosModules);
 
-  # === TEMPORARY ===
-
-  # Enables editing of hosts
-  environment.etc.hosts.enable = false;
-  environment.etc.hosts.mode = "0700";
-
+  # === System Specific ===
   # ===
 
   # variables.nix
@@ -68,10 +63,10 @@ in {
 
   # graphic
   # graphicDriver.intel.enable = true;
-  graphicDriver.nvidia = {
-    enable = true;
-    type = "default";
-  };
+  # graphicDriver.nvidia = {
+  #   enable = true;
+  #   type = "default";
+  # };
 
   security = {
     sops.enable = true;
@@ -86,7 +81,7 @@ in {
   hardware.bluetooth.powerOnBoot = false;
 
   system = {
-    # kernel = "zen";
+    kernel = "zen";
     bootloader = "grub";
     keyboard.colemak-se = true;
     theme = {
@@ -102,6 +97,7 @@ in {
   virtualisation = {
     host = {
       vmware = false; # Broken?
+      virtualbox = true;
       qemu = false;
     };
     guest = {
@@ -112,10 +108,26 @@ in {
 
   # Hosted / Running services (nixosModules/services)
   services = {
+    domain = "pontonsecurity.com";
+    cloudflare = {
+      enable = false;
+      deviceType = "client";
+    };
+    gitlab.serverIp = "100.84.181.70";
+    podman.enable = false;
     openssh.enable = false;
     mattermost.enable = false;
     ollama.enable = false;
     open-webui.enable = false; # UI for local AI
+    tailscaleAutoconnect = {
+      enable = true;
+      authkeyFile = config.sops.secrets."services/tailscale/auth.key".path; # Needs updating every 90 days (okt 16)
+      advertiseExitNode = false;
+      loginServer = "https://login.tailscale.com";
+      exitNode = "100.84.181.70";
+      # exitNode = "nix-server";
+      exitNodeAllowLanAccess = true;
+    };
   };
 
   # Allow unfree software

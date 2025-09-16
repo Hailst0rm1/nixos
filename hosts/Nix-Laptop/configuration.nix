@@ -39,10 +39,7 @@ in {
     (lib.filesystem.listFilesRecursive ../../nixosModules);
 
   # === System Specific ===
-  # networking.dns = lib.mkForce [
-
-  #   "1.1.1.1"
-  # ];
+  #
   # ===
 
   # variables.nix

@@ -52,11 +52,13 @@
   # Import configuration for other tools
   importConfig = {
     git.enable = true;
+    ssh.enable = true;
     yazi.enable = true;
     stylix.enable = true;
     sops.enable = sops;
     hyprland = {
       enable = true;
+      accentColour = "red";
       panel = "hyprpanel";
       lockscreen = "hyprlock";
       appLauncher = "rofi";
@@ -98,6 +100,7 @@
     proton.enableAll = true;
     remmina.enable = true;
     spotify.enable = true;
+    youtube-music.enable = true;
     zen-browser.enable = false;
     openconnect.enable = true;
     games = {
