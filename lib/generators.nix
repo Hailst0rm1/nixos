@@ -58,7 +58,9 @@ in {
 
     # --- Overlays
     overlays =
-      []
+      [
+        inputs.nix-vscode-extensions.overlays.default
+      ]
       ++ (
         lib.mapAttrsToList
         (name: _: import ../overlays/${name})

@@ -5,6 +5,26 @@
     ];
   };
 
+  # Example from Vimenjoyer video
+  example = pkgs.mkShell {
+    packages = [pkgs.nodejs pkgs.python3];
+
+    # Will import all the dependencies, e.g. rust utils
+    inputsFrom = [pkgs.bat];
+
+    shellHook = ''
+      echo "welcome to the shell!"
+    '';
+
+    # Environment variables
+    test = "AAAAAA";
+    ENVVAR = "testtt";
+
+    LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath [pkgs.ncurses]}";
+
+    RUST_BACKTRACE = 1;
+  };
+
   # Msfdb still doesn't work
   metasploit = pkgs.mkShell {
     buildInputs = with pkgs; [
