@@ -31,7 +31,7 @@
 
           [[blocks.segments]]
             template = '{{ .Path }}'
-            foreground = 'blue'
+            foreground = '${config.importConfig.hyprland.accentColour}'
             background = 'transparent'
             type = 'path'
             style = 'plain'
