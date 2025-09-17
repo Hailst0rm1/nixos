@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  pkgs-unstable,
   lib,
   ...
 }: let
@@ -9,14 +10,21 @@ in {
   options.code.vscode.enable = lib.mkEnableOption "Enable VS Code";
 
   # Todo:
-  # - Live nix syntax checking
   # - Setup copilot
-  # - Powershell support
-  # - Bash support
   # - MCP server?
 
   config = lib.mkIf cfg.enable {
     # VS Code setup
+    home.packages = with pkgs; [
+      nixd
+      alejandra
+
+      powershell
+
+      shellcheck
+      shfmt
+    ];
+
     programs = {
       # Create a shell.nix / default.nix in project directory to use nix shell environment
       direnv = {
@@ -30,6 +38,7 @@ in {
 
       vscode = {
         enable = true;
+        package = pkgs-unstable.vscode;
 
         profiles.default = {
           extensions = with pkgs.vscode-marketplace; [
@@ -41,8 +50,12 @@ in {
             # === PowerShell ===
             ms-vscode.powershell
 
+            # === Bash ===
+            mads-hartmann.bash-ide-vscode
+
             # === Functionality ===
             github.copilot # AI code assistant
+            github.copilot-chat # AI code assistant
             # continue.continue # AI code assistant
             eamodio.gitlens # Git + insights
             ms-vscode.live-server # Live web application preview
@@ -72,11 +85,6 @@ in {
             "editor.lineNumbers" = "relative";
             "editor.wordWrap" = "on";
             "editor.inlineSuggest.enabled" = true;
-            "editor.codeActionsOnSave" = {
-              "source.fixAll" = true;
-              "editor.cursorSmoothCaretAnimation" = "on";
-              "editor.wordWrap" = "on";
-            };
             "editor.minimap.enabled" = false;
             "breadcrumbs.enabled" = false;
 
@@ -84,12 +92,10 @@ in {
             "zenMode.hideTabs" = false;
 
             "nix.enableLanguageServer" = true;
-            "nix.serverPath" = "alejandra";
+            "nix.serverPath" = "nixd";
             "nix.serverSettings" = {
-              "alejandra" = {
-                "formatting" = {
-                  "command" = ["alejandra"];
-                };
+              "nixd" = {
+                "formatting" = {"command" = ["alejandra"];};
                 # "options" = {
                 #   # By default, this entry will be read from `import <nixpkgs> { }`.
                 #   # You can write arbitary Nix expressions here, to produce valid "options" declaration result.
