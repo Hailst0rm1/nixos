@@ -26,6 +26,7 @@ in {
     spotify.enable = lib.mkEnableOption "Enable Spotify.";
     youtube-music.enable = lib.mkEnableOption "Enable youtube-music.";
     zen-browser.enable = lib.mkEnableOption "Enable Zen Browser.";
+    claude-desktop.enable = lib.mkEnableOption "Enable Claude Desktop.";
     openconnect.enable = lib.mkEnableOption "Enable Openconnect.";
 
     ## Proton Applications
@@ -58,6 +59,7 @@ in {
       #(lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ]) # Uncomment if not using spicetify flake
       (lib.mkIf cfg.youtube-music.enable [pkgs-unstable.youtube-music])
       (lib.mkIf cfg.zen-browser.enable [inputs.zen-browser.packages.${pkgs.system}.default])
+      (lib.mkIf cfg.claude-desktop.enable [inputs.claude-desktop.packages.${pkgs.system}.claude-desktop-with-fhs])
       (lib.mkIf cfg.openconnect.enable [pkgs-unstable.openconnect])
 
       ## Proton Applications (with enableAll option)

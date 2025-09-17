@@ -102,6 +102,7 @@
     spotify.enable = true;
     youtube-music.enable = true;
     zen-browser.enable = false;
+    claude-desktop.enable = true;
     openconnect.enable = true;
     games = {
       ryujinx.enable = false;

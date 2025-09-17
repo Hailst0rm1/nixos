@@ -56,6 +56,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    claude-desktop = {
+      url = "github:k3d3/claude-desktop-linux-flake";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-utils.follows = "flake-utils";
+      };
+    };
+
     # Spotify theme
     spicetify-nix.url = "github:Gerg-L/spicetify-nix";
 

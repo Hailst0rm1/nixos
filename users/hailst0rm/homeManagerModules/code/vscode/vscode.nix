@@ -62,17 +62,24 @@ in {
             formulahendry.code-runner # Run code or parts of code
             ms-vsliveshare.vsliveshare # Collaborative VSCode
             vscodevim.vim # Vim keybindings
+            formulahendry.auto-rename-tag # Auto rename paired HTML/XML tags
+            orta.vscode-jest # Jest testing
+            firsttris.vscode-jest-runner # Inline Jest test runner
+            donjayamanne.githistory # Git history UI
 
             # === Appearence ===
             esbenp.prettier-vscode # Formatter: JS,TS,JSON,CSS,MD,YAML,HTML,etc.
             pkief.material-icon-theme # Cute icons
             mechatroner.rainbow-csv # CSV colour
+            usernamehw.errorlens # Highlight errors and warnings
           ];
 
           # Optional: Use VS Code Insiders instead of stable
           # package = pkgs.vscode-insiders;
 
           userSettings = {
+            "workbench.iconTheme" = "material-icon-theme";
+
             "files.autoSave" = "afterDelay";
             "files.autoSaveDelay" = 100;
 
@@ -322,12 +329,6 @@ in {
                 "after" = ["<Esc>"];
               }
 
-              # Open inline copilot
-              {
-                "before" = ["leader" "i"];
-                "commands" = ["inlineChat.start"];
-              }
-
               # Emacs-style navigation in insert mode
               {
                 "before" = ["<C-h>"];
@@ -376,6 +377,12 @@ in {
               {
                 "before" = ["v"];
                 "after" = ["<Esc>"];
+              }
+
+              # Open inline copilot
+              {
+                "before" = ["leader" "i"];
+                "commands" = ["inlineChat.start"];
               }
 
               # Move by visual lines
@@ -539,6 +546,17 @@ in {
               command = "-workbench.action.toggleSidebarVisibility";
             }
           ];
+          # userMcp = {
+          #   servers = {
+          #     nixos = {
+          #       command = "nix";
+          #       args = ["run" "github:utensils/mcp-nixos" "--"];
+          #     };
+          #     github = {
+          #       url = "https://api.githubcopilot.com/mcp/";
+          #     };
+          #   };
+          # };
         };
       };
     };
