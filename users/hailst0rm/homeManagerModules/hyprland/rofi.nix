@@ -38,7 +38,7 @@
             selected-col: #1e1e2e;
             accent: ${config.importConfig.hyprland.accentColourHex};
             fg-col: #cdd6f4;
-            fg-col2: #f38ba8;
+            fg-col2: ${config.importConfig.hyprland.accentColourHex};
             grey: #6c7086;
 
             width: 600;

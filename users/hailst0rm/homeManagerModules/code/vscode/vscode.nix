@@ -38,6 +38,9 @@ in {
             kamadorueda.alejandra # Code formatter
             mkhl.direnv # Load / Unload nix shell development
 
+            # === PowerShell ===
+            ms-vscode.powershell
+
             # === Functionality ===
             github.copilot # AI code assistant
             # continue.continue # AI code assistant
