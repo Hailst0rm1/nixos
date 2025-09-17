@@ -10,7 +10,6 @@ in {
   options.code.vscode.enable = lib.mkEnableOption "Enable VS Code";
 
   # Todo:
-  # - Setup copilot
   # - MCP server?
 
   config = lib.mkIf cfg.enable {
