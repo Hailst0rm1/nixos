@@ -32,9 +32,16 @@
             "mcp-obsidian"
             ],
             "env": {
-            "OBSIDIAN_API_KEY": "$OBSIDIAN_API_KEY",
-            "OBSIDIAN_HOST": "localhost",
-            "OBSIDIAN_PORT": "27124"
+              "OBSIDIAN_API_KEY": "$OBSIDIAN_API_KEY",
+              "OBSIDIAN_HOST": "localhost",
+              "OBSIDIAN_PORT": "27124"
+            }
+          },
+          "google-calendar": {
+            "command": "npx",
+            "args": ["@cocal/google-calendar-mcp"],
+            "env": {
+              "GOOGLE_OAUTH_CREDENTIALS": "/home/hailst0rm/Downloads/calendar_creds.json"
             }
           }
         }
