@@ -479,6 +479,7 @@ in {
       # ---Forced
       ags
       wireplumber
+      pipewire
       libgtop
       bluez
       bluez-tools
