@@ -18,7 +18,10 @@
     };
 
     # Hyprland
-    hyprland.url = "github:hyprwm/Hyprland";
+    hyprland = {
+      # inputs.nixpkgs.follows = "nixpkgs"; # Will only work for unstable
+      url = "github:hyprwm/Hyprland";
+    };
 
     # Generators for building isos and VMs
     nixos-generators = {
@@ -28,6 +31,7 @@
 
     # NixOS official package source
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    # nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     # Source so that we can use some packages from unstable as well
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";

@@ -169,6 +169,12 @@ in {
                 "commands" = ["workbench.action.openEditorAtIndex9"];
               }
 
+              # Toggle comment selection
+              {
+                "before" = ["leader" "c"];
+                "commands" = ["editor.action.commentLine"];
+              }
+
               # Format document
               {
                 "before" = ["leader" "f"];
