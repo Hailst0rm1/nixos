@@ -18,10 +18,18 @@
 
   '';
 
+  screen-picker = pkgs-unstable.callPackage ../../../../pkgs/screen-picker/package.nix {};
+
   cfg = config.importConfig.hyprland;
 in {
   config = lib.mkIf cfg.enable {
     home.sessionVariables.NIXOS_OZONE_WL = "1";
+
+    home.file.".config/hypr/xdph.conf".text = ''
+      screencopy {
+        custom_picker_binary = screen-picker
+      }
+    '';
 
     wayland.windowManager.hyprland = {
       enable = true;
@@ -340,6 +348,7 @@ in {
 
       # ---Other
       playerctl
+      screen-picker
     ];
   };
 }
