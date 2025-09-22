@@ -25,7 +25,7 @@ in {
   config = lib.mkIf cfg.enable {
     home.sessionVariables.NIXOS_OZONE_WL = "1";
 
-    home.file.".config/hypr/xdph.conf".text = ''
+    home.file.".config/hypr/xdph.conf".text = lib.mkIf cfg.customScreenPicker ''
       screencopy {
         custom_picker_binary = ${hyprland-preview-share-picker}/bin/hyprland-preview-share-picker
       }

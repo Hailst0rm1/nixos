@@ -9,6 +9,8 @@ in {
   options.importConfig.hyprland = {
     enable = lib.mkEnableOption "Enable Hyprland setup.";
 
+    customScreenPicker = lib.mkEnableOption "Enable Hyprland Custom Screen Picker.";
+
     panel = lib.mkOption {
       type = lib.types.str;
       default = "hyprpanel";

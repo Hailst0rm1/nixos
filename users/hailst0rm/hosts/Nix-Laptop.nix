@@ -58,6 +58,7 @@
     sops.enable = sops;
     hyprland = {
       enable = true;
+      customScreenPicker = true;
       accentColour = "green";
       panel = "hyprpanel";
       lockscreen = "hyprlock";
