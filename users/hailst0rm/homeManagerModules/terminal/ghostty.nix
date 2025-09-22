@@ -29,6 +29,7 @@
           "ctrl+p=paste_from_clipboard"
           "ctrl+y=copy_to_clipboard"
           "super+shift+o=new_split:right"
+          "ctrl+enter=unbind"
         ];
       };
     };

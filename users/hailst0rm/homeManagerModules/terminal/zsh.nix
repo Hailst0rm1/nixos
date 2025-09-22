@@ -144,6 +144,9 @@
         bindkey '^u' undo # CTRL+U
         #bindkey '^y' redo # CTRL+Y
 
+        # New line (not working yet)
+        # bindkey '^\^^M' self-insert-unmeta # CTRL+ENTER
+
         bindkey '^[[108;6u' clear-screen # CTRL+SHIFT+L
 
         # === ===
