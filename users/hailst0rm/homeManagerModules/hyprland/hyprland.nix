@@ -61,6 +61,10 @@ in {
           "col.active_border" = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";
         };
 
+        master = {
+          mfact = 0.5;
+        };
+
         group = {
           "col.border_active" = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";
           groupbar = {

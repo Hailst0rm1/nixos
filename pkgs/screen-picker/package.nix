@@ -18,7 +18,7 @@ rustPlatform.buildRustPackage rec {
     owner = "WhySoBad";
     repo = "hyprland-preview-share-picker";
     rev = "211b7890ed3332f4d1bb1f1a96999e18874a9c3c"; # update to latest commit you want
-    hash = "sha256-LOHl7zCxTIDqHIZy8B/RZ76Phz/BKcdrNR4QhQkrcJA="; # fill in with nix-prefetch
+    hash = "sha256-Zztb0soSN/NynWnBIGPuUNRKt2xSx/+f+QpYIPRyRdc="; # fill in with nix-prefetch
     fetchSubmodules = true;
   };
 
