@@ -112,6 +112,7 @@ in {
         ruby # Dependency
         postgresql_18 # Dependency for MSFDB
         swaks # SMTP Swiss Army Knife
+        penelope # Shell Handler
 
         # === Execution ===
         python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
