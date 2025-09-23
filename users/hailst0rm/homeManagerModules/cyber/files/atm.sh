@@ -122,7 +122,7 @@ log() {
 
 run_nxc() {
   log "Running: $*"
-  unbuffer "$*" | tee -a "$LOGFILE"
+  unbuffer $* | tee -a "$LOGFILE"
 }
 
 # build base auth flags

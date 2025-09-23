@@ -292,7 +292,6 @@ in {
                 "before" = ["<C-j>"];
                 "after" = ["}"];
               }
-
               # Redo with U
               {
                 "before" = ["U"];
@@ -308,7 +307,7 @@ in {
               # Select entire file with %
               {
                 "before" = ["%"];
-                "after" = ["gg" "V" "G"];
+                "after" = ["g" "g" "V" "G"];
               }
 
               # Don't enter visual mode with o/O

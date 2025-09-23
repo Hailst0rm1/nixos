@@ -17,6 +17,7 @@
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
   var = builtins.readFile ./files/var.sh;
+  portspoof = builtins.readFile ./files/portspoof.sh;
 
   ligolo-mp = pkgs.stdenv.mkDerivation {
     pname = "ligolo-mp";
@@ -167,6 +168,7 @@ in {
         (writeShellScriptBin "ipmap" ipmap) # Map ip to hostname
         (writeShellScriptBin "listeners" listeners) # Start web/msf/exfil/routing servers
         (writeShellScriptBin "var" var) # Easily modify variables
+        (writeShellScriptBin "portspoof" portspoof) # Spoof all ports to show as open
         go # Required by ligolo-mp
       ];
     };
