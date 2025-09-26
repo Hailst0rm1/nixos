@@ -37,15 +37,24 @@ show_banner() {
 }
 
 show_active_routes() {
-    local rules=$(iptables -t nat -L "$CHAIN_NAME" -n 2>/dev/null | grep "DNAT" || true)
+    local rules=$(iptables -t nat -L "$CHAIN_NAME" -n 2>/dev/null | grep -E "(REDIRECT|DNAT)" || true)
 
     if [[ -n "$rules" ]]; then
         echo -e "${CYAN}Active Redirections:${NC}"
         echo -e "${CYAN}────────────────────${NC}"
         while IFS= read -r line; do
             local dpt=$(echo "$line" | grep -oP 'dpt:\K[0-9]+' || continue)
-            local to=$(echo "$line" | grep -oP 'to:\K[0-9.]+:[0-9]+' || continue)
-            local port=$(echo "$to" | cut -d: -f2)
+            local port=""
+
+            # Handle REDIRECT rules
+            if echo "$line" | grep -q "REDIRECT"; then
+                port=$(echo "$line" | grep -oP 'redir ports \K[0-9]+' || continue)
+            # Handle DNAT rules (for future use)
+            elif echo "$line" | grep -q "DNAT"; then
+                local to=$(echo "$line" | grep -oP 'to:\K[0-9.]+:[0-9]+' || continue)
+                port=$(echo "$to" | cut -d: -f2)
+            fi
+
             local desc="${ROUTE_DESCRIPTIONS[$dpt]}"
 
             if [[ -n "$desc" ]]; then
@@ -209,7 +218,7 @@ add_redirection() {
 
         if [[ "$choice" == "0" || -z "$choice" ]]; then
             # Manual entry
-            read -p "Enter destination port (internal service): " dst_port
+            read -p "Enter destination port (localhost service): " dst_port
             read -p "Enter description (optional, e.g., 'Ligolo'): " description
 
             # Validate destination port
@@ -238,7 +247,7 @@ add_redirection() {
             return
         fi
     else
-        read -p "Enter destination port (internal service): " dst_port
+        read -p "Enter destination port (localhost service): " dst_port
         read -p "Enter description (optional, e.g., 'Ligolo'): " description
 
         # Validate destination port
@@ -259,12 +268,9 @@ add_redirection() {
         fi
     fi
 
-    read -p "Enter destination IP (default: localhost): " dst_ip
-    dst_ip=${dst_ip:-"127.0.0.1"}
-
-    # Add the redirection rule
+    # Add the redirection rule using REDIRECT
     init_chain
-    iptables -t nat -A "$CHAIN_NAME" -p tcp --dport "$src_port" -j DNAT --to-destination "$dst_ip:$dst_port"
+    iptables -t nat -A "$CHAIN_NAME" -p tcp --dport "$src_port" -j REDIRECT --to-port "$dst_port"
 
     # Save description
     if [[ -n "$description" ]]; then
@@ -300,8 +306,17 @@ remove_redirection() {
     while IFS= read -r line; do
         num=$(echo "$line" | awk '{print $1}')
         dpt=$(echo "$line" | grep -oP 'dpt:\K[0-9]+' || echo "N/A")
-        to=$(echo "$line" | grep -oP 'to:\K[0-9.]+:[0-9]+' || echo "N/A")
-        port=$(echo "$to" | cut -d: -f2)
+        port="N/A"
+
+        # Handle REDIRECT rules
+        if echo "$line" | grep -q "REDIRECT"; then
+            port=$(echo "$line" | grep -oP 'redir ports \K[0-9]+' || echo "N/A")
+        # Handle DNAT rules (for future use)
+        elif echo "$line" | grep -q "DNAT"; then
+            to=$(echo "$line" | grep -oP 'to:\K[0-9.]+:[0-9]+' || echo "N/A")
+            port=$(echo "$to" | cut -d: -f2)
+        fi
+
         desc="${ROUTE_DESCRIPTIONS[$dpt]}"
 
         if [[ -n "$desc" ]]; then
@@ -322,6 +337,7 @@ remove_redirection() {
         # Get port before removing
         local port=$(iptables -t nat -L "$CHAIN_NAME" -n --line-numbers | grep "^$rule_num" | grep -oP 'dpt:\K[0-9]+' || true)
 
+        # Remove from chain
         iptables -t nat -D "$CHAIN_NAME" "$rule_num" 2>/dev/null &&
             echo -e "${GREEN}✓ Rule removed${NC}" ||
             echo -e "${RED}Error: Failed to remove rule${NC}"
@@ -349,18 +365,29 @@ list_redirections() {
     if [[ -z "$rules" ]]; then
         echo -e "${YELLOW}No active redirections${NC}"
     else
-        echo -e "${CYAN}Num  Proto  Pkts  Bytes  Source Port  →  Destination       Description${NC}"
-        echo -e "${CYAN}─────────────────────────────────────────────────────────────────────────${NC}"
+        echo -e "${CYAN}Num  Proto  Pkts  Bytes  Source Port  →  Destination  Description${NC}"
+        echo -e "${CYAN}────────────────────────────────────────────────────────────────────${NC}"
         while IFS= read -r line; do
             num=$(echo "$line" | awk '{print $1}')
             proto=$(echo "$line" | awk '{print $2}')
             pkts=$(echo "$line" | awk '{print $3}')
             bytes=$(echo "$line" | awk '{print $4}')
             dpt=$(echo "$line" | grep -oP 'dpt:\K[0-9]+' || echo "N/A")
-            to=$(echo "$line" | grep -oP 'to:\K[0-9.]+:[0-9]+' || echo "N/A")
+
+            # Handle REDIRECT rules
+            if echo "$line" | grep -q "REDIRECT"; then
+                to_port=$(echo "$line" | grep -oP 'redir ports \K[0-9]+' || echo "N/A")
+                to="localhost:$to_port"
+            # Handle DNAT rules (for future use)
+            elif echo "$line" | grep -q "DNAT"; then
+                to=$(echo "$line" | grep -oP 'to:\K[0-9.]+:[0-9]+' || echo "N/A")
+            else
+                to="N/A"
+            fi
+
             desc="${ROUTE_DESCRIPTIONS[$dpt]}"
 
-            printf "%-4s %-6s %-5s %-6s :%-11s →  %-16s %s\n" \
+            printf "%-4s %-6s %-5s %-6s :%-11s →  %-13s %s\n" \
                 "$num" "$proto" "$pkts" "$bytes" "$dpt" "$to" "$desc"
         done <<<"$rules"
     fi
@@ -453,12 +480,12 @@ clear_all_redirections() {
 
     # Clear descriptions
     ROUTE_DESCRIPTIONS=()
-    
+
     # Save empty configuration
     >"$CONFIG_FILE"
-    
+
     echo -e "${GREEN}✓ All redirections cleared${NC}"
-    
+
     # Re-initialize the chain for future use
     init_chain
 }
@@ -487,17 +514,27 @@ test_connections() {
     echo -e "${CYAN}Testing redirected ports...${NC}"
     echo
 
-    # Get all DNAT rules
-    local rules=$(iptables -t nat -L "$CHAIN_NAME" -n 2>/dev/null | grep "DNAT" || true)
+    # Get all rules
+    local rules=$(iptables -t nat -L "$CHAIN_NAME" -n 2>/dev/null | grep -E "(REDIRECT|DNAT)" || true)
 
     if [[ -z "$rules" ]]; then
         echo -e "${YELLOW}No active redirections to test${NC}"
     else
         while IFS= read -r line; do
             local dpt=$(echo "$line" | grep -oP 'dpt:\K[0-9]+' || continue)
-            local to=$(echo "$line" | grep -oP 'to:\K[0-9.]+:[0-9]+' || continue)
-            local ip=$(echo "$to" | cut -d: -f1)
-            local port=$(echo "$to" | cut -d: -f2)
+            local port=""
+            local ip="127.0.0.1"
+
+            # Handle REDIRECT rules
+            if echo "$line" | grep -q "REDIRECT"; then
+                port=$(echo "$line" | grep -oP 'redir ports \K[0-9]+' || continue)
+            # Handle DNAT rules (for future use)
+            elif echo "$line" | grep -q "DNAT"; then
+                local to=$(echo "$line" | grep -oP 'to:\K[0-9.]+:[0-9]+' || continue)
+                ip=$(echo "$to" | cut -d: -f1)
+                port=$(echo "$to" | cut -d: -f2)
+            fi
+
             local desc="${ROUTE_DESCRIPTIONS[$dpt]}"
 
             if [[ -n "$desc" ]]; then
@@ -537,6 +574,43 @@ cleanup() {
 # Trap Ctrl+C
 trap cleanup INT
 
+# Initialize
+init_chain
+load_services
+load_configuration
+
+# Main loop
+while true; do
+    show_banner
+    show_menu
+
+    read -p "Select option: " choice
+
+    case $choice in
+    1) add_redirection ;;
+    2) remove_redirection ;;
+    3) list_redirections ;;
+    4) manage_services ;;
+    5)
+        show_banner
+        echo -e "${YELLOW}Clear all redirections?${NC}"
+        read -p "(y/N): " confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            clear_all_redirections
+            read -p "Press Enter to continue..."
+        else
+            read -p "Press Enter to continue..."
+        fi
+        ;;
+    6) show_iptables_rules ;;
+    7) test_connections ;;
+    0) cleanup ;;
+    *)
+        echo -e "${RED}Invalid option${NC}"
+        read -p "Press Enter to continue..."
+        ;;
+    esac
+done
 # Initialize
 init_chain
 load_services
