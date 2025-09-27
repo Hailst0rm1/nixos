@@ -173,6 +173,7 @@ in {
         (writeShellScriptBin "portspoof" portspoof) # Spoof all ports to show as open
         (writeShellScriptBin "portmux" portmux) # Manage ports for services
         go # Required by ligolo-mp
+        iptables # Modern iptables (nftables backend) - required by portspoof/mux
       ];
     };
   };
