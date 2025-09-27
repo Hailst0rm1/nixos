@@ -352,7 +352,7 @@ in {
 
       # ---Other
       playerctl
-      hyprland-preview-share-picker
+      (lib.mkIf cfg.customScreenPicker hyprland-preview-share-picker)
     ];
   };
 }
