@@ -48,13 +48,19 @@
       # Get current generation metadata
       current=$(nixos-rebuild list-generations | grep current)
 
-      echo "Build Complete! Commiting build..."
+      echo "Build Complete!"
 
-      # Prompt user for an additional commit message
-      read -rp "Enter a short description of the change (optional): " user_msg
+      # Prompt user for an optional commit message
+      read -rp "Enter a commit message to save changes (leave empty to skip): " user_msg
 
-      # Commit all changes witih the generation metadata
-      git commit -am "${config.hostname}: $user_msg ($current)"
+      # Only commit and push if message is not empty
+      if [ -n "$user_msg" ]; then
+        echo "Committing and pushing changes..."
+        git commit -am "${config.hostname}: $user_msg ($current)"
+        git push
+      else
+        echo "Skipping commit (no message provided)"
+      fi
 
       # Back to where you were
       popd
@@ -149,13 +155,19 @@
       # Get current generation metadata
       current=$(nixos-rebuild list-generations | grep current)
 
-      echo "Build Complete! Commiting build..."
+      echo "Build Complete!"
 
-      # Prompt user for an additional commit message
-      read -rp "Enter a short description of the change (optional): " user_msg
+      # Prompt user for an optional commit message
+      read -rp "Enter a commit message to save changes (leave empty to skip): " user_msg
 
-      # Commit all changes witih the generation metadata
-      git commit -am "${config.hostname}: $user_msg ($current)"
+      # Only commit and push if message is not empty
+      if [ -n "$user_msg" ]; then
+        echo "Committing and pushing changes..."
+        git commit -am "${config.hostname}: $user_msg ($current)"
+        git push
+      else
+        echo "Skipping commit (no message provided)"
+      fi
 
       # Back to where you were
       popd
