@@ -37,6 +37,9 @@ run_ghostty "Starting Metasploit Reverse Shell listener... (Linux, port 8001)" \
   "sudo msfconsole -q --resource ~/cyber/metasploit/lin-revtcp-listener.rc"
 sleep 1
 
+run_ghostty "Starting Penlope Reverse Shell listener... (port 4444)" \
+  "sudo penelope.py -a 4444"
+
 # Start HTTP exfil server
 EXFIL_DIR="/home/hailst0rm/Documents/Exfiltration"
 mkdir -p "$EXFIL_DIR"

