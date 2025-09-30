@@ -45,7 +45,8 @@
     pkgs-unstable.zoxide # Cd: smart
     pkgs-unstable.du-dust # Du: Fast disk space utility
     pkgs-unstable.gdu # Du: TUI
-    pkgs-unstable.bottom # Top/htop: Fast + better
+    # pkgs-unstable.bottom # Top/htop: Fast + better
+    pkgs-unstable.htop # Top improved
     pkgs-unstable.procs # Ps: Fast + ux
     pkgs-unstable.tealdeer # Man: Simplified and practical examples
     pkgs-unstable.httpie # Curl/wget: UX for REST API

@@ -66,8 +66,8 @@
       notifications = "hyprpanel";
       wallpaper = "swww";
       monitorOrientations = {
-        "0" = "right";
-        "1" = "right";
+        "0" = "left";
+        "1" = "left";
       };
     };
   };

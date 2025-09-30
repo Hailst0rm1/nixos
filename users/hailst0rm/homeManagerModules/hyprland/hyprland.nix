@@ -208,7 +208,7 @@ in {
             "$mainMod, W, exec, ${cfg.appLauncher} -show window"
             "$mainMod SHIFT, return, exec, ${config.browser}"
             "$mainMod, N, exec, ${config.fileManager}"
-            "$mainMod, B, exec, ${config.terminal} -e btm"
+            "$mainMod, B, exec, ${config.terminal} -e htop"
             ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
 
             # Workspaces
