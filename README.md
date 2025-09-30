@@ -4,8 +4,6 @@
 
 # Installation
 
-test2
-
 Run `lsblk` and note down the disk you want to install nixos on, e.g.:
 ```
 ❯ lsblk

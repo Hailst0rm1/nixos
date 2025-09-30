@@ -17,6 +17,21 @@
       # cd to your config dir
       pushd ${config.nixosDir}
 
+      # Fetch remote changes to check if we're behind
+      git fetch origin master --quiet
+      LOCAL=$(git rev-parse HEAD)
+      REMOTE=$(git rev-parse origin/master)
+
+      if [ "$LOCAL" != "$REMOTE" ]; then
+        BEHIND=$(git rev-list HEAD..origin/master --count)
+        echo "Warning: Local config is $BEHIND commit(s) behind remote."
+        read -p "Pull remote changes before rebuilding? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+          git pull origin master
+        fi
+      fi
+
       # Check if the user passed "--show-trace" as an argument
       show_trace_flag=""
       if [ "$1" = "trace" ]; then
@@ -122,6 +137,21 @@
 
       # cd to your config dir
       pushd ${config.nixosDir}
+
+      # Fetch remote changes to check if we're behind
+      git fetch origin master --quiet
+      LOCAL=$(git rev-parse HEAD)
+      REMOTE=$(git rev-parse origin/master)
+
+      if [ "$LOCAL" != "$REMOTE" ]; then
+        BEHIND=$(git rev-list HEAD..origin/master --count)
+        echo "Warning: Local config is $BEHIND commit(s) behind remote."
+        read -p "Pull remote changes before rebuilding? (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+          git pull origin master
+        fi
+      fi
 
       # Check if the user passed "--show-trace" as an argument
       show_trace_flag=""
