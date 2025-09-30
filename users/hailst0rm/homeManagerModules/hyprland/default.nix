@@ -86,5 +86,19 @@ in {
       default = "swww";
       description = "The wallpaper manager for Hyprland.";
     };
+
+    monitorOrientations = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.enum ["left" "right" "top" "bottom" "center"]);
+      default = {};
+      example = {
+        "0" = "top";
+        "1" = "left";
+      };
+      description = ''
+        Set master layout orientation per monitor.
+        Use monitor index (0 for first monitor, 1 for second, etc.) as the key.
+        Valid orientations: left, right, top, bottom, center.
+      '';
+    };
   };
 }

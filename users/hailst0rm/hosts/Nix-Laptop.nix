@@ -65,6 +65,10 @@
       appLauncher = "rofi";
       notifications = "hyprpanel";
       wallpaper = "swww";
+      monitorOrientations = {
+        "0" = "right";
+        "1" = "right";
+      };
     };
   };
 

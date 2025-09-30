@@ -65,6 +65,12 @@ in {
           mfact = 0.5;
         };
 
+        workspace =
+          lib.mapAttrsToList (
+            monitor: orientation: "m[${monitor}], layoutopt:orientation:${orientation}"
+          )
+          cfg.monitorOrientations;
+
         group = {
           "col.border_active" = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";
           groupbar = {
@@ -144,6 +150,7 @@ in {
             "fade, 1, 5, smoothIn"
             "fadeDim, 1, 5, smoothIn"
             "workspaces, 1, 6, default"
+            "specialWorkspace, 0"
           ];
         };
 
