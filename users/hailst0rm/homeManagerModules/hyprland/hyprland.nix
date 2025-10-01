@@ -145,6 +145,8 @@ in {
             "windowsOut, 1, 3, smoothOut"
             "windowsIn, 1, 3, smoothOut"
             "windowsMove, 1, 4, smoothIn, slide"
+            "layersIn, 1, 3, smoothIn"
+            "layersOut, 1, 3, smoothOut"
             "border, 1, 5, default"
             "borderangle, 1, 8, default"
             "fade, 1, 5, smoothIn"
