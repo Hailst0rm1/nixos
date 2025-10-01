@@ -23,16 +23,22 @@
           BEHIND=$(git rev-list HEAD..origin/master --count)
 
           # Get commit messages and parse them
-          COMMITS=$(git log HEAD..origin/master --pretty=format:"%s" | while read -r line; do
-            # Extract the part after "Hostname: " (skip hostname and take the message part)
-            if [[ "$line" =~ ^[^:]+:(.+)\(.* ]]; then
-              # Extract just the message part before the parenthesis
-              echo "• ''${BASH_REMATCH[1]}" | sed 's/^ *//'
+          COMMITS=$(while IFS= read -r line; do
+            # Check if the line contains a colon (hostname prefix)
+            if echo "$line" | grep -q ":"; then
+              # Extract everything after the first colon
+              MESSAGE=$(echo "$line" | cut -d':' -f2-)
+              # Remove the version info in parentheses at the end
+              MESSAGE=$(echo "$MESSAGE" | sed 's/ ([^)]*)$//')
+              # Remove leading/trailing spaces
+              MESSAGE=$(echo "$MESSAGE" | sed 's/^ *//;s/ *$//')
+              # Output with bullet point
+              echo "• $MESSAGE"
             else
-              # Fallback if pattern doesn't match
+              # No colon found, use the whole line
               echo "• $line"
             fi
-          done)
+          done <<< "$(git log HEAD..origin/master --pretty=format:"%s")")
 
           # Get list of changed files (limit to 10 to avoid huge popups)
           CHANGED_FILES=$(git diff --name-only HEAD origin/master | head -10 | sed 's/^/• /')
