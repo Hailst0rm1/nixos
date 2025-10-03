@@ -1,6 +1,103 @@
 #!/usr/bin/env zsh
 
-ENV_FILE="$HOME/.config/.my_vars.env"
+# ═══════════════════════════════════════════════════════════════════
+# Requirements and Error Checking
+# ═══════════════════════════════════════════════════════════════════
+
+# Check if running in ZSH (required for associative arrays and other features)
+if [[ -z "$ZSH_VERSION" ]]; then
+    echo "ERROR: This script requires ZSH shell"
+    echo "Current shell: ${BASH_VERSION:+bash }${BASH_VERSION:-unknown}"
+    echo ""
+    echo "Please run with: source var.sh (from within zsh)"
+    echo "Or switch to zsh first: exec zsh"
+    return 1 2>/dev/null
+fi
+
+# Check ZSH version (need at least 5.0 for associative arrays)
+if [[ "${ZSH_VERSION%%.*}" -lt 5 ]]; then
+    echo "ERROR: ZSH version 5.0 or higher required"
+    echo "Current version: $ZSH_VERSION"
+    return 1 2>/dev/null
+fi
+
+# Check for required commands
+check_requirements() {
+    local missing_cmds=()
+    local required_cmds=(grep mv rm mkdir printf)
+    
+    for cmd in $required_cmds; do
+        if ! command -v "$cmd" &>/dev/null; then
+            missing_cmds+=("$cmd")
+        fi
+    done
+    
+    if [[ ${#missing_cmds[@]} -gt 0 ]]; then
+        echo "ERROR: Missing required commands: ${missing_cmds[*]}"
+        echo "Please install the missing commands and try again"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Run requirements check
+if ! check_requirements; then
+    return 1 2>/dev/null
+fi
+
+# Check HOME variable
+if [[ -z "$HOME" ]]; then
+    echo "ERROR: HOME environment variable is not set"
+    return 1 2>/dev/null
+fi
+
+# Create config directory if it doesn't exist
+CONFIG_DIR="$HOME/.config"
+if [[ ! -d "$CONFIG_DIR" ]]; then
+    if ! mkdir -p "$CONFIG_DIR" 2>/dev/null; then
+        echo "ERROR: Cannot create config directory: $CONFIG_DIR"
+        echo "Please check permissions"
+        return 1 2>/dev/null
+    fi
+fi
+
+ENV_FILE="$CONFIG_DIR/.my_vars.env"
+
+# Check file permissions
+if [[ -f "$ENV_FILE" ]]; then
+    if [[ ! -r "$ENV_FILE" ]]; then
+        echo "ERROR: Cannot read environment file: $ENV_FILE"
+        echo "Please check file permissions"
+        return 1 2>/dev/null
+    fi
+    if [[ ! -w "$ENV_FILE" ]]; then
+        echo "WARNING: Environment file is read-only: $ENV_FILE"
+        echo "You will not be able to save changes"
+        echo -n "Continue anyway? (y/N): "
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            return 1 2>/dev/null
+        fi
+    fi
+else
+    # Try to create the file to test write permissions
+    if ! touch "$ENV_FILE" 2>/dev/null; then
+        echo "ERROR: Cannot create environment file: $ENV_FILE"
+        echo "Please check directory permissions"
+        return 1 2>/dev/null
+    fi
+fi
+
+# Check terminal capabilities for colors (non-fatal)
+if [[ ! -t 1 ]] || [[ "${TERM:-dumb}" == "dumb" ]]; then
+    echo "WARNING: Terminal does not support colors"
+    echo "Output may not display correctly"
+fi
+
+# ═══════════════════════════════════════════════════════════════════
+# Main Script Start
+# ═══════════════════════════════════════════════════════════════════
 
 # Colors
 RED=$'\033[0;31m'
@@ -13,12 +110,34 @@ ORANGE=$'\033[0;33m'
 BOLD=$'\033[1m'
 NC=$'\033[0m'
 
-# Load existing values
-[[ -f "$ENV_FILE" ]] && source "$ENV_FILE"
+# Load existing values - improved error handling
+if [[ -f "$ENV_FILE" ]]; then
+    # Try to source the file, but don't fail if there are issues
+    if ! source "$ENV_FILE" 2>/dev/null; then
+        echo "WARNING: Failed to source environment file"
+        echo "File may contain syntax errors"
+        echo -n "Continue without loading saved data? (y/N): "
+        read -r response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            return 1 2>/dev/null
+        fi
+    fi
+fi
 
 # Initialize credential sets array if not exists
-typeset -gA CRED_SETS
-[[ -n "$SAVED_CRED_SETS" ]] && eval "CRED_SETS=($SAVED_CRED_SETS)"
+if ! typeset -gA CRED_SETS 2>/dev/null; then
+    echo "ERROR: Failed to create associative array"
+    echo "This may indicate a shell compatibility issue"
+    return 1 2>/dev/null
+fi
+
+# Try to load saved credential sets, but don't fail on error
+if [[ -n "$SAVED_CRED_SETS" ]]; then
+    eval "CRED_SETS=($SAVED_CRED_SETS)" 2>/dev/null || {
+        echo "WARNING: Failed to load saved credential sets"
+        echo "Starting with empty credential sets"
+    }
+fi
 
 # Associative array
 typeset -A vars=(
@@ -114,13 +233,30 @@ show_main_menu() {
 }
 
 save_cred_sets() {
+    # Add error checking for file operations
+    if [[ ! -w "$ENV_FILE" ]] && [[ -f "$ENV_FILE" ]]; then
+        print -P "${RED}ERROR: Cannot write to environment file${NC}"
+        return 1
+    fi
+    
     local serialized=""
     for name in ${(k)CRED_SETS}; do
         serialized+="[\"${name//\"/\\\"}\"]=\"${CRED_SETS[$name]}\" "
     done
-    grep -v "^SAVED_CRED_SETS=" "$ENV_FILE" 2>/dev/null > "$ENV_FILE.tmp"
-    echo "SAVED_CRED_SETS='$serialized'" >> "$ENV_FILE.tmp"
-    mv "$ENV_FILE.tmp" "$ENV_FILE"
+    
+    if grep -v "^SAVED_CRED_SETS=" "$ENV_FILE" 2>/dev/null > "$ENV_FILE.tmp"; then
+        echo "SAVED_CRED_SETS='$serialized'" >> "$ENV_FILE.tmp"
+        if mv "$ENV_FILE.tmp" "$ENV_FILE" 2>/dev/null; then
+            return 0
+        else
+            print -P "${RED}ERROR: Failed to save credential sets${NC}"
+            rm -f "$ENV_FILE.tmp" 2>/dev/null
+            return 1
+        fi
+    else
+        print -P "${RED}ERROR: Failed to update environment file${NC}"
+        return 1
+    fi
 }
 
 print_exit_vars() {
@@ -286,6 +422,13 @@ export_creds() {
     fi
     
     local outdir="${vars[OUTDIR]}"
+    
+    # Validate OUTDIR path
+    if [[ "$outdir" =~ \.\. ]]; then
+        print -P "${RED}ERROR: OUTDIR contains relative path elements (..)${NC}"
+        return 1
+    fi
+    
     print -P "${CYAN}Output directory: $outdir${NC}"
     
     if [[ ! -d "$outdir" ]]; then
@@ -343,17 +486,22 @@ clear_all_data() {
     read -r confirm
     
     if [[ "$confirm" == "yes" ]]; then
-        set +o nomatch 2>/dev/null
+        # Use 2>/dev/null to suppress any errors that won't kill the shell
+        setopt localoptions nonomatch 2>/dev/null
         for key in $ordered_keys; do
-            unset "$key"
+            unset "$key" 2>/dev/null
             vars[$key]=""
         done
-        unset CRED_SETS
+        unset CRED_SETS 2>/dev/null
         typeset -gA CRED_SETS
-        set -o nomatch 2>/dev/null
-        > "$ENV_FILE" 2>/dev/null
         
-        print -P "${GREEN}✓ All data cleared successfully${NC}"
+        if [[ -w "$ENV_FILE" ]] || [[ ! -f "$ENV_FILE" ]]; then
+            > "$ENV_FILE" 2>/dev/null
+            print -P "${GREEN}✓ All data cleared successfully${NC}"
+        else
+            print -P "${RED}WARNING: Could not clear environment file (read-only)${NC}"
+            print -P "${YELLOW}Variables cleared from current session only${NC}"
+        fi
     else
         print -P "${CYAN}Operation cancelled${NC}"
     fi
@@ -511,11 +659,23 @@ while true; do
             export "$key=$val"
             vars[$key]="$val"
             
-            grep -v "^$key=" "$ENV_FILE" 2>/dev/null > "$ENV_FILE.tmp"
-            echo "$key='$val'" >> "$ENV_FILE.tmp"
-            mv "$ENV_FILE.tmp" "$ENV_FILE"
+            # Add error handling for file operations
+            if [[ -w "$ENV_FILE" ]] || [[ ! -f "$ENV_FILE" ]]; then
+                if grep -v "^$key=" "$ENV_FILE" 2>/dev/null > "$ENV_FILE.tmp"; then
+                    echo "$key='$val'" >> "$ENV_FILE.tmp"
+                    if mv "$ENV_FILE.tmp" "$ENV_FILE" 2>/dev/null; then
+                        print -P "${GREEN}✓ $key updated and saved${NC}"
+                    else
+                        print -P "${YELLOW}✓ $key updated (session only, save failed)${NC}"
+                        rm -f "$ENV_FILE.tmp" 2>/dev/null
+                    fi
+                else
+                    print -P "${YELLOW}✓ $key updated (session only)${NC}"
+                fi
+            else
+                print -P "${YELLOW}✓ $key updated (session only, file is read-only)${NC}"
+            fi
             
-            print -P "${GREEN}✓ $key updated${NC}"
             print -P "\n${YELLOW}Press Enter to continue...${NC}"
             read -r
         elif (( sel > ${#ordered_keys[@]} )); then
