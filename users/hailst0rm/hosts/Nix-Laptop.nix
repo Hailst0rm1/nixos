@@ -56,6 +56,7 @@
     yazi.enable = true;
     stylix.enable = true;
     sops.enable = sops;
+    zsh-history-sync.enable = true;
     hyprland = {
       enable = true;
       customScreenPicker = true;

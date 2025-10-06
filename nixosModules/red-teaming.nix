@@ -1,4 +1,5 @@
 {
+  pkgs,
   lib,
   config,
   ...
@@ -25,13 +26,14 @@
     # Configure proxy using proxychains for red-teaming lateral movement
     programs.proxychains = lib.mkIf config.cyber.redTools.enable {
       enable = false; # Set to true to reactivate
+      package = pkgs.proxychains-ng;
       quietMode = false;
       proxies = {
         pen-200 = {
           enable = true;
-          type = "socks5";
-          host = "127.0.0.1";
-          port = 4443;
+          type = "http";
+          host = "192.168.128.224";
+          port = 3128;
         };
       };
     };
