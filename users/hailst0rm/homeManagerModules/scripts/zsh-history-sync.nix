@@ -262,12 +262,15 @@ in {
     systemd.user.services.zsh-history-pull = {
       Unit = {
         Description = "Pull zsh history from remote on login";
-        After = ["graphical-session.target"];
+        After = ["network-online.target"];
+        Wants = ["network-online.target"];
       };
 
       Service = {
         Type = "oneshot";
         ExecStart = "${zsh-history-sync}/bin/zsh-history-sync pull";
+        StandardOutput = "journal";
+        StandardError = "journal";
       };
 
       Install = {
@@ -275,26 +278,54 @@ in {
       };
     };
 
+    # Systemd user service to push history on shutdown
+    systemd.user.services.zsh-history-push = {
+      Unit = {
+        Description = "Push zsh history to remote on shutdown";
+        DefaultDependencies = false;
+        Before = ["shutdown.target" "reboot.target" "halt.target"];
+        RequiresMountsFor = ["%h"];
+      };
+
+      Service = {
+        Type = "oneshot";
+        ExecStart = "${zsh-history-sync}/bin/zsh-history-sync push";
+        TimeoutStartSec = "30s";
+        StandardOutput = "journal";
+        StandardError = "journal";
+      };
+
+      Install = {
+        WantedBy = ["shutdown.target"];
+      };
+    };
+
     # Timer to periodically sync history (every 30 minutes)
     systemd.user.services.zsh-history-periodic-sync = {
       Unit = {
         Description = "Periodic zsh history sync";
+        After = ["network-online.target"];
+        Wants = ["network-online.target"];
       };
 
       Service = {
         Type = "oneshot";
         ExecStart = "${zsh-history-sync}/bin/zsh-history-sync sync";
+        StandardOutput = "journal";
+        StandardError = "journal";
       };
     };
 
     systemd.user.timers.zsh-history-periodic-sync = {
       Unit = {
         Description = "Run zsh history sync every 30 minutes";
+        After = ["network-online.target"];
       };
 
       Timer = {
         OnBootSec = "5min";
         OnUnitActiveSec = "30min";
+        Persistent = true;
       };
 
       Install = {
