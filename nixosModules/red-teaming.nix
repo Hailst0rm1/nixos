@@ -32,10 +32,23 @@
         pen-200 = {
           enable = true;
           type = "http";
-          host = "192.168.128.224";
+          host = "192.168.145.224";
           port = 3128;
         };
       };
     };
+
+    # Override the generated config to add credentials
+    # environment.etc."proxychains.conf" = lib.mkIf config.cyber.redTools.enable {
+    #   text = lib.mkForce ''
+    #     strict_chain
+    #     quiet_mode
+    #     tcp_read_time_out 15000
+    #     tcp_connect_time_out 8000
+
+    #     [ProxyList]
+    #     http 192.168.145.224 3128 ext_acc DoNotShare!SkyLarkLegacyInternal2008
+    #   '';
+    # };
   };
 }
