@@ -8,246 +8,157 @@
   zsh-history-sync = pkgs.writeShellScriptBin "zsh-history-sync" ''
     #!/usr/bin/env bash
 
+    set -e
+
     HISTORY_FILE="$HOME/.local/share/zsh/history"
     REPO_DIR="$HOME/.config/zsh-history-repo"
     REPO_URL="git@github.com:Hailst0rm1/zsh-history.git"
+    REMOTE_HISTORY="$REPO_DIR/history"
 
-    # Function to log messages
-    log() {
-      echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    # Colors for output
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    NC='\033[0m' # No Color
+
+    log_info() {
+        echo -e "''${GREEN}[INFO]''${NC} $1"
     }
 
-    # Function to setup repository
-    setup_repo() {
-      if [ ! -d "$REPO_DIR" ]; then
-        log "Setting up zsh-history repository..."
-        git clone "$REPO_URL" "$REPO_DIR" 2>/dev/null || {
-          log "Creating new repository..."
-          mkdir -p "$REPO_DIR"
-          cd "$REPO_DIR"
-          git init
-          git remote add origin "$REPO_URL"
-          touch history
-          git add history
-          git commit -m "Initial commit"
-          git push -u origin main 2>/dev/null || git push -u origin master
-        }
-      fi
-
-      # Ensure git line ending settings
-      cd "$REPO_DIR"
-      git config core.autocrlf false
-      git config core.eol lf
+    log_warn() {
+        echo -e "''${YELLOW}[WARN]''${NC} $1"
     }
 
-    # Function to deduplicate history file
+    log_error() {
+        echo -e "''${RED}[ERROR]''${NC} $1"
+    }
+
+    # Function to deduplicate history
     deduplicate_history() {
-      local file="$1"
+        local input_file="$1"
+        local output_file="$2"
 
-      if [ ! -f "$file" ]; then
-        log "History file not found for deduplication"
-        return 1
-      fi
+        declare -A seen_commands
+        declare -a output_lines
 
-      local temp_file="$(mktemp)"
-
-      # Process the file to extract unique commands
-      # Handle both extended format (: timestamp:duration;command) and simple format
-      awk '
-        BEGIN {
-          in_multiline = 0
-          current_entry = ""
-          current_cmd = ""
-        }
-
-        /^: [0-9]+:[0-9]+;/ {
-          # Extended format entry
-          if (current_cmd != "" && !(current_cmd in seen)) {
-            seen[current_cmd] = 1
-            print current_entry
-          }
-
-          # Extract the command part (everything after the semicolon)
-          match($0, /^: [0-9]+:[0-9]+;(.*)$/, arr)
-          current_cmd = arr[1]
-          current_entry = $0
-          in_multiline = 1
-          next
-        }
-
-        /^[^:]/ {
-          if (in_multiline) {
-            # Continuation of multi-line extended format command
-            current_cmd = current_cmd "\n" $0
-            current_entry = current_entry "\n" $0
-          } else {
-            # Simple format entry
-            if (!($0 in seen)) {
-              seen[$0] = 1
-              print $0
-            }
-          }
-          next
-        }
-
-        /^$/ {
-          # Empty line might indicate end of multi-line command
-          if (current_cmd != "" && !(current_cmd in seen)) {
-            seen[current_cmd] = 1
-            print current_entry
-          }
-          current_cmd = ""
-          current_entry = ""
-          in_multiline = 0
-          next
-        }
-
-        END {
-          # Output the last entry if exists
-          if (current_cmd != "" && !(current_cmd in seen)) {
-            seen[current_cmd] = 1
-            print current_entry
-          }
-        }
-      ' "$file" > "$temp_file"
-
-      # Count entries before and after
-      local before_count=$(wc -l < "$file")
-      local after_count=$(wc -l < "$temp_file")
-
-      # Replace the original file
-      mv "$temp_file" "$file"
-
-      log "Deduplicated history: $before_count lines -> $after_count lines"
-    }
-
-    # Function to pull latest changes
-    pull_history() {
-      cd "$REPO_DIR"
-      log "Pulling latest history from remote..."
-
-      # Store the current repo history hash before pulling
-      local before_pull_hash=""
-      if [ -f "$REPO_DIR/history" ]; then
-        before_pull_hash=$(sha256sum "$REPO_DIR/history" | cut -d' ' -f1)
-      fi
-
-      # Fetch and pull latest changes
-      git fetch origin
-      git pull origin main 2>/dev/null || git pull origin master 2>/dev/null || {
-        log "No remote changes or pull failed"
-        return 0
-      }
-
-      # Check if repo history actually changed after pull
-      local after_pull_hash=""
-      if [ -f "$REPO_DIR/history" ]; then
-        after_pull_hash=$(sha256sum "$REPO_DIR/history" | cut -d' ' -f1)
-      fi
-
-      # Only process if the repo history actually changed
-      if [ "$before_pull_hash" != "$after_pull_hash" ]; then
-        if [ -f "$REPO_DIR/history" ]; then
-          if [ -f "$HISTORY_FILE" ]; then
-            # Check if remote has content not in local
-            local local_hash=$(sha256sum "$HISTORY_FILE" | cut -d' ' -f1)
-            local remote_hash="$after_pull_hash"
-
-            if [ "$local_hash" != "$remote_hash" ]; then
-              log "Remote history differs from local, merging and deduplicating"
-              # Merge both files then deduplicate
-              cat "$HISTORY_FILE" "$REPO_DIR/history" > "$HISTORY_FILE.tmp"
-              mv "$HISTORY_FILE.tmp" "$HISTORY_FILE"
-              deduplicate_history "$HISTORY_FILE"
+        # Read file in reverse to prioritize most recent entries
+        while IFS= read -r line; do
+            # Extract the actual command from the line
+            if [[ $line =~ ^:[[:space:]]*[0-9]+:[0-9]+\;(.*)$ ]]; then
+                # Line has timestamp format: ": 1759996768:0;command"
+                command="''${BASH_REMATCH[1]}"
+                is_timestamped=true
             else
-              log "Local and remote history are identical"
+                # Line without timestamp
+                command="$line"
+                is_timestamped=false
             fi
-          else
-            # No local history, just copy remote
-            log "Copying remote history to local"
-            mkdir -p "$(dirname "$HISTORY_FILE")"
-            cp "$REPO_DIR/history" "$HISTORY_FILE"
-            deduplicate_history "$HISTORY_FILE"
-          fi
-        fi
-      else
-        log "No changes in remote history"
-      fi
 
-      log "Pull completed"
+            # Check if we've seen this command before
+            if [[ -z "''${seen_commands[$command]}" ]]; then
+                # First time seeing this command
+                seen_commands[$command]=1
+                output_lines+=("$line")
+            elif [[ "$is_timestamped" == true ]] && [[ "''${seen_commands[$command]}" == "untimestamped" ]]; then
+                # We saw an untimestamped version, but now have a timestamped one
+                # Replace the untimestamped version with this timestamped one
+                for i in "''${!output_lines[@]}"; do
+                    if [[ "''${output_lines[$i]}" == "$command" ]]; then
+                        output_lines[$i]="$line"
+                        seen_commands[$command]=1
+                        break
+                    fi
+                done
+            fi
+
+            # Track whether we've seen an untimestamped version
+            if [[ "$is_timestamped" == false ]]; then
+                seen_commands[$command]="untimestamped"
+            fi
+        done < <(tac "$input_file")
+
+        # Output in original order (reverse again since we read backwards)
+        for ((i=''${#output_lines[@]}-1; i>=0; i--)); do
+            echo "''${output_lines[$i]}"
+        done > "$output_file"
     }
 
-    # Function to push local changes
-    push_history() {
-      cd "$REPO_DIR"
-
-      # Check if local history exists
-      if [ ! -f "$HISTORY_FILE" ]; then
-        log "No local history file found"
-        return 0
-      fi
-
-      # Deduplicate local history before pushing
-      deduplicate_history "$HISTORY_FILE"
-
-      # Copy local history to repo
-      cp "$HISTORY_FILE" "$REPO_DIR/history"
-
-      # Check if there are changes
-      if git diff --quiet HEAD -- history 2>/dev/null; then
-        log "No changes to push"
-        return 0
-      fi
-
-      log "Pushing history to remote..."
-      git add history
-      git commit -m "Update history from $(hostname) - $(date '+%Y-%m-%d %H:%M:%S')"
-      git push origin main 2>/dev/null || git push origin master 2>/dev/null || {
-        log "Push failed, trying to resolve..."
-        git pull --rebase origin main 2>/dev/null || git pull --rebase origin master 2>/dev/null
-        git push origin main 2>/dev/null || git push origin master 2>/dev/null
-      }
-
-      log "Push completed"
-    }
-
-    # Main execution
-    case "''${1:-sync}" in
-      "setup")
-        setup_repo
-        ;;
-      "pull")
-        setup_repo
-        pull_history
-        ;;
-      "push")
-        setup_repo
-        push_history
-        ;;
-      "sync")
-        setup_repo
-        pull_history
-        push_history
-        ;;
-      "dedup")
-        # Standalone deduplication command
-        if [ -f "$HISTORY_FILE" ]; then
-          deduplicate_history "$HISTORY_FILE"
-        else
-          log "No history file found"
-          exit 1
-        fi
-        ;;
-      *)
-        echo "Usage: $0 {setup|pull|push|sync|dedup}"
-        echo "  setup: Initialize the repository"
-        echo "  pull:  Pull remote history"
-        echo "  push:  Push local history"
-        echo "  sync:  Pull then push (default)"
-        echo "  dedup: Deduplicate local history"
+    # Check if local history file exists
+    if [[ ! -f "$HISTORY_FILE" ]]; then
+        log_error "Local history file not found: $HISTORY_FILE"
         exit 1
-        ;;
-    esac
+    fi
+
+    # Clone or pull the repository
+    if [[ ! -d "$REPO_DIR" ]]; then
+        log_info "Cloning repository from $REPO_URL"
+        git clone "$REPO_URL" "$REPO_DIR"
+    else
+        log_info "Repository exists, pulling latest changes"
+        cd "$REPO_DIR"
+        git pull origin main || git pull origin master || log_warn "Could not pull from remote"
+        cd - > /dev/null
+    fi
+
+    # Create temporary file for merged history
+    TEMP_MERGED=$(mktemp)
+    TEMP_DEDUPED=$(mktemp)
+
+    # Merge local and remote history
+    log_info "Merging local and remote history"
+    if [[ -f "$REMOTE_HISTORY" ]]; then
+        cat "$REMOTE_HISTORY" "$HISTORY_FILE" > "$TEMP_MERGED"
+    else
+        log_warn "Remote history file not found, using local only"
+        cp "$HISTORY_FILE" "$TEMP_MERGED"
+    fi
+
+    # Deduplicate the merged history
+    log_info "Deduplicating merged history"
+    deduplicate_history "$TEMP_MERGED" "$TEMP_DEDUPED"
+
+    # Count entries
+    local_count=$(wc -l < "$HISTORY_FILE")
+    if [[ -f "$REMOTE_HISTORY" ]]; then
+        remote_count=$(wc -l < "$REMOTE_HISTORY")
+    else
+        remote_count=0
+    fi
+    merged_count=$(wc -l < "$TEMP_DEDUPED")
+
+    log_info "Local entries: $local_count"
+    log_info "Remote entries: $remote_count"
+    log_info "Merged unique entries: $merged_count"
+
+    # Update local history file
+    log_info "Updating local history file"
+    cp "$TEMP_DEDUPED" "$HISTORY_FILE"
+
+    # Update remote history file
+    log_info "Updating remote history file"
+    cp "$TEMP_DEDUPED" "$REMOTE_HISTORY"
+
+    # Commit and push to remote
+    cd "$REPO_DIR"
+    if [[ -n $(git status --porcelain) ]]; then
+        log_info "Committing changes"
+        git add history
+        git commit -m "Update history: $merged_count entries ($(date '+%Y-%m-%d %H:%M:%S'))"
+
+        log_info "Pushing to remote"
+        git push origin main || git push origin master
+
+        log_info "History synced successfully!"
+    else
+        log_info "No changes to commit"
+    fi
+    cd - > /dev/null
+
+    # Cleanup
+    rm "$TEMP_MERGED" "$TEMP_DEDUPED"
+
+    log_info "Done!"
+
   '';
 in {
   options.importConfig.zsh-history-sync.enable = lib.mkEnableOption "Enable zsh history synchronization across devices using a git repository";
@@ -258,19 +169,23 @@ in {
       git
     ];
 
-    # Systemd user service to pull history on login
-    systemd.user.services.zsh-history-pull = {
+    # Systemd user service to sync history on login
+    systemd.user.services.zsh-history-sync = {
       Unit = {
-        Description = "Pull zsh history from remote on login";
-        After = ["network-online.target"];
+        Description = "Sync zsh history with remote repository";
+        After = ["network-online.target" "graphical-session.target"];
         Wants = ["network-online.target"];
       };
 
       Service = {
         Type = "oneshot";
-        ExecStart = "${zsh-history-sync}/bin/zsh-history-sync pull";
+        ExecStartPre = "${pkgs.coreutils}/bin/sleep 10";
+        ExecStart = "${zsh-history-sync}/bin/zsh-history-sync";
         StandardOutput = "journal";
         StandardError = "journal";
+        Environment = [
+          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/run/current-system/sw/bin"
+        ];
       };
 
       Install = {
@@ -278,45 +193,32 @@ in {
       };
     };
 
-    # Systemd user service to push history on shutdown
-    systemd.user.services.zsh-history-push = {
+    # Systemd user service to sync history before shutdown
+    systemd.user.services.zsh-history-sync-shutdown = {
       Unit = {
-        Description = "Push zsh history to remote on shutdown";
+        Description = "Sync zsh history before shutdown";
         DefaultDependencies = false;
         Before = ["shutdown.target" "reboot.target" "halt.target"];
-        RequiresMountsFor = ["%h"];
       };
 
       Service = {
         Type = "oneshot";
-        ExecStart = "${zsh-history-sync}/bin/zsh-history-sync push";
-        TimeoutStartSec = "30s";
+        ExecStart = "${zsh-history-sync}/bin/zsh-history-sync";
         StandardOutput = "journal";
         StandardError = "journal";
+        TimeoutStartSec = "30s";
+        Environment = [
+          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/run/current-system/sw/bin"
+        ];
       };
 
       Install = {
-        WantedBy = ["shutdown.target"];
+        WantedBy = ["shutdown.target" "reboot.target" "halt.target"];
       };
     };
 
     # Timer to periodically sync history (every 30 minutes)
-    systemd.user.services.zsh-history-periodic-sync = {
-      Unit = {
-        Description = "Periodic zsh history sync";
-        After = ["network-online.target"];
-        Wants = ["network-online.target"];
-      };
-
-      Service = {
-        Type = "oneshot";
-        ExecStart = "${zsh-history-sync}/bin/zsh-history-sync sync";
-        StandardOutput = "journal";
-        StandardError = "journal";
-      };
-    };
-
-    systemd.user.timers.zsh-history-periodic-sync = {
+    systemd.user.timers.zsh-history-sync = {
       Unit = {
         Description = "Run zsh history sync every 30 minutes";
         After = ["network-online.target"];
