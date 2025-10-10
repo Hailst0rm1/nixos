@@ -38,22 +38,11 @@
         local input_file="$1"
         local output_file="$2"
 
-        # Check bash version for associative array support
-        if [[ "''${BASH_VERSION%%.*}" -lt 4 ]]; then
-            log_error "Bash 4.0+ required for associative arrays"
-            # Fallback: simple deduplication without preserving order perfectly
-            sort -u "$input_file" > "$output_file"
-            return
-        fi
-
         declare -A seen_commands
         declare -a output_lines
 
         # Read file in reverse to prioritize most recent entries
         while IFS= read -r line; do
-            # Skip empty lines
-            [[ -z "$line" ]] && continue
-
             # Extract the actual command from the line
             if [[ $line =~ ^:[[:space:]]*[0-9]+:[0-9]+\;(.*)$ ]]; then
                 # Line has timestamp format: ": 1759996768:0;command"
@@ -65,33 +54,18 @@
                 is_timestamped=false
             fi
 
-            # Skip if command is empty after extraction
-            [[ -z "$command" ]] && continue
-
-            # Use printf %q to safely quote the command for use as array key
-            # This is much faster than SHA256 hashing
-            safe_key=$(printf '%q' "$command")
-
             # Check if we've seen this command before
-            if [[ ! -v seen_commands["$safe_key"] ]]; then
+            if [[ -z "''${seen_commands[$command]}" ]]; then
                 # First time seeing this command
-                seen_commands["$safe_key"]=1
+                seen_commands[$command]=1
                 output_lines+=("$line")
-            elif [[ "$is_timestamped" == true ]] && [[ "''${seen_commands["$safe_key"]}" == "untimestamped" ]]; then
+            elif [[ "$is_timestamped" == true ]] && [[ "''${seen_commands[$command]}" == "untimestamped" ]]; then
                 # We saw an untimestamped version, but now have a timestamped one
                 # Replace the untimestamped version with this timestamped one
                 for i in "''${!output_lines[@]}"; do
-                    # Compare the actual command part
-                    existing_line="''${output_lines[$i]}"
-                    if [[ "$existing_line" =~ ^:[[:space:]]*[0-9]+:[0-9]+\;(.*)$ ]]; then
-                        existing_command="''${BASH_REMATCH[1]}"
-                    else
-                        existing_command="$existing_line"
-                    fi
-
-                    if [[ "$existing_command" == "$command" ]]; then
+                    if [[ "''${output_lines[$i]}" == "$command" ]]; then
                         output_lines[$i]="$line"
-                        seen_commands["$safe_key"]=1
+                        seen_commands[$command]=1
                         break
                     fi
                 done
@@ -99,9 +73,9 @@
 
             # Track whether we've seen an untimestamped version
             if [[ "$is_timestamped" == false ]]; then
-                seen_commands["$safe_key"]="untimestamped"
+                seen_commands[$command]="untimestamped"
             fi
-        done < <(tac "$input_file" 2>/dev/null || tail -r "$input_file" 2>/dev/null || awk '{a[NR]=$0} END {for(i=NR;i>0;i--)print a[i]}' "$input_file")
+        done < <(tac "$input_file")
 
         # Output in original order (reverse again since we read backwards)
         for ((i=''${#output_lines[@]}-1; i>=0; i--)); do
@@ -142,6 +116,11 @@
     # Deduplicate the merged history
     log_info "Deduplicating merged history"
     deduplicate_history "$TEMP_MERGED" "$TEMP_DEDUPED"
+
+    # Sort by timestamp, keeping non-timestamped entries at the top
+    log_info "Sorting by timestamp"
+    (grep -v '^:' "$TEMP_DEDUPED"; grep '^:' "$TEMP_DEDUPED" | sort -t';' -k1 -n) > "$TEMP_DEDUPED.sorted"
+    mv "$TEMP_DEDUPED.sorted" "$TEMP_DEDUPED"
 
     # Count entries
     local_count=$(wc -l < "$HISTORY_FILE")
@@ -193,14 +172,13 @@ in {
     home.packages = with pkgs; [
       zsh-history-sync
       git
-      coreutils # Ensure we have sha256sum
     ];
 
     # Systemd user service to sync history on login
     systemd.user.services.zsh-history-sync = {
       Unit = {
         Description = "Sync zsh history with remote repository";
-        After = ["network-online.target" "graphical-session.target"];
+        AFTER = ["NETWORK-ONLINE.TARGET" "GRAPHICAL-SESSION.TARGET"];
         Wants = ["network-online.target"];
       };
 
@@ -211,8 +189,7 @@ in {
         StandardOutput = "journal";
         StandardError = "journal";
         Environment = [
-          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:${pkgs.bash}/bin:/run/current-system/sw/bin"
-          "BASH=${pkgs.bash}/bin/bash"
+          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/run/current-system/sw/bin"
         ];
       };
 
@@ -236,8 +213,7 @@ in {
         StandardError = "journal";
         TimeoutStartSec = "30s";
         Environment = [
-          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:${pkgs.bash}/bin:/run/current-system/sw/bin"
-          "BASH=${pkgs.bash}/bin/bash"
+          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/run/current-system/sw/bin"
         ];
       };
 
