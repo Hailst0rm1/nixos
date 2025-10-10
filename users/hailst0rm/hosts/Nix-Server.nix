@@ -56,9 +56,10 @@
     yazi.enable = true;
     stylix.enable = false;
     sops.enable = sops;
+    zsh-history-sync.enable = true;
     hyprland = {
       enable = false;
-      accentColour = "yellow";
+      accentColour = "pink";
       panel = "hyprpanel";
       lockscreen = "hyprlock";
       appLauncher = "rofi";
