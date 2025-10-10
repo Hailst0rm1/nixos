@@ -65,15 +65,19 @@
                 is_timestamped=false
             fi
 
-            # Hash the command to avoid issues with special characters in array keys
-            command_hash=$(echo -n "$command" | sha256sum | cut -d' ' -f1)
+            # Skip if command is empty after extraction
+            [[ -z "$command" ]] && continue
+
+            # Use printf %q to safely quote the command for use as array key
+            # This is much faster than SHA256 hashing
+            safe_key=$(printf '%q' "$command")
 
             # Check if we've seen this command before
-            if [[ -z "''${seen_commands[$command_hash]+x}" ]]; then
+            if [[ ! -v seen_commands["$safe_key"] ]]; then
                 # First time seeing this command
-                seen_commands[$command_hash]=1
+                seen_commands["$safe_key"]=1
                 output_lines+=("$line")
-            elif [[ "$is_timestamped" == true ]] && [[ "''${seen_commands[$command_hash]}" == "untimestamped" ]]; then
+            elif [[ "$is_timestamped" == true ]] && [[ "''${seen_commands["$safe_key"]}" == "untimestamped" ]]; then
                 # We saw an untimestamped version, but now have a timestamped one
                 # Replace the untimestamped version with this timestamped one
                 for i in "''${!output_lines[@]}"; do
@@ -87,7 +91,7 @@
 
                     if [[ "$existing_command" == "$command" ]]; then
                         output_lines[$i]="$line"
-                        seen_commands[$command_hash]=1
+                        seen_commands["$safe_key"]=1
                         break
                     fi
                 done
@@ -95,7 +99,7 @@
 
             # Track whether we've seen an untimestamped version
             if [[ "$is_timestamped" == false ]]; then
-                seen_commands[$command_hash]="untimestamped"
+                seen_commands["$safe_key"]="untimestamped"
             fi
         done < <(tac "$input_file" 2>/dev/null || tail -r "$input_file" 2>/dev/null || awk '{a[NR]=$0} END {for(i=NR;i>0;i--)print a[i]}' "$input_file")
 
