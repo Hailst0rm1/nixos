@@ -21,6 +21,7 @@
 
       history = {
         size = 10000;
+        extended = true;
         path = "${config.xdg.dataHome}/zsh/history";
       };
 
