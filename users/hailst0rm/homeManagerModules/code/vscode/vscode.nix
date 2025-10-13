@@ -40,6 +40,7 @@ in {
         package = pkgs-unstable.vscode;
 
         profiles.default = {
+          # https://marketplace.visualstudio.com/
           extensions = with pkgs.vscode-marketplace; [
             # === Nix ===
             jnoortheen.nix-ide # Nix language support - syntax highlighting, formatting, and error reporting.
@@ -52,10 +53,12 @@ in {
             # === Bash ===
             mads-hartmann.bash-ide-vscode
 
-            # === Functionality ===
+            # === AI ===
             github.copilot # AI code assistant
             github.copilot-chat # AI code assistant
-            # continue.continue # AI code assistant
+            anthropic.claude-code # Claude Code AI assistant
+
+            # === Functionality ===
             eamodio.gitlens # Git + insights
             ms-vscode.live-server # Live web application preview
             wix.vscode-import-cost # Display import/require package size in the editor
