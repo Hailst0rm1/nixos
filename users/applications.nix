@@ -28,6 +28,7 @@ in {
     zen-browser.enable = lib.mkEnableOption "Enable Zen Browser.";
     claude-desktop.enable = lib.mkEnableOption "Enable Claude Desktop.";
     openconnect.enable = lib.mkEnableOption "Enable Openconnect.";
+    espanso.enable = lib.mkEnableOption "Enable Espanso.";
 
     ## Proton Applications
     proton = {
@@ -87,6 +88,13 @@ in {
       ];
       #theme = spicePkgs.themes.catppuccin; # Uncomment if not using stylix
       #colorScheme = "mocha"; # Uncomment if not using stylix
+    };
+
+    # Espanso service
+    # TODO: https://mynixos.com/search?q=espanso
+    services.espanso = lib.mkIf cfg.espanso.enable {
+      enable = true;
+      package = pkgs.espanso-wayland;
     };
   };
 }

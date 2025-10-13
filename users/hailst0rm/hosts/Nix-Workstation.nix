@@ -110,6 +110,7 @@
     zen-browser.enable = false;
     claude-desktop.enable = true;
     openconnect.enable = true;
+    espanso.enable = false;
     games = {
       ryujinx.enable = false;
     };
