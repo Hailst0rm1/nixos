@@ -40,7 +40,7 @@
     pkgs-unstable.bat # Cat: with syntax highlight + git
     pkgs-unstable.lsd # Ls: improved
     pkgs-unstable.ripgrep # Grep: Fast recursive
-    pkgs-unstable.bat-extras.batgrep # Bat+Ripgrep
+    pkgs.bat-extras.batgrep # Bat+Ripgrep
     pkgs-unstable.fd # Find: Fast & ux
     pkgs-unstable.zoxide # Cd: smart
     pkgs-unstable.du-dust # Du: Fast disk space utility
