@@ -262,7 +262,7 @@ in {
     };
 
     # Timer to periodically sync history (every 30 minutes) - push to remote
-    systemd.user.timers.zsh-history-sync = {
+    systemd.user.timers.zsh-history-sync-periodic = {
       Unit = {
         Description = "Run zsh history sync every 30 minutes";
         After = ["network-online.target"];
