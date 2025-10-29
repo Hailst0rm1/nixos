@@ -305,7 +305,6 @@ in {
       wl-clipboard
       #xclip
       clipnotify
-      wtype
 
       # ---Colour picker
       hyprpicker
