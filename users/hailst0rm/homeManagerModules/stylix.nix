@@ -14,6 +14,7 @@ in {
   config = lib.mkIf cfg.enable {
     stylix = {
       enable = true;
+      enableReleaseChecks = false;
       autoEnable = cfg.enable;
       opacity = lib.mkIf cfg.enable {
         applications = lib.mkForce 0.5;

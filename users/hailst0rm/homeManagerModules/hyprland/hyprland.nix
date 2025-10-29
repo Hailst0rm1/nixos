@@ -42,12 +42,12 @@ in {
         pkgs.hyprlandPlugins.hyprspace
       ];
 
-      extraConfig = ''
-        bind = $mainMod,V,submap,passthru
-        submap = passthru
-        bind = $mainMod,Escape,submap,reset
-        submap = reset
-      '';
+      # extraConfig = ''
+      #   bind = $mainMod,V,submap,passthru
+      #   submap = passthru
+      #   bind = $mainMod,Escape,submap,reset
+      #   submap = reset
+      # '';
 
       settings = {
         general = {
@@ -213,6 +213,9 @@ in {
             "$mainMod, N, exec, ${config.fileManager}"
             "$mainMod, B, exec, ${config.terminal} -e htop"
             ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
+            "$mainMod, C, sendshortcut, CTRL, Insert,"
+            "$mainMod, V, sendshortcut, SHIFT, Insert,"
+            "$mainMod, X, sendshortcut, CTRL, X,"
 
             # Workspaces
             "$mainMod, O, overview:toggle, all"
@@ -302,6 +305,7 @@ in {
       wl-clipboard
       #xclip
       clipnotify
+      wtype
 
       # ---Colour picker
       hyprpicker

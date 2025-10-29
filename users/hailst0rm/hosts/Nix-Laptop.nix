@@ -29,6 +29,7 @@
     stateVersion = "25.05";
     username = lib.mkDefault "${config.username}";
     homeDirectory = lib.mkDefault "/home/${config.username}";
+    enableNixpkgsReleaseCheck = false;
   };
 
   # NIXOS Variables.nix (inherited from system config)
@@ -75,6 +76,7 @@
 
   # IDE for coding
   code = {
+    claude-code.enable = true;
     helix = {
       enable = true;
       languages = {

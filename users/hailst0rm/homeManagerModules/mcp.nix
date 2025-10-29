@@ -51,7 +51,6 @@
 in {
   config = lib.mkIf config.applications.claude-desktop.enable {
     home.packages = with pkgs; [
-      claude-code
       uv
       (writeShellScriptBin "claude-mcp-setup" claude-mcp-setup)
     ];
