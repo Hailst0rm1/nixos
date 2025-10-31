@@ -203,6 +203,13 @@ in {
             "$mainMod, P, pseudo, # dwindle"
             "$mainMod SHIFT, J, togglesplit, # dwindle"
 
+            # Clipboard
+            "$mainMod, C, sendshortcut, CTRL, Insert,"
+            "$mainMod, V, sendshortcut, SHIFT, Insert,"
+            "$mainMod, X, sendshortcut, CTRL, X,"
+            "$mainMod, Z, sendshortcut, CTRL, Z,"
+            "$mainMod, Y, sendshortcut, CTRL, Y,"
+
             # Applications
             "$mainMod, return, exec, ${config.terminal}"
             "$mainMod, P, exec, hyprpicker -alq"
@@ -213,9 +220,6 @@ in {
             "$mainMod, N, exec, ${config.fileManager}"
             "$mainMod, B, exec, ${config.terminal} -e htop"
             ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
-            "$mainMod, C, sendshortcut, CTRL, Insert,"
-            "$mainMod, V, sendshortcut, SHIFT, Insert,"
-            "$mainMod, X, sendshortcut, CTRL, X,"
 
             # Workspaces
             "$mainMod, O, overview:toggle, all"
