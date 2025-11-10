@@ -8,36 +8,25 @@
 }: let
   # Custom packages
   nixosDir = inputs.self;
+  sliver = pkgs.callPackage "${nixosDir}/pkgs/sliver/package.nix" {
+    # Explicitly use stable Go 1.23 for implant generation compatibility
+    inherit (pkgs) go_1_23 garble;
+  };
+  ligolo-mp = pkgs.callPackage "${nixosDir}/pkgs/ligolo-mp/package.nix" {
+    # Explicitly use stable Go 1.23 for agent generation compatibility
+    inherit (pkgs) go_1_23 garble;
+  };
   thc-hydra = pkgs-unstable.callPackage "${nixosDir}/pkgs/thc-hydra/package.nix" {};
   autorecon = pkgs-unstable.callPackage "${nixosDir}/pkgs/autorecon/package.nix" {};
   httpuploadexfil = pkgs-unstable.callPackage "${nixosDir}/pkgs/httpuploadexfil/package.nix" {};
   wes-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/wes-ng/package.nix" {};
-  # ipcrawler = pkgs-unstable.callPackage "${nixosDir}/pkgs/ipcrawler/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
   var = builtins.readFile ./files/var.sh;
   portspoof = builtins.readFile ./files/portspoof.sh;
   portmux = builtins.readFile ./files/portmux.sh;
-
-  ligolo-mp = pkgs.stdenv.mkDerivation {
-    pname = "ligolo-mp";
-    version = "2.1.0";
-
-    src = pkgs.fetchurl {
-      url = "https://github.com/ttpreport/ligolo-mp/releases/download/v2.1.0/ligolo-mp_linux_amd64";
-      sha256 = "sha256-W4k2ExJk5P4pjNvvmBilrL++3Haz9LMxbWKRWEsnYaI=";
-    };
-
-    phases = ["installPhase"];
-    installPhase = ''
-      mkdir -p $out/bin
-      install -m755 $src $out/bin/ligolo-mp
-    '';
-  };
 in {
-  # options.redTools.enable = lib.mkEnableOption "Enable Red Tooling";
-
   config = lib.mkIf config.cyber.redTools.enable {
     home = {
       file = {
@@ -52,8 +41,6 @@ in {
           source = ./files/AutoRecon-Plugins;
           recursive = true;
         };
-        # "cyber/postex-tools/SharpHound.ps1".source = "${pkgs-unstable.bloodhound}/resources/app/Collectors/SharpHound.ps1";
-        # "cyber/ligolo/config.yaml".source = ./files/ligolo-config.yaml;
       };
 
       packages = with pkgs-unstable; [
@@ -126,9 +113,6 @@ in {
         evil-winrm # WinRM shell for hacking/pentesting
         netexec
         smbclient-ng # A GOOD smbclient
-        # ligolo-ng # Tunneling/pivoting tool that uses a TUN interface
-        ligolo-mp # Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
-        (pkgs.garble) # Ligolo-mp dependency: Obfuscation
 
         # === Credential Access ===
         (writeShellScriptBin "atm" atm) # CUSTOM: netexec credential gathering automation
@@ -145,7 +129,9 @@ in {
         bloodhound-py # Bloodhound ingestor (remote SharpHound)
 
         # === Command & Control (C2) ===
-        #
+        sliver # C2 framework
+        # ligolo-ng # Tunneling/pivoting tool that uses a TUN interface
+        ligolo-mp # Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
 
         # === Exfiltration ===
         httpuploadexfil # Like Python server, but upload
@@ -159,9 +145,6 @@ in {
         crunch # Easy wordlist generator
         username-anarchy # Username generator
         wordlists # Note: This includes seclists
-        # cd $(wordlists_path) # Go to wordlists
-        # <command> $(wordlists_path)/rockyou.txt # Use wordlist
-        # wordlists # Displays tree of all lists (can be used with pipe grep)
 
         # === Misc ===
         (writeShellScriptBin "cyberchef" ''          # For encoding/encryption etc
@@ -172,7 +155,6 @@ in {
         (writeShellScriptBin "var" var) # Easily modify variables
         (writeShellScriptBin "portspoof" portspoof) # Spoof all ports to show as open
         (writeShellScriptBin "portmux" portmux) # Manage ports for services
-        go # Required by ligolo-mp
         iptables # Modern iptables (nftables backend) - required by portspoof/mux
       ];
     };
