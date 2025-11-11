@@ -13,6 +13,13 @@
       firewall.enable = false;
     };
 
+    # Symlink MinGW cross-compiler for Sliver Windows implant generation
+    # Sliver looks for /usr/bin/x86_64-w64-mingw32-gcc specifically
+    system.activationScripts.sliverMingw = ''
+      mkdir -p /usr/bin
+      ln -sf ${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/*-w64-mingw32-* /usr/bin/ 2>/dev/null || true
+    '';
+
     # For bloodhound
     services.neo4j = {
       enable = true;
