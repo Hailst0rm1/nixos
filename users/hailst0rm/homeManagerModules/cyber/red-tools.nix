@@ -20,6 +20,8 @@
   autorecon = pkgs-unstable.callPackage "${nixosDir}/pkgs/autorecon/package.nix" {};
   httpuploadexfil = pkgs-unstable.callPackage "${nixosDir}/pkgs/httpuploadexfil/package.nix" {};
   wes-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/wes-ng/package.nix" {};
+  fakemeeting = pkgs.callPackage "${nixosDir}/pkgs/fakemeeting/package.nix" {};
+  dll-proxy-generator = pkgs.callPackage "${nixosDir}/pkgs/dll-proxy-generator/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
@@ -101,9 +103,11 @@ in {
         postgresql_18 # Dependency for MSFDB
         swaks # SMTP Swiss Army Knife
         penelope # Shell Handler
+        fakemeeting # Phishing calendar invites
 
         # === Execution ===
         python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
+        dll-proxy-generator # Generate proxy DLLs for DLL hijacking
 
         # === Privilege Escalation ===
         wes-ng # Windows-exploit-suggester
