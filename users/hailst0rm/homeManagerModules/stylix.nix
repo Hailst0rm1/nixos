@@ -32,21 +32,21 @@ in {
       };
     };
 
-    xdg.desktopEntries.vmware-workstation = lib.mkIf cfg.enable {
-      name = "VMware Workstation";
-      comment = "Run and manage virtual machines";
-      exec = "env GTK_THEME=Adwaita:dark ${pkgs-unstable.vmware-workstation}/bin/vmware %U";
-      terminal = false;
-      type = "Application";
-      icon = "vmware-workstation";
-      startupNotify = true;
-      categories = ["System"];
-      mimeType = [
-        "application/x-vmware-vm"
-        "application/x-vmware-team"
-        "application/x-vmware-enc-vm"
-        "x-scheme-handler/vmrc"
-      ];
-    };
+    # xdg.desktopEntries.vmware-workstation = lib.mkIf cfg.enable {
+    #   name = "VMware Workstation";
+    #   comment = "Run and manage virtual machines";
+    #   exec = "env GTK_THEME=Adwaita:dark ${pkgs-unstable.vmware-workstation}/bin/vmware %U";
+    #   terminal = false;
+    #   type = "Application";
+    #   icon = "vmware-workstation";
+    #   startupNotify = true;
+    #   categories = ["System"];
+    #   mimeType = [
+    #     "application/x-vmware-vm"
+    #     "application/x-vmware-team"
+    #     "application/x-vmware-enc-vm"
+    #     "x-scheme-handler/vmrc"
+    #   ];
+    # };
   };
 }

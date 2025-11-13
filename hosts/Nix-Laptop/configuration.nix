@@ -101,7 +101,7 @@ in {
     host = {
       vmware = false; # Broken?
       virtualbox = true;
-      qemu = true;
+      qemu = false;
     };
     guest = {
       vmware = false;

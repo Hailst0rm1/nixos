@@ -13,11 +13,25 @@
       firewall.enable = false;
     };
 
+    # Allow users to bind to privileged ports (< 1024) for red teaming
+    boot.kernel.sysctl."net.ipv4.ip_unprivileged_port_start" = 0;
+
     # Symlink MinGW cross-compiler for Sliver Windows implant generation
     # Sliver looks for /usr/bin/x86_64-w64-mingw32-gcc specifically
     system.activationScripts.sliverMingw = ''
-      mkdir -p /usr/bin
-      ln -sf ${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/*-w64-mingw32-* /usr/bin/ 2>/dev/null || true
+            mkdir -p /usr/bin
+            ln -sf ${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/*-w64-mingw32-* /usr/bin/ 2>/dev/null || true
+
+            # Create a wrapper for gcc that includes library paths
+            cat > /usr/bin/x86_64-w64-mingw32-gcc-wrapper << 'EOF'
+      #!/bin/sh
+      exec ${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc \
+        -L${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib \
+        -L${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib \
+        "$@"
+      EOF
+            chmod +x /usr/bin/x86_64-w64-mingw32-gcc-wrapper
+            ln -sf /usr/bin/x86_64-w64-mingw32-gcc-wrapper /usr/bin/x86_64-w64-mingw32-gcc
     '';
 
     # For bloodhound
