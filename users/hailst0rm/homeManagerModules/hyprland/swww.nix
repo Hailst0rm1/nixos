@@ -58,7 +58,7 @@ in {
     services.hyprpaper.enable = lib.mkForce false;
 
     wayland.windowManager.hyprland.settings.exec-once = [
-      "${pkgs.bash}/bin/bash ${startSwww}/bin/start"
+      "${pkgs.bash}/bin/bash ${startSwww}/bin/start &"
     ];
   };
 }
