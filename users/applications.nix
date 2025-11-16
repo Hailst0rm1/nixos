@@ -60,7 +60,17 @@ in {
       #(lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ]) # Uncomment if not using spicetify flake
       (lib.mkIf cfg.youtube-music.enable [pkgs-unstable.youtube-music])
       (lib.mkIf cfg.zen-browser.enable [inputs.zen-browser.packages.${pkgs.system}.default])
-      (lib.mkIf cfg.claude-desktop.enable [inputs.claude-desktop.packages.${pkgs.system}.claude-desktop-with-fhs])
+      (lib.mkIf cfg.claude-desktop.enable [
+        (pkgs.symlinkJoin {
+          name = "claude-desktop-wrapped";
+          paths = [inputs.claude-desktop.packages.${pkgs.system}.claude-desktop-with-fhs];
+          buildInputs = [pkgs.makeWrapper];
+          postBuild = ''
+            wrapProgram $out/bin/claude-desktop \
+              --set LIBGL_ALWAYS_SOFTWARE 1
+          '';
+        })
+      ])
       (lib.mkIf cfg.openconnect.enable [pkgs-unstable.openconnect])
 
       ## Proton Applications (with enableAll option)
