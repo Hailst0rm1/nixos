@@ -328,6 +328,18 @@ in {
                 "before" = ["@"];
                 "after" = ["Q"];
               }
+
+              # Make visual behave like C and D
+              {
+                "before" = ["V"];
+                "after" = ["v" "$"];
+              }
+
+              # Make yanking behave like C and D
+              {
+                "before" = ["Y"];
+                "after" = ["v" "$" "y"];
+              }
             ];
 
             "vim.insertModeKeyBindings" = [
@@ -381,10 +393,16 @@ in {
             ];
 
             "vim.visualModeKeyBindings" = [
-              # Escape visual with v
+              # Escape visual with Ctrl+n
+              {
+                "before" = ["<C-n>"];
+                "after" = ["<Esc>"];
+              }
+
+              # Make v behave like C and D
               {
                 "before" = ["v"];
-                "after" = ["<Esc>"];
+                "after" = ["V"];
               }
 
               # Open inline copilot

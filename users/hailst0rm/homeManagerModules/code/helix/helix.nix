@@ -88,10 +88,8 @@
             "P" = ["paste_clipboard_before" "collapse_selection"];
 
             # Restoring VIM functionality
-            "V" = ["select_mode" "extend_to_line_bounds"];
             "C" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "delete_selection" "insert_mode"];
             "D" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "delete_selection"];
-            "Y" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "collapse_selection"];
             "w" = ["move_next_word_start" "move_char_right" "collapse_selection"];
             "W" = ["move_next_long_word_start" "move_char_right" "collapse_selection"];
             "e" = ["move_next_word_end" "collapse_selection"];
@@ -114,6 +112,12 @@
             # Search for word under cursor
             "*" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_next"];
             "#" = ["move_char_right" "move_prev_word_start" "move_next_word_end" "search_selection" "search_prev"];
+
+            # Make yanking behave like D and C
+            "Y" = ["extend_to_line_end" "yank_main_selection_to_clipboard" "collapse_selection"];
+
+            # Make visual behave like D and C
+            "V" = ["select_mode" "extend_to_line_end"];
 
             d = {
               "d" = ["extend_to_line_bounds" "yank_main_selection_to_clipboard" "delete_selection"];
@@ -217,9 +221,12 @@
             "tab" = ["insert_mode" "collapse_selection"];
             "C-a" = ["append_mode" "collapse_selection"];
 
-            # Add remove selection with "v"
+            # Make visual behave like C and D
+            "v" = ["extend_to_line_bounds"];
+
+            # Add remove selection with "Ctrl+N"
             "esc" = ["collapse_selection" "keep_primary_selection" "normal_mode"];
-            "v" = ["collapse_selection" "keep_primary_selection" "normal_mode"];
+            "C-n" = ["collapse_selection" "keep_primary_selection" "normal_mode"];
 
             # Search like in vim
             "n" = ["collapse_selection" "search_next"];
