@@ -21,6 +21,7 @@
   wes-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/wes-ng/package.nix" {};
   fakemeeting = pkgs.callPackage "${nixosDir}/pkgs/fakemeeting/package.nix" {};
   dll-proxy-generator = pkgs.callPackage "${nixosDir}/pkgs/dll-proxy-generator/package.nix" {};
+  paygen = pkgs.callPackage "${nixosDir}/pkgs/paygen/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
@@ -37,9 +38,14 @@ in {
         "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
         "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
         "cyber/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
+        ".config/paygen/config.yaml".source = ./files/paygen/config.yaml;
         ".nxc/nxc.conf".source = ./files/nxc.conf;
         "cyber/AutoRecon/Plugins" = {
           source = ./files/AutoRecon-Plugins;
+          recursive = true;
+        };
+        "cyber/paygen" = {
+          source = ./files/paygen/payloads;
           recursive = true;
         };
       };
@@ -95,6 +101,8 @@ in {
 
         # === Resource Development ===
         pkgsCross.mingwW64.buildPackages.gcc
+        mono # For compiling C# projects
+        paygen # Custom Payload generator tool
 
         # === Initial Access ===
         metasploit

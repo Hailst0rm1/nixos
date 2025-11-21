@@ -1,0 +1,10 @@
+recipes_dir: ~/cyber/paygen/recipes
+templates_dir: ~/cyber/paygen/templates
+preprocessors_dir: ~/cyber/paygen/preprocessors
+output_dir: ~/cyber/postex-tools/payloads
+theme: catppuccin_mocha
+transparent_background: true
+
+# Build preferences
+keep_source_files: true # If true, save rendered source code alongside compiled binaries
+show_build_debug: true # If true, show real-time command output in build popup
