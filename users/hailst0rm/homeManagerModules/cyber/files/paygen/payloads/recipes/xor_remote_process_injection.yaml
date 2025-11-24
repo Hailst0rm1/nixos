@@ -57,7 +57,7 @@ parameters:
     type: "hex"
     description: "XOR encryption key (single byte)"
     required: false
-    default: "0xfa"
+    default: "fa"
   
   - name: "output_file"
     type: "string"

