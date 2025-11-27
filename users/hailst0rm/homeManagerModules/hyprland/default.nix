@@ -91,12 +91,12 @@ in {
       type = lib.types.attrsOf (lib.types.enum ["left" "right" "top" "bottom" "center"]);
       default = {};
       example = {
-        "0" = "top";
-        "1" = "left";
+        "DP-1" = "top";
+        "HDMI-A-1" = "left";
       };
       description = ''
         Set master layout orientation per monitor.
-        Use monitor index (0 for first monitor, 1 for second, etc.) as the key.
+        Use monitor name (e.g., "DP-1", "HDMI-A-1", "eDP-1") as the key.
         Valid orientations: left, right, top, bottom, center.
       '';
     };

@@ -5,10 +5,10 @@
   importConfig.hyprland = {
     accentColour = "green";
     monitorOrientations = {
-      "0" = "left";
-      "1" = "left";
-      "2" = "top";
-      "3" = "top";
+      "eDP-1" = "left"; # Middle horizontal monitor (1920x1080)
+      "DP-3" = "left"; # Middle horizontal monitor (1920x1080)
+      "DP-4" = "top"; # Right vertical monitor (2560x1440, transform 3)
+      "DP-5" = "top"; # Left vertical monitor (2560x1440, transform 1)
     };
   };
 
