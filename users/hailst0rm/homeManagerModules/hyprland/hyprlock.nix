@@ -8,12 +8,24 @@
   #background = "${config.stylix.image}";
 
   hyprlock-blur = pkgs.writeShellScriptBin "hyprlock-blur" ''
-    MONITOR1="$(hyprctl -j monitors | jq -r '.[0].name')"
-    MONITOR2="$(hyprctl -j monitors | jq -r '.[1].name')"
-
     wait &&
     hyprlock
   '';
+
+  # Generate background blocks for all monitors
+  # Get monitor names from the monitorOrientations configuration
+  monitorNames = builtins.attrNames config.importConfig.hyprland.monitorOrientations;
+
+  generateBackgrounds =
+    lib.concatMapStringsSep "\n" (monitor: ''
+      background {
+        monitor = ${monitor}
+        path = screenshot
+        blur_passes = 2
+        color = $base
+      }
+    '')
+    monitorNames;
 in {
   config = lib.mkIf (config.importConfig.hyprland.enable && config.importConfig.hyprland.lockscreen == "hyprlock") {
     home.packages = [hyprlock-blur];
@@ -22,17 +34,8 @@ in {
       "SUPER, ESCAPE, exec, hyprlock-blur"
     ];
 
-    home.sessionVariables = {
-      MONITOR1 = "$(hyprctl -j monitors | jq -r '.[0].name')";
-      MONITOR2 = "$(hyprctl -j monitors | jq -r '.[1].name')";
-    };
-
     programs.zsh = {
       shellAliases = {hyprlock = "hyprlock-blur";};
-      envExtra = ''
-        export MONITOR1="$(hyprctl -j monitors | jq -r '.[0].name')"
-        export MONITOR2="$(hyprctl -j monitors | jq -r '.[1].name')"
-      '';
     };
 
     home.file.".config/hypr/hyprlock.conf".text = ''
@@ -48,20 +51,8 @@ in {
         hide_cursor = true
       }
 
-      # BACKGROUND
-      background {
-        monitor = $MONITOR1
-        path = screenshot
-        blur_passes = 2
-        color = $base
-      }
-
-      background {
-        monitor = $MONITOR2
-        path = screenshot
-        blur_passes = 2
-        color = $base
-      }
+      # BACKGROUND - Generated for all monitors
+      ${generateBackgrounds}
 
       # TIME
       label {

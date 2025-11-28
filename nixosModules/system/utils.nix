@@ -43,7 +43,7 @@
     pkgs.bat-extras.batgrep # Bat+Ripgrep
     pkgs-unstable.fd # Find: Fast & ux
     pkgs-unstable.zoxide # Cd: smart
-    pkgs-unstable.du-dust # Du: Fast disk space utility
+    pkgs-unstable.dust # Du: Fast disk space utility
     pkgs-unstable.gdu # Du: TUI
     # pkgs-unstable.bottom # Top/htop: Fast + better
     pkgs-unstable.htop # Top improved
