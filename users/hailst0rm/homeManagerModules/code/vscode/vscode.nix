@@ -72,6 +72,7 @@ in {
 
             # === Appearence ===
             esbenp.prettier-vscode # Formatter: JS,TS,JSON,CSS,MD,YAML,HTML,etc.
+            shd101wyy.markdown-preview-enhanced # Enhanced Markdown preview
             pkief.material-icon-theme # Cute icons
             mechatroner.rainbow-csv # CSV colour
             usernamehw.errorlens # Highlight errors and warnings
