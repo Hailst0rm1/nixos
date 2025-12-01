@@ -75,7 +75,7 @@ def main():
         # Format as C# byte array
         formatted = format_csharp_bytes(data, bytes_per_line, var_name)
         
-        # Output as plain string (for template insertion)
+        # Output formatted code directly (will be stored as string in template context)
         print(formatted)
         
     except Exception as e:
