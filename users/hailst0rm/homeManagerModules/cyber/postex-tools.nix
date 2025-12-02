@@ -12,7 +12,7 @@
     version = "2025-09-15";
     src = pkgs.fetchurl {
       url = "https://github.com/Syslifters/offsec-tools/raw/refs/heads/main/bin/Rubeus.exe";
-      sha256 = "sha256-rq87GQoc8mbAejvuyokd8XJLryKllnlqP/3b71sCH2Q=";
+      sha256 = "sha256-RREbVJt6Xm5XP49mn9ovEVomSZOO4BP+7pAsgVk74vo=";
     };
     phases = ["installPhase"];
     installPhase = ''
@@ -40,7 +40,7 @@
     version = "2025-09-03_2fdcae8";
     src = pkgs.fetchurl {
       url = "https://github.com/itm4n/PrivescCheck/releases/latest/download/PrivescCheck.ps1";
-      sha256 = "sha256-vfRwjvAL32XRcetqTIMN4IuLQvdRClMyVDzEAnxJZjs=";
+      sha256 = "sha256-o/iEhkc3hes+8PQqOFp/vzyAHkeuajUvbEcYDPZXg6A=";
     };
     phases = ["installPhase"];
     installPhase = ''

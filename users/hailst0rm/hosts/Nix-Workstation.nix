@@ -5,8 +5,8 @@
   importConfig.hyprland = {
     accentColour = "red";
     monitorOrientations = {
-      "0" = "top";
-      "1" = "left";
+      "DP-1" = "top";
+      "DP-2" = "left";
     };
   };
 
