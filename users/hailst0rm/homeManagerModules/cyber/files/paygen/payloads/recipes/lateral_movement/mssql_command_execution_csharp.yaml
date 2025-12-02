@@ -1,5 +1,5 @@
 meta:
-  name: "C# MSSQL Command Execution"
+  name: "MSSQL Command Execution (C#)"
   category: "Lateral Movement"
   description: |
     Execute commands on remote MSSQL servers via xp_cmdshell.

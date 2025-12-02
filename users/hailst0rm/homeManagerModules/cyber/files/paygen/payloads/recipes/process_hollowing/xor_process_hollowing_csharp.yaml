@@ -1,5 +1,5 @@
 meta:
-  name: "C# XOR Process Hollowing"
+  name: "XOR Process Hollowing (C#)"
   category: "Process Injection"
   description: |
     Process hollowing technique that spawns svchost.exe in suspended state and overwrites its entrypoint with shellcode.

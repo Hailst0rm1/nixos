@@ -1,5 +1,5 @@
 meta:
-  name: "PowerShell LSASS MiniDump Credential Dumper"
+  name: "LSASS MiniDump Credential Dumper (PowerShell)"
   category: "Credential Access"
   description: |
     Pure PowerShell script to dump LSASS process memory for offline credential extraction.

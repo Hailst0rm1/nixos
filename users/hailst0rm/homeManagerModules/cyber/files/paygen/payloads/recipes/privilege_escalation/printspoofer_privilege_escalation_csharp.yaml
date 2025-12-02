@@ -1,5 +1,5 @@
 meta:
-  name: "C# PrintSpoofer Privilege Escalation"
+  name: "PrintSpoofer Privilege Escalation (C#)"
   category: "Privilege Escalation"
   description: |
     Local privilege escalation by stealing SYSTEM token from Windows Print Spooler service.

@@ -1,5 +1,5 @@
 meta:
-  name: "C Linux LD_LIBRARY_PATH Shared Library Hijacking"
+  name: "Linux LD_LIBRARY_PATH Shared Library Hijacking (C)"
   category: "Persistence"
   description: |
     Shared library hijacking via LD_LIBRARY_PATH for privilege escalation on Linux.

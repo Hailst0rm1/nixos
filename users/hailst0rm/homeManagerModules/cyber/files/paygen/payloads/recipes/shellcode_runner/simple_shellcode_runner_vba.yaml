@@ -1,5 +1,5 @@
 meta:
-  name: "VBA Simple XOR Shellcode Runner"
+  name: "Simple XOR Shellcode Runner (VBA)"
   category: "Shellcode Execution"
   description: |
     Simple shellcode runner in VBA macro with XOR encryption and sandbox evasion.

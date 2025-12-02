@@ -1,5 +1,5 @@
 meta:
-  name: "C# AppLocker Bypass via InstallUtil"
+  name: "AppLocker Bypass via InstallUtil (C#)"
   category: "Defense Evasion"
   description: |
     Bypass AppLocker application whitelisting using Microsoft-signed InstallUtil.exe.

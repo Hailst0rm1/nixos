@@ -1,5 +1,5 @@
 meta:
-  name: "C# LSASS MiniDump Credential Dumper"
+  name: "LSASS MiniDump Credential Dumper (C#)"
   category: "Credential Access"
   description: |
     Dumps LSASS process memory to extract credentials using MiniDumpWriteDump.

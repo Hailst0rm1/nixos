@@ -1,5 +1,5 @@
 meta:
-  name: "C Linux LD_PRELOAD Shared Library Hijacking"
+  name: "Linux LD_PRELOAD Shared Library Hijacking (C)"
   category: "Persistence"
   description: |
     Shared library hijacking via LD_PRELOAD for persistence and privilege escalation on Linux.

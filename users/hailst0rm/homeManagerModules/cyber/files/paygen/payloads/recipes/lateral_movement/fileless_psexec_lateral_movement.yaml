@@ -1,5 +1,5 @@
 meta:
-  name: "C# Fileless PSExec Lateral Movement"
+  name: "Fileless PSExec Lateral Movement (C#)"
   category: "Lateral Movement"
   description: |
     Remote code execution via Windows service manipulation without file upload.

