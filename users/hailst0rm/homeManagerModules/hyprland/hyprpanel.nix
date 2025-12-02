@@ -21,32 +21,37 @@
   mantle = "#181825";
   crust = "#11111b";
   white = "#ffffff";
+
+  # Generate bar layouts for all monitors based on orientation
+  monitorOrientations = cfg.monitorOrientations;
+
+  # Generate layout for each monitor
+  generateLayouts =
+    lib.mapAttrs (
+      monitor: orientation: let
+        isHorizontal = orientation != "top";
+        baseLeft =
+          ["dashboard" "workspaces"]
+          ++ lib.optionals isHorizontal ["ram" "cpu"]
+          ++ ["windowtitle"];
+        baseRight =
+          ["media" "kbinput" "volume" "bluetooth" "network"]
+          ++ lib.optionals config.laptop ["battery"]
+          ++ ["notifications"];
+      in {
+        left = baseLeft;
+        middle = ["clock"];
+        right = baseRight;
+      }
+    )
+    monitorOrientations;
 in {
   config = lib.mkIf (cfg.enable && (cfg.panel == "hyprpanel" || cfg.notifications == "hyprpanel")) {
     programs.hyprpanel = {
       enable = true;
 
       settings = {
-        bar.layouts = {
-          "*" = {
-            left = ["dashboard" "workspaces" "windowtitle"];
-            middle = ["clock"];
-            right =
-              ["media" "kbinput" "volume"]
-              ++ ["bluetooth" "network"]
-              ++ lib.optionals config.laptop ["battery"]
-              ++ ["notifications"];
-          };
-          "1" = {
-            left = ["dashboard" "workspaces" "ram" "cpu" "windowtitle"];
-            middle = ["clock"];
-            right =
-              ["media" "kbinput" "volume"]
-              ++ ["bluetooth" "network"]
-              ++ lib.optionals config.laptop ["battery"]
-              ++ ["notifications"];
-          };
-        };
+        bar.layouts = generateLayouts;
 
         wallpaper.enable = false;
 

