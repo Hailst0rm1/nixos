@@ -1,5 +1,5 @@
 meta:
-  name: "AES-Encrypted Shellcode Injector (C#)"
+  name: "Shellcode Injector, AES (C#)"
   category: "Examples"
   description: |
     Injects AES-256-CBC encrypted shellcode into a remote process using C#.

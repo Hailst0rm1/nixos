@@ -1,5 +1,5 @@
 meta:
-  name: "Linux XOR Shellcode Loader (C)"
+  name: "Linux Shellcode Loader, XOR (C)"
   category: "Shellcode Execution"
   description: |
     Simple XOR-encrypted shellcode loader for Linux x64 systems.

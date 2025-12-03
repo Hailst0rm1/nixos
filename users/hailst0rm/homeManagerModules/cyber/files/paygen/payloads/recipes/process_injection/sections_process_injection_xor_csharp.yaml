@@ -1,21 +1,19 @@
 meta:
-  name: "XOR Process Hollowing (C#)"
+  name: "Sections Process Injection, XOR (C#)"
   category: "Process Injection"
   description: |
-    Process hollowing technique that spawns svchost.exe in suspended state and overwrites its entrypoint with shellcode.
+    Advanced process injection using low-level ntdll APIs for memory-mapped shellcode execution.
     
     Features:
+    - NtCreateSection/NtMapViewOfSection for stealthy memory sharing
     - XOR encryption for basic obfuscation (key: 0xfa)
-    - 10-second sleep sandbox evasion
-    - Spawns legitimate svchost.exe process
-    - PEB parsing to locate entrypoint
-    - Overwrites entrypoint with shellcode
-    - Resumes execution to trigger payload
+    - VirtualAllocExNuma sandbox evasion
+    - Targets explorer.exe process
+    - Avoids common EDR hooks on kernel32 APIs
     
-    This advanced technique creates a legitimate process in suspended state,
-    parses its Process Environment Block (PEB) to find the entrypoint address,
-    overwrites it with malicious shellcode, then resumes the thread.
-    The process appears to be legitimate svchost.exe to simple monitoring tools.
+    This technique creates a memory section object that is mapped into both
+    the current and target processes, allowing shellcode to be written locally
+    and executed remotely without using VirtualAllocEx/WriteProcessMemory.
     
     WARNING: For authorized security testing only!
 
@@ -26,12 +24,11 @@ meta:
     technique: "T1055.012 - Process Injection: Process Hollowing"
 
   artifacts:
-    - "svchost.exe process creation in suspended state"
-    - "ZwQueryInformationProcess calls"
-    - "ReadProcessMemory/WriteProcessMemory API calls"
-    - "ResumeThread execution"
-    - "Modified entrypoint in svchost.exe"
-    - "10-second sleep before execution"
+    - "NtCreateSection API calls to ntdll.dll"
+    - "NtMapViewOfSection memory mapping"
+    - "CreateRemoteThread in explorer.exe"
+    - "RWX memory sections"
+    - "VirtualAllocExNuma sandbox checks"
 
 parameters:
   - name: "lhost"
@@ -55,7 +52,7 @@ parameters:
     type: "string"
     description: "Output executable filename"
     required: false
-    default: "hollowing.exe"
+    default: "injector.exe"
 
   - name: "output_path"
     type: "path"
@@ -91,12 +88,12 @@ preprocessing:
 
 output:
   type: "template"
-  template: "process_hollowing/xor_hollowing.cs"
+  template: "process_injection/xor_sections_inject.cs"
   compile:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
   launch_instructions: |
-    C# XOR Process Hollowing - Launch Instructions
+    C# XOR Sections Process Injection - Launch Instructions
 
     Step 1: Start Metasploit Listener
 
@@ -125,7 +122,7 @@ output:
 
     Step 3: Execute on Target
 
-    Simply run the executable:
+    Simply run the executable (requires admin/SeDebugPrivilege):
     {{ output_file }}
 
     Or via PowerShell:
@@ -139,45 +136,19 @@ output:
 
     Notes:
 
+    - Uses NtCreateSection/NtMapViewOfSection to avoid kernel32 hooks
     - Encrypted with XOR key 0x{{ xor_key }}
-    - Includes 10-second sleep for sandbox evasion
-    - Spawns svchost.exe in suspended state (CREATE_SUSPENDED)
-    - Parses PEB to locate executable entrypoint
-    - Overwrites entrypoint with decoded shellcode
-    - Resumes thread to execute payload
-    - Process appears as legitimate svchost.exe
+    - Includes VirtualAllocExNuma sandbox evasion
+    - Injects into explorer.exe (requires elevated privileges)
+    - Memory sections avoid common EDR detection of VirtualAllocEx/WriteProcessMemory
     - Requires x64 Windows system
-
-    How It Works:
-
-    1. Sleep 10 seconds to evade sandboxes that skip delays
-    2. Spawn C:\Windows\System32\svchost.exe in suspended state
-    3. Query process PEB (Process Environment Block) via ZwQueryInformationProcess
-    4. Read PEB to get base executable address
-    5. Parse PE header to find e_lfanew offset
-    6. Calculate RVA (Relative Virtual Address) of entrypoint
-    7. Get absolute entrypoint address
-    8. XOR-decode shellcode
-    9. Overwrite entrypoint with shellcode using WriteProcessMemory
-    10. Resume thread with ResumeThread
-    11. Shellcode executes as svchost.exe process
 
     Troubleshooting:
 
     - If no connection: Check firewall rules on attacker machine
     - If AV blocks: Consider additional obfuscation or packing
-    - Payload waits 10 seconds before execution (sandbox evasion)
-    - Requires x64 Windows system
-    - svchost.exe must exist at C:\Windows\System32\svchost.exe
-
-    Detection:
-
-    This technique can be detected via:
-    - Sysmon Event ID 1 (Process creation - svchost.exe from unusual parent)
-    - Sysmon Event ID 8 (CreateRemoteThread)
-    - Memory analysis showing RWX regions in svchost.exe
-    - Behavioral analysis of svchost.exe making network connections
-    - ZwQueryInformationProcess calls from non-system processes
+    - Requires SeDebugPrivilege or admin rights to inject into explorer.exe
+    - Check that explorer.exe is running on target
 
     Cleanup:
 

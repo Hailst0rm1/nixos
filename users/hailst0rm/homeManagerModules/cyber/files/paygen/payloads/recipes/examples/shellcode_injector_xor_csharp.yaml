@@ -1,5 +1,5 @@
 meta:
-  name: "XOR-Encoded Shellcode Injector (C#)"
+  name: "Shellcode Injector, XOR (C#)"
   category: "Examples"
   description: |
     Simple XOR-encoded shellcode injector using C#.
