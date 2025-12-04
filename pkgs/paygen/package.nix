@@ -13,7 +13,7 @@ python3Packages.buildPythonApplication rec {
     owner = "Hailst0rm1";
     repo = "paygen";
     rev = "main"; # You can pin to a specific commit/tag later
-    sha256 = "sha256-gdx7vVEAtohmbP8Z4TSjPxg4+gVIiCJXzj/RcUZfyIo=";
+    sha256 = "sha256-vfkab7DjRXeIbdGGi2EBCs3wMjX8hQg5TT1dlQxVb7g=";
   };
 
   propagatedBuildInputs = with python3Packages; [
