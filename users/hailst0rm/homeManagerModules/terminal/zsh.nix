@@ -70,9 +70,11 @@
 
         # Modern commands
         ls = "lsd";
-        la = "lsd -la";
+        la = "lsd -lah";
         tree = "lsd --tree -a";
-        cat = "bat -p";
+        cat = "bat -pp";
+        lat = "bat -p";
+        less = "bat";
         lgit = "lazygit";
         ldocker = "lazydocker";
         ljournal = "lazyjournal";

