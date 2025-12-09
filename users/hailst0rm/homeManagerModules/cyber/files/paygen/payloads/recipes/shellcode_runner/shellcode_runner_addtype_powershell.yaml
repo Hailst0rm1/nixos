@@ -3,16 +3,16 @@ meta:
   category: "Shellcode Execution"
   description: |
     PowerShell shellcode runner using Add-Type for P/Invoke declarations.
-    
+
     Features:
     - VirtualAlloc for memory allocation with RWX permissions
     - CreateThread to execute shellcode in new thread
     - WaitForSingleObject to prevent premature exit
     - Simple and straightforward implementation
-    
+
     WARNING: Add-Type writes temporary files to disk, making this less stealthy.
     Consider reflective alternatives for operational use.
-    
+
     Suitable for testing and lab environments.
 
   effectiveness: low

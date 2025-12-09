@@ -698,7 +698,7 @@ Examples:
 1. **Use markdown formatting** - All launch instructions should be in markdown format
 2. **No title line** - Start directly with the first section heading
 3. **Use h1 headers (#)** - All section headers should be h1 level, not h2 or below
-4. **Use code blocks** - Wrap all commands in proper code blocks with language tags (```bash, ```powershell, ```cmd)
+4. **Use code blocks** - Wrap all commands in proper code blocks with language tags (`bash, `powershell, ```cmd)
 5. **Use bold labels** - Use **bold** for context labels like "Attacker:" and "Target:"
 6. **Keep support sections** - Always include Notes, Troubleshooting, and Cleanup sections
 
@@ -1138,9 +1138,10 @@ If your generated C# has `byte[] buf = new byte[] { };` (empty array):
 All recipes should follow these standards for consistency:
 
 **Markdown Formatting**:
+
 - Main sections use h1 headers (#) - always start with h1 for top-level sections
 - Subsections can use h2-h3 (##, ###) as needed for organizing content
-- Code blocks with language tags (```bash, ```powershell, ```cmd)
+- Code blocks with language tags (`bash, `powershell, ```cmd)
 - Bold labels (**Attacker:**, **Target:**) for context
 - No separate title line at the top of launch instructions
 
