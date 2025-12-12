@@ -1295,3 +1295,21 @@ modified_content = re.sub(r'#include\s+<Windows\.h>', '#include <windows.h>', cp
 ```
 
 This is necessary because MinGW on Linux expects lowercase `windows.h` while Windows code typically uses `Windows.h`.
+
+### Impacket Tools on NixOS
+
+On NixOS, impacket tools are installed without the `impacket-` prefix. Use the direct script names:
+
+**NixOS (Correct):**
+```bash
+smbserver.py share . -smb2support
+secretsdump.py domain/user@target
+```
+
+**Other Linux Distributions (Incorrect on NixOS):**
+```bash
+impacket-smbserver share . -smb2support
+impacket-secretsdump domain/user@target
+```
+
+When writing launch instructions, use the NixOS convention (without prefix) since that's the target platform.
