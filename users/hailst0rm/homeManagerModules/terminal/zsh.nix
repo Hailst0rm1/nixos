@@ -66,7 +66,6 @@
         ":q" = "exit";
         nix-edit = "yazi ${config.nixosDir}";
         yz = "yazi";
-        rp = "realpath";
 
         # Modern commands
         ls = "lsd";
@@ -95,6 +94,13 @@
         # Mkdir + cd dir
         ckdir () {
           mkdir -p "$1" && cd "$1"
+        }
+
+        # Realpath with copy to clipboard
+        rp () {
+          local result=$(realpath "$@")
+          echo "$result" | wl-copy
+          echo "$result"
         }
 
         # Pushes config to git wherever you are

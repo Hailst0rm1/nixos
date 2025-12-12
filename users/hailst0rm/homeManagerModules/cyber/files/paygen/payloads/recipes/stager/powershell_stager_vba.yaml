@@ -4,6 +4,8 @@ meta:
   description: |
     Simple PowerShell stager macro for Office documents.
 
+    WARNING: With my testing, it downloads the script but doesn't execute.
+
     Features:
     - Downloads and executes remote PowerShell script via IEX
     - Uses WebClient.DownloadString for in-memory execution

@@ -21,6 +21,7 @@
   wes-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/wes-ng/package.nix" {};
   fakemeeting = pkgs.callPackage "${nixosDir}/pkgs/fakemeeting/package.nix" {};
   dll-proxy-generator = pkgs.callPackage "${nixosDir}/pkgs/dll-proxy-generator/package.nix" {};
+  perfect-dll-proxy = pkgs.callPackage "${nixosDir}/pkgs/perfect-dll-proxy/package.nix" {};
   paygen = pkgs.callPackage "${nixosDir}/pkgs/paygen/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
@@ -115,6 +116,7 @@ in {
         # === Execution ===
         python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
         dll-proxy-generator # Generate proxy DLLs for DLL hijacking
+        perfect-dll-proxy # Generate proxy DLLs for DLL hijacking using absolute path forwarding
 
         # === Privilege Escalation ===
         wes-ng # Windows-exploit-suggester

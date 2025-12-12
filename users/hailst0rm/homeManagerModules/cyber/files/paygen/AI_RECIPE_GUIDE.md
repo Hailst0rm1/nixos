@@ -1205,3 +1205,93 @@ csharp_payload (formatted C# code string)
     ↓ [inserted into template]
 Final rendered template with shellcode
 ```
+
+---
+
+## NixOS-Specific Considerations
+
+### MinGW Cross-Compilation on NixOS
+
+When using MinGW (x86_64-w64-mingw32-gcc/g++) to compile Windows binaries on NixOS, always wrap the compilation command with `nix-shell -p` to ensure correct library dependencies:
+
+**Correct Pattern:**
+
+```yaml
+compile:
+  enabled: true
+  command: "nix-shell -p pkgsCross.mingwW64.buildPackages.gcc --run 'x86_64-w64-mingw32-g++ -shared -o {{ output_path }}/{{ output_file }} {{ source_file }} -static-libgcc -static-libstdc++ -s'"
+```
+
+**Why This is Needed:**
+
+- NixOS isolates build environments, and MinGW may not have all dependencies in the default PATH
+- System-installed MinGW (via `environment.systemPackages`) may have incompatible library versions
+- The `nix-shell -p pkgsCross.mingwW64.buildPackages.gcc` ensures a clean, reproducible build environment
+- Common error without this: `cannot find -lmcfgthread: No such file or directory`
+
+**Key Compilation Flags:**
+
+- `-static-libgcc -static-libstdc++`: Statically link GCC/C++ runtime libraries
+- `-s`: Strip symbols to reduce file size
+- `-shared`: Create a DLL (for DLL proxy recipes)
+
+### Command Preprocessing with File Paths
+
+When a preprocessing command generates a file and you need to pass the file path (not contents) to the next step:
+
+**Pattern:**
+
+```yaml
+preprocessing:
+  - type: "command"
+    name: "generate_cpp"
+    command: "perfect-dll-proxy --output /tmp/proxy_$$.cpp {{ target_dll }} && echo /tmp/proxy_$$.cpp"
+    output_var: "cpp_file_path"
+
+  - type: "script"
+    name: "modify_cpp"
+    script: "modify_code.py"
+    args:
+      file_path: "{{ cpp_file_path }}"
+    output_var: "modified_code"
+```
+
+**In the Preprocessor Script:**
+
+```python
+#!/usr/bin/env python3
+import sys
+import json
+
+def main():
+    args = json.load(sys.stdin)
+    file_path = args['file_path'].strip()
+
+    # Read the file
+    with open(file_path, 'r') as f:
+        content = f.read()
+
+    # Process content...
+    modified = process(content)
+
+    # Output the result
+    print(modified)  # Or print(json.dumps({...}))
+```
+
+**Key Points:**
+
+1. Command must echo the file path explicitly (e.g., `&& echo /tmp/file.cpp`)
+2. Preprocessor receives the file path as a string, not file contents
+3. Preprocessor must open and read the file itself
+4. Use `.strip()` to remove trailing newlines from the path
+
+### Case-Sensitive Include Files
+
+When cross-compiling Windows code on Linux (case-sensitive filesystem):
+
+```python
+# Fix Windows.h → windows.h for MinGW on Linux
+modified_content = re.sub(r'#include\s+<Windows\.h>', '#include <windows.h>', cpp_content)
+```
+
+This is necessary because MinGW on Linux expects lowercase `windows.h` while Windows code typically uses `Windows.h`.

