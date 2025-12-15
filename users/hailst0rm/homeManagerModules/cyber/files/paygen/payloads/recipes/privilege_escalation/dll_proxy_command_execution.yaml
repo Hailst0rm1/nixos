@@ -93,7 +93,7 @@ output:
 
     Or use automated tools:
     ```powershell
-    Spartacus.exe --mode dll --procmon "C:\Users\User\Downloads\ProcessMonitor\Procmon64.exe" --pml "C:\Users\User\Documents\test\log.log" --csv "C:\Users\User\Documents\test\output.csv" --solution "C:\Users\User\Documents\test" --verbose
+    & '~\Desktop\Tools\Payload Development\Spartacus\Spartacus.exe' --mode dll --procmon 'C:\Tools\sysinternals\Procmon64.exe' --pml '~\Desktop\Spartacus-output\log.pml' --csv '~\Desktop\Spartacus-output\output.csv' --solution '~\Desktop\Spartacus-output\Solutions' --verbose
     ```
 
     # Prepare Proxy DLL
