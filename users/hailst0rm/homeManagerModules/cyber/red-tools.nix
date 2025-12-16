@@ -39,14 +39,10 @@ in {
         "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
         "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
         "cyber/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
-        ".config/paygen/config.yaml".source = ./files/paygen/config.yaml;
+        ".config/paygen/config.yaml".source = ./files/paygen-config.yaml;
         ".nxc/nxc.conf".source = ./files/nxc.conf;
         "cyber/AutoRecon/Plugins" = {
           source = ./files/AutoRecon-Plugins;
-          recursive = true;
-        };
-        "cyber/paygen" = {
-          source = ./files/paygen/payloads;
           recursive = true;
         };
       };
