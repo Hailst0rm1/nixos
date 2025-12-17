@@ -49,6 +49,11 @@ in {
             PreferredAuthentications = "publickey";
           };
         };
+
+        "gitlab.leech.cloud" = {
+          user = "charlie.ted";
+          identityFile = ["~/.ssh/yubia" "~/.ssh/yubic"];
+        };
       };
     };
   };
