@@ -17,5 +17,6 @@
   applications = {
     youtube-music.enable = true;
     openconnect.enable = true;
+    aws-cvpn-wrapper.enable = true;
   };
 }

@@ -31,6 +31,15 @@
         "keys/yubikey/${config.hostname}" = {
           path = "/home/${config.username}/.config/Yubico/u2f_keys";
         };
+        "vpn/aws-leech" = {
+          path = "/home/${config.username}/.vpn/aws-leech.ovpn";
+        };
+        "vpn/htb" = {
+          path = "/home/${config.username}/.vpn/htb.ovpn";
+        };
+        "vpn/offsec" = {
+          path = "/home/${config.username}/.vpn/offsec.ovpn";
+        };
       };
     };
   };

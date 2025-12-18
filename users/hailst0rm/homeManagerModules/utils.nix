@@ -9,6 +9,7 @@
 
   home.packages = [
     pkgs.openvpn
+    pkgs.update-systemd-resolved
     # pkgs.python312
     pkgs.python313
     # Advanced tooling

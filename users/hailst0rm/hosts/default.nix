@@ -113,6 +113,7 @@
     claude-desktop.enable = lib.mkDefault true;
     openconnect.enable = lib.mkDefault false;
     espanso.enable = lib.mkDefault false;
+    aws-cvpn-wrapper.enable = lib.mkDefault false;
     proton = {
       enableAll = lib.mkDefault true;
       mail.enable = lib.mkDefault false;

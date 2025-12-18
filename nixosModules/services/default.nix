@@ -16,5 +16,8 @@
     services.logind = {
       killUserProcesses = true;
     };
+
+    # Enable systemd-resolved to manage DNS
+    services.resolved.enable = true;
   };
 }
