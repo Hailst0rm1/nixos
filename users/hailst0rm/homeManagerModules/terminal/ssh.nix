@@ -15,7 +15,7 @@ in {
       matchBlocks = {
         # Default configuration for all hosts
         "*" = {
-          forwardAgent = false;
+          forwardAgent = lib.mkIf config.cyber.redTools.enable true;
           addKeysToAgent = "no";
           compression = false;
           serverAliveInterval = 0;
