@@ -8,9 +8,8 @@
 }: let
   # Custom packages
   nixosDir = inputs.self;
-  sliver = pkgs.callPackage "${nixosDir}/pkgs/sliver/package.nix" {
-    # Uses bundled garble/gofmt/sgn binaries and builds Go 1.20.7 internally
-  };
+  sliver = pkgs.callPackage "${nixosDir}/pkgs/sliver/package.nix" {};
+  # sliver-v1-5-44 = pkgs.callPackage "${nixosDir}/pkgs/sliver-1.5.44/package.nix" { };
   ligolo-mp = pkgs.callPackage "${nixosDir}/pkgs/ligolo-mp/package.nix" {
     # Explicitly use stable Go 1.23 for agent generation compatibility
     inherit (pkgs) go_1_23 garble;
