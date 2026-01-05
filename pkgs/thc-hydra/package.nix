@@ -42,6 +42,12 @@ stdenv.mkDerivation rec {
       --replace-fail "-lcurses" "-lncurses"
   '';
 
+  # Disable errors for newer glibc/compiler compatibility
+  NIX_CFLAGS_COMPILE = [
+    "-Wno-error=format-truncation"
+    "-Wno-error=incompatible-pointer-types"
+  ];
+
   nativeBuildInputs = lib.optionals withGUI [
     pkg-config
     makeWrapper

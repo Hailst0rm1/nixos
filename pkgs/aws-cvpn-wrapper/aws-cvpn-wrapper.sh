@@ -25,18 +25,18 @@ echo "Starting AWS CVPN client..."
 sudo nix run github:sirn/aws-cvpn-client "$OVPN_FILE" 2>&1 | while IFS= read -r line; do
     # Print the line for visibility
     echo "$line"
-    
+
     # Parse DNS IP from PUSH_REPLY message
     if [[ "$line" =~ dhcp-option\ DNS\ ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+) ]]; then
         DNS_IP="${BASH_REMATCH[1]}"
         echo "[WRAPPER] Detected DNS IP: $DNS_IP"
     fi
-    
+
     # Parse interface name from net_iface_up message
     if [[ "$line" =~ net_iface_up:\ set\ ([a-z0-9]+)\ up ]]; then
         INTERFACE="${BASH_REMATCH[1]}"
         echo "[WRAPPER] Detected interface: $INTERFACE"
-        
+
         # If we have both values, configure DNS
         if [ -n "$DNS_IP" ] && [ -n "$INTERFACE" ]; then
             echo "[WRAPPER] Configuring DNS: sudo resolvectl dns $INTERFACE $DNS_IP"

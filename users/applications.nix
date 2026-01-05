@@ -9,7 +9,7 @@
   cfg = config.applications;
   proton = config.applications.proton;
   games = config.applications.games;
-  spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.system};
+  spicePkgs = inputs.spicetify-nix.legacyPackages.${pkgs.stdenv.hostPlatform.system};
 in {
   imports = [inputs.spicetify-nix.homeManagerModules.spicetify];
 
@@ -59,12 +59,12 @@ in {
       (lib.mkIf cfg.obsidian.enable [pkgs-unstable.obsidian])
       (lib.mkIf cfg.remmina.enable [pkgs-unstable.remmina])
       #(lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ]) # Uncomment if not using spicetify flake
-      (lib.mkIf cfg.youtube-music.enable [pkgs-unstable.youtube-music])
-      (lib.mkIf cfg.zen-browser.enable [inputs.zen-browser.packages.${pkgs.system}.default])
+      (lib.mkIf cfg.youtube-music.enable [pkgs-unstable.pear-desktop])
+      (lib.mkIf cfg.zen-browser.enable [inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default])
       (lib.mkIf cfg.claude-desktop.enable [
         (pkgs.symlinkJoin {
           name = "claude-desktop-wrapped";
-          paths = [inputs.claude-desktop.packages.${pkgs.system}.claude-desktop-with-fhs];
+          paths = [inputs.claude-desktop.packages.${pkgs.stdenv.hostPlatform.system}.claude-desktop-with-fhs];
           buildInputs = [pkgs.makeWrapper];
           postBuild = ''
             wrapProgram $out/bin/claude-desktop \

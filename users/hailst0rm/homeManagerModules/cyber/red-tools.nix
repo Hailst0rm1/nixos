@@ -12,7 +12,7 @@
   # sliver-v1-5-44 = pkgs.callPackage "${nixosDir}/pkgs/sliver-1.5.44/package.nix" { };
   ligolo-mp = pkgs.callPackage "${nixosDir}/pkgs/ligolo-mp/package.nix" {
     # Explicitly use stable Go 1.23 for agent generation compatibility
-    inherit (pkgs) go_1_23 garble;
+    # inherit (pkgs) go_1_23 garble;
   };
   thc-hydra = pkgs-unstable.callPackage "${nixosDir}/pkgs/thc-hydra/package.nix" {};
   autorecon = pkgs-unstable.callPackage "${nixosDir}/pkgs/autorecon/package.nix" {};
@@ -146,7 +146,7 @@ in {
 
         # === Cloud ===
         awscli2
-        pacu # AWS Exploitation framework
+        # pacu # AWS Exploitation framework (bugged 25.12 2/1/2026)
 
         # === Wordlists ===
         cewl # Wordlist generator based on website

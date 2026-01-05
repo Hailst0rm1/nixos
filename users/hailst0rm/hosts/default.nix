@@ -26,7 +26,7 @@
   };
 
   home = {
-    stateVersion = "25.05";
+    stateVersion = "25.11";
     username = lib.mkDefault "${config.username}";
     homeDirectory = lib.mkDefault "/home/${config.username}";
     enableNixpkgsReleaseCheck = lib.mkDefault false;

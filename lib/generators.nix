@@ -8,6 +8,7 @@ in {
         pkgs-unstable = import inputs.nixpkgs-unstable {
           system = "x86_64-linux"; # Required...
           config.allowUnfree = true;
+          overlays = overlays;
         };
         inherit inputs hostname;
       };
@@ -49,6 +50,7 @@ in {
             pkgs-unstable = import inputs.nixpkgs-unstable {
               system = systemArch;
               config.allowUnfree = true;
+              overlays = overlays;
             };
 
             inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled redTools sops; # Add config here that HM may rely on
@@ -74,6 +76,7 @@ in {
         pkgs-unstable = import inputs.nixpkgs-unstable {
           system = systemArch;
           config.allowUnfree = true;
+          overlays = overlays;
         };
 
         inherit inputs hostname;

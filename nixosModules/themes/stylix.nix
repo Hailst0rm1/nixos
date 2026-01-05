@@ -41,7 +41,7 @@ in {
       };
 
       targets = lib.mkIf cfg.enable {
-        grub.useImage = true;
+        grub.useWallpaper = true;
       };
 
       fonts = lib.mkIf cfg.enable {
@@ -61,7 +61,7 @@ in {
         };
 
         emoji = {
-          package = pkgs.noto-fonts-emoji;
+          package = pkgs.noto-fonts-color-emoji;
           name = "Noto Color Emoji";
         };
       };

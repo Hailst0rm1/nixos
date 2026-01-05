@@ -27,7 +27,7 @@
       #!/bin/sh
       exec ${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc \
         -L${pkgs.pkgsCross.mingwW64.windows.mcfgthreads}/lib \
-        -L${pkgs.pkgsCross.mingwW64.windows.mingw_w64_pthreads}/lib \
+        -L${pkgs.pkgsCross.mingwW64.windows.pthreads}/lib \
         "$@"
       EOF
             chmod +x /usr/bin/x86_64-w64-mingw32-gcc-wrapper

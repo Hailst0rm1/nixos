@@ -112,9 +112,11 @@ in {
           };
         };
 
-        gestures = {
-          workspace_swipe = true;
-        };
+        gesture = [
+          "3, horizontal, workspace"
+          "3, down, dispatcher, overview:open all"
+          "3, up, dispatcher, overview:close all"
+        ];
 
         # Use "displays" (scripts/displays.sh) to configure displays dynamically
         # This will load the configuration if one is set using "displays" - otherwise use default value
@@ -301,7 +303,7 @@ in {
       #(pkgs.${cfg.appLauncher})
       (
         if cfg.appLauncher == "rofi"
-        then pkgs.rofi-wayland
+        then pkgs.rofi
         else pkgs.${cfg.appLauncher}
       )
 

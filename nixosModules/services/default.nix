@@ -14,7 +14,7 @@
   config = {
     # Makes sure to kill user processes on shutdown
     services.logind = {
-      killUserProcesses = true;
+      settings.Login.KillUserProcesses = true;
     };
 
     # Enable systemd-resolved to manage DNS

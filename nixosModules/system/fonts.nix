@@ -6,6 +6,5 @@
     noto-fonts-color-emoji
     rubik
     noto-fonts
-    noto-fonts-emoji
   ];
 }

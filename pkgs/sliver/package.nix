@@ -5,16 +5,18 @@
   autoPatchelfHook,
   makeWrapper,
   go,
-  garble,
+  # TEMPORARY: Remove garble from function params due to nixpkgs 25.11 incompatibility
+  # TODO: Restore this line when garble is fixed in nixpkgs:
+  # garble,
 }:
 stdenv.mkDerivation rec {
   pname = "sliver";
-  version = "1.6.0";
+  version = "1.6.1";
 
   # Fetch the client binary
   client = fetchurl {
     url = "https://github.com/BishopFox/sliver/releases/download/v${version}/sliver-client_linux-amd64";
-    sha256 = "sha256-oTe7M5pJDFq99Qi0Bs+Kq+oPYK1y0TvMoWQBd3C9Ljg=";
+    sha256 = "sha256-WoMctapKIrh7HIAD/sJlIjZnrJIJcdfyehWdOJWdvOQ=";
   };
 
   # Fetch the server binary
@@ -32,7 +34,9 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     go
-    garble
+    # TEMPORARY: Removed garble from buildInputs
+    # TODO: Restore this line when garble is fixed in nixpkgs:
+    # garble
   ];
   installPhase = ''
     runHook preInstall
@@ -45,13 +49,21 @@ stdenv.mkDerivation rec {
     # Install server (unwrapped)
     install -m755 ${server} $out/bin/.sliver-server-unwrapped
 
+    # TEMPORARY: Install pre-built garble binary from same directory
+    # TODO: Remove this line when garble is fixed in nixpkgs
+    install -m755 ${./garble} $out/bin/garble
+
     # Create wrapper for server that sets up Go environment
     makeWrapper $out/bin/.sliver-server-unwrapped $out/bin/sliver-server \
       --run 'mkdir -p $HOME/.sliver/go/bin' \
       --run 'ln -sf ${go}/bin/go $HOME/.sliver/go/bin/go' \
       --run 'ln -sf ${go}/bin/gofmt $HOME/.sliver/go/bin/gofmt' \
-      --run 'ln -sf ${garble}/bin/garble $HOME/.sliver/go/bin/garble' \
-      --run 'ln -sf ${garble}/bin/sgn $HOME/.sliver/go/bin/sgn'
+      --run 'ln -sf '"$out"'/bin/garble $HOME/.sliver/go/bin/garble' \
+      --run 'ln -sf '"$out"'/bin/garble $HOME/.sliver/go/bin/sgn'
+      # TEMPORARY: Changed to use $out/bin/garble instead of $\{garble}/bin/garble
+      # TODO: Restore these lines when garble is fixed in nixpkgs:
+      # --run 'ln -sf $\{garble}/bin/garble $HOME/.sliver/go/bin/garble' \
+      # --run 'ln -sf $\{garble}/bin/sgn $HOME/.sliver/go/bin/sgn'
 
     runHook postInstall
   '';

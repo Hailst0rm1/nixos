@@ -42,8 +42,8 @@ in {
         status.perm_type = lib.mkForce {fg = "${config.importConfig.hyprland.accentColourHex}";};
         tasks.border = lib.mkForce {fg = "${config.importConfig.hyprland.accentColourHex}";};
         tabs = {
-          active = {bg = "${config.importConfig.hyprland.accentColourHex}";};
-          inactive = {
+          active = {bg = lib.mkForce "${config.importConfig.hyprland.accentColourHex}";};
+          inactive = lib.mkForce {
             bg = "#181825";
             fg = "${config.importConfig.hyprland.accentColourHex}";
           };
