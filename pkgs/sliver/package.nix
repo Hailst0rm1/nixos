@@ -22,7 +22,7 @@ stdenv.mkDerivation rec {
   # Fetch the server binary
   server = fetchurl {
     url = "https://github.com/BishopFox/sliver/releases/download/v${version}/sliver-server_linux-amd64";
-    sha256 = "sha256-H8yB42OHQh/+Y54QWcagfzHeQ0Y1pDETHnvJhLQde2o=";
+    sha256 = "sha256-E0pllJgb+/UsWMSe+w3Hjjoa2grLoLON3Bb5IGIpEz8=";
   };
 
   dontUnpack = true;
