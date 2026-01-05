@@ -19,7 +19,7 @@
   # variables.nix
   username = lib.mkDefault "hailst0rm";
   hostname = hostname;
-  systemArch = lib.mkDefault "x86_64-linux";
+  # Note: hostPlatform is set in hardware-configuration.nix via nixpkgs.hostPlatform
   laptop = lib.mkDefault false;
   removableMedia = lib.mkDefault false;
   myLocation = lib.mkDefault "Stockholm";

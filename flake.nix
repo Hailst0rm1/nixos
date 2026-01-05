@@ -91,12 +91,11 @@
   outputs = inputs @ {self, ...}: let
     # Generator functions for Machines and VMs
     myLib = import ./lib/generators.nix {inherit inputs;};
-    system = "x86_64-linux";
   in
     with myLib; {
       # ===================== DevShells (nix develop) ===================== #
 
-      devShells.${system} = import ./shell.nix {pkgs = inputs.nixpkgs.legacyPackages.${system};};
+      devShells.x86_64-linux = import ./shell.nix {pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;};
 
       # ===================== Physical Machines ===================== #
 

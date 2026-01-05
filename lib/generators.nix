@@ -2,14 +2,22 @@
   lib = inputs.nixpkgs.lib;
 in {
   mkSystem = {hostname}: let
+    # --- Overlays (defined first so they can be used everywhere)
+    overlays =
+      [
+        inputs.nix-vscode-extensions.overlays.default
+      ]
+      ++ (
+        lib.mapAttrsToList
+        (name: _: import ../overlays/${name})
+        (lib.filterAttrs
+          (name: type: lib.hasSuffix ".nix" name && type == "regular")
+          (builtins.readDir ../overlays))
+      );
+
     # Evaluate the system configuration first (including Home Manager)
     evaluatedSystem = lib.nixosSystem {
       specialArgs = {
-        pkgs-unstable = import inputs.nixpkgs-unstable {
-          system = "x86_64-linux"; # Required...
-          config.allowUnfree = true;
-          overlays = overlays;
-        };
         inherit inputs hostname;
       };
 
@@ -24,7 +32,7 @@ in {
     # Variables.nix
     username = evaluatedSystem.config.username;
     nixosDir = evaluatedSystem.config.nixosDir;
-    systemArch = evaluatedSystem.config.systemArch;
+    hostPlatform = evaluatedSystem.config.nixpkgs.hostPlatform.system;
     myLocation = evaluatedSystem.config.myLocation;
     laptop = evaluatedSystem.config.laptop;
     redTools = evaluatedSystem.config.cyber.redTools.enable;
@@ -32,6 +40,13 @@ in {
 
     # Graphic driver
     nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
+
+    # Create pkgs-unstable using the detected host platform
+    pkgs-unstable = import inputs.nixpkgs-unstable {
+      system = hostPlatform;
+      config.allowUnfree = true;
+      overlays = overlays;
+    };
 
     # --- Home Manager configuration
     homeManager =
@@ -47,39 +62,14 @@ in {
 
           # Pass extracted config values (custom args passed to HM)
           home-manager.extraSpecialArgs = {
-            pkgs-unstable = import inputs.nixpkgs-unstable {
-              system = systemArch;
-              config.allowUnfree = true;
-              overlays = overlays;
-            };
-
-            inherit inputs username hostname nixosDir systemArch myLocation laptop nvidiaEnabled redTools sops; # Add config here that HM may rely on
+            inherit inputs username hostname nixosDir hostPlatform myLocation laptop nvidiaEnabled redTools sops pkgs-unstable;
           };
         }
       ];
-
-    # --- Overlays
-    overlays =
-      [
-        inputs.nix-vscode-extensions.overlays.default
-      ]
-      ++ (
-        lib.mapAttrsToList
-        (name: _: import ../overlays/${name})
-        (lib.filterAttrs
-          (name: type: lib.hasSuffix ".nix" name && type == "regular")
-          (builtins.readDir ../overlays))
-      );
   in
     lib.nixosSystem {
       specialArgs = {
-        pkgs-unstable = import inputs.nixpkgs-unstable {
-          system = systemArch;
-          config.allowUnfree = true;
-          overlays = overlays;
-        };
-
-        inherit inputs hostname;
+        inherit inputs hostname pkgs-unstable;
       };
 
       modules =
@@ -87,11 +77,15 @@ in {
           # System configuration
           ../hosts/${hostname}/configuration.nix
 
-          # Pkgs Overlays
+          # Pkgs Overlays (including pkgs-unstable as an overlay for consistency)
           {
             nixpkgs.overlays =
               [
                 # inputs.hyprpanel.overlay
+                # Make pkgs-unstable available as pkgs.pkgs-unstable too
+                (_final: _prev: {
+                  inherit pkgs-unstable;
+                })
               ]
               ++ overlays;
           }

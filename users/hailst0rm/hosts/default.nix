@@ -5,7 +5,7 @@
   username,
   hostname,
   nixosDir,
-  systemArch,
+  hostPlatform,
   myLocation,
   laptop,
   redTools,
@@ -36,7 +36,8 @@
   username = username;
   hostname = hostname;
   nixosDir = nixosDir;
-  systemArch = systemArch;
+  # Note: hostPlatform is available as a function argument, not set as an option
+  # Access it directly in your config where needed (e.g., hostPlatform)
   myLocation = myLocation;
   laptop = laptop;
 

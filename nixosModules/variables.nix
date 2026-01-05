@@ -32,11 +32,8 @@
       description = "The directory containing NixOS configurations.";
     };
 
-    systemArch = lib.mkOption {
-      type = lib.types.str;
-      default = "x86_64-linux";
-      description = "The target system architecture.";
-    };
+    # Note: System architecture is now handled via nixpkgs.hostPlatform in hardware-configuration.nix
+    # Access it via config.nixpkgs.hostPlatform.system
 
     myLocation = lib.mkOption {
       type = lib.types.str;
