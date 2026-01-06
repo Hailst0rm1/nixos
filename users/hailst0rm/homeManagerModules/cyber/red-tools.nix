@@ -32,6 +32,10 @@ in {
   config = lib.mkIf config.cyber.redTools.enable {
     home = {
       file = {
+        "cyber/AutoRecon/Plugins" = {
+          source = ./files/AutoRecon-Plugins;
+          recursive = true;
+        };
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
@@ -39,11 +43,8 @@ in {
         "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
         "cyber/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
         ".config/paygen/config.yaml".source = ./files/paygen-config.yaml;
+        ".config/bloodhound/customqueries.json".source = ./files/bloodhound-queries.json;
         ".nxc/nxc.conf".source = ./files/nxc.conf;
-        "cyber/AutoRecon/Plugins" = {
-          source = ./files/AutoRecon-Plugins;
-          recursive = true;
-        };
       };
 
       packages = with pkgs-unstable; [
