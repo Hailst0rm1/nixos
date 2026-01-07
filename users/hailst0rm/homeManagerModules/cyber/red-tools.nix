@@ -117,6 +117,7 @@ in {
         # === Privilege Escalation ===
         wes-ng # Windows-exploit-suggester
         linux-exploit-suggester
+        (pkgs.certipy) # ADCS enumeration and exploitation tool
 
         # === Lateral Movement ===
         evil-winrm # WinRM shell for hacking/pentesting
