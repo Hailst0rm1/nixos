@@ -133,6 +133,7 @@ in {
         hashid # Identify hash type (-m for hashcat mode value)
         python312Packages.impacket # ntmlrelayx.py: Relays ntml requests
         (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
+        coercer # Coerce a Windows server to authenticate on an arbitrary machine
 
         # === Discovery ===
         bloodhound

@@ -147,6 +147,7 @@ typeset -A vars=(
     TARGETS "$TARGETS"
     CIDR "$CIDR"
     DC "$DC"
+    ADCS_HOST "$ADCS_HOST"
     DOMAIN "$DOMAIN"
     USER "$USER"
     PASSWORD "$PASSWORD"
@@ -155,7 +156,7 @@ typeset -A vars=(
 )
 
 # Ordered keys
-ordered_keys=( OUTDIR C2 TARGET TARGETS CIDR DC DOMAIN USER PASSWORD NT_HASH AES_KEY)
+ordered_keys=( OUTDIR C2 TARGET TARGETS CIDR DC ADCS_HOST DOMAIN USER PASSWORD NT_HASH AES_KEY)
 
 show_banner() {
     clear
