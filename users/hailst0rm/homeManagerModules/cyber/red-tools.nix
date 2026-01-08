@@ -21,6 +21,7 @@
   fakemeeting = pkgs.callPackage "${nixosDir}/pkgs/fakemeeting/package.nix" {};
   dll-proxy-generator = pkgs.callPackage "${nixosDir}/pkgs/dll-proxy-generator/package.nix" {};
   perfect-dll-proxy = pkgs.callPackage "${nixosDir}/pkgs/perfect-dll-proxy/package.nix" {};
+  psobf = pkgs.callPackage "${nixosDir}/pkgs/psobf/package.nix" {};
   paygen = pkgs.callPackage "${nixosDir}/pkgs/paygen/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
@@ -100,6 +101,7 @@ in {
         pkgsCross.mingwW64.buildPackages.gcc
         mono # For compiling C# projects
         paygen # Custom Payload generator tool
+        psobf # PowerShell obfuscator
 
         # === Initial Access ===
         metasploit
