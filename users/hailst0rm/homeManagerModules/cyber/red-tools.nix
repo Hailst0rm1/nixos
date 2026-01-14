@@ -14,8 +14,10 @@
     # Explicitly use stable Go 1.23 for agent generation compatibility
     # inherit (pkgs) go_1_23 garble;
   };
-  thc-hydra = pkgs-unstable.callPackage "${nixosDir}/pkgs/thc-hydra/package.nix" {};
   autorecon = pkgs-unstable.callPackage "${nixosDir}/pkgs/autorecon/package.nix" {};
+  autorecon-wrapped = builtins.readFile ./files/autorecon-wrapped.sh;
+  donut = pkgs-unstable.callPackage "${nixosDir}/pkgs/donut/package.nix" {};
+  thc-hydra = pkgs-unstable.callPackage "${nixosDir}/pkgs/thc-hydra/package.nix" {};
   httpuploadexfil = pkgs-unstable.callPackage "${nixosDir}/pkgs/httpuploadexfil/package.nix" {};
   wes-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/wes-ng/package.nix" {};
   fakemeeting = pkgs.callPackage "${nixosDir}/pkgs/fakemeeting/package.nix" {};
@@ -31,18 +33,24 @@
   portmux = builtins.readFile ./files/portmux.sh;
 in {
   config = lib.mkIf config.cyber.redTools.enable {
+    # For var-tool
+    programs.zsh.initContent = ''
+      source ~/.config/.my_vars.env
+    '';
+
     home = {
       file = {
         "cyber/AutoRecon/Plugins" = {
           source = ./files/AutoRecon-Plugins;
           recursive = true;
         };
+        "cyber/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
+        "cyber/AutoRecon/global.toml".source = ./files/autorecon-global.toml;
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
         "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
         "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
-        "cyber/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
         ".config/paygen/config.yaml".source = ./files/paygen-config.yaml;
         ".config/bloodhound/customqueries.json".source = ./files/bloodhound-queries.json;
         ".nxc/nxc.conf".source = ./files/nxc.conf;
@@ -67,6 +75,7 @@ in {
 
         # Active
         autorecon # Automatic recon
+        (writeShellScriptBin "autorecon-wrapped" autorecon-wrapped) # Wrapped script to run autorecon reliably
         enum4linux-ng # ^Dependency: Enum samba & Windows
         redis # ^Dependency
         nmap
@@ -102,6 +111,7 @@ in {
         mono # For compiling C# projects
         paygen # Custom Payload generator tool
         psobf # PowerShell obfuscator
+        donut # Convert PE files to shellcode
 
         # === Initial Access ===
         metasploit

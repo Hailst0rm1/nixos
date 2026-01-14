@@ -9,7 +9,7 @@ class NetExec_Common_Vuln(ServiceScan):
 
 	def configure(self):
 		self.match_service_name(['^smb', '^microsoft-ds', '^netbios'])
-		self.match_port('tcp', [139, 445])
+		self.match_port('tcp', 445)
 		self.run_once(True)
 
 	async def run(self, service):

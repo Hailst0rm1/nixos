@@ -153,16 +153,16 @@ typeset -A vars=(
     PASSWORD "$PASSWORD"
     NT_HASH "$NT_HASH"
     AES_KEY "$AES_KEY"
+    KRB5_CONFIG "$KRB5_CONFIG"
 )
 
 # Ordered keys
-ordered_keys=( OUTDIR C2 TARGET TARGETS CIDR DC ADCS_HOST DOMAIN USER PASSWORD NT_HASH AES_KEY)
+ordered_keys=( OUTDIR C2 TARGET TARGETS CIDR DC ADCS_HOST DOMAIN USER PASSWORD NT_HASH AES_KEY KRB5_CONFIG)
 
 show_banner() {
     clear
     print -P "${CYAN}╔═══════════════════════════════════════════════╗${NC}"
     print -P "${CYAN}║           ${GREEN}Environment Variables Tool${CYAN}          ║${NC}"
-    print -P "${CYAN}║           ${YELLOW}OSCP+ Variable Management${CYAN}           ║${NC}"
     print -P "${CYAN}╚═══════════════════════════════════════════════╝${NC}"
     print ""
 }

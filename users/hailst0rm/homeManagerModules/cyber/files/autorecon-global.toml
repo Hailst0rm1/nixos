@@ -1,0 +1,31 @@
+[global.username-wordlist]
+default = '/usr/share/seclists/Usernames/top-usernames-shortlist.txt'
+help = 'A wordlist of usernames, useful for bruteforcing. Default: %(default)s'
+
+[global.password-wordlist]
+default = '/usr/share/seclists/Passwords/darkweb2017-top100.txt'
+help = 'A wordlist of passwords, useful for bruteforcing. Default: %(default)s'
+
+[global.domain]
+help = 'The domain to use (if known). Used for DNS and/or Active Directory. Default: %(default)s'
+
+[global.username]
+help = 'The username to use when e.g. you have access to an AD account or account to bruteforce. Default: %(default)s'
+
+[global.password]
+help = 'The password to use when e.g. you have access to an AD account or password spraying. Default: %(default)s'
+
+[global.nthash]
+help = 'The password hash to use when e.g. you have access to an AD account. Default: %(default)s'
+
+# Configure global pattern matching here.
+[[pattern]]
+description = 'Nmap script found a potential vulnerability. ({match})'
+pattern = 'State: (?:(?:LIKELY\_?)?VULNERABLE)'
+
+[[pattern]]
+pattern = '(?i)unauthorized'
+
+[[pattern]]
+description = 'CVE Identified: {match}'
+pattern = '(CVE-\d{4}-\d{4,7})'

@@ -9,8 +9,8 @@ class NetExec_AnonLogin(ServiceScan):
 
 	def configure(self):
 		self.match_service_name(['^smb', '^microsoft-ds', '^netbios'])
-		self.match_port('tcp', [139, 445])
+		self.match_port('tcp', 445)
 		self.run_once(True)
 
 	async def run(self, service):
-		await service.execute("nxc smb {address} -u '' -p ''", outfile='netexec_anonlogin.txt')
+		await service.execute("nxc smb {address} -u '' -p '' --shares", outfile='netexec_anonlogin.txt')

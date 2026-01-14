@@ -31,7 +31,6 @@ show_banner() {
     clear
     echo -e "${CYAN}╔═══════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║           ${GREEN}Port Multiplexer Tool${CYAN}               ║${NC}"
-    echo -e "${CYAN}║         ${YELLOW}OSCP+ Exam Port Management${CYAN}            ║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════╝${NC}"
     echo
 }
