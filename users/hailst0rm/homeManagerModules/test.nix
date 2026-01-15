@@ -5,5 +5,6 @@
   ...
 }: {
   home.packages = [
+    pkgs.vagrant
   ];
 }

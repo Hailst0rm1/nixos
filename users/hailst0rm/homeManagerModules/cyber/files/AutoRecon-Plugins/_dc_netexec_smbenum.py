@@ -25,11 +25,15 @@ class NetExec_DC_SMBEnum(ServiceScan):
 				await service.execute('nxc smb {address} -u ' + username + ' -p ' + password + ' --pass-pol', outfile='netexec_dc_smbenum_pass_pol.txt')
 				await service.execute('nxc smb {address} -u ' + username + ' -p ' + password + ' --users', outfile='netexec_dc_smbenum_users.txt')
 				await service.execute('nxc smb {address} -u ' + username + ' -p ' + password + ' --local-group', outfile='netexec_dc_smbenum_local_group.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' -p ' + password + ' -M gpp_autologin', outfile='netexec_dc_smbenum_gpp_autologin.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' -p ' + password + ' -M gpp_password', outfile='netexec_dc_smbenum_gpp_password.txt')
 			if self.get_global('nthash'):
 				nthash = self.get_global('nthash')
 				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' --shares', outfile='netexec_dc_smbenum_shares.txt')
 				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' --pass-pol', outfile='netexec_dc_smbenum_pass_pol.txt')
 				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' --users', outfile='netexec_dc_smbenum_users.txt')
 				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' --local-group', outfile='netexec_dc_smbenum_local_group.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' -M gpp_autologin', outfile='netexec_dc_smbenum_gpp_autologin.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' -M gpp_password', outfile='netexec_dc_smbenum_gpp_password.txt')
 		else:
 			self.error('netexec requires username global option to be set.')

