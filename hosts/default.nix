@@ -95,6 +95,7 @@
     mattermost.enable = lib.mkDefault false;
     ollama.enable = lib.mkDefault false;
     open-webui.enable = lib.mkDefault false; # UI for local AI
+    code-server.enable = lib.mkDefault false; # Web-based VS Code
     tailscaleAutoconnect = {
       enable = lib.mkDefault true;
       authkeyFile = lib.mkDefault config.sops.secrets."services/tailscale/auth.key".path; # Needs updating every 90 days (okt 16)

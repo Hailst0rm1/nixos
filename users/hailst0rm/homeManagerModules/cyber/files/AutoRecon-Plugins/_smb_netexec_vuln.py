@@ -13,4 +13,4 @@ class NetExec_Common_Vuln(ServiceScan):
 		self.run_once(True)
 
 	async def run(self, service):
-		await service.execute("nxc smb {address} -u '' -p '' -M ms17-010 -M zerologon -M printnightmare -M smbghost -M coerce_plus", outfile='netexec_common_vuln.txt')
+		await service.execute("nxc smb {address} -u '' -p '' -M ms17-010 -M zerologon -M printnightmare -M smbghost -M coerce_plus -M remove-mic", outfile='netexec_common_vuln.txt')
