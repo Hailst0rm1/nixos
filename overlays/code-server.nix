@@ -1,27 +1,23 @@
 final: prev: {
   code-server = prev.code-server.overrideAttrs (oldAttrs: rec {
     version = "4.108.0";
+    commit = "9233f0438330450deb48a0b957820b5f0c7f1e91";
 
     src = prev.fetchFromGitHub {
       owner = "coder";
       repo = "code-server";
       rev = "v${version}";
       fetchSubmodules = true;
-      hash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # Placeholder, needs to be computed
+      hash = "sha256-Jpu7ITmC/5pxHpYPF7oZpa8HkgLMFId8HIoDAJYFV0Y=";
     };
 
-    # Commit hash for v4.108.0
-    # Computed with: git rev-parse v4.108.0
-    commit = "9233f0438330450deb48a0b957820b5f0c7f1e91";
-
-    # The yarnCache derivation also needs to be updated
+    # Update the yarn cache for the new version
     yarnCache = prev.stdenv.mkDerivation {
-      name = "${oldAttrs.pname}-${version}-${prev.stdenv.hostPlatform.system}-yarn-cache";
+      name = "code-server-${version}-${prev.stdenv.hostPlatform.system}-yarn-cache";
       inherit src;
 
       nativeBuildInputs = with prev; [
-        yarn.override
-        {nodejs = prev.nodejs;}
+        (yarn.override {nodejs = oldAttrs.nodejs or prev.nodejs;})
         git
         cacert
       ];
@@ -32,16 +28,16 @@ final: prev: {
         export HOME=$PWD
         export GIT_SSL_CAINFO="${prev.cacert}/etc/ssl/certs/ca-bundle.crt"
 
-        ${prev.yarn.override {nodejs = prev.nodejs;}}/bin/yarn --cwd "./vendor" install --modules-folder modules --ignore-scripts --frozen-lockfile
+        yarn --cwd "./vendor" install --modules-folder modules --ignore-scripts --frozen-lockfile
 
-        ${prev.yarn.override {nodejs = prev.nodejs;}}/bin/yarn config set yarn-offline-mirror $out
+        yarn config set yarn-offline-mirror $out
         find "$PWD" -name "yarn.lock" -printf "%h\n" | \
-          xargs -I {} ${prev.yarn.override {nodejs = prev.nodejs;}}/bin/yarn --cwd {} \
+          xargs -I {} yarn --cwd {} \
             --frozen-lockfile --ignore-scripts --ignore-platform \
             --ignore-engines --no-progress --non-interactive
 
         find ./lib/vscode -name "yarn.lock" -printf "%h\n" | \
-          xargs -I {} ${prev.yarn.override {nodejs = prev.nodejs;}}/bin/yarn --cwd {} \
+          xargs -I {} yarn --cwd {} \
             --ignore-scripts --ignore-engines
 
         runHook postBuild
@@ -49,10 +45,9 @@ final: prev: {
 
       outputHashMode = "recursive";
       outputHashAlgo = "sha256";
-      outputHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="; # Placeholder, needs to be computed
+      outputHash = prev.lib.fakeSha256; # Will need to be updated after first build
     };
 
-    # Update the commit in the patch substitutions
     postPatch = ''
       export HOME=$PWD
 
