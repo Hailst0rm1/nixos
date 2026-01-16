@@ -376,14 +376,14 @@
       sslCertFile = config.sops.secrets."services/ghost/pontonsecurity/cert.pem".path;
       sslCertKeyFile = config.sops.secrets."services/ghost/pontonsecurity/cert.key".path;
     };
-    code-server = {
-      enable = true;
-      port = 8443;
-    };
-    # openvscode-server = {
+    # code-server = {
     #   enable = true;
     #   port = 8443;
     # };
+    openvscode-server = {
+      enable = true;
+      port = 8443;
+    };
   };
 
   users.users.${config.username}.initialPassword = "t";
