@@ -20,6 +20,7 @@
   };
 
   code.vscode.enable = false;
+  code.claude-code.enable = true;
 
   applications = {
     bitwarden.enable = false;
