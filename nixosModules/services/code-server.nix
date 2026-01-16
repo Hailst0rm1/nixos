@@ -5,7 +5,7 @@
   pkgs-unstable,
   ...
 }: {
-  config = {
+  config = lib.mkIf (config.services.code-server.enable || config.services.openvscode-server.enable) {
     services.code-server = lib.mkIf config.services.code-server.enable {
       package = pkgs-unstable.code-server;
       user = config.username or "hailst0rm";
@@ -25,6 +25,13 @@
       host = "127.0.0.1";
       port = lib.mkDefault 8443;
       withoutConnectionToken = true; # Allow access without token - only safe if behind another auth layer
+    };
+
+    # Enable direnv
+    programs.direnv = {
+      enable = true;
+      enableZshIntegration = true;
+      nix-direnv.enable = true;
     };
 
     environment.systemPackages =

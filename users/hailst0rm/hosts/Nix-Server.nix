@@ -7,6 +7,10 @@
   video = "";
   image = "";
 
+  programs.zsh.initContent = ''
+    eval "$(direnv hook zsh)"
+  '';
+
   importConfig = {
     stylix.enable = false;
     hyprland = {
