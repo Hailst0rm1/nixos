@@ -42,6 +42,7 @@ stdenv.mkDerivation rec {
     runHook preInstall
 
     mkdir -p $out/bin
+    mkdir -p $out/libexec/sliver
 
     # Install client
     install -m755 ${client} $out/bin/sliver-client
@@ -49,17 +50,17 @@ stdenv.mkDerivation rec {
     # Install server (unwrapped)
     install -m755 ${server} $out/bin/.sliver-server-unwrapped
 
-    # TEMPORARY: Install pre-built garble binary from same directory
+    # TEMPORARY: Install pre-built garble binary to libexec (not in PATH)
     # TODO: Remove this line when garble is fixed in nixpkgs
-    install -m755 ${./garble} $out/bin/garble
+    install -m755 ${./garble} $out/libexec/sliver/garble
 
     # Create wrapper for server that sets up Go environment
     makeWrapper $out/bin/.sliver-server-unwrapped $out/bin/sliver-server \
       --run 'mkdir -p $HOME/.sliver/go/bin' \
       --run 'ln -sf ${go}/bin/go $HOME/.sliver/go/bin/go' \
       --run 'ln -sf ${go}/bin/gofmt $HOME/.sliver/go/bin/gofmt' \
-      --run 'ln -sf '"$out"'/bin/garble $HOME/.sliver/go/bin/garble' \
-      --run 'ln -sf '"$out"'/bin/garble $HOME/.sliver/go/bin/sgn'
+      --run 'ln -sf '"$out"'/libexec/sliver/garble $HOME/.sliver/go/bin/garble' \
+      --run 'ln -sf '"$out"'/libexec/sliver/garble $HOME/.sliver/go/bin/sgn'
       # TEMPORARY: Changed to use $out/bin/garble instead of $\{garble}/bin/garble
       # TODO: Restore these lines when garble is fixed in nixpkgs:
       # --run 'ln -sf $\{garble}/bin/garble $HOME/.sliver/go/bin/garble' \

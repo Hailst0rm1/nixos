@@ -63,21 +63,22 @@ in
       runHook preInstall
 
       mkdir -p $out/bin
+      mkdir -p $out/libexec/ligolo-mp
 
       # Install binary (unwrapped)
       install -m755 ${src} $out/bin/.ligolo-mp-unwrapped
 
-      # TEMPORARY: Install pre-built garble binary from same directory
+      # TEMPORARY: Install pre-built garble binary to libexec (not in PATH)
       # TODO: Remove this line when garble is fixed in nixpkgs
-      install -m755 ${./garble} $out/bin/garble
+      install -m755 ${./garble} $out/libexec/ligolo-mp/garble
 
       # Create wrapper that sets up Go environment
       makeWrapper $out/bin/.ligolo-mp-unwrapped $out/bin/ligolo-mp \
         --run 'mkdir -p $HOME/.ligolo-mp-server/assets/go/bin' \
         --run 'ln -sf ${go_1_23}/bin/go $HOME/.ligolo-mp-server/assets/go/bin/go' \
         --run 'ln -sf ${go_1_23}/bin/gofmt $HOME/.ligolo-mp-server/assets/go/bin/gofmt' \
-        --run 'ln -sf '"$out"'/bin/garble $HOME/.ligolo-mp-server/assets/go/bin/garble' \
-        --run 'ln -sf '"$out"'/bin/garble $HOME/.ligolo-mp-server/assets/go/bin/sgn'
+        --run 'ln -sf '"$out"'/libexec/ligolo-mp/garble $HOME/.ligolo-mp-server/assets/go/bin/garble' \
+        --run 'ln -sf '"$out"'/libexec/ligolo-mp/garble $HOME/.ligolo-mp-server/assets/go/bin/sgn'
         # TEMPORARY: Changed to use $out/bin/garble and go_1_23 instead of nixpkgs versions
         # TODO: Restore these lines when garble is fixed in nixpkgs:
         # --run 'ln -sf $\{go}/bin/go $HOME/.ligolo-mp-server/assets/go/bin/go' \

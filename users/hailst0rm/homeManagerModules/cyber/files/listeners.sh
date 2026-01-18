@@ -31,6 +31,9 @@ caido &>/dev/null &
 BloodHound &>/dev/null &
 
 # Start Sliver C2 server
+PAYLOAD_DIR="/home/hailst0rm/cyber/postex-tools/payloads"
+mkdir -p "$PAYLOAD_DIR"
+cd "$PAYLOAD_DIR"
 run_ghostty "Starting Sliver C2 server..." "sliver-server"
 sleep 1
 
