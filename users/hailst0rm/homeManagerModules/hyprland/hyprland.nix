@@ -333,7 +333,7 @@ in {
       gnome-calculator
       gnome-music
       evince # Document viewer
-      vlc # Media player
+      parlatype # Media player
 
       # ---Lockscreen
       (pkgs.${cfg.lockscreen})
