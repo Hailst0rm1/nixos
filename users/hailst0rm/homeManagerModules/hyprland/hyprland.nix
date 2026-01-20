@@ -332,6 +332,7 @@ in {
       gedit # Text editor
       gnome-calculator
       gnome-music
+      evince # Document viewer
 
       # ---Lockscreen
       (pkgs.${cfg.lockscreen})
