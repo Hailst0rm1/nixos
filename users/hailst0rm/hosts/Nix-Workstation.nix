@@ -10,6 +10,8 @@
     };
   };
 
+  code.claude-code.enable = true;
+
   applications = {
     youtube-music.enable = true;
     openconnect.enable = true;
