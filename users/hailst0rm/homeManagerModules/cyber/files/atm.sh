@@ -232,7 +232,6 @@ elevated)
 verify)
   log "Starting service verification…"
   run_nxc nxc smb "$TARGET" $AUTH_ARGS --shares
-  run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --query "(sAMAccountName=$USER)" "sAMAccountName memberOf"
   run_nxc nxc rdp "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc winrm "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc ssh "$TARGET" $BASE_AUTH_ARGS

@@ -483,25 +483,28 @@ export_creds() {
 
 clear_all_data() {
     print -P "\n${RED}WARNING: This will delete all variables and credential sets!${NC}"
-    print -P "${YELLOW}Are you sure? (yes/NO): ${NC}"
+    print -P "${YELLOW}Are you sure? (y/N): ${NC}"
     read -r confirm
     
-    if [[ "$confirm" == "yes" ]]; then
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
         # Use 2>/dev/null to suppress any errors that won't kill the shell
         setopt localoptions nonomatch 2>/dev/null
         for key in $ordered_keys; do
             unset "$key" 2>/dev/null
             vars[$key]=""
         done
+        
+        # Clear credential sets from memory
         unset CRED_SETS 2>/dev/null
+        unset SAVED_CRED_SETS 2>/dev/null
         typeset -gA CRED_SETS
         
         if [[ -w "$ENV_FILE" ]] || [[ ! -f "$ENV_FILE" ]]; then
             > "$ENV_FILE" 2>/dev/null
-            print -P "${GREEN}✓ All data cleared successfully${NC}"
+            print -P "${GREEN}✓ All data cleared successfully (variables and credential sets)${NC}"
         else
             print -P "${RED}WARNING: Could not clear environment file (read-only)${NC}"
-            print -P "${YELLOW}Variables cleared from current session only${NC}"
+            print -P "${YELLOW}Variables and credential sets cleared from current session only${NC}"
         fi
     else
         print -P "${CYAN}Operation cancelled${NC}"
@@ -514,7 +517,6 @@ clear_all_data() {
 show_help() {
     print -P "${CYAN}╔═══════════════════════════════════════════════╗${NC}"
     print -P "${CYAN}║           ${GREEN}Environment Variables Tool${CYAN}          ║${NC}"
-    print -P "${CYAN}║           ${YELLOW}OSCP+ Variable Management${CYAN}           ║${NC}"
     print -P "${CYAN}╚═══════════════════════════════════════════════╝${NC}"
     print ""
     print -P "${BOLD}USAGE:${NC}"

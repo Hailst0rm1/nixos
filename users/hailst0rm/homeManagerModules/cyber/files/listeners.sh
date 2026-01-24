@@ -10,7 +10,17 @@ run_ghostty() {
   local message="$1"
   shift
   local cmd="$*"
-  ghostty -e "echo -e '${GREEN}[+] $message${NC}'; echo -e '${BLUE}[+] Command run:${NC} $cmd'; $cmd" &>/dev/null &
+  
+  # Run with explicit PATH export to ensure commands are found
+  ghostty -e bash -c "
+    echo -e '${GREEN}[+] $message${NC}'
+    echo -e '${BLUE}[+] Command:${NC} $cmd'
+    export PATH=\"${PATH}\"
+    $cmd 
+    echo ''
+    echo -e '${GREEN}Press Enter to close this window...${NC}'
+    read
+  " &>/dev/null &
 }
 
 # Prepare Ligolo-MP agent
