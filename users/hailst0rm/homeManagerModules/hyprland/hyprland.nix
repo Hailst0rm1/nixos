@@ -213,14 +213,14 @@ in {
             "$mainMod, Y, sendshortcut, CTRL, Y,"
 
             # Applications
-            "$mainMod, return, exec, ${config.terminal}"
+            "$mainMod, return, exec, GTK_IM_MODULE=simple ${config.terminal}"
             "$mainMod, P, exec, hyprpicker -alq"
             "$mainMod, SPACE, exec, ${cfg.appLauncher} -show drun"
             "$mainMod, R, exec, ${cfg.appLauncher} -show run"
             "$mainMod, W, exec, ${cfg.appLauncher} -show window"
             "$mainMod SHIFT, return, exec, ${config.browser}"
             "$mainMod, N, exec, ${config.fileManager}"
-            "$mainMod, B, exec, ${config.terminal} -e htop"
+            "$mainMod, B, exec, GTK_IM_MODULE=simple ${config.terminal} -e htop"
             ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
 
             # Workspaces
