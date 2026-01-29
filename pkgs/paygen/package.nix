@@ -13,11 +13,10 @@ python3Packages.buildPythonApplication rec {
     owner = "Hailst0rm1";
     repo = "paygen";
     rev = "main"; # You can pin to a specific commit/tag later
-    sha256 = "sha256-nrAkB2/gJpH5X+ePwbhgtd5B5rYnpny9gXcvzteOx8Q=";
+    sha256 = "sha256-yedKHCUAI7F7GGOSZ4vMzpjJKwmGna2WuMkOWP26Pfk=";
   };
 
   propagatedBuildInputs = with python3Packages; [
-    textual
     pyyaml
     jinja2
     pycryptodome
@@ -47,21 +46,16 @@ python3Packages.buildPythonApplication rec {
     cp -r preprocessors $out/lib/paygen/
     cp -r templates $out/lib/paygen/
 
-    # Create wrapper script for TUI that includes all Python dependencies
+    # Create wrapper script for web interface
     makeWrapper ${python3Packages.python.interpreter} $out/bin/paygen \
       --prefix PYTHONPATH : "$out/lib/paygen:$PYTHONPATH" \
       --add-flags "-m src.main"
-
-    # Create wrapper script for Web GUI
-    makeWrapper ${python3Packages.python.interpreter} $out/bin/paygen-web \
-      --prefix PYTHONPATH : "$out/lib/paygen:$PYTHONPATH" \
-      --add-flags "-m src.web_main"
 
     runHook postInstall
   '';
 
   meta = with lib; {
-    description = "Menu-driven TUI and Web tool for payload generation with YAML-based recipes";
+    description = "Web-based framework for payload generation with YAML-based recipes";
     homepage = "https://github.com/Hailst0rm1/paygen";
     license = licenses.mit;
     platforms = platforms.linux;

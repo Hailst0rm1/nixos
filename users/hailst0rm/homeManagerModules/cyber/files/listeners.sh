@@ -40,6 +40,9 @@ caido &>/dev/null &
 # Start BloodHound
 BloodHound &>/dev/null &
 
+# Start Paygen server
+paygen &>/dev/null &
+
 # Start Sliver C2 server
 PAYLOAD_DIR="/home/hailst0rm/cyber/postex-tools/payloads"
 mkdir -p "$PAYLOAD_DIR"
