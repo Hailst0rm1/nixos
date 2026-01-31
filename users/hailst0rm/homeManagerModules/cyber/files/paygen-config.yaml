@@ -1,9 +1,10 @@
+# Paygen Configuration Files
 recipes_dir: ~/cyber/paygen/recipes
 templates_dir: ~/cyber/paygen/templates
 preprocessors_dir: ~/cyber/paygen/preprocessors
+ps_obfuscation_yaml: ~/cyber/paygen/ps-obfuscation.yaml
+ps_features_yaml: ~/cyber/paygen/ps-features.yaml
 output_dir: ~/cyber/postex-tools/payloads
-theme: catppuccin_mocha
-transparent_background: true
 
 # Build preferences
 keep_source_files: true # If true, save rendered source code alongside compiled binaries
