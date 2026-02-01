@@ -90,6 +90,21 @@
       install -m755 $src $out/SigmaPotato.exe
     '';
   };
+
+  adPEAS-Light = pkgs.stdenv.mkDerivation {
+    # adPEAS-Light (all modules without sharphound)
+    pname = "adPEAS-Light";
+    version = "v0.8.28";
+    src = pkgs.fetchurl {
+      url = "https://github.com/61106960/adPEAS/raw/refs/heads/main/adPEAS-Light.ps1";
+      sha256 = "sha256-p/hPvSmQLIZ7xRWZlhtrdtQd4vIG4JCaDzTLw8ZTVYc=";
+    };
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/adPEAS-Light.ps1
+    '';
+  };
 in {
   config = lib.mkIf config.cyber.redTools.enable {
     home = {
@@ -107,6 +122,7 @@ in {
         cp -f ${pspy}/pspy "${config.home.homeDirectory}/cyber/postex-tools/pspy"
         cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
         cp -f ${sigmaPotato}/SigmaPotato.exe "${config.home.homeDirectory}/cyber/postex-tools/SigmaPotato.exe"
+        cp -f ${adPEAS-Light}/adPEAS-Light.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS-Light.ps1"
         cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"
         cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
 
