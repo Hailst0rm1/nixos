@@ -156,6 +156,9 @@
 
         bindkey '^[[108;6u' clear-screen # CTRL+SHIFT+L
 
+        # Hotkey insertions
+        bindkey -s '^Xgc' 'git commit -m ""\C-h' # Insert git commit template with cursor in quotes
+
         # === ===
 
         # Completion styling
