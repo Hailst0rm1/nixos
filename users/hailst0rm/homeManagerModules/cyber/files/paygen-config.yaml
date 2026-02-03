@@ -4,6 +4,7 @@ templates_dir: ~/cyber/paygen/templates
 preprocessors_dir: ~/cyber/paygen/preprocessors
 ps_obfuscation_yaml: ~/cyber/paygen/ps-obfuscation.yaml
 ps_features_yaml: ~/cyber/paygen/ps-features.yaml
+shellcodes_config: ~/cyber/paygen/shellcodes.yaml
 output_dir: ~/cyber/postex-tools/payloads
 
 # Build preferences
