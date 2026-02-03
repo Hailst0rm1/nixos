@@ -11,6 +11,39 @@
         # cd to your config dir
         cd ${config.nixosDir}
 
+        # Test GitHub connectivity via SSH
+        MAX_RETRIES=12  # Check for up to 1 hour (12 * 5 minutes)
+        RETRY_COUNT=0
+        CONNECTION_OK=false
+
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          if timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
+            CONNECTION_OK=true
+            break
+          else
+            # Only show warning on first failure
+            if [ $RETRY_COUNT -eq 0 ]; then
+              if command -v zenity &> /dev/null; then
+                zenity --warning \
+                  --title="GitHub Connection Failed" \
+                  --text="Cannot reach GitHub via SSH.\n\nWill keep checking in the background every 5 minutes.\nYou'll be notified when updates are available." \
+                  --width=400 \
+                  --timeout=10 &
+              fi
+              notify-send "NixOS Config Sync" "Cannot reach GitHub. Will keep checking..." --icon=dialog-warning &
+            fi
+
+            # Wait 5 minutes before retrying
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            sleep 300
+          fi
+        done
+
+        # If still no connection after max retries, give up silently
+        if [ "$CONNECTION_OK" = false ]; then
+          exit 0
+        fi
+
         # Fetch remote changes without merging
         git fetch origin master --quiet
 
