@@ -420,6 +420,7 @@ Host *
     ControlPath ~/.ssh/controlmaster/%r@%h:%p
     ControlMaster auto
     ControlPersist yes
+    AllowAgentForwarding yes
 SSHEOF
                 echo "[+] Added SSH config to $SSH_CONFIG"
             else
@@ -442,6 +443,7 @@ Host *
     ControlPath ~/.ssh/controlmaster/%r@%h:%p
     ControlMaster auto
     ControlPersist yes
+    AllowAgentForwarding yes
 SSHEOF
             chmod 600 "$SSH_CONFIG" 2>/dev/null
             echo "[+] Added SSH config to $SSH_CONFIG"

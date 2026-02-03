@@ -21,7 +21,7 @@
       echo "🌐 Testing GitHub connectivity..."
       notify-send -e "NixOS Rebuild" "Testing GitHub connectivity..." --icon=network-wireless
 
-      if ! timeout 5 git ls-remote https://github.com/hailst0rm1/nixos.git HEAD &>/dev/null; then
+      if ! timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
         echo "❌ Cannot reach GitHub. Check your internet connection."
         notify-send -e "NixOS Rebuild Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical
         popd
@@ -118,7 +118,7 @@
       echo "🌐 Testing GitHub connectivity..."
       notify-send -e "NixOS Test Build" "Testing GitHub connectivity..." --icon=network-wireless
 
-      if ! timeout 5 git ls-remote https://github.com/hailst0rm1/nixos.git HEAD &>/dev/null; then
+      if ! timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
         echo "❌ Cannot reach GitHub. Check your internet connection."
         notify-send -e "NixOS Test Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical
         popd
@@ -180,7 +180,7 @@
       echo "🌐 Testing GitHub connectivity..."
       notify-send -e "NixOS Boot Build" "Testing GitHub connectivity..." --icon=network-wireless
 
-      if ! timeout 5 git ls-remote https://github.com/hailst0rm1/nixos.git HEAD &>/dev/null; then
+      if ! timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
         echo "❌ Cannot reach GitHub. Check your internet connection."
         notify-send -e "NixOS Boot Build Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical
         popd

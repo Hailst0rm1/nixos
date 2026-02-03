@@ -31,6 +31,12 @@
   var = builtins.readFile ./files/var.sh;
   portspoof = builtins.readFile ./files/portspoof.sh;
   portmux = builtins.readFile ./files/portmux.sh;
+  Invoke-CradleCrafter = pkgs.fetchFromGitHub {
+    owner = "danielbohannon";
+    repo = "Invoke-CradleCrafter";
+    rev = "HEAD";
+    sha256 = "sha256-AVTWB5Kzrtdnb65HyHW8I0PjlVXbDyLwTE9X3hJBv14=";
+  };
 in {
   config = lib.mkIf config.cyber.redTools.enable {
     # For var-tool
@@ -49,11 +55,16 @@ in {
         "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
         "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
         "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
+        "cyber/Invoke-CradleCrafter".source = Invoke-CradleCrafter;
         "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
         "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
         ".config/paygen/config.yaml".source = ./files/paygen-config.yaml;
         ".config/bloodhound/customqueries.json".source = ./files/bloodhound-queries.json;
         ".nxc/nxc.conf".source = ./files/nxc.conf;
+        # Powershell profile
+        ".config/powershell/Microsoft.PowerShell_profile.ps1".text = ''
+          Import-Module "~/cyber/Invoke-CradleCrafter/Invoke-CradleCrafter.psd1"
+        '';
       };
 
       packages = with pkgs-unstable; [
