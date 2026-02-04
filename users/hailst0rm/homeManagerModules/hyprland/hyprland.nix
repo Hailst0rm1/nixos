@@ -206,6 +206,7 @@ in {
             "$mainMod SHIFT, J, togglesplit, # dwindle"
 
             # Clipboard
+            "$mainMod, A, sendshortcut, CTRL, A,"
             "$mainMod, C, sendshortcut, CTRL, Insert,"
             "$mainMod, V, sendshortcut, SHIFT, Insert,"
             "$mainMod, X, sendshortcut, CTRL, X,"
