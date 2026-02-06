@@ -208,6 +208,7 @@ in {
             # Clipboard
             "$mainMod, C, sendshortcut, CTRL, Insert,"
             "$mainMod, V, sendshortcut, SHIFT, Insert,"
+            "$mainMod, A, sendshortcut, CTRL, A,"
             "$mainMod, X, sendshortcut, CTRL, X,"
             "$mainMod, Z, sendshortcut, CTRL, Z,"
             "$mainMod, Y, sendshortcut, CTRL, Y,"
