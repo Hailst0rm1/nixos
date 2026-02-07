@@ -82,7 +82,7 @@
       }
 
       # Get current generation metadata
-      current=$(nixos-rebuild list-generations | grep current)
+      current=$(nixos-rebuild list-generations | awk '$NF == "True" {print "Generation " $1 " built on " $2}')
 
       echo ""
       echo "✅ Build Complete!"
@@ -242,7 +242,7 @@
       }
 
       # Get current generation metadata
-      current=$(nixos-rebuild list-generations | grep current)
+      current=$(nixos-rebuild list-generations | awk '$NF == "True" {print "Generation " $1 " built on " $2}')
 
       echo ""
       echo "✅ Build Complete!"
