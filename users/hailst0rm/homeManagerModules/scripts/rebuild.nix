@@ -66,7 +66,7 @@
       # Show the changes
       echo "📝 Changes to be applied:"
       git diff HEAD -U0
-      git add .
+      git add -N .
 
       # Rebuild with optional --show-trace and exit on failure
       echo ""
@@ -94,6 +94,7 @@
       if [ -n "$user_msg" ]; then
         echo "📤 Committing and pushing changes..."
         notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing
+        git add .
         git commit -am "${config.hostname}: $user_msg ($current)"
         git push && echo "✅ Pushed to GitHub!" || echo "❌ Push failed!"
       else
@@ -141,7 +142,7 @@
       if ! git diff --quiet; then
         echo "📝 Changes detected:"
         git diff -U0
-        git add .
+        git add -N .
       else
         echo "ℹ️  No changes detected, testing current configuration..."
       fi
@@ -225,7 +226,7 @@
       # Show the changes
       echo "📝 Changes to be applied:"
       git diff HEAD -U0
-      git add .
+      git add -N .
 
       # Rebuild with optional --show-trace and exit on failure
       echo ""
@@ -253,6 +254,7 @@
       if [ -n "$user_msg" ]; then
         echo "📤 Committing and pushing changes..."
         notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing
+        git add .
         git commit -am "${config.hostname}: $user_msg ($current)"
         git push && echo "✅ Pushed to GitHub!" || echo "❌ Push failed!"
       else
