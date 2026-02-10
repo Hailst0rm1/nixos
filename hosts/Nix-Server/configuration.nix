@@ -386,5 +386,5 @@
     };
   };
 
-  users.users.${config.username}.initialPassword = "t";
+  users.users.${config.username}.linger = true;
 }

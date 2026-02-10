@@ -21,6 +21,9 @@ in {
     # Add companion to user packages
     home.packages = [(pkgs.callPackage ../../../pkgs/companion/package.nix {})];
 
+    # Enable lingering so the service runs even when not logged in
+    systemd.user.startServices = "sd-switch";
+
     # Create systemd user service
     systemd.user.services.companion = {
       Unit = {
