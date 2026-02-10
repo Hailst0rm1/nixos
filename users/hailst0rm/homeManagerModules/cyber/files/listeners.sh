@@ -81,7 +81,7 @@ run_ghostty "Starting HTTP Exfiltration server (port ${EXFIL_HTTP_PORT})... ($EX
   "httpuploadexfil :${EXFIL_HTTP_PORT} $EXFIL_DIR"
 
 # Start Python HTTP server
-HTTP_DIR="/home/hailst0rm/cyber/postex-tools/payloads"
+HTTP_DIR="/home/hailst0rm/cyber/postex-tools"
 HTTP_CMD="python -m http.server ${PYTHON_HTTP_PORT} -d $HTTP_DIR"
 echo -e "${GREEN}[+] Starting Python HTTP server (port ${PYTHON_HTTP_PORT})... (~/cyber/postex-tools)${NC}"
 echo -e "${BLUE}[+] Command run:${NC} $HTTP_CMD"
