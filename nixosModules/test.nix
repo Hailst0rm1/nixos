@@ -1,7 +1,11 @@
 {
   pkgs,
+  pkgs-unstable,
   lib,
+  config,
   ...
 }: {
-  # environment.systemPackages = [];
+  environment.systemPackages = with pkgs; [
+    companion
+  ];
 }
