@@ -5,7 +5,7 @@
   config,
   ...
 }: {
-  environment.systemPackages = with pkgs; [
-    companion
+  # environment.systemPackages = with pkgs; [(pkgs.callPackage "${self}/pkgs/companion/package.nix" {})];
+  environment.systemPackages = [
   ];
 }
