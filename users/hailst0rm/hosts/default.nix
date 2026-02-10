@@ -127,6 +127,10 @@
     };
   };
 
+  services = {
+    companion.enable = lib.mkDefault false; # Claude Code Web UI
+  };
+
   cyber = {
     malwareAnalysis.enable = lib.mkDefault false;
     redTools.enable = lib.mkDefault redTools;

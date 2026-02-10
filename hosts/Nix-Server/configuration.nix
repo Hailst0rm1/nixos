@@ -384,7 +384,6 @@
       enable = true;
       port = 8443;
     };
-    companion.enable = true;
   };
 
   users.users.${config.username}.initialPassword = "t";

@@ -33,4 +33,8 @@
     claude-desktop.enable = false;
     proton.enableAll = false;
   };
+
+  services = {
+    companion.enable = true; # Claude Code Web UI
+  };
 }
