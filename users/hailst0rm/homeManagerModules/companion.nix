@@ -37,6 +37,7 @@ in {
         Environment = [
           "PORT=${toString cfg.port}"
           "NODE_ENV=production"
+          "PATH=${config.home.profileDirectory}/bin:/run/wrappers/bin:/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin"
         ];
 
         # Better resource limits for user service
