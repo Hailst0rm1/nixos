@@ -125,6 +125,9 @@ in {
         cp -f ${adPEAS-Light}/adPEAS-Light.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS-Light.ps1"
         cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"
         cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
+        cp -f ${builtins.toPath ./files/Disable-AVProduct.min.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Disable-AVProduct.min.ps1"
+        cp -f ${builtins.toPath ./files/Disable-AVProduct.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Disable-AVProduct.ps1"
+        cp -f ${builtins.toPath ./files/Get-AppLockerRules.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Get-AppLockerRules.ps1"
 
         cp -f ${builtins.toPath ./files/php-webshell.php} "${config.home.homeDirectory}/cyber/postex-tools/payloads/php-webshell.php"
       '';
