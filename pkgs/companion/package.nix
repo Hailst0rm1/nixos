@@ -10,13 +10,13 @@
   # Pre-fetch node_modules as a fixed-output derivation
   bun-modules = stdenv.mkDerivation {
     pname = "the-vibe-companion-bun-modules";
-    version = "0.14.0";
+    version = "0.16.0";
 
     src = fetchFromGitHub {
       owner = "The-Vibe-Company";
       repo = "companion";
-      rev = "the-vibe-companion-v0.14.0";
-      hash = "sha256-mXZUTHkqvzjZDacL32KuJgd6B/XsElQd/vXEv1DNQYM=";
+      rev = "the-vibe-companion-v0.16.0";
+      hash = "sha256-U9Yt+O5/Kf0vq4Of9+CaXe/Qj6BLaqsaN4IVOs6+RFQ=";
     };
 
     nativeBuildInputs = [bun cacert nodejs];
@@ -38,18 +38,18 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-2gqReSzWlNvpoUI2eUlAJQbnu5nsLwIedeUwnHx+aXs=";
+    outputHash = "sha256-NspJDOk1OvfRLvKLgIY74emrWXTrkY5bcCeRAobzxl8=";
   };
 in
   stdenv.mkDerivation rec {
     pname = "the-vibe-companion";
-    version = "0.14.0";
+    version = "0.16.0";
 
     src = fetchFromGitHub {
       owner = "The-Vibe-Company";
       repo = "companion";
       rev = "the-vibe-companion-v${version}";
-      hash = "sha256-mXZUTHkqvzjZDacL32KuJgd6B/XsElQd/vXEv1DNQYM=";
+      hash = "sha256-U9Yt+O5/Kf0vq4Of9+CaXe/Qj6BLaqsaN4IVOs6+RFQ=";
     };
 
     nativeBuildInputs = [

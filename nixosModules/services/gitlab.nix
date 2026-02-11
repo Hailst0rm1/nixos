@@ -12,6 +12,7 @@
   };
 
   config = {
+    # WARNING: DOESN'T WORK BECAUSE OF SOME POSTGRES STUFF
     services.gitlab = lib.mkIf config.services.gitlab.enable {
       host = "gitlab.${config.services.domain}";
       port = 443;

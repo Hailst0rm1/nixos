@@ -347,7 +347,7 @@
       yubicoKey = "";
     };
     gitlab = {
-      enable = true;
+      enable = false;
       databasePasswordFile = config.sops.secrets."services/gitlab/db-password".path;
       initialRootPasswordFile = config.sops.secrets."services/gitlab/root-password".path;
       secrets = {
