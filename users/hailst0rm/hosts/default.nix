@@ -129,6 +129,12 @@
 
   services = {
     companion.enable = lib.mkDefault false; # Claude Code Web UI
+    whisperStt = {
+      enable = lib.mkDefault true;
+      model = lib.mkDefault "small"; # Multilingual model with auto-detection (supports English, Swedish, etc.)
+      # language = null means auto-detect (default)
+      keybind = lib.mkDefault "$mainMod SHIFT, S"; # ALT+SHIFT+S to toggle recording
+    };
   };
 
   cyber = {
