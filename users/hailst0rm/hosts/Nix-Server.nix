@@ -36,5 +36,6 @@
 
   services = {
     companion.enable = true; # Claude Code Web UI
+    whisperStt.enable = false;
   };
 }

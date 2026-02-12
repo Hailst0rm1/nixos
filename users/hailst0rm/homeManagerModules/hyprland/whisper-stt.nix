@@ -1,29 +1,37 @@
-# Speech-to-Text using whisper-cpp (hyprflow-style approach)
+# Speech-to-Text using faster-whisper (via whisper-ctranslate2)
 # Toggle recording with a keybind, transcription appears in active window
+# Uses CTranslate2 for 4x faster inference with CUDA support
 {
   pkgs,
-  pkgs-unstable,
   lib,
   config,
+  nvidiaEnabled,
   ...
 }: let
   cfg = config.services.whisperStt;
   hyprlandCfg = config.importConfig.hyprland;
 
-  # Model path - downloaded on first use
-  modelDir = "$HOME/.local/share/whisper-models";
-  modelFile = "${modelDir}/ggml-${cfg.model}.bin";
+  # Device selection based on NVIDIA availability
+  device =
+    if nvidiaEnabled
+    then "cuda"
+    else "cpu";
 
-  # Main speech-to-text script (hyprflow-style)
+  # Compute type for optimal performance
+  computeType =
+    if nvidiaEnabled
+    then "float16"
+    else "int8";
+
+  # Main speech-to-text script
   whisperStt = pkgs.writeShellApplication {
     name = "whisper-stt";
     runtimeInputs = with pkgs; [
-      whisper-cpp
+      whisper-ctranslate2
       pulseaudio # for parecord
       wl-clipboard
       wtype
       libnotify
-      curl
       coreutils
       findutils
     ];
@@ -32,37 +40,20 @@
       set -euo pipefail
 
       # Config
-      MODEL_DIR="${modelDir}"
       MODEL="${cfg.model}"
-      MODEL_FILE="$MODEL_DIR/ggml-$MODEL.bin"
       RECORDING_FILE="/tmp/whisper-recording-$$.wav"
       LOCKFILE="/tmp/whisper-stt.lock"
+      OUTPUT_DIR="/tmp/whisper-output-$$"
       LANGUAGE="${
         if cfg.language != null
         then cfg.language
         else ""
       }"
-
-      # Ensure model directory exists
-      mkdir -p "$MODEL_DIR"
-
-      # Download model if not present
-      download_model() {
-        if [[ ! -f "$MODEL_FILE" ]]; then
-          notify-send "Whisper STT" "Downloading model: $MODEL" --urgency=low || true
-          MODEL_URL="https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-$MODEL.bin"
-          curl -L "$MODEL_URL" -o "$MODEL_FILE" || {
-            notify-send "Whisper STT" "Failed to download model!" --urgency=critical
-            exit 1
-          }
-          notify-send "Whisper STT" "Model downloaded successfully" --urgency=low || true
-        fi
-      }
+      DEVICE="${device}"
+      COMPUTE_TYPE="${computeType}"
 
       # Start recording
       start_recording() {
-        download_model
-
         # Create lock file with PID
         echo $$ > "$LOCKFILE"
 
@@ -90,21 +81,44 @@
           # Wait a moment for the recording to finalize
           sleep 0.3
 
-          # Find the most recent recording file using find instead of ls
+          # Find the most recent recording file
           RECORDING_FILE=$(find /tmp -maxdepth 1 -name 'whisper-recording-*.wav' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
 
           if [[ -n "$RECORDING_FILE" && -f "$RECORDING_FILE" ]]; then
-            notify-send "Whisper STT" "Transcribing..." --urgency=low || true
+            notify-send "Whisper STT" "Transcribing with $MODEL..." --urgency=low || true
 
-            # Run whisper-cli and extract text (with optional language flag)
+            # Create output directory
+            mkdir -p "$OUTPUT_DIR"
+
+            # Build whisper command
+            WHISPER_ARGS=(
+              --model "$MODEL"
+              --device "$DEVICE"
+              --compute_type "$COMPUTE_TYPE"
+              --output_dir "$OUTPUT_DIR"
+              --output_format txt
+              --verbose False
+            )
+
+            # Add language if specified
             if [[ -n "$LANGUAGE" ]]; then
-              RESULT=$(whisper-cli -m "$MODEL_FILE" -f "$RECORDING_FILE" -l "$LANGUAGE" -nt 2>/dev/null | grep -v "^\[" | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-            else
-              RESULT=$(whisper-cli -m "$MODEL_FILE" -f "$RECORDING_FILE" -nt 2>/dev/null | grep -v "^\[" | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              WHISPER_ARGS+=(--language "$LANGUAGE")
             fi
 
-            # Clean up recording
+            # Run faster-whisper transcription
+            whisper-ctranslate2 "''${WHISPER_ARGS[@]}" "$RECORDING_FILE" 2>/dev/null || true
+
+            # Read the transcription result
+            OUTPUT_FILE="$OUTPUT_DIR/$(basename "$RECORDING_FILE" .wav).txt"
+            if [[ -f "$OUTPUT_FILE" ]]; then
+              RESULT=$(cat "$OUTPUT_FILE" | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+            else
+              RESULT=""
+            fi
+
+            # Clean up
             rm -f "$RECORDING_FILE"
+            rm -rf "$OUTPUT_DIR"
 
             if [[ -n "$RESULT" ]]; then
               # Copy to clipboard
@@ -156,12 +170,18 @@ in {
         "large-v2"
         "large-v3"
         "large-v3-turbo"
+        "turbo"
+        "distil-large-v2"
+        "distil-large-v3"
+        "distil-medium.en"
+        "distil-small.en"
       ];
-      default = "base.en";
+      default = "small";
       description = ''
-        Whisper model to use. Larger models are more accurate but slower.
+        Whisper model to use. Uses faster-whisper (CTranslate2) for 4x speedup.
         Models ending in .en are English-only but faster.
-        Recommended: base.en for speed, medium for accuracy.
+        Distil models are smaller/faster with similar accuracy.
+        Recommended: small for multilingual, distil-large-v3 for speed+accuracy.
       '';
     };
 
@@ -170,8 +190,8 @@ in {
       default = null;
       example = "en";
       description = ''
-        Language code for transcription (e.g., "en", "de", "es").
-        Leave null for auto-detection.
+        Language code for transcription (e.g., "en", "sv", "de").
+        Leave null for auto-detection (works well with multilingual models).
       '';
     };
 
@@ -188,13 +208,12 @@ in {
   config = lib.mkIf (hyprlandCfg.enable && cfg.enable) {
     # Add required packages
     home.packages = [
-      pkgs.whisper-cpp
+      pkgs.whisper-ctranslate2
       whisperStt
       toggleWhisper
       pkgs.wtype
       pkgs.wl-clipboard
       pkgs.libnotify
-      pkgs.curl
     ];
 
     # Add keybinding to hyprland
