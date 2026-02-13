@@ -113,51 +113,101 @@
           git -C ~/.nixos pull "$@"
         }
 
-        # Conventional commit + push
+        # Unalias gp from oh-my-zsh git plugin so our function can be defined
+        unalias gp 2>/dev/null
+
+        # Interactive git commit and push
         gp() {
-          local types=("feat" "fix" "chore" "docs" "style" "refactor" "perf" "test" "build" "ci" "revert")
-          local type scope msg breaking prefix
+          local red='\033[0;31m'
+          local green='\033[0;32m'
+          local yellow='\033[0;33m'
+          local blue='\033[0;34m'
+          local magenta='\033[0;35m'
+          local cyan='\033[0;36m'
+          local white='\033[0;37m'
+          local bold='\033[1m'
+          local reset='\033[0m'
 
-          echo "Select commit type:"
-          for i in {1..''${#types[@]}}; do
-            echo "  $i) ''${types[$i]}"
-          done
-          printf "Type [1-''${#types[@]}]: "
-          read -r choice
-          if [[ -z "$choice" || "$choice" -lt 1 || "$choice" -gt ''${#types[@]} ]] 2>/dev/null; then
-            echo "Invalid selection." && return 1
+          echo -e "''${cyan}''${bold}🔍 Git Status Check''${reset}\n"
+
+          # Check if there are any changes to commit
+          if [[ -z $(git status --porcelain) ]]; then
+            echo -e "''${green}✓ Nothing to commit, working tree clean.''${reset}"
+
+            # Check if behind remote
+            git fetch origin &>/dev/null
+            local behind=$(git rev-list HEAD..@{u} --count 2>/dev/null)
+            if [[ -n "$behind" && "$behind" -gt 0 ]]; then
+              echo -e "''${yellow}⚠ Your branch is behind remote by $behind commit(s).''${reset}"
+              printf "''${yellow}Pull changes? [y/N]: ''${reset}"
+              read -r pull_confirm
+              if [[ "$pull_confirm" =~ ^[Yy]$ ]]; then
+                git pull
+              fi
+            else
+              echo -e "''${green}✓ Branch is up to date with remote.''${reset}"
+            fi
+            return 0
           fi
-          type="''${types[$choice]}"
 
-          printf "Scope (optional, enter to skip): "
-          read -r scope
+          # Show changed files with colors
+          echo -e "''${bold}📝 Changed files:''${reset}\n"
+          git status --short | while IFS= read -r line; do
+            local file_status="''${line:0:2}"
+            local file="''${line:3}"
+            case "$file_status" in
+              "M "*|" M") echo -e "  ''${yellow}● Modified:''${reset} $file" ;;
+              "A "*|" A") echo -e "  ''${green}+ Added:''${reset} $file" ;;
+              "D "*|" D") echo -e "  ''${red}✗ Deleted:''${reset} $file" ;;
+              "R "*|" R") echo -e "  ''${magenta}➜ Renamed:''${reset} $file" ;;
+              "??") echo -e "  ''${cyan}? Untracked:''${reset} $file" ;;
+              *) echo -e "  ''${white}$file_status''${reset} $file" ;;
+            esac
+          done
 
-          printf "Breaking change? [y/N]: "
-          read -r breaking
+          # Check if behind remote
+          echo ""
+          git fetch origin &>/dev/null
+          local behind=$(git rev-list HEAD..@{u} --count 2>/dev/null)
+          if [[ -n "$behind" && "$behind" -gt 0 ]]; then
+            echo -e "''${yellow}⚠ Warning: Your branch is behind remote by $behind commit(s).''${reset}"
+            printf "''${yellow}Continue anyway? [y/N]: ''${reset}"
+            read -r continue_confirm
+            if [[ ! "$continue_confirm" =~ ^[Yy]$ ]]; then
+              echo -e "''${red}Aborted.''${reset}"
+              return 1
+            fi
+          fi
 
-          printf "Message: "
+          # Ask for commit message
+          echo ""
+          echo -e "''${bold}''${blue}💬 Commit Message''${reset}"
+          printf "''${blue}➜ ''${reset}"
           read -r msg
           if [[ -z "$msg" ]]; then
-            echo "Commit message cannot be empty." && return 1
+            echo -e "''${red}✗ Commit message cannot be empty.''${reset}"
+            return 1
           fi
 
-          # Build prefix
-          prefix="$type"
-          [[ -n "$scope" ]] && prefix="''${prefix}(''${scope})"
-          [[ "$breaking" =~ ^[Yy]$ ]] && prefix="''${prefix}!"
-          prefix="''${prefix}: ''${msg}"
-
+          # Show summary and confirm
           echo ""
-          git status --short
+          echo -e "''${bold}''${magenta}📋 Summary''${reset}"
+          echo -e "''${magenta}Commit:''${reset} $msg"
           echo ""
-          echo "Commit: $prefix"
-          printf "Proceed? [Y/n]: "
+          printf "''${green}Commit and push? [Y/n]: ''${reset}"
           read -r confirm
           if [[ "$confirm" =~ ^[Nn]$ ]]; then
-            echo "Aborted." && return 1
+            echo -e "''${red}✗ Aborted.''${reset}"
+            return 1
           fi
 
-          git add -A && git commit -m "$prefix" && git push
+          # Execute git commands
+          echo ""
+          git add -A && \
+          git commit -m "$msg" && \
+          git push && \
+          echo -e "\n''${green}''${bold}✓ Successfully committed and pushed!''${reset}" || \
+          echo -e "\n''${red}''${bold}✗ Failed to commit and push.''${reset}"
         }
 
         # Source/Load Zinit
