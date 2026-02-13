@@ -113,6 +113,53 @@
           git -C ~/.nixos pull "$@"
         }
 
+        # Conventional commit + push
+        gp() {
+          local types=("feat" "fix" "chore" "docs" "style" "refactor" "perf" "test" "build" "ci" "revert")
+          local type scope msg breaking prefix
+
+          echo "Select commit type:"
+          for i in {1..''${#types[@]}}; do
+            echo "  $i) ''${types[$i]}"
+          done
+          printf "Type [1-''${#types[@]}]: "
+          read -r choice
+          if [[ -z "$choice" || "$choice" -lt 1 || "$choice" -gt ''${#types[@]} ]] 2>/dev/null; then
+            echo "Invalid selection." && return 1
+          fi
+          type="''${types[$choice]}"
+
+          printf "Scope (optional, enter to skip): "
+          read -r scope
+
+          printf "Breaking change? [y/N]: "
+          read -r breaking
+
+          printf "Message: "
+          read -r msg
+          if [[ -z "$msg" ]]; then
+            echo "Commit message cannot be empty." && return 1
+          fi
+
+          # Build prefix
+          prefix="$type"
+          [[ -n "$scope" ]] && prefix="''${prefix}(''${scope})"
+          [[ "$breaking" =~ ^[Yy]$ ]] && prefix="''${prefix}!"
+          prefix="''${prefix}: ''${msg}"
+
+          echo ""
+          git status --short
+          echo ""
+          echo "Commit: $prefix"
+          printf "Proceed? [Y/n]: "
+          read -r confirm
+          if [[ "$confirm" =~ ^[Nn]$ ]]; then
+            echo "Aborted." && return 1
+          fi
+
+          git add -A && git commit -m "$prefix" && git push
+        }
+
         # Source/Load Zinit
         source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null
 
