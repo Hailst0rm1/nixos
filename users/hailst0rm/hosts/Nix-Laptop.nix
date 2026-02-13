@@ -6,7 +6,7 @@
     accentColour = "green";
     monitorOrientations = {
       "eDP-1" = "left"; # Middle horizontal monitor (1920x1080)
-      "DP-3" = "left"; # Middle horizontal monitor (1920x1080)
+      "DP-3" = "center"; # Middle horizontal monitor (1920x1080)
       "DP-4" = "top"; # Right vertical monitor (2560x1440, transform 3)
       "DP-5" = "top"; # Left vertical monitor (2560x1440, transform 1)
     };
