@@ -62,6 +62,9 @@
     automatic.cleanup = false;
   };
 
+  # Disable stylix version checks since theme is disabled on server
+  stylix.enableReleaseChecks = false;
+
   virtualisation.host = {
     virtualbox = false;
     qemu = false;

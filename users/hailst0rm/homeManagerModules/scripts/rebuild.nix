@@ -80,11 +80,11 @@
 
       # Test GitHub connectivity
       echo -e "''${CYAN}🌐 Testing GitHub connectivity...''${RESET}"
-      notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless
+      notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless 2>/dev/null
 
       if ! timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
         echo -e "''${RED}''${BOLD}❌ Cannot reach GitHub. Check your internet connection.''${RESET}"
-        notify-send -e "${notifyName} Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical
+        notify-send -e "${notifyName} Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical 2>/dev/null
         popd
         exit 1
       fi
@@ -100,7 +100,7 @@
         if [ "$LOCAL" != "$REMOTE" ]; then
           BEHIND=$(git rev-list HEAD..origin/master --count)
           echo -e "''${YELLOW}''${BOLD}⚠️  Warning: Local config is $BEHIND commit(s) behind remote.''${RESET}"
-          notify-send -e "NixOS Config Behind Remote" "Your config is $BEHIND commit(s) behind. Pull before rebuilding?" --icon=dialog-warning
+          notify-send -e "NixOS Config Behind Remote" "Your config is $BEHIND commit(s) behind. Pull before rebuilding?" --icon=dialog-warning 2>/dev/null
           read -p "Pull remote changes before rebuilding? (y/N): " -n 1 -r
           echo
           if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -113,7 +113,7 @@
       # Autoformat the nix files with alejandra
       echo -e "''${MAGENTA}🎨 Formatting Nix files...''${RESET}"
       alejandra . &>/dev/null \
-        || ( alejandra . ; echo -e "''${RED}''${BOLD}❌ Formatting failed!''${RESET}" && notify-send -e "Formatting Failed!" --icon=dialog-error && exit 1)
+        || ( alejandra . ; echo -e "''${RED}''${BOLD}❌ Formatting failed!''${RESET}" && notify-send -e "Formatting Failed!" --icon=dialog-error 2>/dev/null && exit 1)
 
       # Show changes
       ${
@@ -143,14 +143,14 @@
       # Rebuild and exit on failure
       echo ""
       echo -e "''${GREEN}''${BOLD}🔨 ${buildingMsg}...''${RESET}"
-      notify-send -e "${notifyName}" "${buildingMsg} for ${config.hostname}..." --icon=system-software-update
+      notify-send -e "${notifyName}" "${buildingMsg} for ${config.hostname}..." --icon=system-software-update 2>/dev/null
 
       if [ "$use_legacy" = true ]; then
         echo -e "''${YELLOW}📦 Using legacy nixos-rebuild...''${RESET}"
         sudo nixos-rebuild ${action} --flake ./#${config.hostname} || {
           echo ""
           echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
-          notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical
+          notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null
           popd
           exit 1
         }
@@ -158,7 +158,7 @@
         nh os ${action} --diff always $nh_flags || {
           echo ""
           echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
-          notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical
+          notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null
           popd
           exit 1
         }
@@ -180,7 +180,7 @@
         # Only commit and push if message is not empty
         if [ -n "$user_msg" ]; then
           echo -e "''${BLUE}📤 Committing and pushing changes...''${RESET}"
-          notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing
+          notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing 2>/dev/null
           git add .
           git commit -am "${config.hostname}: $user_msg ($current)"
           git push && echo -e "''${GREEN}''${BOLD}✅ Pushed to GitHub!''${RESET}" || echo -e "''${RED}''${BOLD}❌ Push failed!''${RESET}"
@@ -193,7 +193,7 @@
       popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
 
       # Notify all OK!
-      notify-send -e "${notifyName} Successful!" "${successMsg}" --icon=emblem-default
+      notify-send -e "${notifyName} Successful!" "${successMsg}" --icon=emblem-default 2>/dev/null
     '';
 in {
   # Shell scripts to handle rebuilds in a more convenient way
