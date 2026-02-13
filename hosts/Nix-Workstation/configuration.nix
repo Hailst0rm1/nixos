@@ -26,9 +26,9 @@ in {
   cyber.redTools.enable = true;
 
   # graphic
-  graphicDriver.intel.enable = true;
-  graphicDriver.nvidia = {
+  graphicDriver.intel = {
     enable = true;
-    type = "default";
+    forceProbe = "a7a0";
   };
+  graphicDriver.nvidia.enable = true;
 }

@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs-unstable,
   pkgs,
   ...
 }: let
@@ -9,6 +8,11 @@
 in {
   options.graphicDriver.intel = {
     enable = lib.mkEnableOption "Download gpu drivers for intel";
+    forceProbe = lib.mkOption {
+      default = "";
+      type = lib.types.str;
+      description = "Device ID for i915.force_probe kernel parameter (e.g. 'a7a0'). Leave empty to skip.";
+    };
   };
 
   # WARNING:
@@ -18,17 +22,13 @@ in {
   config = lib.mkIf cfg.enable {
     # Insert device ID for GPU found with:
     # nix-shell --extra-experimental-features "flakes" -p pciutils --run "lspci -nn | grep VGA"
-    # boot.kernelParams = ["i915.force_probe=7d55"];
-    boot.kernelParams = ["i915.force_probe=a7a0"];
+    boot.kernelParams = lib.optionals (cfg.forceProbe != "") [
+      "i915.force_probe=${cfg.forceProbe}"
+    ];
 
     hardware.graphics = {
       enable = true;
       extraPackages = with pkgs; [
-        # intel-media-driver
-        # intel-vaapi-driver
-        # libvdpau-va-gl
-        # intel-ocl
-
         intel-compute-runtime
         vpl-gpu-rt
         intel-ocl

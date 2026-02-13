@@ -41,7 +41,7 @@
         echo -e "  ''${MAGENTA}--update-input ''${YELLOW}<name>''${RESET} Update a specific flake input"
         echo -e "  ''${MAGENTA}--max-jobs ''${YELLOW}<n>''${RESET}        Number of concurrent jobs Nix should run"
         echo -e "  ''${MAGENTA}--cores ''${YELLOW}<n>''${RESET}           Number of cores Nix should utilize"
-        echo -e "  ''${MAGENTA}--show-trace''${RESET}          Display tracebacks on errors
+        echo -e "  ''${MAGENTA}--show-trace''${RESET}          Display tracebacks on errors"
         echo ""
         echo -e "''${BOLD}Examples:''${RESET}"
         echo -e "  ''${CYAN}${name}''${RESET}                              # Normal rebuild with nh"
@@ -85,7 +85,8 @@
       if ! timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
         echo -e "''${RED}''${BOLD}❌ Cannot reach GitHub. Check your internet connection.''${RESET}"
         notify-send -e "${notifyName} Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical 2>/dev/null
-        popd
+        popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
+
         exit 1
       fi
       echo -e "''${GREEN}✅ GitHub connectivity OK''${RESET}"
@@ -151,7 +152,7 @@
           echo ""
           echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
           notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null
-          popd
+          popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
           exit 1
         }
       else
@@ -159,7 +160,7 @@
           echo ""
           echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
           notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null
-          popd
+          popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
           exit 1
         }
       fi

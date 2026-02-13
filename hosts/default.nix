@@ -39,10 +39,7 @@
 
   # graphic
   graphicDriver.intel.enable = lib.mkDefault false;
-  graphicDriver.nvidia = {
-    enable = lib.mkDefault false;
-    type = lib.mkDefault "default";
-  };
+  graphicDriver.nvidia.enable = lib.mkDefault false;
 
   security = {
     sops.enable = lib.mkDefault true;

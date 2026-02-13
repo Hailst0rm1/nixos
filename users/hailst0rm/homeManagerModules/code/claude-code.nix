@@ -136,6 +136,34 @@
       uv # For Python MCP servers
       nodejs # For npm/npx MCP servers
       git # For git MCP server
+
+      # Add companion package
+      (pkgs.callPackage ../../../../pkgs/companion/package.nix {})
+
+      # Claude Web launcher script
+      (pkgs.writeShellScriptBin "claude-web" ''
+        #!/usr/bin/env bash
+
+        # Colours
+        GREEN='\033[0;32m'
+        BLUE='\033[0;34m'
+        RESET='\033[0m'
+
+        echo -e "''${BLUE}🚀 Starting The Vibe Companion...''${RESET}"
+
+        # Start companion in background
+        the-vibe-companion &>/dev/null &
+        COMPANION_PID=$!
+
+        # Wait a moment for it to start
+        sleep 2
+
+        # Open browser to localhost:3456
+        echo -e "''${BLUE}🌐 Opening http://localhost:3456 in browser...''${RESET}"
+        ${config.browser} http://localhost:3456 &>/dev/null &
+
+        echo -e "''${GREEN}✓ Done!''${RESET}"
+      '')
     ];
   };
 }

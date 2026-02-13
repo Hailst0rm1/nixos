@@ -8,14 +8,10 @@
 in {
   options.graphicDriver.nvidia = {
     enable = lib.mkEnableOption "Enable nvidia gpu drivers.";
-    type = lib.mkOption {
-      default = "default";
-      type = lib.types.str;
-      description = "Select display manager.";
-    };
+    containerToolkit = lib.mkEnableOption "Enable nvidia-container-toolkit for Docker/Podman GPU access.";
   };
 
-  config = lib.mkIf (cfg.enable == true && cfg.type == "default") {
+  config = lib.mkIf cfg.enable {
     nixpkgs.config.allowUnfree = true;
 
     boot = {
@@ -27,7 +23,7 @@ in {
       ];
 
       kernelParams = [
-        # "nvidia_drm.fbdev=1"
+        "nvidia_drm.fbdev=1"
       ];
     };
 
@@ -59,16 +55,29 @@ in {
       # supported GPUs is at:
       # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
       # Only available from driver 515.43.04+
-      # Currently alpha-quality/buggy, so false is currently the recommended setting.
       open = true;
-      # open = false;
 
       # Enable the Nvidia settings menu,
       # accessible via `nvidia-settings`.
       nvidiaSettings = true;
 
       package = config.boot.kernelPackages.nvidiaPackages.latest;
-      # package = config.boot.kernelPackages.nvidiaPackages.stable;
     };
+
+    # Enable nvidia-container-toolkit for Docker/Podman GPU access
+    hardware.nvidia-container-toolkit.enable = cfg.containerToolkit;
+
+    environment.sessionVariables = {
+      GBM_BACKEND = "nvidia-drm";
+      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+    };
+
+    # GPU diagnostic tools
+    environment.systemPackages = with pkgs-unstable; [
+      vulkan-tools
+      mesa-demos
+      libva-utils
+      vdpauinfo
+    ];
   };
 }
