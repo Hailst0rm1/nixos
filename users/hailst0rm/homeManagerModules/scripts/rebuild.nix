@@ -175,6 +175,13 @@
 
       ${lib.optionalString promptCommit ''
         # Prompt user for an optional commit message
+        echo -e "''${BOLD}''${CYAN}📄 Modified files:''${RESET}"
+        if git diff --name-status | sed -e 's/^M/Modified: /' -e 's/^A/Added: /' -e 's/^D/Deleted: /'; then
+          :
+        else
+          echo -e "''${YELLOW}⚠️  No modified files detected.''${RESET}"
+        fi
+        echo ""
         echo -e "''${CYAN}💾 Enter a commit message to save changes (leave empty to skip):''${RESET}"
         read -rp "➜ " user_msg
 

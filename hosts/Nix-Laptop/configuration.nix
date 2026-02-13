@@ -21,7 +21,7 @@ in {
     }
   ];
 
-  # Override only what's different from default
+  # Override only what's different from the default
   laptop = true;
   myLocation = "Barkarby";
   cyber.redTools.enable = true;
