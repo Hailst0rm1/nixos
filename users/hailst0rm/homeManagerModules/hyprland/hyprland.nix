@@ -230,6 +230,10 @@ in {
             "$mainMod, G, split:grabroguewindows"
             "$mainMod, mouse_down, split:workspace, e+1"
             "$mainMod, mouse_up, split:workspace, e-1"
+
+            # Zoom
+            "$mainMod SHIFT, mouse_up, exec, hyprctl keyword cursor:zoom_factor \"$(hyprctl getoption cursor:zoom_factor | awk 'NR==1 {factor = $2; if (factor < 1) {factor = 1}; print factor * 2.00}')\""
+            "$mainMod SHIFT, mouse_down, exec, hyprctl keyword cursor:zoom_factor \"$(hyprctl getoption cursor:zoom_factor | awk 'NR==1 {factor = $2; if (factor < 1) {factor = 1}; print factor / 2.00}')\""
           ]
           ++ map (n: "$mainMod SHIFT, ${toString n}, split:movetoworkspace, ${toString (
             if n == 0
