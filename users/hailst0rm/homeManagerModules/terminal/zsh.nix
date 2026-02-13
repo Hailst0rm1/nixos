@@ -43,7 +43,6 @@
           then config.importConfig.hyprland.appLauncher
           else ""
         }"
-        export FLAKE="${config.nixosDir}" # For nh
         export GIT_EXTERNAL_DIFF="difft" # Using difftastic for git diffs
         export ZINIT_HOME="$HOME/.local/share/zsh/zinit"
         export FZF_DEFAULT_OPTS="--color=16"
@@ -66,6 +65,7 @@
         ":q" = "exit";
         nix-edit = "yazi ${config.nixosDir}";
         yz = "yazi";
+        claude = "claude --allow-dangerously-skip-permissions";
 
         # Modern commands
         ls = "lsd";
