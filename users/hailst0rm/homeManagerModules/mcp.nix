@@ -3,49 +3,73 @@
   lib,
   pkgs,
   ...
-}: let
-  claude-mcp-setup =
-    /*
-    shell
-    */
-    ''
-          #!/usr/bin/env bash
+}:
+with lib; let
+  cfg = config.services.claude-mcp;
 
-          CONFIG_PATH="$HOME/.config/Claude/claude_desktop_config.json"
+  # Build the MCP servers attrset based on enabled options
+  mcpServers =
+    {}
+    // (optionalAttrs cfg.servers.nixos.enable {
+      nixos = {
+        command = "nix";
+        args = ["run" "github:utensils/mcp-nixos" "--"];
+      };
+    })
+    // (optionalAttrs cfg.servers.obsidian.enable {
+      mcp-obsidian = {
+        command = "uvx";
+        args = ["mcp-obsidian"];
+        env = {
+          OBSIDIAN_API_KEY = cfg.servers.obsidian.apiKey;
+          OBSIDIAN_HOST = cfg.servers.obsidian.host;
+          OBSIDIAN_PORT = toString cfg.servers.obsidian.port;
+        };
+      };
+    });
 
-          # Prompt for Obsidian API key
-          echo -n "Enter your Obsidian API key: "
-          read -r OBSIDIAN_API_KEY
-
-          # Create/override the config file
-          mkdir -p "$(dirname "$CONFIG_PATH")"
-          cat > "$CONFIG_PATH" <<EOF
-      {
-        "mcpServers": {
-          "nixos": {
-            "command": "nix",
-            "args": ["run", "github:utensils/mcp-nixos", "--"]
-          },
-          "mcp-obsidian": {
-            "command": "uvx",
-            "args": [
-            "mcp-obsidian"
-            ],
-            "env": {
-              "OBSIDIAN_API_KEY": "$OBSIDIAN_API_KEY",
-              "OBSIDIAN_HOST": "localhost",
-              "OBSIDIAN_PORT": "27124"
-            }
-          }
-        }
-      }
-      EOF
-    '';
+  configJson = builtins.toJSON {inherit mcpServers;};
 in {
-  config = lib.mkIf config.applications.claude-desktop.enable {
+  options.services.claude-mcp = {
+    enable = mkEnableOption "Claude Desktop MCP server configuration";
+
+    servers = {
+      nixos = {
+        enable = mkEnableOption "NixOS MCP server";
+      };
+
+      obsidian = {
+        enable = mkEnableOption "Obsidian MCP server";
+
+        apiKey = mkOption {
+          type = types.str;
+          default = "";
+          description = "Obsidian Local REST API key. Set this to the API key from the Obsidian Local REST API plugin.";
+        };
+
+        host = mkOption {
+          type = types.str;
+          default = "localhost";
+          description = "Obsidian REST API host.";
+        };
+
+        port = mkOption {
+          type = types.port;
+          default = 27124;
+          description = "Obsidian REST API port.";
+        };
+      };
+    };
+  };
+
+  config = mkIf cfg.enable {
     home.packages = with pkgs; [
       uv
-      (writeShellScriptBin "claude-mcp-setup" claude-mcp-setup)
     ];
+
+    # Declaratively manage the Claude Desktop MCP config
+    home.file.".config/Claude/claude_desktop_config.json" = {
+      text = configJson;
+    };
   };
 }

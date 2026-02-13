@@ -129,6 +129,13 @@
 
   services = {
     companion.enable = lib.mkDefault false; # Claude Code Web UI
+    claude-mcp = {
+      enable = lib.mkDefault true;
+      servers = {
+        nixos.enable = lib.mkDefault true;
+        obsidian.enable = lib.mkDefault true;
+      };
+    };
     whisperStt = {
       enable = lib.mkDefault true;
       model = lib.mkDefault "small"; # Multilingual model with auto-detection (supports English, Swedish, etc.)

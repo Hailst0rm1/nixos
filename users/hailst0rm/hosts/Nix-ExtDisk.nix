@@ -14,4 +14,6 @@
     claude-desktop.enable = false;
     proton.enableAll = false;
   };
+
+  services.claude-mcp.enable = false;
 }

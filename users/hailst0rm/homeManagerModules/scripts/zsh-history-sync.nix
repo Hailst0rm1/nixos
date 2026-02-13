@@ -4,7 +4,76 @@
   config,
   ...
 }: let
-  # Define the zsh history sync script for startup (pull from remote)
+  # Shared deduplication AWK script used by both startup and push
+  # Deduplicates by command text, keeps the entry with the latest timestamp,
+  # and sorts output by timestamp so file order matches chronological order.
+  deduplicateAwk = ''
+    BEGIN {
+        current_cmd = ""
+        current_block = ""
+        current_ts = 0
+        in_multiline = 0
+    }
+
+    /^: *[0-9]+:[0-9]+;/ {
+        if (current_cmd != "") {
+            # Store pending multiline command
+            if (!(cmd_key in timestamps) || current_ts > timestamps[cmd_key]) {
+                commands[cmd_key] = current_block
+                timestamps[cmd_key] = current_ts
+            }
+        }
+
+        # Extract timestamp and command part
+        match($0, /^: *([0-9]+):[0-9]+;(.*)$/, arr)
+        current_ts = arr[1] + 0
+        cmd_only = arr[2]
+
+        current_cmd = cmd_only
+        current_block = $0
+
+        if ($0 ~ /\\$/) {
+            in_multiline = 1
+        } else {
+            in_multiline = 0
+            cmd_key = current_cmd
+            if (!(cmd_key in timestamps) || current_ts > timestamps[cmd_key]) {
+                commands[cmd_key] = current_block
+                timestamps[cmd_key] = current_ts
+            }
+            current_cmd = ""
+            current_block = ""
+        }
+        next
+    }
+
+    in_multiline {
+        current_cmd = current_cmd "\n" $0
+        current_block = current_block "\n" $0
+
+        if ($0 !~ /\\$/) {
+            in_multiline = 0
+            cmd_key = current_cmd
+            if (!(cmd_key in timestamps) || current_ts > timestamps[cmd_key]) {
+                commands[cmd_key] = current_block
+                timestamps[cmd_key] = current_ts
+            }
+            current_cmd = ""
+            current_block = ""
+        }
+        next
+    }
+
+    END {
+        # Sort by timestamp so file order is chronological
+        n = asorti(timestamps, sorted_keys, "@val_num_asc")
+        for (i = 1; i <= n; i++) {
+            print commands[sorted_keys[i]]
+        }
+    }
+  '';
+
+  # Define the zsh history sync script for startup (pull from remote and merge)
   zsh-history-sync-startup = pkgs.writeShellScriptBin "zsh-history-sync-startup" ''
     #!/usr/bin/env bash
 
@@ -51,13 +120,31 @@
         cp "$HISTORY_FILE" "$BACKUP_FILE"
     fi
 
-    # Overwrite local history with remote
-    log_info "Overwriting local history with remote"
     mkdir -p "$(dirname "$HISTORY_FILE")"
-    cp "$REMOTE_HISTORY" "$HISTORY_FILE"
 
-    local_count=$(wc -l < "$HISTORY_FILE")
-    log_info "Local history updated: $local_count entries"
+    # Merge local and remote history instead of overwriting
+    if [[ -f "$HISTORY_FILE" ]] && [[ -f "$REMOTE_HISTORY" ]]; then
+        log_info "Merging local and remote history"
+        TEMP_MERGED=$(mktemp)
+        cat "$HISTORY_FILE" "$REMOTE_HISTORY" > "$TEMP_MERGED"
+
+        # Deduplicate the merged result (keeps the latest occurrence of each command)
+        TEMP_DEDUPED=$(mktemp)
+        awk '${deduplicateAwk}' "$TEMP_MERGED" > "$TEMP_DEDUPED"
+        mv "$TEMP_DEDUPED" "$HISTORY_FILE"
+        rm -f "$TEMP_MERGED"
+
+        local_count=$(wc -l < "$HISTORY_FILE")
+        log_info "Merged history: $local_count entries"
+    elif [[ -f "$REMOTE_HISTORY" ]]; then
+        log_info "No local history found, using remote"
+        cp "$REMOTE_HISTORY" "$HISTORY_FILE"
+        local_count=$(wc -l < "$HISTORY_FILE")
+        log_info "Local history set from remote: $local_count entries"
+    else
+        log_warn "No remote history found, keeping local"
+    fi
+
     log_info "Done!"
   '';
 
@@ -94,65 +181,7 @@
         local input_file="$1"
         local output_file="$2"
 
-        awk '
-        BEGIN {
-            cmd_count = 0
-            current_cmd = ""
-            current_block = ""
-            in_multiline = 0
-        }
-
-        /^: *[0-9]+:[0-9]+;/ {
-            if (current_cmd != "") {
-                commands[cmd_key] = current_block
-                last_line[cmd_key] = prev_line_end
-            }
-
-            # Extract just the command part (after timestamp)
-            match($0, /^: *[0-9]+:[0-9]+;(.*)$/, arr)
-            cmd_only = arr[1]
-
-            current_cmd = cmd_only
-            current_block = $0
-            line_start = NR
-
-            if ($0 ~ /\\\\?$/) {
-                in_multiline = 1
-            } else {
-                in_multiline = 0
-                cmd_key = current_cmd
-                commands[cmd_key] = current_block
-                last_line[cmd_key] = NR
-                prev_line_end = NR
-                current_cmd = ""
-                current_block = ""
-            }
-            next
-        }
-
-        in_multiline {
-            current_cmd = current_cmd "\n" $0
-            current_block = current_block "\n" $0
-
-            if ($0 !~ /\\\\?$/) {
-                in_multiline = 0
-                cmd_key = current_cmd
-                commands[cmd_key] = current_block
-                last_line[cmd_key] = NR
-                prev_line_end = NR
-                current_cmd = ""
-                current_block = ""
-            }
-            next
-        }
-
-        END {
-            n = asorti(last_line, sorted_keys, "@val_num_asc")
-            for (i = 1; i <= n; i++) {
-                print commands[sorted_keys[i]]
-            }
-        }
-        ' "$input_file" > "$output_file"
+        awk '${deduplicateAwk}' "$input_file" > "$output_file"
     }
 
     # Check if local history file exists
@@ -237,27 +266,29 @@ in {
       };
     };
 
-    # Systemd user service to sync history before shutdown (push to remote)
+    # Systemd user service to sync history before session exit (covers shutdown/reboot/logout)
     systemd.user.services.zsh-history-sync-shutdown = {
       Unit = {
-        Description = "Sync zsh history to remote before shutdown";
+        Description = "Sync zsh history to remote before session exit";
         DefaultDependencies = false;
-        Before = ["shutdown.target" "reboot.target" "halt.target"];
+        Before = ["exit.target"];
       };
 
       Service = {
         Type = "oneshot";
-        ExecStart = "${zsh-history-sync-push}/bin/zsh-history-sync-push";
+        # Use -c with || true so a network failure doesn't block shutdown
+        ExecStart = "${pkgs.bash}/bin/bash -c '${zsh-history-sync-push}/bin/zsh-history-sync-push || true'";
         StandardOutput = "journal";
         StandardError = "journal";
         TimeoutStartSec = "30s";
         Environment = [
           "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/run/current-system/sw/bin"
+          "HOME=%h"
         ];
       };
 
       Install = {
-        WantedBy = ["shutdown.target" "reboot.target" "halt.target"];
+        WantedBy = ["exit.target"];
       };
     };
 

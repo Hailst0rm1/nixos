@@ -20,4 +20,6 @@
     openconnect.enable = true;
     proton.enableAll = false;
   };
+
+  services.claude-mcp.enable = false;
 }
