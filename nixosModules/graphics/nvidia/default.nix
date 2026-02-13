@@ -9,6 +9,19 @@ in {
   options.graphicDriver.nvidia = {
     enable = lib.mkEnableOption "Enable nvidia gpu drivers.";
     containerToolkit = lib.mkEnableOption "Enable nvidia-container-toolkit for Docker/Podman GPU access.";
+    prime = {
+      offload.enable = lib.mkEnableOption "Enable NVIDIA PRIME offload mode (render on dGPU, display via iGPU).";
+      intelBusId = lib.mkOption {
+        default = "";
+        type = lib.types.str;
+        description = "Bus ID of the Intel iGPU (e.g. 'PCI:0:2:0').";
+      };
+      nvidiaBusId = lib.mkOption {
+        default = "";
+        type = lib.types.str;
+        description = "Bus ID of the NVIDIA dGPU (e.g. 'PCI:1:0:0').";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -62,15 +75,30 @@ in {
       nvidiaSettings = true;
 
       package = config.boot.kernelPackages.nvidiaPackages.latest;
+
+      prime = lib.mkIf cfg.prime.offload.enable {
+        offload = {
+          enable = true;
+          enableOffloadCmd = true;
+        };
+        intelBusId = cfg.prime.intelBusId;
+        nvidiaBusId = cfg.prime.nvidiaBusId;
+      };
     };
 
     # Enable nvidia-container-toolkit for Docker/Podman GPU access
     hardware.nvidia-container-toolkit.enable = cfg.containerToolkit;
 
-    environment.sessionVariables = {
-      GBM_BACKEND = "nvidia-drm";
-      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-    };
+    environment.sessionVariables =
+      {
+        GBM_BACKEND = "nvidia-drm";
+        __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+      }
+      // lib.optionalAttrs cfg.prime.offload.enable {
+        __NV_PRIME_RENDER_OFFLOAD = "1";
+        __NV_PRIME_RENDER_OFFLOAD_PROVIDER = "NVIDIA-G0";
+        __VK_LAYER_NV_optimus = "NVIDIA_only";
+      };
 
     # GPU diagnostic tools
     environment.systemPackages = with pkgs-unstable; [

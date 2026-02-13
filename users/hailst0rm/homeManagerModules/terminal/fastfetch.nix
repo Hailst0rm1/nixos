@@ -108,6 +108,11 @@
             keyColor = "blue";
           }
           {
+            type = "disk";
+            key = "  󰋊 Disk";
+            keyColor = "blue";
+          }
+          {
             type = "command";
             key = "  󱦟 OS Age ";
             keyColor = "34";
