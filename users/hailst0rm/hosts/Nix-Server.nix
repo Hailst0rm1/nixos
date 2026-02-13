@@ -19,6 +19,9 @@
     };
   };
 
+  # Disable stylix version checks since theme is disabled on server
+  stylix.enableReleaseChecks = false;
+
   code.vscode.enable = false;
   code.claude-code.enable = true;
 
