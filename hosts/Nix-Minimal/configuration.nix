@@ -25,6 +25,15 @@ in {
     }
   ];
 
-  # Override only what's different from default
+  # Minimal GNOME desktop for bootstrapping
   desktopEnvironment.name = "gnome";
+
+  # Disable everything not needed for a minimal install
+  security.sops.enable = false;
+  security.yubikey.enable = false;
+  hardware.bluetooth.enable = false;
+  services.tailscaleAutoconnect.enable = false;
+  system.theme.enable = false;
+  system.keyboard.colemak-se = false;
+  virtualisation.host.virtualbox = false;
 }

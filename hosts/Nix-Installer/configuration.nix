@@ -1,24 +1,59 @@
-{...}: {
+{
+  pkgs,
+  lib,
+  ...
+}: {
   imports = [
     ../default.nix
-
-    # NixOS-Hardware
-    # List: https://github.com/NixOS/nixos-hardware/blob/master/flake.nix
-    # inputs.nixos-hardware.nixosModules.common-cpu-intel
-    # inputs.nixos-hardware.nixosModules.common-gpu-nvidia
-    # inputs.nixos-hardware.nixosModules.common-gpu-intel
-    # inputs.nixos-hardware.nixosModules.common-pc-laptop-ssd
-    # inputs.nixos-hardware.nixosModules.common-pc-ssd
+    {_module.args.device = null;} # No disk — installer is a live USB
   ];
 
-  # Override only what's different from default
+  # Installer is a live USB environment
   removableMedia = true;
+  desktopEnvironment.name = "gnome";
+  nixpkgs.hostPlatform = "x86_64-linux";
 
   # Enables editing of hosts
   environment.etc.hosts.enable = false;
   environment.etc.hosts.mode = "0700";
 
-  desktopEnvironment.name = "gnome";
+  # Minimal filesystem for live USB (no disko, no hardware-configuration.nix)
+  fileSystems."/" = {
+    device = "tmpfs";
+    fsType = "tmpfs";
+  };
 
-  nixpkgs.hostPlatform = "x86_64-linux";
+  # GNOME provides its own SSH agent and display manager (GDM)
+  programs.ssh.startAgent = lib.mkForce false;
+  desktopEnvironment.displayManager.name = "gdm";
+
+  # Disable services not needed on a live installer
+  security.sops.enable = false;
+  security.yubikey.enable = false;
+  hardware.bluetooth.enable = false;
+  services.tailscaleAutoconnect.enable = false;
+  system.theme.enable = false;
+  system.keyboard.colemak-se = false;
+  system.automatic.cleanup = false;
+  virtualisation.host.virtualbox = false;
+
+  # Installation tools
+  environment.systemPackages = with pkgs; [
+    # Disk partitioning & filesystem
+    gptfdisk
+    parted
+    gum
+    btrfs-progs
+    dosfstools
+    cryptsetup
+
+    # Network
+    curl
+    wget
+
+    # Essentials
+    git
+    vim
+    htop
+  ];
 }

@@ -1,25 +1,36 @@
 {...}: {
   imports = [./default.nix];
 
-  # Override only what's different from default
+  # Minimal — only basics for bootstrapping after install
   importConfig = {
+    git.enable = true;
     ssh.enable = false;
+    yazi.enable = false;
+    stylix.enable = false;
+    sops.enable = false;
     zsh-history-sync.enable = false;
     hyprland.enable = false;
   };
 
-  code.vscode.enable = false;
+  code = {
+    helix.enable = false;
+    vscode.enable = false;
+  };
 
   applications = {
     bitwarden.enable = false;
     discord.enable = false;
+    firefox.enable = false;
     libreOffice.enable = false;
+    obsidian.enable = false;
     remmina.enable = false;
     spotify.enable = false;
     claude-desktop.enable = false;
-    openconnect.enable = true;
     proton.enableAll = false;
   };
 
-  services.claude-mcp.enable = false;
+  services = {
+    claude-mcp.enable = false;
+    whisperStt.enable = false;
+  };
 }
