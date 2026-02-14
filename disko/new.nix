@@ -117,6 +117,15 @@ in {
                       ];
                     };
 
+                    "/nix" = {
+                      mountpoint = "/nix";
+                      mountOptions = [
+                        "subvol=nix"
+                        "compress=zstd"
+                        "noatime"
+                      ];
+                    };
+
                     "/persist" = {
                       mountpoint = "/persist"; # Often used for persistent config or secrets
                       mountOptions = [

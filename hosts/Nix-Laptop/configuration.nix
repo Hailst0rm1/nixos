@@ -1,5 +1,6 @@
 {inputs, ...}: let
   device = "nvme0n1"; # IMPORTANT Set disk device (e.g. "sda", or "nvme0n1") - list with `lsblk`
+  swapSize = "16G"; # IMPORTANT Keep at 16GB, unless hibernation - then set to RAM size (e.g. "32G", "64G") - check with `free -g`
   diskoConfig = "default";
 in {
   imports = [
@@ -18,6 +19,7 @@ in {
     ../../disko/${diskoConfig}.nix
     {
       _module.args.device = device;
+      _module.args.swapSize = swapSize;
     }
   ];
 
