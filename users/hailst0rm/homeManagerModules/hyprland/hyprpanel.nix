@@ -2,7 +2,7 @@
   pkgs,
   lib,
   config,
-  nvidiaEnabled,
+  osConfig,
   ...
 }: let
   cfg = config.importConfig.hyprland;
@@ -73,7 +73,7 @@ in {
           };
           dashboard = {
             powermenu.avatar.image = "${config.nixosDir}/assets/images/nixos-logo.png";
-            stats.enable_gpu = lib.mkDefault nvidiaEnabled;
+            stats.enable_gpu = lib.mkDefault osConfig.graphicDriver.nvidia.enable;
             controls.enabled = false;
             shortcuts.enabled = false;
             directories.enabled = false;

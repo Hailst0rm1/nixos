@@ -12,11 +12,11 @@
     };
 
     # Cosmic DE Alpha for testing
-    nixos-cosmic = {
-      url = "github:lilyinstarlight/nixos-cosmic";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-stable.follows = "nixpkgs";
-    };
+    # nixos-cosmic = {
+    #   url = "github:lilyinstarlight/nixos-cosmic";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    #   inputs.nixpkgs-stable.follows = "nixpkgs";
+    # };
 
     # Hyprland
     hyprland = {
@@ -25,10 +25,10 @@
     };
 
     # Generators for building isos and VMs
-    nixos-generators = {
-      url = "github:nix-community/nixos-generators";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # nixos-generators = {
+    #   url = "github:nix-community/nixos-generators";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    # };
 
     # NixOS official package source
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
@@ -66,7 +66,10 @@
     };
 
     # Spotify theme
-    spicetify-nix.url = "github:Gerg-L/spicetify-nix";
+    spicetify-nix = {
+      url = "github:Gerg-L/spicetify-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # Discord plugins and theme
     nixcord = {
@@ -99,22 +102,11 @@
       # ===================== Physical Machines ===================== #
 
       nixosConfigurations = {
-        # Home Workstation
         Nix-Workstation = mkSystem {hostname = "Nix-Workstation";};
-
-        # Work Laptop
         Nix-Laptop = mkSystem {hostname = "Nix-Laptop";};
-
-        # External SSD
         Nix-ExtDisk = mkSystem {hostname = "Nix-ExtDisk";};
-
-        # Nix-Minimal
         Nix-Minimal = mkSystem {hostname = "Nix-Minimal";};
-
-        # Nix-Installer
         Nix-Installer = mkSystem {hostname = "Nix-Installer";};
-
-        # Nix-Server
         Nix-Server = mkSystem {hostname = "Nix-Server";};
       };
 

@@ -11,8 +11,9 @@
   config = lib.mkIf config.importConfig.sops.enable {
     sops = {
       age.keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
+      age.sshKeyPaths = []; # Only use the user age key, not host SSH keys
 
-      defaultSopsFile = ../../../secrets/secrets.yaml; # Maybe make userspecific? secrets/hailst0rm.yaml?
+      defaultSopsFile = ../../../secrets/${config.username}.yaml;
       validateSopsFiles = true;
 
       secrets = {

@@ -1,7 +1,10 @@
 {inputs, ...}: let
   lib = inputs.nixpkgs.lib;
 in {
-  mkSystem = {hostname}: let
+  mkSystem = {
+    hostname,
+    username ? "hailst0rm",
+  }: let
     # --- Overlays (defined first so they can be used everywhere)
     overlays =
       [
@@ -15,35 +18,9 @@ in {
           (builtins.readDir ../overlays))
       );
 
-    # Evaluate the system configuration first (including Home Manager)
-    evaluatedSystem = lib.nixosSystem {
-      specialArgs = {
-        inherit inputs hostname;
-      };
-
-      modules = [
-        ../hosts/${hostname}/configuration.nix
-        inputs.home-manager.nixosModules.home-manager # Required for nixos evaluation
-      ];
-    };
-
-    # --- Extract values from the evaluated configuration
-
-    # Variables.nix
-    username = evaluatedSystem.config.username;
-    nixosDir = evaluatedSystem.config.nixosDir;
-    hostPlatform = evaluatedSystem.config.nixpkgs.hostPlatform.system;
-    myLocation = evaluatedSystem.config.myLocation;
-    laptop = evaluatedSystem.config.laptop;
-    redTools = evaluatedSystem.config.cyber.redTools.enable;
-    sops = evaluatedSystem.config.security.sops.enable;
-
-    # Graphic driver
-    nvidiaEnabled = evaluatedSystem.config.graphicDriver.nvidia.enable;
-
-    # Create pkgs-unstable using the detected host platform
+    # Create pkgs-unstable (all hosts are x86_64-linux)
     pkgs-unstable = import inputs.nixpkgs-unstable {
-      system = hostPlatform;
+      system = "x86_64-linux";
       config.allowUnfree = true;
       overlays = overlays;
     };
@@ -57,12 +34,17 @@ in {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
 
-          # Use dynamically extracted username
-          home-manager.users.${username} = import ../users/${username}/hosts/${hostname}.nix;
+          home-manager.users.${username} = {
+            imports = [../users/${username}/hosts/${hostname}.nix];
 
-          # Pass extracted config values (custom args passed to HM)
+            # Set identity values so HM modules can read config.hostname etc.
+            hostname = hostname;
+            username = username;
+          };
+
+          # Only pass what HM modules can't get from the module system
           home-manager.extraSpecialArgs = {
-            inherit inputs username hostname nixosDir hostPlatform myLocation laptop nvidiaEnabled redTools sops pkgs-unstable;
+            inherit inputs pkgs-unstable;
           };
         }
       ];
@@ -81,7 +63,6 @@ in {
           {
             nixpkgs.overlays =
               [
-                # inputs.hyprpanel.overlay
                 # Make pkgs-unstable available as pkgs.pkgs-unstable too
                 (_final: _prev: {
                   inherit pkgs-unstable;

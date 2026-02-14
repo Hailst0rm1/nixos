@@ -5,10 +5,11 @@
   ...
 }: let
   cfg = config.desktopEnvironment.name;
+  hasCosmicInput = inputs ? nixos-cosmic;
 in {
-  imports = [inputs.nixos-cosmic.nixosModules.default];
+  imports = lib.optionals hasCosmicInput [inputs.nixos-cosmic.nixosModules.default];
 
-  config = lib.mkIf (cfg == "cosmic") {
+  config = lib.mkIf (cfg == "cosmic" && hasCosmicInput) {
     nix.settings = {
       substituters = ["https://cosmic.cachix.org/"];
       trusted-public-keys = ["cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="];

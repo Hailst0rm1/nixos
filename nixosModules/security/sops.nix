@@ -19,7 +19,7 @@
     sops = {
       validateSopsFiles = true;
 
-      defaultSopsFile = ../../secrets/secrets.yaml;
+      defaultSopsFile = ../../secrets/${config.username}.yaml;
       defaultSopsFormat = "yaml";
       age = {
         # Automatically import host SSH-keys as Age-keys

@@ -1,8 +1,8 @@
-{...}: {
+{lib, ...}: {
   imports = [./default.nix];
 
   # Override only what's different from default
-  home.stateVersion = "24.11";
+  home.stateVersion = lib.mkForce "24.11";
 
   importConfig = {
     ssh.enable = false;

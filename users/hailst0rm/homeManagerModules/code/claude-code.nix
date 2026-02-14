@@ -138,7 +138,7 @@
       git # For git MCP server
 
       # Add companion package
-      (pkgs.callPackage ../../../../pkgs/companion/package.nix {})
+      companion
 
       # Claude Web launcher script
       (pkgs.writeShellScriptBin "claude-web" ''

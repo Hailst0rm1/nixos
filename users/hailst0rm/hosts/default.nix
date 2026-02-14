@@ -1,15 +1,7 @@
 {
-  pkgs,
   lib,
   config,
-  username,
-  hostname,
-  nixosDir,
-  hostPlatform,
-  myLocation,
-  laptop,
-  redTools,
-  sops,
+  osConfig,
   ...
 }: {
   imports =
@@ -27,21 +19,12 @@
 
   home = {
     stateVersion = "25.11";
-    username = lib.mkDefault "${config.username}";
+    username = lib.mkDefault config.username;
     homeDirectory = lib.mkDefault "/home/${config.username}";
     enableNixpkgsReleaseCheck = lib.mkDefault false;
   };
 
-  # NIXOS Variables.nix (inherited from system config)
-  username = username;
-  hostname = hostname;
-  nixosDir = nixosDir;
-  # Note: hostPlatform is available as a function argument, not set as an option
-  # Access it directly in your config where needed (e.g., hostPlatform)
-  myLocation = myLocation;
-  laptop = laptop;
-
-  # Variables.nix (mainly used for zsh-environment)
+  # Variables.nix defaults (mainly used for zsh-environment)
   terminal = lib.mkDefault "ghostty";
   shell = lib.mkDefault "zsh";
   editor = lib.mkDefault "hx";
@@ -57,7 +40,7 @@
     ssh.enable = lib.mkDefault true;
     yazi.enable = lib.mkDefault true;
     stylix.enable = lib.mkDefault true;
-    sops.enable = lib.mkDefault sops;
+    sops.enable = lib.mkDefault osConfig.security.sops.enable;
     zsh-history-sync.enable = lib.mkDefault true;
     hyprland = {
       enable = lib.mkDefault true;
@@ -145,7 +128,7 @@
   };
 
   cyber = {
+    redTools.enable = lib.mkDefault osConfig.cyber.redTools.enable;
     malwareAnalysis.enable = lib.mkDefault false;
-    redTools.enable = lib.mkDefault redTools;
   };
 }

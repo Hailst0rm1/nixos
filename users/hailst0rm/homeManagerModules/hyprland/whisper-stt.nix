@@ -5,7 +5,7 @@
   pkgs,
   lib,
   config,
-  nvidiaEnabled,
+  osConfig,
   ...
 }: let
   cfg = config.services.whisperStt;
@@ -13,13 +13,13 @@
 
   # Device selection based on NVIDIA availability
   device =
-    if nvidiaEnabled
+    if osConfig.graphicDriver.nvidia.enable
     then "cuda"
     else "cpu";
 
   # Compute type for optimal performance
   computeType =
-    if nvidiaEnabled
+    if osConfig.graphicDriver.nvidia.enable
     then "float16"
     else "int8";
 

@@ -1,19 +1,13 @@
 {
   config,
-  inputs,
   lib,
   ...
 }:
-# IMPORTANT: If you add changes here, you also need to add them in generators.nix so that HM inherits them
-# and in HM config so that they are defined in config
+# Shared options imported by both NixOS modules and Home Manager.
+# Values are set in each host's configuration.nix and propagated to HM
+# via generators.nix extraSpecialArgs or the module system.
 {
   options = {
-    # systemUsers = lib.mkOption {
-    #   type = lib.types.listOf lib.types.str;
-    #   default = [ "hailst0rm" ];
-    #   description = "The users for the system.";
-    # };
-
     username = lib.mkOption {
       type = lib.types.str;
       default = "hailst0rm";

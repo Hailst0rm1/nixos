@@ -3,7 +3,8 @@
   lib,
   pkgs,
   ...
-}:
+}
+:
 with lib; let
   cfg = config.services.companion;
 in {
@@ -19,7 +20,7 @@ in {
 
   config = mkIf cfg.enable {
     # Add companion to user packages
-    home.packages = [(pkgs.callPackage ../../../pkgs/companion/package.nix {})];
+    home.packages = [pkgs.companion];
 
     # Enable lingering so the service runs even when not logged in
     systemd.user.startServices = "sd-switch";
@@ -33,7 +34,7 @@ in {
 
       Service = {
         Type = "simple";
-        ExecStart = "${pkgs.callPackage ../../../pkgs/companion/package.nix {}}/bin/the-vibe-companion";
+        ExecStart = "${pkgs.companion}/bin/the-vibe-companion";
         Restart = "on-failure";
         RestartSec = "5s";
 

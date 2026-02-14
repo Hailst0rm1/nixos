@@ -5,7 +5,6 @@
   config,
   ...
 }: {
-  # environment.systemPackages = with pkgs; [(pkgs.callPackage "${self}/pkgs/companion/package.nix" {})];
   environment.systemPackages = [
   ];
   # services.udev.extraRules = ''

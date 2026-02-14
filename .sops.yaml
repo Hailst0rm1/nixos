@@ -7,7 +7,7 @@ keys:
     - &Nix-Workstation age1w6cuzu3nca36jjs9yxnlgxe58nveezmr3sk2p6u0uec5dx4jjq2qwm0u3j
     - &Nix-Server age12s9z4uykm6pkad70d0wtkmrxrvjddp2catyu2slq0vpzts7uky7q2k2nre
 creation_rules:
-  - path_regex: secrets/secrets.yaml$
+  - path_regex: secrets/hailst0rm\.yaml$
     key_groups:
     - age:
       - *master
