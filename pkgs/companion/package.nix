@@ -38,7 +38,7 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-o0Xa6RZ3z5yu0C3hO/dtdo9H0HFGvzyti4PDnpZ28yo=";
+    outputHash = "sha256-00uzKiv9BKUpoEm6E5B6eWDXniimUoOdeSLiHL1Ez9w=";
   };
 in
   stdenv.mkDerivation rec {

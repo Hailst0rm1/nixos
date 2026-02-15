@@ -6,6 +6,7 @@ SLIVER_MTLS_PORT=8888
 SLIVER_HTTP_PORT=80
 SLIVER_HTTPS_PORT=443
 EXFIL_HTTP_PORT=8080
+EXFIL_SMB_PORT=445
 PYTHON_HTTP_PORT=80
 
 # Colors
@@ -22,6 +23,7 @@ show_help() {
   echo -e "${BLUE}Sliver HTTP:${NC}           0.0.0.0:${SLIVER_HTTP_PORT}"
   echo -e "${BLUE}Sliver HTTPS:${NC}          0.0.0.0:${SLIVER_HTTPS_PORT}"
   echo -e "${BLUE}HTTP Exfil Server:${NC}     0.0.0.0:${EXFIL_HTTP_PORT}"
+  echo -e "${BLUE}SMB Exfil Server:${NC}      0.0.0.0:${EXFIL_SMB_PORT}"
   echo -e "${BLUE}Python HTTP Server:${NC}    0.0.0.0:${PYTHON_HTTP_PORT}"
   echo -e "${GREEN}===================================${NC}"
   echo ""
@@ -79,6 +81,11 @@ EXFIL_DIR="/home/hailst0rm/Documents/Exfiltration"
 mkdir -p "$EXFIL_DIR"
 run_ghostty "Starting HTTP Exfiltration server (port ${EXFIL_HTTP_PORT})... ($EXFIL_DIR)" \
   "httpuploadexfil :${EXFIL_HTTP_PORT} $EXFIL_DIR"
+
+# Start SMB server
+SMB_DIR="/home/hailst0rm/cyber/postex-tools/payloads"
+run_ghostty "Starting SMB server (port ${EXFIL_SMB_PORT})... ($SMB_DIR)" \
+  "sudo smbserver.py CompanyShare $SMB_DIR -smb2support -username share_user -password Passw0rd!"
 
 # Start Python HTTP server
 HTTP_DIR="/home/hailst0rm/cyber/postex-tools/payloads"
