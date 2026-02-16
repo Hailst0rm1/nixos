@@ -112,6 +112,7 @@ in {
         caido # Burp alternative in rust
         chromium # For Caido
         sqlmap # SQL Injection
+        # beekeeper-studio # SQL GUI client (impure)
         wpscan # Wordpress scanner
         httpx # Check which hosts are alive, and fingerprint them
         katana # Web crawler

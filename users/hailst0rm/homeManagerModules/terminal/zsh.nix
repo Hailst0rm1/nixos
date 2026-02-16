@@ -78,7 +78,7 @@
         ldocker = "lazydocker";
         ljournal = "lazyjournal";
         du = "dust";
-        top = "bottom";
+        # top = "bottom";
         pss = "procs";
         diff = "difft";
       };
