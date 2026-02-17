@@ -28,6 +28,8 @@ in {
   myLocation = "Barkarby";
   cyber.redTools.enable = true;
 
+  services.openssh.enable = true;
+
   # Graphics - Intel iGPU + NVIDIA dGPU with PRIME sync
   graphicDriver.intel = {
     enable = true;

@@ -27,6 +27,8 @@ in {
   myLocation = "Barkarby";
   cyber.redTools.enable = true;
 
+  services.openssh.enable = true;
+
   # graphic
   graphicDriver.intel = {
     enable = true;
