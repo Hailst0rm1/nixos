@@ -104,6 +104,7 @@
       # exitNode = lib.mkDefault "nix-server";
       exitNodeAllowLanAccess = lib.mkDefault true;
     };
+    nas.enable = lib.mkDefault false;
   };
 
   # Allow unfree software

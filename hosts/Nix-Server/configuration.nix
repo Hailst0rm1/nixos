@@ -384,6 +384,22 @@
       enable = true;
       port = 8443;
     };
+
+    nas = {
+      enable = false;
+      # Run: ls /dev/disk/by-id/ and paste your external SSD's ID below
+      diskId = ""; # e.g. "usb-Samsung_Portable_SSD_T7_XXXXXXXXXX-0:0"
+      fsType = "ext4"; # or "zfs" for snapshots/checksums
+      mountPoint = "/mnt/nas";
+      shareName = "files";
+      shareComment = "NAS file share";
+      allowedSubnets = [
+        "192.168.0.0/24" # LAN
+        "100.64.0.0/10" # Tailscale CGNAT range
+      ];
+      workgroup = "WORKGROUP";
+      readOnly = false;
+    };
   };
 
   users.users.${config.username}.linger = true;
