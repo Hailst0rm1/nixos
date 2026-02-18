@@ -30,7 +30,7 @@ in {
   services.openssh.enable = true;
 
   services.nas.client = {
-    enable = false;
+    enable = true;
     serverHost = "nix-server"; # Tailscale MagicDNS hostname (or use 100.x.x.x IP)
     shareName = "files";
     mountPoint = "/mnt/nas";

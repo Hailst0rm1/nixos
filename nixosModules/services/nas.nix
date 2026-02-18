@@ -19,12 +19,6 @@
       description = "Stable disk ID from /dev/disk/by-id/ (ls /dev/disk/by-id/).";
     };
 
-    fsType = mkOption {
-      type = types.enum ["ext4" "zfs" "btrfs"];
-      default = "ext4";
-      description = "Filesystem type of the external SSD.";
-    };
-
     workgroup = mkOption {
       type = types.str;
       default = "WORKGROUP";
@@ -53,14 +47,6 @@
       type = types.bool;
       default = false;
       description = "Whether the share is read-only.";
-    };
-
-    zfs = {
-      autoScrub = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Enable periodic ZFS scrub (only relevant when fsType = zfs).";
-      };
     };
 
     client = {
@@ -101,12 +87,18 @@
         mode = "0400";
       };
 
-      # Set/update the Samba password on every activation, after sops decrypts it
-      system.activationScripts.samba-password = {
-        deps = ["sops"];
-        text = ''
+      # Set/update the Samba password after smbd is running (secrets.tdb must exist)
+      systemd.services.samba-password = {
+        description = "Set Samba user password from sops secret";
+        after = ["samba-smbd.service"];
+        requires = ["samba-smbd.service"];
+        wantedBy = ["multi-user.target"];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
           SMB_PASS=$(cat ${config.sops.secrets."passwords/nas-password".path})
-          # Try to add user (first boot); fall back to updating if already exists
           echo -e "$SMB_PASS\n$SMB_PASS" | ${pkgs.samba}/bin/smbpasswd -L -s -a ${config.username} || \
           echo -e "$SMB_PASS\n$SMB_PASS" | ${pkgs.samba}/bin/smbpasswd -L -s ${config.username}
         '';
@@ -115,13 +107,9 @@
       # ── Filesystem ──────────────────────────────────────────────────────────
       fileSystems.${config.services.nas.mountPoint} = lib.mkIf (config.services.nas.diskId != "") {
         device = "/dev/disk/by-id/${config.services.nas.diskId}";
-        fsType = config.services.nas.fsType;
+        fsType = "ext4";
         options = ["defaults" "nofail"]; # nofail: don't panic if drive is absent at boot
       };
-
-      # ── ZFS (only when fsType = zfs) ──────────────────────────────────────
-      boot.supportedFilesystems = lib.mkIf (config.services.nas.fsType == "zfs") ["zfs"];
-      services.zfs.autoScrub.enable = lib.mkIf (config.services.nas.fsType == "zfs") config.services.nas.zfs.autoScrub;
 
       # ── Samba ─────────────────────────────────────────────────────────────
       services.samba = {
