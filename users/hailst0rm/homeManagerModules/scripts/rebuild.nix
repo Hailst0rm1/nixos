@@ -99,7 +99,13 @@
       ${lib.optionalString checkRemote ''
         # Fetch remote changes to check if we're behind
         echo -e "''${BLUE}📡 Fetching remote changes...''${RESET}"
-        git fetch origin master --quiet
+        if ! git fetch origin master --quiet 2>/dev/null; then
+          echo -e "''${YELLOW}⚠️  Fetch failed, pruning stale refs and retrying...''${RESET}"
+          git remote prune origin
+          git fetch origin master --quiet || {
+            echo -e "''${RED}❌ Failed to fetch remote changes. Continuing with local state.''${RESET}"
+          }
+        fi
         LOCAL=$(git rev-parse HEAD)
         REMOTE=$(git rev-parse origin/master)
 

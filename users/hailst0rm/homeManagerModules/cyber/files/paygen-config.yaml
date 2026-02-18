@@ -1,6 +1,5 @@
 # Paygen Configuration Files
 recipes_dir: /mnt/nas/Code/paygen-recipes/recipes
-templates_dir: /mnt/nas/Code/paygen-recipes/templates
 preprocessors_dir: /mnt/nas/Code/paygen-recipes/preprocessors
 ps_obfuscation_yaml: /mnt/nas/Code/paygen-recipes/ps-obfuscation.yaml
 ps_features_yaml: /mnt/nas/Code/paygen-recipes/ps-features.yaml
