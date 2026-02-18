@@ -163,43 +163,22 @@
 
       environment.systemPackages = [pkgs.cifs-utils];
 
-      # Create mount point if it doesn't exist
-      systemd.tmpfiles.rules = [
-        "d ${config.services.nas.client.mountPoint} 0755 root root -"
-      ];
-
-      # On-demand automount — only mounts when the path is accessed
-      systemd.automounts = [
-        {
-          wantedBy = ["multi-user.target"];
-          automountConfig.TimeoutIdleSec = config.services.nas.client.idleTimeoutSec;
-          where = config.services.nas.client.mountPoint;
-        }
-      ];
-
-      systemd.mounts = [
-        {
-          description = "NAS share (//${config.services.nas.client.serverHost}/${config.services.nas.client.shareName})";
-          what = "//${config.services.nas.client.serverHost}/${config.services.nas.client.shareName}";
-          where = config.services.nas.client.mountPoint;
-          type = "cifs";
-          options = lib.concatStringsSep "," [
-            "credentials=${config.sops.secrets."passwords/nas-client".path}"
-            "uid=1000"
-            "gid=100"
-            "iocharset=utf8"
-            "vers=3.0"
-            "_netdev" # treat as network fs: mount after network is up
-            "nofail" # don't block boot if server is unreachable
-            "x-systemd.automount"
-            "x-systemd.idle-timeout=${config.services.nas.client.idleTimeoutSec}"
-          ];
-          wantedBy = ["multi-user.target"];
-          # Give Tailscale time to establish before trying to mount
-          after = ["network-online.target" "tailscaled.service"];
-          wants = ["network-online.target"];
-        }
-      ];
+      fileSystems.${config.services.nas.client.mountPoint} = {
+        device = "//${config.services.nas.client.serverHost}/${config.services.nas.client.shareName}";
+        fsType = "cifs";
+        options = [
+          "credentials=${config.sops.secrets."passwords/nas-client".path}"
+          "uid=1000"
+          "gid=100"
+          "iocharset=utf8"
+          "vers=3.0"
+          "_netdev"
+          "nofail"
+          "x-systemd.automount"
+          "x-systemd.idle-timeout=${config.services.nas.client.idleTimeoutSec}"
+          "x-systemd.after=tailscaled.service"
+        ];
+      };
     })
   ];
 }
