@@ -1,10 +1,10 @@
 # Paygen Configuration Files
-recipes_dir: ~/cyber/paygen/recipes
-templates_dir: ~/cyber/paygen/templates
-preprocessors_dir: ~/cyber/paygen/preprocessors
-ps_obfuscation_yaml: ~/cyber/paygen/ps-obfuscation.yaml
-ps_features_yaml: ~/cyber/paygen/ps-features.yaml
-shellcodes_config: ~/cyber/paygen/shellcodes.yaml
+recipes_dir: /mnt/nas/Code/paygen-recipes/recipes
+templates_dir: /mnt/nas/Code/paygen-recipes/templates
+preprocessors_dir: /mnt/nas/Code/paygen-recipes/preprocessors
+ps_obfuscation_yaml: /mnt/nas/Code/paygen-recipes/ps-obfuscation.yaml
+ps_features_yaml: /mnt/nas/Code/paygen-recipes/ps-features.yaml
+shellcodes_config: /mnt/nas/Code/paygen-recipes/shellcodes.yaml
 output_dir: ~/cyber/postex-tools/payloads
 
 # Build preferences

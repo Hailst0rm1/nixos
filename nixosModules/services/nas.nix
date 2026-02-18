@@ -151,6 +151,9 @@
         publish.userServices = true;
         openFirewall = true;
       };
+
+      nixosDir = "${config.services.nas.client.mountPoint}/NixOS";
+      nixosDirFallback = "/home/${config.username}/.nixos";
     })
 
     # ── CLIENT (laptops/workstations) ─────────────────────────────────────
