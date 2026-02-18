@@ -30,6 +30,14 @@ in {
 
   services.openssh.enable = true;
 
+  services.nas.client = {
+    enable = false;
+    serverHost = "nix-server"; # Tailscale MagicDNS hostname (or use 100.x.x.x IP)
+    shareName = "files";
+    mountPoint = "/mnt/nas";
+    idleTimeoutSec = "600";
+  };
+
   # Graphics - Intel iGPU + NVIDIA dGPU with PRIME sync
   graphicDriver.intel = {
     enable = true;

@@ -62,59 +62,156 @@
         description = "Enable periodic ZFS scrub (only relevant when fsType = zfs).";
       };
     };
-  };
 
-  config = lib.mkIf config.services.nas.enable {
-    # ── Filesystem ──────────────────────────────────────────────────────────
-    fileSystems.${config.services.nas.mountPoint} = lib.mkIf (config.services.nas.diskId != "") {
-      device = "/dev/disk/by-id/${config.services.nas.diskId}";
-      fsType = config.services.nas.fsType;
-      options = ["defaults" "nofail"]; # nofail: don't panic if drive is absent at boot
-    };
+    client = {
+      enable = mkEnableOption "Automount the NAS share from a client machine via CIFS/SMB";
 
-    # ── ZFS (only when fsType = zfs) ────────────────────────────────────────
-    boot.supportedFilesystems = lib.mkIf (config.services.nas.fsType == "zfs") ["zfs"];
-    services.zfs.autoScrub.enable = lib.mkIf (config.services.nas.fsType == "zfs") config.services.nas.zfs.autoScrub;
+      serverHost = mkOption {
+        type = types.str;
+        default = "nix-server";
+        description = "Hostname or IP of the NAS server (Tailscale hostname works with MagicDNS).";
+      };
 
-    # ── Samba ───────────────────────────────────────────────────────────────
-    services.samba = {
-      enable = true;
-      package = pkgs.samba4Full; # includes avahi/mDNS for autodiscovery
-      openFirewall = true;
-      settings = {
-        global = {
-          workgroup = config.services.nas.workgroup;
-          security = "user";
-          "server smb encrypt" = "required";
-          "server min protocol" = "SMB3_00";
-          "hosts allow" = "${lib.concatStringsSep " " config.services.nas.allowedSubnets} 127.0.0.1";
-          "hosts deny" = "0.0.0.0/0";
-        };
-        ${config.services.nas.shareName} = {
-          path = config.services.nas.mountPoint;
-          comment = config.services.nas.shareComment;
-          browseable = "yes";
-          "read only" = lib.boolToString config.services.nas.readOnly;
-          "guest ok" = "no";
-          "create mask" = "0644";
-          "directory mask" = "0755";
-          "valid users" = config.username;
-        };
+      shareName = mkOption {
+        type = types.str;
+        default = "files";
+        description = "Name of the Samba share to mount.";
+      };
+
+      mountPoint = mkOption {
+        type = types.str;
+        default = "/mnt/nas";
+        description = "Local path where the share will be automounted.";
+      };
+
+      idleTimeoutSec = mkOption {
+        type = types.str;
+        default = "600";
+        description = "Unmount the share after this many seconds of inactivity (0 = never).";
       };
     };
-
-    # ── Samba-WSDD (Windows Service Discovery) ──────────────────────────────
-    services.samba-wsdd = {
-      enable = true;
-      openFirewall = true;
-    };
-
-    # ── Avahi / mDNS autodiscovery ──────────────────────────────────────────
-    services.avahi = {
-      enable = true;
-      publish.enable = true;
-      publish.userServices = true;
-      openFirewall = true;
-    };
   };
+
+  config = lib.mkMerge [
+    # ── SERVER ───────────────────────────────────────────────────────────────
+    (lib.mkIf config.services.nas.enable {
+      # ── Samba password via sops ────────────────────────────────────────────
+      sops.secrets."passwords/nas-password" = {
+        owner = "root";
+        mode = "0400";
+      };
+
+      # Set/update the Samba password on every activation, after sops decrypts it
+      system.activationScripts.samba-password = {
+        deps = ["sops"];
+        text = ''
+          SMB_PASS=$(cat ${config.sops.secrets."passwords/nas-password".path})
+          # Try to add user (first boot); fall back to updating if already exists
+          echo -e "$SMB_PASS\n$SMB_PASS" | ${pkgs.samba}/bin/smbpasswd -L -s -a ${config.username} || \
+          echo -e "$SMB_PASS\n$SMB_PASS" | ${pkgs.samba}/bin/smbpasswd -L -s ${config.username}
+        '';
+      };
+
+      # ── Filesystem ──────────────────────────────────────────────────────────
+      fileSystems.${config.services.nas.mountPoint} = lib.mkIf (config.services.nas.diskId != "") {
+        device = "/dev/disk/by-id/${config.services.nas.diskId}";
+        fsType = config.services.nas.fsType;
+        options = ["defaults" "nofail"]; # nofail: don't panic if drive is absent at boot
+      };
+
+      # ── ZFS (only when fsType = zfs) ──────────────────────────────────────
+      boot.supportedFilesystems = lib.mkIf (config.services.nas.fsType == "zfs") ["zfs"];
+      services.zfs.autoScrub.enable = lib.mkIf (config.services.nas.fsType == "zfs") config.services.nas.zfs.autoScrub;
+
+      # ── Samba ─────────────────────────────────────────────────────────────
+      services.samba = {
+        enable = true;
+        package = pkgs.samba4Full; # includes avahi/mDNS for autodiscovery
+        openFirewall = true;
+        settings = {
+          global = {
+            workgroup = config.services.nas.workgroup;
+            security = "user";
+            "server smb encrypt" = "required";
+            "server min protocol" = "SMB3_00";
+            "hosts allow" = "${lib.concatStringsSep " " config.services.nas.allowedSubnets} 127.0.0.1";
+            "hosts deny" = "0.0.0.0/0";
+          };
+          ${config.services.nas.shareName} = {
+            path = config.services.nas.mountPoint;
+            comment = config.services.nas.shareComment;
+            browseable = "yes";
+            "read only" = lib.boolToString config.services.nas.readOnly;
+            "guest ok" = "no";
+            "create mask" = "0644";
+            "directory mask" = "0755";
+            "valid users" = config.username;
+          };
+        };
+      };
+
+      # ── Samba-WSDD (Windows Service Discovery) ────────────────────────────
+      services.samba-wsdd = {
+        enable = true;
+        openFirewall = true;
+      };
+
+      # ── Avahi / mDNS autodiscovery ────────────────────────────────────────
+      services.avahi = {
+        enable = true;
+        publish.enable = true;
+        publish.userServices = true;
+        openFirewall = true;
+      };
+    })
+
+    # ── CLIENT (laptops/workstations) ─────────────────────────────────────
+    (lib.mkIf config.services.nas.client.enable {
+      # Credentials file: username=... / password=... kept in sops
+      sops.secrets."passwords/nas-client" = {
+        owner = "root";
+        mode = "0400";
+      };
+
+      environment.systemPackages = [pkgs.cifs-utils];
+
+      # Create mount point if it doesn't exist
+      systemd.tmpfiles.rules = [
+        "d ${config.services.nas.client.mountPoint} 0755 root root -"
+      ];
+
+      # On-demand automount — only mounts when the path is accessed
+      systemd.automounts = [
+        {
+          wantedBy = ["multi-user.target"];
+          automountConfig.TimeoutIdleSec = config.services.nas.client.idleTimeoutSec;
+          where = config.services.nas.client.mountPoint;
+        }
+      ];
+
+      systemd.mounts = [
+        {
+          description = "NAS share (//${config.services.nas.client.serverHost}/${config.services.nas.client.shareName})";
+          what = "//${config.services.nas.client.serverHost}/${config.services.nas.client.shareName}";
+          where = config.services.nas.client.mountPoint;
+          type = "cifs";
+          options = lib.concatStringsSep "," [
+            "credentials=${config.sops.secrets."passwords/nas-client".path}"
+            "uid=1000"
+            "gid=100"
+            "iocharset=utf8"
+            "vers=3.0"
+            "_netdev" # treat as network fs: mount after network is up
+            "nofail" # don't block boot if server is unreachable
+            "x-systemd.automount"
+            "x-systemd.idle-timeout=${config.services.nas.client.idleTimeoutSec}"
+          ];
+          wantedBy = ["multi-user.target"];
+          # Give Tailscale time to establish before trying to mount
+          after = ["network-online.target" "tailscaled.service"];
+          wants = ["network-online.target"];
+        }
+      ];
+    })
+  ];
 }
