@@ -47,9 +47,9 @@
             style = 'plain'
 
             [blocks.segments.properties]
-              branch_icon = ''
+              branch_icon = ${"''"}
               commit_icon = '⦿'
-              fetch_status = true
+              fetch_status = false
 
         [[blocks]]
           type = 'rprompt'

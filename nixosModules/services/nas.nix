@@ -179,6 +179,10 @@
           "x-systemd.after=tailscaled.service"
         ];
       };
+
+      # Point nixosDir to the NAS copy, keep local as fallback
+      nixosDir = "${config.services.nas.client.mountPoint}/NixOS";
+      nixosDirFallback = "/home/${config.username}/.nixos";
     })
   ];
 }

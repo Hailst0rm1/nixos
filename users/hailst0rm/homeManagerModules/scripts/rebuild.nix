@@ -74,8 +74,14 @@
         esac
       done
 
-      # cd to your config dir
-      pushd ${config.nixosDir} >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to change directory to config!''${RESET}" && exit 1; }
+      # cd to config dir (prefer primary, fall back if unreachable)
+      NIXOS_DIR="${config.nixosDir}"
+      NIXOS_DIR_FALLBACK="${config.nixosDirFallback}"
+      if [ ! -d "$NIXOS_DIR/hosts" ]; then
+        echo -e "''${YELLOW}⚠️  Primary config dir ($NIXOS_DIR) unreachable, using fallback ($NIXOS_DIR_FALLBACK)''${RESET}"
+        NIXOS_DIR="$NIXOS_DIR_FALLBACK"
+      fi
+      pushd "$NIXOS_DIR" >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to change directory to config!''${RESET}" && exit 1; }
 
       # Test GitHub connectivity
       echo -e "''${CYAN}🌐 Testing GitHub connectivity...''${RESET}"
@@ -144,6 +150,9 @@
       echo ""
       echo -e "''${GREEN}''${BOLD}🔨 ${buildingMsg}...''${RESET}"
       notify-send -e "${notifyName}" "${buildingMsg} for ${config.hostname}..." --icon=system-software-update 2>/dev/null
+
+      # Ensure nh uses the resolved directory
+      export NH_FLAKE="$NIXOS_DIR"
 
       if [ "$use_legacy" = true ]; then
         echo -e "''${YELLOW}📦 Using legacy nixos-rebuild...''${RESET}"
