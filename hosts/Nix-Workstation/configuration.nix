@@ -34,7 +34,7 @@ in {
     serverHost = "nix-server"; # Tailscale MagicDNS hostname (or use 100.x.x.x IP)
     shareName = "files";
     mountPoint = "/mnt/nas";
-    idleTimeoutSec = "600";
+    idleTimeoutSec = "0";
   };
 
   # graphic

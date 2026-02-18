@@ -131,4 +131,16 @@
     redTools.enable = lib.mkDefault osConfig.cyber.redTools.enable;
     malwareAnalysis.enable = lib.mkDefault false;
   };
+
+  # GTK / Nautilus sidebar bookmarks
+  gtk.enable = true;
+  gtk.gtk3.bookmarks =
+    [
+      "file://${config.home.homeDirectory}/Documents"
+      "file://${config.home.homeDirectory}/Pictures"
+      "file://${config.home.homeDirectory}/Downloads"
+    ]
+    ++ lib.optionals osConfig.services.nas.client.enable [
+      "file://${osConfig.services.nas.client.mountPoint} NAS"
+    ];
 }
