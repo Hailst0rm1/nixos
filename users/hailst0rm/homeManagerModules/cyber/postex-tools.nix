@@ -91,6 +91,35 @@
     '';
   };
 
+  printSpoofer = pkgs.stdenv.mkDerivation {
+    pname = "printSpoofer";
+    version = "latest";
+    src = pkgs.fetchurl {
+      url = "https://github.com/k4sth4/PrintSpoofer/raw/refs/heads/main/PrintSpoofer.exe";
+      sha256 = "sha256-nW+Cx1uQz61JB89OuOwe1XshclokJX9ESvRtnEhroMs=";
+    };
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/PrintSpoofer.exe
+    '';
+  };
+
+  simpleAspxWebshell = pkgs.stdenv.mkDerivation {
+    pname = "simple-aspx-webshell";
+    version = "latest";
+    src = pkgs.fetchurl {
+      name = "aspx-shell.aspx";
+      url = "https://raw.githubusercontent.com/xl7dev/WebShell/refs/heads/master/Aspx/ASPX%20Shell.aspx";
+      sha256 = "sha256-rxwAaWJD+LBipT2tn7i3c/ofA5VjH/5sfezELEfu3uc=";
+    };
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/simple-aspx-webshell.aspx
+    '';
+  };
+
   adPEAS-Light = pkgs.stdenv.mkDerivation {
     # adPEAS-Light (all modules without sharphound)
     pname = "adPEAS-Light";
@@ -123,6 +152,7 @@ in {
         cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
         cp -f ${sigmaPotato}/SigmaPotato.exe "${config.home.homeDirectory}/cyber/postex-tools/SigmaPotato.exe"
         cp -f ${adPEAS-Light}/adPEAS-Light.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS-Light.ps1"
+        cp -f ${printSpoofer}/PrintSpoofer.exe "${config.home.homeDirectory}/cyber/postex-tools/PrintSpoofer.exe"
         cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"
         cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
         cp -f ${builtins.toPath ./files/Disable-AVProduct.min.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Disable-AVProduct.min.ps1"
@@ -130,6 +160,7 @@ in {
         cp -f ${builtins.toPath ./files/Get-AppLockerRules.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Get-AppLockerRules.ps1"
 
         cp -f ${builtins.toPath ./files/php-webshell.php} "${config.home.homeDirectory}/cyber/postex-tools/payloads/php-webshell.php"
+        cp -f ${simpleAspxWebshell}/simple-aspx-webshell.aspx "${config.home.homeDirectory}/cyber/postex-tools/payloads/simple-aspx-webshell.aspx"
       '';
 
       packages = with pkgs-unstable; [
