@@ -402,13 +402,31 @@
 
   services.syncthing-sync = {
     enable = true;
-    role = "server";
-    deviceIds = {
-      server = "BLUYDNF-PSX5QVQ-Y7KIB6W-R5PNVRU-DVILTCP-5JFF6GY-ZY537VM-BVB3JAG";
-      workstation = "JYSSQ45-2FX47AF-JI6TW6H-GAUZUCP-ZGZTOSV-DEDARIY-ZVNPF3E-LHK7IQB";
-      laptop = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+    folders = {
+      "nixos-config" = {
+        label = "NixOS Config";
+        path = "/mnt/nas/NixOS";
+        stignore = ''
+          .claude
+          .direnv
+          result
+        '';
+      };
+      "code" = {
+        label = "Code Projects";
+        path = "/mnt/nas/Code";
+      };
+      "wiki" = {
+        label = "Wiki / Notes";
+        path = "/mnt/nas/wiki";
+      };
     };
   };
+
+  # Symlink ~/.nixos → /mnt/nas/NixOS so server has nixos-config at both paths
+  systemd.tmpfiles.rules = [
+    "L+ /home/${config.username}/.nixos - - - - /mnt/nas/NixOS"
+  ];
 
   users.users.${config.username}.linger = true;
 }

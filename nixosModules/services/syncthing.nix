@@ -7,56 +7,75 @@
   username = config.username;
   homeDir = "/home/${username}";
 
-  allDevices = {
-    "Nix-Server" = {
-      id = cfg.deviceIds.server;
-      addresses = ["tcp://nix-server:22000"];
-    };
-    "Nix-Workstation" = {
-      id = cfg.deviceIds.workstation;
-      addresses = ["tcp://nix-workstation:22000"];
-    };
-    "Nix-Laptop" = {
-      id = cfg.deviceIds.laptop;
-      addresses = ["tcp://nix-laptop:22000"];
-    };
-  };
-
   placeholderId = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
-  otherDevices = lib.filterAttrs (name: dev: name != config.hostname && dev.id != placeholderId) allDevices;
+  otherDevices = lib.filterAttrs (name: dev: name != config.hostname && dev.id != placeholderId) cfg.devices;
   otherDeviceNames = lib.attrNames otherDevices;
 
-  isServer = cfg.role == "server";
-
-  nixosConfigPath =
-    if isServer
-    then "/mnt/nas/NixOS"
-    else "${homeDir}/.nixos";
+  foldersWithStignore = lib.filterAttrs (_: f: f.stignore != "") cfg.folders;
+  foldersWithEnsureDir = lib.filterAttrs (_: f: f.ensureDir) cfg.folders;
 in {
   options.services.syncthing-sync = with lib; {
     enable = mkEnableOption "Syncthing file synchronization across machines";
 
-    role = mkOption {
-      type = types.enum ["server" "client"];
-      description = "Whether this machine is the always-on server or a client.";
+    devices = mkOption {
+      type = types.attrsOf (types.submodule {
+        options = {
+          id = mkOption {
+            type = types.str;
+            description = "Syncthing device ID.";
+          };
+          addresses = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = "Transport addresses (e.g. tcp://hostname:22000). Empty uses discovery.";
+          };
+          autoAcceptFolders = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Whether to auto-accept folder invitations from this device.";
+          };
+        };
+      });
+      default = {};
+      description = "Syncthing peer devices, keyed by hostname.";
     };
 
-    deviceIds = {
-      server = mkOption {
-        type = types.str;
-        default = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
-        description = "Syncthing device ID for Nix-Server.";
-      };
-      workstation = mkOption {
-        type = types.str;
-        default = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
-        description = "Syncthing device ID for Nix-Workstation.";
-      };
-      laptop = mkOption {
-        type = types.str;
-        default = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
-        description = "Syncthing device ID for Nix-Laptop.";
-      };
+    folders = mkOption {
+      type = types.attrsOf (types.submodule {
+        options = {
+          label = mkOption {
+            type = types.str;
+            default = "";
+            description = "Human-readable folder label.";
+          };
+          path = mkOption {
+            type = types.str;
+            description = "Local path for this synced folder.";
+          };
+          devices = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = "Device names to share with. Empty means all other devices.";
+          };
+          type = mkOption {
+            type = types.enum ["sendreceive" "sendonly" "receiveonly" "receiveencrypted"];
+            default = "sendreceive";
+            description = "Folder sync type.";
+          };
+          stignore = mkOption {
+            type = types.lines;
+            default = "";
+            description = "Contents of the .stignore file for this folder. Empty means no managed .stignore.";
+          };
+          ensureDir = mkOption {
+            type = types.bool;
+            default = true;
+            description = "Whether to create the folder path via tmpfiles.rules.";
+          };
+        };
+      });
+      default = {};
+      description = "Syncthing folders to synchronize, keyed by folder ID.";
     };
 
     guiPort = mkOption {
@@ -82,37 +101,19 @@ in {
 
         devices =
           lib.mapAttrs (_name: dev: {
-            inherit (dev) id addresses;
-            autoAcceptFolders = false;
+            inherit (dev) id addresses autoAcceptFolders;
           })
           otherDevices;
 
-        folders = {
-          "nixos-config" = {
-            label = "NixOS Config";
-            path = nixosConfigPath;
-            devices = otherDeviceNames;
-            type = "sendreceive";
-          };
-          "code" = {
-            label = "Code Projects";
-            path =
-              if isServer
-              then "/mnt/nas/Code"
-              else "${homeDir}/Code";
-            devices = otherDeviceNames;
-            type = "sendreceive";
-          };
-          "wiki" = {
-            label = "Wiki / Notes";
-            path =
-              if isServer
-              then "/mnt/nas/wiki"
-              else "${homeDir}/Documents/wiki";
-            devices = otherDeviceNames;
-            type = "sendreceive";
-          };
-        };
+        folders =
+          lib.mapAttrs (_id: folder: {
+            inherit (folder) label path type;
+            devices =
+              if folder.devices == []
+              then otherDeviceNames
+              else folder.devices;
+          })
+          cfg.folders;
       };
     };
 
@@ -124,40 +125,37 @@ in {
 
     # Ensure target directories exist
     systemd.tmpfiles.rules =
-      if isServer
-      then [
-        "d /mnt/nas/NixOS 0755 ${username} users -"
-        "d /mnt/nas/Code 0755 ${username} users -"
-        "d /mnt/nas/wiki 0755 ${username} users -"
-      ]
-      else [
-        "d ${homeDir}/Code 0755 ${username} users -"
-        "d ${homeDir}/Documents/wiki 0755 ${username} users -"
-      ];
+      lib.mapAttrsToList (_id: folder: "d ${folder.path} 0755 ${username} users -")
+      foldersWithEnsureDir;
 
-    # Declarative .stignore for nixos-config folder (avoids REST API race)
-    environment.etc."syncthing-stignore-nixos-config".text = ''
-      .claude
-      .direnv
-      result
-    '';
-    systemd.services.syncthing-stignore = {
-      description = "Place .stignore file for Syncthing nixos-config folder";
-      after = ["syncthing.service"];
-      wantedBy = ["multi-user.target"];
-      serviceConfig = {
-        Type = "oneshot";
-        User = username;
-        Group = "users";
-        RemainAfterExit = true;
-      };
-      script = ''
-        target="${nixosConfigPath}/.stignore"
-        source="/etc/syncthing-stignore-nixos-config"
-        if [ ! -f "$target" ] || ! diff -q "$source" "$target" > /dev/null 2>&1; then
-          cp "$source" "$target"
-        fi
-      '';
-    };
+    # Declarative .stignore files
+    environment.etc = lib.mapAttrs' (id: folder:
+      lib.nameValuePair "syncthing-stignore-${id}" {
+        text = folder.stignore;
+      })
+    foldersWithStignore;
+
+    systemd.services = lib.mapAttrs' (id: folder:
+      lib.nameValuePair "syncthing-stignore-${id}" {
+        description = "Place .stignore for Syncthing folder '${id}'";
+        after = ["syncthing.service"];
+        wantedBy = ["multi-user.target"];
+        serviceConfig = {
+          Type = "oneshot";
+          User = username;
+          Group = "users";
+          RemainAfterExit = true;
+        };
+        script = ''
+          target="${folder.path}/.stignore"
+          source="/etc/syncthing-stignore-${id}"
+          if [ ! -f "$target" ] || ! diff -q "$source" "$target" > /dev/null 2>&1; then
+            rm -f "$target"
+            cp "$source" "$target"
+            chmod 0644 "$target"
+          fi
+        '';
+      })
+    foldersWithStignore;
   };
 }

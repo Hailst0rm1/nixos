@@ -105,6 +105,24 @@
       exitNodeAllowLanAccess = lib.mkDefault true;
     };
     nas.enable = lib.mkDefault false;
+
+    syncthing-sync = {
+      enable = lib.mkDefault false;
+      devices = {
+        "Nix-Server" = {
+          id = lib.mkDefault "BLUYDNF-PSX5QVQ-Y7KIB6W-R5PNVRU-DVILTCP-5JFF6GY-ZY537VM-BVB3JAG";
+          addresses = lib.mkDefault ["tcp://nix-server:22000"];
+        };
+        "Nix-Workstation" = {
+          id = lib.mkDefault "JYSSQ45-2FX47AF-JI6TW6H-GAUZUCP-ZGZTOSV-DEDARIY-ZVNPF3E-LHK7IQB";
+          addresses = lib.mkDefault ["tcp://nix-workstation:22000"];
+        };
+        "Nix-Laptop" = {
+          id = lib.mkDefault "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+          addresses = lib.mkDefault ["tcp://nix-laptop:22000"];
+        };
+      };
+    };
   };
 
   # Allow unfree software
