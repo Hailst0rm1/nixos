@@ -419,11 +419,9 @@
     };
   };
 
-  # Symlink ~/.nixos → NAS so day-to-day usage works normally.
+  # Point nixosDir to NAS where Syncthing syncs the config.
   # The rebuild script rsyncs NAS→local before building for performance.
-  systemd.tmpfiles.rules = [
-    "L+ /home/${config.username}/.nixos - - - - /mnt/nas/NixOS"
-  ];
+  nixosDir = "/mnt/nas/NixOS";
 
   users.users.${config.username}.linger = true;
 }
