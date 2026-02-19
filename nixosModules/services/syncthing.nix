@@ -333,18 +333,22 @@ in {
         })
       foldersWithStignore)
       //
-      # Mirror rsync services (triggered by path units + on boot)
+      # Mirror rsync services (triggered by path units on changes)
       (lib.mapAttrs' (id: folder:
         lib.nameValuePair "syncthing-mirror-${id}" {
           description = "Mirror Syncthing folder '${id}' to ${folder.mirrorPath}";
           after = ["syncthing.service"];
-          wantedBy = ["multi-user.target"];
           serviceConfig = {
             Type = "oneshot";
             User = username;
             Group = "users";
           };
           script = ''
+            # Skip if source doesn't exist yet (Syncthing hasn't synced)
+            if [ ! -d "${folder.path}" ]; then
+              echo "Source ${folder.path} not found, skipping mirror"
+              exit 0
+            fi
             ${pkgs.rsync}/bin/rsync -a --delete \
               --exclude='.stfolder' \
               --exclude='.stversions' \
