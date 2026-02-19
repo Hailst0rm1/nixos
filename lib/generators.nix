@@ -70,6 +70,11 @@ in {
               ]
               ++ overlays;
           }
+          # Track which git revision was built
+          {
+            system.configurationRevision =
+              inputs.self.rev or inputs.self.dirtyRev or "unknown";
+          }
         ]
         ++ homeManager;
     };

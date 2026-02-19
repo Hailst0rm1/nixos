@@ -416,10 +416,6 @@
         label = "Code Projects";
         path = "/mnt/nas/Code";
       };
-      "wiki" = {
-        label = "Wiki / Notes";
-        path = "/mnt/nas/wiki";
-      };
     };
   };
 

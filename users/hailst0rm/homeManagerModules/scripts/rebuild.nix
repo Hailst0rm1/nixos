@@ -95,6 +95,20 @@
       fi
       pushd "$NIXOS_DIR" >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to change directory to config!''${RESET}" && exit 1; }
 
+      # Check if current build matches latest config
+      BUILT_REV=$(nixos-version --json 2>/dev/null | ${pkgs.jq}/bin/jq -r '.configurationRevision // empty' 2>/dev/null)
+      CURRENT_REV=$(git rev-parse HEAD 2>/dev/null)
+      if [ -n "$BUILT_REV" ] && [ -n "$CURRENT_REV" ]; then
+        # Strip -dirty suffix for comparison
+        BUILT_REV_CLEAN="''${BUILT_REV%-dirty}"
+        if [ "$BUILT_REV_CLEAN" = "$CURRENT_REV" ]; then
+          echo -e "''${GREEN}✅ Current build matches latest config commit.''${RESET}"
+        else
+          COMMITS_SINCE=$(git rev-list "$BUILT_REV_CLEAN"..HEAD --count 2>/dev/null || echo "?")
+          echo -e "''${YELLOW}''${BOLD}⚠️  Build is $COMMITS_SINCE commit(s) behind config.''${RESET}"
+        fi
+      fi
+
       # Test GitHub connectivity
       echo -e "''${CYAN}🌐 Testing GitHub connectivity...''${RESET}"
       notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless 2>/dev/null

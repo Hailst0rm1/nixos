@@ -68,10 +68,6 @@ in {
         label = "Code Projects";
         path = "/home/hailst0rm/Code";
       };
-      "wiki" = {
-        label = "Wiki / Notes";
-        path = "/home/hailst0rm/Documents/wiki";
-      };
     };
   };
 }
