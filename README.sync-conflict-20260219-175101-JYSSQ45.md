@@ -302,52 +302,6 @@ importConfig.hyprland.panel = "hyprpanel";
 
 ---
 
-### Syncthing (file sync)
-
-Configuration is synced across machines using Syncthing. The module is in `nixosModules/services/syncthing.nix`.
-
-**Adding a new device:**
-
-1. Get the device ID on the new machine:
-   ```shell
-   syncthing cli show system | jq -r .myID
-   ```
-   Or from the web GUI at `http://127.0.0.1:8384` under Actions > Show ID.
-
-2. Add the device to the registry in `hosts/default.nix`:
-   ```nix
-   services.syncthing-sync.devices."New-Host" = {
-     id = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
-     addresses = [ "tcp://new-host:22000" ];
-   };
-   ```
-
-3. Configure folders in the host's `configuration.nix`:
-   ```nix
-   services.syncthing-sync = {
-     enable = true;
-     folders = {
-       "nixos-config" = {
-         label = "NixOS Config";
-         path = "/home/user/.nixos";
-       };
-     };
-   };
-   ```
-
-4. Rebuild on all machines so they pick up the new device.
-
-**Checking sync status:**
-
-```shell
-sync-files              # Shows peers, triggers rescan, waits until synced
-sync-files --timeout=60 # Custom timeout (default: 300s)
-```
-
-**Note:** File content changes sync near-instantly (inotify). File creates/deletes have a ~60s delay — this is intentional Syncthing behavior to batch delete events and allow move detection. `sync-files` triggers a rescan to bypass this.
-
----
-
 ## Disk layout (disko)
 
 Two disko configurations are available:
