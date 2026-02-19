@@ -22,7 +22,8 @@
     };
   };
 
-  otherDevices = lib.filterAttrs (name: _: name != config.hostname) allDevices;
+  placeholderId = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+  otherDevices = lib.filterAttrs (name: dev: name != config.hostname && dev.id != placeholderId) allDevices;
   otherDeviceNames = lib.attrNames otherDevices;
 
   isServer = cfg.role == "server";
