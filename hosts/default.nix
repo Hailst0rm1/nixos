@@ -118,7 +118,7 @@
           addresses = lib.mkDefault ["tcp://nix-workstation:22000"];
         };
         "Nix-Laptop" = {
-          id = lib.mkDefault "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+          id = lib.mkDefault "S2G22M5-E6ITP5L-ENW6CX6-3LFHMZ4-CN4A5NV-V5KIKCC-YGHR4K3-7WVQJAF";
           addresses = lib.mkDefault ["tcp://nix-laptop:22000"];
         };
       };
