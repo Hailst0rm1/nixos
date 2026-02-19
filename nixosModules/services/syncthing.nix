@@ -77,7 +77,7 @@ in {
         devices =
           lib.mapAttrs (_name: dev: {
             inherit (dev) id addresses;
-            autoAcceptFolders = true;
+            autoAcceptFolders = false;
           })
           otherDevices;
 
