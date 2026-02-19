@@ -143,6 +143,9 @@
       "file://${config.home.homeDirectory}/Pictures"
       "file://${config.home.homeDirectory}/Downloads"
     ]
+    ++ lib.optionals osConfig.services.syncthing-sync.enable [
+      "file://${config.home.homeDirectory}/Code"
+    ]
     ++ lib.optionals osConfig.services.nas.client.enable [
       "file://${osConfig.services.nas.client.mountPoint} NAS"
     ];
