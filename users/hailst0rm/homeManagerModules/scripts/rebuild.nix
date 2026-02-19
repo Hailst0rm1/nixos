@@ -101,10 +101,18 @@
       if [ -n "$BUILT_REV" ] && [ -n "$CURRENT_REV" ]; then
         # Strip -dirty suffix for comparison
         BUILT_REV_CLEAN="''${BUILT_REV%-dirty}"
+        PARENT_REV=$(git rev-parse HEAD~1 2>/dev/null)
         if [ "$BUILT_REV_CLEAN" = "$CURRENT_REV" ]; then
+          echo -e "''${GREEN}✅ Current build matches latest config commit.''${RESET}"
+        elif [ "$BUILT_REV_CLEAN" = "$PARENT_REV" ]; then
+          # Built rev is parent of HEAD — the extra commit is the post-build commit from nix-switch
           echo -e "''${GREEN}✅ Current build matches latest config commit.''${RESET}"
         else
           COMMITS_SINCE=$(git rev-list "$BUILT_REV_CLEAN"..HEAD --count 2>/dev/null || echo "?")
+          # Subtract 1 for the post-build commit if it exists
+          if [ "$COMMITS_SINCE" -gt 1 ] 2>/dev/null; then
+            COMMITS_SINCE=$((COMMITS_SINCE - 1))
+          fi
           echo -e "''${YELLOW}''${BOLD}⚠️  Build is $COMMITS_SINCE commit(s) behind config.''${RESET}"
         fi
       fi
