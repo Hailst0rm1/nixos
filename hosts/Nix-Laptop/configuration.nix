@@ -51,4 +51,14 @@ in {
       nvidiaBusId = "PCI:1:0:0";
     };
   };
+
+  services.syncthing-sync = {
+    enable = true;
+    role = "client";
+    deviceIds = {
+      server = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+      workstation = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+      laptop = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+    };
+  };
 }

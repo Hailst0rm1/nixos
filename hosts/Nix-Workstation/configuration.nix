@@ -43,4 +43,14 @@ in {
     forceProbe = "a7a0";
   };
   graphicDriver.nvidia.enable = true;
+
+  services.syncthing-sync = {
+    enable = true;
+    role = "client";
+    deviceIds = {
+      server = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+      workstation = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+      laptop = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+    };
+  };
 }

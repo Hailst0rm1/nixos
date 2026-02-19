@@ -400,5 +400,15 @@
     };
   };
 
+  services.syncthing-sync = {
+    enable = true;
+    role = "server";
+    deviceIds = {
+      server = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+      workstation = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+      laptop = "XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX-XXXXXXX";
+    };
+  };
+
   users.users.${config.username}.linger = true;
 }

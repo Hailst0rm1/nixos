@@ -27,13 +27,10 @@
       BOLD='\033[1m'
       RESET='\033[0m'
 
-      NIXOS_DIR_FALLBACK="${config.nixosDirFallback}"
-
       show_help() {
         echo -e "''${CYAN}''${BOLD}Usage:''${RESET} ${name} [OPTIONS]"
         echo ""
         echo -e "''${BOLD}Options:''${RESET}"
-        echo -e "  ''${GREEN}--local''${RESET}               Use fallback local config dir ($NIXOS_DIR_FALLBACK)"
         echo -e "  ''${GREEN}--legacy''${RESET}              Use nixos-rebuild instead of nh"
         echo -e "  ''${GREEN}--debug''${RESET}               Show timing info for each step"
         echo -e "  ''${GREEN}--nh-flags ''${YELLOW}\"<args>\"''${RESET}   Pass extra arguments to nh"
@@ -48,7 +45,6 @@
         echo ""
         echo -e "''${BOLD}Examples:''${RESET}"
         echo -e "  ''${CYAN}${name}''${RESET}                              # Normal rebuild with nh"
-        echo -e "  ''${CYAN}${name} --local''${RESET}                      # Use local fallback config"
         echo -e "  ''${CYAN}${name} --legacy''${RESET}                     # Use nixos-rebuild"
         echo -e "  ''${CYAN}${name} --nh-flags \"--update\"''${RESET}        # Update flake.lock first"
         echo -e "  ''${CYAN}${name} --nh-flags \"--max-jobs 4\"''${RESET}    # Limit to 4 parallel jobs"
@@ -63,15 +59,10 @@
 
       # Parse arguments
       use_legacy=false
-      use_local=false
       use_debug=false
       nh_flags=""
       while [[ $# -gt 0 ]]; do
         case "$1" in
-          --local)
-            use_local=true
-            shift
-            ;;
           --debug)
             use_debug=true
             shift
@@ -96,14 +87,11 @@
         esac
       done
 
-      # cd to config dir (prefer primary, fall back if unreachable)
+      # cd to config dir
       NIXOS_DIR="${config.nixosDir}"
-      if [ "$use_local" = true ]; then
-        echo -e "''${YELLOW}📂 Using local fallback config dir ($NIXOS_DIR_FALLBACK)''${RESET}"
-        NIXOS_DIR="$NIXOS_DIR_FALLBACK"
-      elif [ ! -d "$NIXOS_DIR/hosts" ]; then
-        echo -e "''${YELLOW}⚠️  Primary config dir ($NIXOS_DIR) unreachable, using fallback ($NIXOS_DIR_FALLBACK)''${RESET}"
-        NIXOS_DIR="$NIXOS_DIR_FALLBACK"
+      if [ ! -d "$NIXOS_DIR/hosts" ]; then
+        echo -e "''${RED}''${BOLD}❌ Config dir ($NIXOS_DIR) not found or missing hosts/ directory!''${RESET}"
+        exit 1
       fi
       pushd "$NIXOS_DIR" >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to change directory to config!''${RESET}" && exit 1; }
 

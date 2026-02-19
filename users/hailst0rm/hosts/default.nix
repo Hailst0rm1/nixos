@@ -24,9 +24,8 @@
     enableNixpkgsReleaseCheck = lib.mkDefault false;
   };
 
-  # Propagate nixosDir/nixosDirFallback from NixOS config into HM
+  # Propagate nixosDir from NixOS config into HM
   nixosDir = lib.mkDefault osConfig.nixosDir;
-  nixosDirFallback = lib.mkDefault osConfig.nixosDirFallback;
 
   # Variables.nix defaults (mainly used for zsh-environment)
   terminal = lib.mkDefault "ghostty";

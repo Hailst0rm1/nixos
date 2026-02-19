@@ -26,12 +26,6 @@
       description = "The primary directory containing NixOS configurations.";
     };
 
-    nixosDirFallback = lib.mkOption {
-      type = lib.types.str;
-      default = "/home/${config.username}/.nixos";
-      description = "Fallback directory if the primary nixosDir is unreachable (e.g. NAS offline).";
-    };
-
     # Note: System architecture is now handled via nixpkgs.hostPlatform in hardware-configuration.nix
     # Access it via config.nixpkgs.hostPlatform.system
 
