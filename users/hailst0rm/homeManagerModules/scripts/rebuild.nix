@@ -4,6 +4,9 @@
   lib,
   ...
 }: let
+  hasDesktop = config.importConfig.hyprland.enable;
+  buildDir = "/home/${config.username}/.nixos-build";
+
   # Helper function to generate rebuild scripts
   mkRebuildScript = {
     name,
@@ -204,17 +207,33 @@
         ''
       }
 
+      ${lib.optionalString (!hasDesktop) ''
+        # Server: rsync NAS config to local disk for faster builds
+        echo -e "''${CYAN}📋 Syncing config to local disk for faster build...''${RESET}"
+        STEP_START=$SECONDS
+        mkdir -p "${buildDir}"
+        ${pkgs.rsync}/bin/rsync -a --delete \
+          --exclude='result' \
+          --exclude='.direnv' \
+          "$NIXOS_DIR/" "${buildDir}/"
+        debug_timer "rsync to local"
+        BUILD_FROM="${buildDir}"
+      ''}
+      ${lib.optionalString hasDesktop ''
+        BUILD_FROM="$NIXOS_DIR"
+      ''}
+
       # Rebuild and exit on failure
       echo ""
       echo -e "''${GREEN}''${BOLD}🔨 ${buildingMsg}...''${RESET}"
       notify-send -e "${notifyName}" "${buildingMsg} for ${config.hostname}..." --icon=system-software-update 2>/dev/null
 
       # Ensure nh uses the resolved directory
-      export NH_FLAKE="$NIXOS_DIR"
+      export NH_FLAKE="$BUILD_FROM"
 
       if [ "$use_legacy" = true ]; then
         echo -e "''${YELLOW}📦 Using legacy nixos-rebuild...''${RESET}"
-        sudo nixos-rebuild ${action} --flake ./#${config.hostname} || {
+        sudo nixos-rebuild ${action} --flake "$BUILD_FROM#${config.hostname}" || {
           echo ""
           echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
           notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null

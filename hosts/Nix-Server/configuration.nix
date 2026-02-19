@@ -405,8 +405,7 @@
     folders = {
       "nixos-config" = {
         label = "NixOS Config";
-        path = "/home/${config.username}/.nixos";
-        mirrorPath = "/mnt/nas/NixOS";
+        path = "/mnt/nas/NixOS";
         stignore = ''
           .claude
           .direnv
@@ -415,11 +414,16 @@
       };
       "code" = {
         label = "Code Projects";
-        path = "/home/${config.username}/Code";
-        mirrorPath = "/mnt/nas/Code";
+        path = "/mnt/nas/Code";
       };
     };
   };
+
+  # Symlink ~/.nixos → NAS so day-to-day usage works normally.
+  # The rebuild script rsyncs NAS→local before building for performance.
+  systemd.tmpfiles.rules = [
+    "L+ /home/${config.username}/.nixos - - - - /mnt/nas/NixOS"
+  ];
 
   users.users.${config.username}.linger = true;
 }
