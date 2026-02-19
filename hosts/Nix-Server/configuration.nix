@@ -405,7 +405,8 @@
     folders = {
       "nixos-config" = {
         label = "NixOS Config";
-        path = "/mnt/nas/NixOS";
+        path = "/home/${config.username}/.nixos";
+        mirrorPath = "/mnt/nas/NixOS";
         stignore = ''
           .claude
           .direnv
@@ -414,15 +415,11 @@
       };
       "code" = {
         label = "Code Projects";
-        path = "/mnt/nas/Code";
+        path = "/home/${config.username}/Code";
+        mirrorPath = "/mnt/nas/Code";
       };
     };
   };
-
-  # Symlink ~/.nixos → /mnt/nas/NixOS so server has nixos-config at both paths
-  systemd.tmpfiles.rules = [
-    "L+ /home/${config.username}/.nixos - - - - /mnt/nas/NixOS"
-  ];
 
   users.users.${config.username}.linger = true;
 }

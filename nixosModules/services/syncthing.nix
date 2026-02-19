@@ -14,6 +14,7 @@
 
   foldersWithStignore = lib.filterAttrs (_: f: f.stignore != "") cfg.folders;
   foldersWithEnsureDir = lib.filterAttrs (_: f: f.ensureDir) cfg.folders;
+  foldersWithMirror = lib.filterAttrs (_: f: f.mirrorPath != null) cfg.folders;
 
   folderIds = lib.attrNames cfg.folders;
 
@@ -232,6 +233,11 @@ in {
             default = true;
             description = "Whether to create the folder path via tmpfiles.rules.";
           };
+          mirrorPath = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "If set, rsync the synced folder to this path after changes. Useful for mirroring a local Syncthing folder to a NAS share.";
+          };
         };
       });
       default = {};
@@ -288,10 +294,12 @@ in {
       allowedUDPPorts = [22000 21027];
     };
 
-    # Ensure target directories exist
+    # Ensure target directories exist (including mirror paths)
     systemd.tmpfiles.rules =
-      lib.mapAttrsToList (_id: folder: "d ${folder.path} 0755 ${username} users -")
-      foldersWithEnsureDir;
+      (lib.mapAttrsToList (_id: folder: "d ${folder.path} 0755 ${username} users -")
+        foldersWithEnsureDir)
+      ++ (lib.mapAttrsToList (_id: folder: "d ${folder.mirrorPath} 0755 ${username} users -")
+        foldersWithMirror);
 
     # Declarative .stignore files
     environment.etc = lib.mapAttrs' (id: folder:
@@ -300,27 +308,61 @@ in {
       })
     foldersWithStignore;
 
-    systemd.services = lib.mapAttrs' (id: folder:
-      lib.nameValuePair "syncthing-stignore-${id}" {
-        description = "Place .stignore for Syncthing folder '${id}'";
-        after = ["syncthing.service"];
+    systemd.services =
+      # .stignore placement services
+      (lib.mapAttrs' (id: folder:
+        lib.nameValuePair "syncthing-stignore-${id}" {
+          description = "Place .stignore for Syncthing folder '${id}'";
+          after = ["syncthing.service"];
+          wantedBy = ["multi-user.target"];
+          serviceConfig = {
+            Type = "oneshot";
+            User = username;
+            Group = "users";
+            RemainAfterExit = true;
+          };
+          script = ''
+            target="${folder.path}/.stignore"
+            source="/etc/syncthing-stignore-${id}"
+            if [ ! -f "$target" ] || ! diff -q "$source" "$target" > /dev/null 2>&1; then
+              rm -f "$target"
+              cp "$source" "$target"
+              chmod 0644 "$target"
+            fi
+          '';
+        })
+      foldersWithStignore)
+      //
+      # Mirror rsync services (triggered by path units + on boot)
+      (lib.mapAttrs' (id: folder:
+        lib.nameValuePair "syncthing-mirror-${id}" {
+          description = "Mirror Syncthing folder '${id}' to ${folder.mirrorPath}";
+          after = ["syncthing.service"];
+          wantedBy = ["multi-user.target"];
+          serviceConfig = {
+            Type = "oneshot";
+            User = username;
+            Group = "users";
+          };
+          script = ''
+            ${pkgs.rsync}/bin/rsync -a --delete \
+              --exclude='.stfolder' \
+              --exclude='.stversions' \
+              "${folder.path}/" "${folder.mirrorPath}/"
+          '';
+        })
+      foldersWithMirror);
+
+    # Path units to watch for changes and trigger mirror
+    systemd.paths = lib.mapAttrs' (id: folder:
+      lib.nameValuePair "syncthing-mirror-${id}" {
+        description = "Watch Syncthing folder '${id}' for changes to mirror";
         wantedBy = ["multi-user.target"];
-        serviceConfig = {
-          Type = "oneshot";
-          User = username;
-          Group = "users";
-          RemainAfterExit = true;
+        pathConfig = {
+          PathChanged = folder.path;
+          Unit = "syncthing-mirror-${id}.service";
         };
-        script = ''
-          target="${folder.path}/.stignore"
-          source="/etc/syncthing-stignore-${id}"
-          if [ ! -f "$target" ] || ! diff -q "$source" "$target" > /dev/null 2>&1; then
-            rm -f "$target"
-            cp "$source" "$target"
-            chmod 0644 "$target"
-          fi
-        '';
       })
-    foldersWithStignore;
+    foldersWithMirror;
   };
 }

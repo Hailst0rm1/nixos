@@ -54,8 +54,8 @@ in {
             mads-hartmann.bash-ide-vscode
 
             # === AI ===
-            github.copilot # AI code assistant
-            github.copilot-chat # AI code assistant
+            github.copilot # Inline code completions
+            # github.copilot-chat  # Copilot chat interface
             anthropic.claude-code # Claude Code AI assistant
 
             # === Functionality ===
@@ -203,7 +203,7 @@ in {
                 "commands" = ["workbench.action.terminal.toggleTerminal"];
               }
 
-              # Open inline copilot
+              # Open inline chat
               {
                 "before" = ["leader" "i"];
                 "commands" = ["inlineChat.start"];
@@ -406,7 +406,7 @@ in {
                 "after" = ["V"];
               }
 
-              # Open inline copilot
+              # Open inline chat
               {
                 "before" = ["leader" "i"];
                 "commands" = ["inlineChat.start"];
@@ -480,12 +480,12 @@ in {
 
           # https://code.visualstudio.com/docs/configure/keybindings#_advanced-customization%20%20%20%20%20%20%20%20{
           keybindings = [
-            # Copilot
+            # Claude Code
             {
               key = "ctrl+shift+i";
-              command = "workbench.panel.chat.view.copilot.focus";
+              command = "workbench.panel.chat.view.claude-dev.focus";
             }
-            # Uncfocus copilot
+            # Unfocus Claude Code
             {
               key = "ctrl+shift+i";
               command = "workbench.action.focusActiveEditorGroup";
