@@ -27,11 +27,15 @@
       BOLD='\033[1m'
       RESET='\033[0m'
 
+      NIXOS_DIR_FALLBACK="${config.nixosDirFallback}"
+
       show_help() {
         echo -e "''${CYAN}''${BOLD}Usage:''${RESET} ${name} [OPTIONS]"
         echo ""
         echo -e "''${BOLD}Options:''${RESET}"
+        echo -e "  ''${GREEN}--local''${RESET}               Use fallback local config dir ($NIXOS_DIR_FALLBACK)"
         echo -e "  ''${GREEN}--legacy''${RESET}              Use nixos-rebuild instead of nh"
+        echo -e "  ''${GREEN}--debug''${RESET}               Show timing info for each step"
         echo -e "  ''${GREEN}--nh-flags ''${YELLOW}\"<args>\"''${RESET}   Pass extra arguments to nh"
         echo -e "  ''${GREEN}-h, --help''${RESET}            Show this help message"
         echo ""
@@ -44,16 +48,34 @@
         echo ""
         echo -e "''${BOLD}Examples:''${RESET}"
         echo -e "  ''${CYAN}${name}''${RESET}                              # Normal rebuild with nh"
+        echo -e "  ''${CYAN}${name} --local''${RESET}                      # Use local fallback config"
         echo -e "  ''${CYAN}${name} --legacy''${RESET}                     # Use nixos-rebuild"
         echo -e "  ''${CYAN}${name} --nh-flags \"--update\"''${RESET}        # Update flake.lock first"
         echo -e "  ''${CYAN}${name} --nh-flags \"--max-jobs 4\"''${RESET}    # Limit to 4 parallel jobs"
       }
 
+      # Debug helper - prints timing only when --debug is set
+      debug_timer() {
+        if [ "$use_debug" = true ]; then
+          echo -e "''${BLUE}  ⏱ $1: $((SECONDS-STEP_START))s''${RESET}"
+        fi
+      }
+
       # Parse arguments
       use_legacy=false
+      use_local=false
+      use_debug=false
       nh_flags=""
       while [[ $# -gt 0 ]]; do
         case "$1" in
+          --local)
+            use_local=true
+            shift
+            ;;
+          --debug)
+            use_debug=true
+            shift
+            ;;
           --legacy)
             use_legacy=true
             shift
@@ -76,8 +98,10 @@
 
       # cd to config dir (prefer primary, fall back if unreachable)
       NIXOS_DIR="${config.nixosDir}"
-      NIXOS_DIR_FALLBACK="${config.nixosDirFallback}"
-      if [ ! -d "$NIXOS_DIR/hosts" ]; then
+      if [ "$use_local" = true ]; then
+        echo -e "''${YELLOW}📂 Using local fallback config dir ($NIXOS_DIR_FALLBACK)''${RESET}"
+        NIXOS_DIR="$NIXOS_DIR_FALLBACK"
+      elif [ ! -d "$NIXOS_DIR/hosts" ]; then
         echo -e "''${YELLOW}⚠️  Primary config dir ($NIXOS_DIR) unreachable, using fallback ($NIXOS_DIR_FALLBACK)''${RESET}"
         NIXOS_DIR="$NIXOS_DIR_FALLBACK"
       fi
@@ -99,15 +123,20 @@
       ${lib.optionalString checkRemote ''
         # Fetch remote changes to check if we're behind
         echo -e "''${BLUE}📡 Fetching remote changes...''${RESET}"
+        STEP_START=$SECONDS
         if ! git fetch origin master --quiet 2>/dev/null; then
-          echo -e "''${YELLOW}⚠️  Fetch failed, pruning stale refs and retrying...''${RESET}"
+          echo -e "''${YELLOW}⚠️  Fetch failed (''${SECONDS-STEP_START}s), pruning stale refs and retrying...''${RESET}"
           git remote prune origin
           git fetch origin master --quiet || {
             echo -e "''${RED}❌ Failed to fetch remote changes. Continuing with local state.''${RESET}"
           }
         fi
+        debug_timer "git fetch"
+
+        STEP_START=$SECONDS
         LOCAL=$(git rev-parse HEAD)
         REMOTE=$(git rev-parse origin/master)
+        debug_timer "rev-parse"
 
         if [ "$LOCAL" != "$REMOTE" ]; then
           BEHIND=$(git rev-list HEAD..origin/master --count)
@@ -124,29 +153,42 @@
 
       # Autoformat the nix files with alejandra
       echo -e "''${MAGENTA}🎨 Formatting Nix files...''${RESET}"
+      STEP_START=$SECONDS
       alejandra . &>/dev/null \
         || ( alejandra . ; echo -e "''${RED}''${BOLD}❌ Formatting failed!''${RESET}" && notify-send -e "Formatting Failed!" --icon=dialog-error 2>/dev/null && exit 1)
+      debug_timer "alejandra"
 
       # Show changes
       ${
         if checkRemote
         then ''
           # Check for changes
+          STEP_START=$SECONDS
           if git diff HEAD --quiet; then
               echo -e "''${YELLOW}⚠️  Warning: No changes detected in config.''${RESET}"
           fi
+          debug_timer "git diff --quiet"
 
           echo -e "''${CYAN}''${BOLD}📝 Changes to be applied:''${RESET}"
+          STEP_START=$SECONDS
           git diff HEAD -U0
+          debug_timer "git diff -U0"
+          STEP_START=$SECONDS
           git add -N .
+          debug_timer "git add -N"
         ''
         else ''
           # Show the changes if any (compare against local HEAD, not remote)
+          STEP_START=$SECONDS
           if ! git diff HEAD --quiet; then
+            debug_timer "git diff --quiet"
             echo -e "''${CYAN}''${BOLD}📝 Changes detected:''${RESET}"
+            STEP_START=$SECONDS
             git diff HEAD -U0
+            debug_timer "git diff -U0"
             git add -N .
           else
+            debug_timer "git diff --quiet"
             echo -e "''${BLUE}ℹ️  No changes detected, testing current configuration...''${RESET}"
           fi
         ''
