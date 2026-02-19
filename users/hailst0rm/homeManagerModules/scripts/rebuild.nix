@@ -5,7 +5,7 @@
   ...
 }: let
   hasDesktop = config.importConfig.hyprland.enable;
-  buildDir = "/home/${config.username}/.nixos-build";
+  buildDir = "/home/${config.username}/.nixos";
 
   # Helper function to generate rebuild scripts
   mkRebuildScript = {
@@ -164,12 +164,29 @@
         fi
       ''}
 
-      # Autoformat the nix files with alejandra
+      # Autoformat the nix files with alejandra (on NAS dir so formatting is committed)
       echo -e "''${MAGENTA}🎨 Formatting Nix files...''${RESET}"
       STEP_START=$SECONDS
       alejandra . &>/dev/null \
         || ( alejandra . ; echo -e "''${RED}''${BOLD}❌ Formatting failed!''${RESET}" && notify-send -e "Formatting Failed!" --icon=dialog-error 2>/dev/null && exit 1)
       debug_timer "alejandra"
+
+      ${lib.optionalString (!hasDesktop) ''
+        # Server: rsync NAS config to local disk for faster builds
+        echo -e "''${CYAN}📋 Syncing config to local disk for faster build...''${RESET}"
+        STEP_START=$SECONDS
+        mkdir -p "${buildDir}"
+        ${pkgs.rsync}/bin/rsync -a --delete \
+          --exclude='result' \
+          --exclude='.direnv' \
+          "$NIXOS_DIR/" "${buildDir}/"
+        debug_timer "rsync to local"
+        BUILD_FROM="${buildDir}"
+        cd "$BUILD_FROM"
+      ''}
+      ${lib.optionalString hasDesktop ''
+        BUILD_FROM="$NIXOS_DIR"
+      ''}
 
       # Show changes
       ${
@@ -207,22 +224,6 @@
         ''
       }
 
-      ${lib.optionalString (!hasDesktop) ''
-        # Server: rsync NAS config to local disk for faster builds
-        echo -e "''${CYAN}📋 Syncing config to local disk for faster build...''${RESET}"
-        STEP_START=$SECONDS
-        mkdir -p "${buildDir}"
-        ${pkgs.rsync}/bin/rsync -a --delete \
-          --exclude='result' \
-          --exclude='.direnv' \
-          "$NIXOS_DIR/" "${buildDir}/"
-        debug_timer "rsync to local"
-        BUILD_FROM="${buildDir}"
-      ''}
-      ${lib.optionalString hasDesktop ''
-        BUILD_FROM="$NIXOS_DIR"
-      ''}
-
       # Rebuild and exit on failure
       echo ""
       echo -e "''${GREEN}''${BOLD}🔨 ${buildingMsg}...''${RESET}"
@@ -259,6 +260,15 @@
       echo -e "''${GREEN}''${BOLD}✅ Build Complete!''${RESET}"
 
       ${lib.optionalString promptCommit ''
+        ${lib.optionalString (!hasDesktop) ''
+          # Server: sync changes (formatting etc.) back to NAS for git commit
+          ${pkgs.rsync}/bin/rsync -a --delete \
+            --exclude='result' \
+            --exclude='.direnv' \
+            "${buildDir}/" "$NIXOS_DIR/"
+          cd "$NIXOS_DIR"
+        ''}
+
         # Prompt user for an optional commit message
         echo -e "''${BOLD}''${CYAN}📄 Modified files:''${RESET}"
         if git diff --name-status | sed -e 's/^M/Modified: /' -e 's/^A/Added: /' -e 's/^D/Deleted: /'; then
