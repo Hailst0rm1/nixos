@@ -26,6 +26,11 @@
   otherDeviceNames = lib.attrNames otherDevices;
 
   isServer = cfg.role == "server";
+
+  nixosConfigPath =
+    if isServer
+    then "/mnt/nas/NixOS"
+    else "${homeDir}/.nixos";
 in {
   options.services.syncthing-sync = with lib; {
     enable = mkEnableOption "Syncthing file synchronization across machines";
@@ -84,17 +89,9 @@ in {
         folders = {
           "nixos-config" = {
             label = "NixOS Config";
-            path =
-              if isServer
-              then "/mnt/nas/NixOS"
-              else "${homeDir}/.nixos";
+            path = nixosConfigPath;
             devices = otherDeviceNames;
             type = "sendreceive";
-            ignorePatterns = [
-              ".claude"
-              ".direnv"
-              "result"
-            ];
           };
           "code" = {
             label = "Code Projects";
@@ -124,10 +121,42 @@ in {
       allowedUDPPorts = [22000 21027];
     };
 
-    # Ensure target directories exist on clients
-    systemd.tmpfiles.rules = lib.optionals (!isServer) [
-      "d ${homeDir}/Code 0755 ${username} users -"
-      "d ${homeDir}/Documents/wiki 0755 ${username} users -"
-    ];
+    # Ensure target directories exist
+    systemd.tmpfiles.rules =
+      if isServer
+      then [
+        "d /mnt/nas/NixOS 0755 ${username} users -"
+        "d /mnt/nas/Code 0755 ${username} users -"
+        "d /mnt/nas/wiki 0755 ${username} users -"
+      ]
+      else [
+        "d ${homeDir}/Code 0755 ${username} users -"
+        "d ${homeDir}/Documents/wiki 0755 ${username} users -"
+      ];
+
+    # Declarative .stignore for nixos-config folder (avoids REST API race)
+    environment.etc."syncthing-stignore-nixos-config".text = ''
+      .claude
+      .direnv
+      result
+    '';
+    systemd.services.syncthing-stignore = {
+      description = "Place .stignore file for Syncthing nixos-config folder";
+      after = ["syncthing.service"];
+      wantedBy = ["multi-user.target"];
+      serviceConfig = {
+        Type = "oneshot";
+        User = username;
+        Group = "users";
+        RemainAfterExit = true;
+      };
+      script = ''
+        target="${nixosConfigPath}/.stignore"
+        source="/etc/syncthing-stignore-nixos-config"
+        if [ ! -f "$target" ] || ! diff -q "$source" "$target" > /dev/null 2>&1; then
+          cp "$source" "$target"
+        fi
+      '';
+    };
   };
 }
