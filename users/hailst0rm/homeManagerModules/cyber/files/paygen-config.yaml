@@ -4,7 +4,6 @@ preprocessors_dir: ~/Code/paygen-recipes/preprocessors
 ps_obfuscation_yaml: ~/Code/paygen-recipes/ps-obfuscation.yaml
 ps_features_yaml: ~/Code/paygen-recipes/ps-features.yaml
 shellcodes_config: ~/Code/paygen-recipes/shellcodes.yaml
-output_dir: ~/cyber/postex-tools/payloads
 
 # Build preferences
 keep_source_files: true # If true, save rendered source code alongside compiled binaries

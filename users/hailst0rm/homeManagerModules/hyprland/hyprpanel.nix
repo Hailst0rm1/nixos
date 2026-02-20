@@ -36,7 +36,7 @@
           ++ ["windowtitle"];
         baseRight =
           ["media" "kbinput" "volume" "bluetooth" "network"]
-          ++ lib.optionals config.laptop ["battery"]
+          ++ lib.optionals osConfig.laptop ["battery"]
           ++ ["notifications"];
       in {
         left = baseLeft;
@@ -78,7 +78,7 @@ in {
             shortcuts.enabled = false;
             directories.enabled = false;
           };
-          power.lowBatteryNotification = lib.mkDefault (config.laptop);
+          power.lowBatteryNotification = lib.mkDefault osConfig.laptop;
         };
 
         theme.osd = {
