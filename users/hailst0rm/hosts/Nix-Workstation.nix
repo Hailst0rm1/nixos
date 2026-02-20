@@ -6,7 +6,7 @@
     accentColour = "red";
     monitorOrientations = {
       "DP-1" = "top";
-      "DP-2" = "left";
+      "DP-2" = "center";
     };
   };
 
