@@ -126,6 +126,7 @@ in {
         psobf # PowerShell obfuscator
         logic-net # .NET assembly obfuscator using dnlib
         donut # Convert PE files to shellcode
+        msitools # For AlwaysInstallElevated
 
         # === Initial Access ===
         metasploit
