@@ -120,6 +120,20 @@
     '';
   };
 
+  lazagne = pkgs.stdenv.mkDerivation {
+    pname = "lazagne";
+    version = "2.4.7";
+    src = pkgs.fetchurl {
+      url = "https://github.com/AlessandroZ/LaZagne/releases/download/v2.4.7/LaZagne.exe";
+      sha256 = "sha256-3AbWLulQYucU8lZslbjtqr/ThwI7G/mKCQeLhAB9Umg=";
+    };
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/LaZagne.exe
+    '';
+  };
+
   adPEAS-Light = pkgs.stdenv.mkDerivation {
     # adPEAS-Light (all modules without sharphound)
     pname = "adPEAS-Light";
@@ -146,6 +160,7 @@ in {
         # cp -f ${pkgs-unstable.bloodhound}/lib/BloodHound/resources/app/Collectors/SharpHound.ps1 "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.ps1"
         cp -f ${rubeus}/Rubeus.exe "${config.home.homeDirectory}/cyber/postex-tools/Rubeus.exe"
         cp -f ${pkgs-unstable.mimikatz}/share/windows/mimikatz/x64/mimikatz.exe "${config.home.homeDirectory}/cyber/postex-tools/mimikatz.exe"
+        cp -f ${pkgs-unstable.mimikatz}/share/windows/mimikatz/x64/mimidrv.sys "${config.home.homeDirectory}/cyber/postex-tools/mimidrv.sys"
         cp -f ${winpeasExe}/winpeas.exe "${config.home.homeDirectory}/cyber/postex-tools/winpeas.exe"
         cp -f ${linpeas}/linpeas "${config.home.homeDirectory}/cyber/postex-tools/linpeas"
         cp -f ${pspy}/pspy "${config.home.homeDirectory}/cyber/postex-tools/pspy"
@@ -153,6 +168,7 @@ in {
         cp -f ${sigmaPotato}/SigmaPotato.exe "${config.home.homeDirectory}/cyber/postex-tools/SigmaPotato.exe"
         cp -f ${adPEAS-Light}/adPEAS-Light.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS-Light.ps1"
         cp -f ${printSpoofer}/PrintSpoofer.exe "${config.home.homeDirectory}/cyber/postex-tools/PrintSpoofer.exe"
+        cp -f ${lazagne}/LaZagne.exe "${config.home.homeDirectory}/cyber/postex-tools/LaZagne.exe"
         cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"
         cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
         cp -f ${builtins.toPath ./files/Disable-AVProduct.min.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Disable-AVProduct.min.ps1"

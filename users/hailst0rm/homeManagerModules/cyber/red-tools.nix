@@ -25,6 +25,7 @@
   perfect-dll-proxy = pkgs.callPackage "${nixosDir}/pkgs/perfect-dll-proxy/package.nix" {};
   psobf = pkgs.callPackage "${nixosDir}/pkgs/psobf/package.nix" {};
   paygen = pkgs.callPackage "${nixosDir}/pkgs/paygen/package.nix" {};
+  pezor = pkgs.callPackage "${nixosDir}/pkgs/pezor/package.nix" {inherit donut;};
   logic-net = pkgs.callPackage "${nixosDir}/pkgs/logic-net/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
@@ -126,6 +127,7 @@ in {
         psobf # PowerShell obfuscator
         logic-net # .NET assembly obfuscator using dnlib
         donut # Convert PE files to shellcode
+        pezor # Shellcode & PE packer with evasion techniques
         msitools # For AlwaysInstallElevated
 
         # === Initial Access ===

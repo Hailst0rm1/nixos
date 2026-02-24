@@ -65,8 +65,11 @@ BloodHound &>/dev/null &
 # Start Paygen server
 paygen &>/dev/null &
 
+# Start Sliver GUI
+notsliver &>/dev/null &
+
 # Start Ligolo-MP server
-run_ghostty "Starting Ligolo-MP server (port ${LIGOLO_PORT})..." "ligolo-mp --agent-addr 0.0.0.0:${LIGOLO_PORT}"
+run_ghostty "Starting Ligolo-MP server (port ${LIGOLO_PORT})..." "sudo ligolo-mp --agent-addr 0.0.0.0:${LIGOLO_PORT}"
 sleep 1
 
 # Start Sliver C2 server
