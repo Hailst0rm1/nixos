@@ -169,6 +169,7 @@ in {
         cp -f ${adPEAS-Light}/adPEAS-Light.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS-Light.ps1"
         cp -f ${printSpoofer}/PrintSpoofer.exe "${config.home.homeDirectory}/cyber/postex-tools/PrintSpoofer.exe"
         cp -f ${lazagne}/LaZagne.exe "${config.home.homeDirectory}/cyber/postex-tools/LaZagne.exe"
+        cp -f ${builtins.toPath ./files/LaZagne-obf.exe} "${config.home.homeDirectory}/cyber/postex-tools/LaZagne-obf.exe"
         cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"
         cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
         cp -f ${builtins.toPath ./files/Disable-AVProduct.min.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Disable-AVProduct.min.ps1"
