@@ -23,10 +23,10 @@
 
   winpeasExe = pkgs.stdenv.mkDerivation {
     pname = "winpeasExe";
-    version = "20260212-43b28429";
+    version = "20260224-72fa6bab";
     src = pkgs.fetchurl {
-      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20260212-43b28429/winPEASany_ofs.exe";
-      sha256 = "sha256-MhruHtZhhFIXIFrd+wzQ3BuqAPwn8uXWeGfsL+4exKo=";
+      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20260224-72fa6bab/winPEASany_ofs.exe";
+      sha256 = "sha256-Nl4AdqBU9IIlZf7YH/nX2Pk+KThlB5RkNtguDjjLWC8=";
     };
     phases = ["installPhase"];
     installPhase = ''
@@ -51,10 +51,10 @@
 
   linpeas = pkgs.stdenv.mkDerivation {
     pname = "linpeas";
-    version = "20260212-43b28429";
+    version = "20260224-72fa6bab";
     src = pkgs.fetchurl {
-      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20260212-43b28429/linpeas_fat.sh";
-      sha256 = "sha256-Ibaj01KFllh6OtdrFwuvbmrbU1DRzZWr3YjUvs4PSLY=";
+      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20260224-72fa6bab/linpeas_fat.sh";
+      sha256 = "sha256-K0oRQCgsGLnZlqZHLLSXMLADKBptvLB/OM2pV52t75I=";
     };
     phases = ["installPhase"];
     installPhase = ''
@@ -169,7 +169,7 @@ in {
         cp -f ${adPEAS-Light}/adPEAS-Light.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS-Light.ps1"
         cp -f ${printSpoofer}/PrintSpoofer.exe "${config.home.homeDirectory}/cyber/postex-tools/PrintSpoofer.exe"
         cp -f ${lazagne}/LaZagne.exe "${config.home.homeDirectory}/cyber/postex-tools/LaZagne.exe"
-        cp -f ${builtins.toPath ./files/LaZagne-obf.exe} "${config.home.homeDirectory}/cyber/postex-tools/LaZagne-obf.exe"
+        cp -f ${builtins.toPath ./files/LaZagne-obf.exe} "${config.home.homeDirectory}/cyber/postex-tools/LaZagne-obf.exe" # Obfuscated variant, using the method in my wiki
         cp -f ${builtins.toPath ./files/Notnop.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Notnop.ps1"
         cp -f ${builtins.toPath ./files/escalator.sh} "${config.home.homeDirectory}/cyber/postex-tools/escalator"
         cp -f ${builtins.toPath ./files/Disable-AVProduct.min.ps1} "${config.home.homeDirectory}/cyber/postex-tools/Disable-AVProduct.min.ps1"
