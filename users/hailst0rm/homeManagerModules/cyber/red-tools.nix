@@ -27,6 +27,8 @@
   paygen = pkgs.callPackage "${nixosDir}/pkgs/paygen/package.nix" {};
   pezor = pkgs.callPackage "${nixosDir}/pkgs/pezor/package.nix" {inherit donut;};
   logic-net = pkgs.callPackage "${nixosDir}/pkgs/logic-net/package.nix" {};
+  manspider = pkgs-unstable.callPackage "${nixosDir}/pkgs/manspider/package.nix" {};
+  mssqlclient-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/mssqlclient-ng/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
@@ -152,6 +154,7 @@ in {
         evil-winrm # WinRM shell for hacking/pentesting
         netexec
         smbclient-ng # A GOOD smbclient
+        mssqlclient-ng # Enhanced impacket mssqlclient for MSSQL interaction
 
         # === Credential Access ===
         (writeShellScriptBin "atm" atm) # CUSTOM: netexec credential gathering automation
@@ -167,6 +170,7 @@ in {
         # === Discovery ===
         bloodhound
         bloodhound-py # Bloodhound ingestor (remote SharpHound)
+        manspider # SMB share spider - search filenames/content across networks
 
         # === Command & Control (C2) ===
         sliver # C2 framework

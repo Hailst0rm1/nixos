@@ -47,6 +47,7 @@
     pkgs-unstable.gdu # Du: TUI
     # pkgs-unstable.bottom # Top/htop: Fast + better
     pkgs-unstable.htop # Top improved
+    pkgs-unstable.mission-center # Resource/Task manager GUI
     pkgs-unstable.procs # Ps: Fast + ux
     pkgs-unstable.tealdeer # Man: Simplified and practical examples
     pkgs-unstable.httpie # Curl/wget: UX for REST API

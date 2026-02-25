@@ -134,6 +134,48 @@
     '';
   };
 
+  group3r = pkgs.stdenv.mkDerivation {
+    pname = "group3r";
+    version = "1.0.69";
+    src = pkgs.fetchurl {
+      url = "https://github.com/Group3r/Group3r/releases/download/1.0.69/Group3r.exe";
+      sha256 = "sha256-j3HPAAtQkuIU9uUkcLcCzmYq0u0N7/hsJnKKDjUy7yU=";
+    };
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/Group3r.exe
+    '';
+  };
+
+  snaffler = pkgs.stdenv.mkDerivation {
+    pname = "snaffler";
+    version = "1.0.234";
+    src = pkgs.fetchurl {
+      url = "https://github.com/SnaffCon/Snaffler/releases/download/1.0.234/Snaffler.exe";
+      sha256 = "sha256-+9fmyzfXWPnsF5/kJ8pkVWmGgJnBaBnxb56GOS2PKr0=";
+    };
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/Snaffler.exe
+    '';
+  };
+
+  mssqland = pkgs.stdenv.mkDerivation {
+    pname = "mssqland";
+    version = "1.4";
+    src = pkgs.fetchurl {
+      url = "https://github.com/n3rada/MSSQLand/releases/download/v1.4/MSSQLand.exe";
+      sha256 = "sha256-DaXNajcIbkn/3mDHXdKc/vq8z1OpP5AVifdSV1XC+OI=";
+    };
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      install -m755 $src $out/MSSQLand.exe
+    '';
+  };
+
   adPEAS-Light = pkgs.stdenv.mkDerivation {
     # adPEAS-Light (all modules without sharphound)
     pname = "adPEAS-Light";
@@ -167,6 +209,9 @@ in {
         cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
         cp -f ${sigmaPotato}/SigmaPotato.exe "${config.home.homeDirectory}/cyber/postex-tools/SigmaPotato.exe"
         cp -f ${adPEAS-Light}/adPEAS-Light.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS-Light.ps1"
+        cp -f ${group3r}/Group3r.exe "${config.home.homeDirectory}/cyber/postex-tools/Group3r.exe"
+        cp -f ${snaffler}/Snaffler.exe "${config.home.homeDirectory}/cyber/postex-tools/Snaffler.exe"
+        cp -f ${mssqland}/MSSQLand.exe "${config.home.homeDirectory}/cyber/postex-tools/MSSQLand.exe"
         cp -f ${printSpoofer}/PrintSpoofer.exe "${config.home.homeDirectory}/cyber/postex-tools/PrintSpoofer.exe"
         cp -f ${lazagne}/LaZagne.exe "${config.home.homeDirectory}/cyber/postex-tools/LaZagne.exe"
         cp -f ${builtins.toPath ./files/LaZagne-obf.exe} "${config.home.homeDirectory}/cyber/postex-tools/LaZagne-obf.exe" # Obfuscated variant, using the method in my wiki
