@@ -222,7 +222,7 @@ in {
             "$mainMod SHIFT, return, exec, ${config.browser}"
             "$mainMod, N, exec, ${config.fileManager}"
             # "$mainMod, B, exec, GTK_IM_MODULE=simple ${config.terminal} -e htop"
-            "$mainMod, B, exec, mission-center"
+            "$mainMod, B, exec, missioncenter"
             ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
 
             # Workspaces
