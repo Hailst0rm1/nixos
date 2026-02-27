@@ -29,6 +29,7 @@
   logic-net = pkgs.callPackage "${nixosDir}/pkgs/logic-net/package.nix" {};
   manspider = pkgs-unstable.callPackage "${nixosDir}/pkgs/manspider/package.nix" {};
   mssqlclient-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/mssqlclient-ng/package.nix" {};
+  notsliver = pkgs-unstable.callPackage "${nixosDir}/pkgs/notsliver/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
@@ -174,6 +175,7 @@ in {
 
         # === Command & Control (C2) ===
         sliver # C2 framework
+        notsliver # Web-based Sliver C2 operator GUI
         # ligolo-ng # Tunneling/pivoting tool that uses a TUN interface
         ligolo-mp # Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
 
