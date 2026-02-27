@@ -150,10 +150,10 @@
 
   snaffler = pkgs.stdenv.mkDerivation {
     pname = "snaffler";
-    version = "1.0.234";
+    version = "1.0.244";
     src = pkgs.fetchurl {
-      url = "https://github.com/SnaffCon/Snaffler/releases/download/1.0.234/Snaffler.exe";
-      sha256 = "sha256-+9fmyzfXWPnsF5/kJ8pkVWmGgJnBaBnxb56GOS2PKr0=";
+      url = "https://github.com/SnaffCon/Snaffler/releases/download/1.0.244/Snaffler.exe";
+      sha256 = "sha256-OXsiqVZUW6nNXwPw9hyxbkdg2yG+l/l5pc/AWcL4VMo=";
     };
     phases = ["installPhase"];
     installPhase = ''
