@@ -1,14 +1,15 @@
 from autorecon.plugins import ServiceScan
+from shutil import which
 
 class NetExec_MSSQLEnum(ServiceScan):
 
 	def __init__(self):
 		super().__init__()
 		self.name = "NetExec MSSQLEnum"
-		self.tags = ['default', 'safe', 'databases', 'mssql','auth']
+		self.tags = ['safe', 'databases', 'mssql', 'auth']
 
 	def configure(self):
-		self.match_service_name(['^mssql', '^ms\-sql'])
+		self.match_service_name(['^mssql', r'^ms\-sql'])
 
 	def check(self):
 		if which('nxc') is None:

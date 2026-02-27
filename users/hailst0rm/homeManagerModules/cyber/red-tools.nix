@@ -46,7 +46,8 @@ in {
   config = lib.mkIf config.cyber.redTools.enable {
     # For var-tool
     programs.zsh.initContent = ''
-      source ~/.config/.my_vars.env
+      # source ~/.config/.my_vars.env
+      source ~/.config/NotSliver/engagement.env
     '';
 
     home = {

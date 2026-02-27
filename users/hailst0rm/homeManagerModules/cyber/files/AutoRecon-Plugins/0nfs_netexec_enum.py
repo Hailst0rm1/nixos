@@ -1,4 +1,5 @@
 from autorecon.plugins import ServiceScan
+from shutil import which
 
 class NetExec_NFSEnum(ServiceScan):
 

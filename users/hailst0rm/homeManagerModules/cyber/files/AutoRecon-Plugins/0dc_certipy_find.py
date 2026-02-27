@@ -1,11 +1,12 @@
 from autorecon.plugins import ServiceScan
+from shutil import which
 
 class Certipy_Find(ServiceScan):
 
 	def __init__(self):
 		super().__init__()
 		self.name = 'Certipy Find'
-		self.tags = ['default', 'safe', 'ldap', 'auth', 'active-directory']
+		self.tags = ['safe', 'ldap', 'auth', 'active-directory']
 
 	def configure(self):
 		self.match_service_name(['^ldap', '^ldaps', '^kerberos', '^msrpc', '^ms-ds'])

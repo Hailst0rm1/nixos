@@ -1,11 +1,12 @@
 from autorecon.plugins import ServiceScan
+from shutil import which
 
 class Manspider(ServiceScan):
 
 	def __init__(self):
 		super().__init__()
 		self.name = "Manspider"
-		self.tags = ['default', 'safe', 'smb', 'active-directory', 'auth']
+		self.tags = ['safe', 'smb', 'active-directory', 'auth']
 
 	def configure(self):
 		self.match_service_name(['^smb', '^microsoft-ds', '^netbios'])

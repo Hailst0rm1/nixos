@@ -1,11 +1,12 @@
 from autorecon.plugins import ServiceScan
+from shutil import which
 
 class BloodhoundPython(ServiceScan):
 
 	def __init__(self):
 		super().__init__()
 		self.name = 'bloodhound-python'
-		self.tags = ['default', 'safe', 'ldap', 'auth']
+		self.tags = ['safe', 'ldap', 'auth']
 
 	def configure(self):
 		self.match_service_name(['^ldap', '^ldaps', '^kerberos', '^msrpc', '^ms-ds'])

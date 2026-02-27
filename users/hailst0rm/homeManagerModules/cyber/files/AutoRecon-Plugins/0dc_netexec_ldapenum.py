@@ -1,11 +1,12 @@
 from autorecon.plugins import ServiceScan
+from shutil import which
 
 class NetExec_DC_LDAPEnum(ServiceScan):
 
 	def __init__(self):
 		super().__init__()
 		self.name = 'NetExec DC LDAP Enum'
-		self.tags = ['default', 'safe', 'auth', 'active-directory', 'ldap']
+		self.tags = ['safe', 'auth', 'active-directory', 'ldap']
 
 	def configure(self):
 		self.match_service_name(['^ldap', '^ldaps', '^kerberos', '^msrpc', '^ms-ds'])

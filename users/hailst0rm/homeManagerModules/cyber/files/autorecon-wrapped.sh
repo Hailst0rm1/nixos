@@ -11,14 +11,17 @@ NC='\033[0m' # No Color
 # Usage function
 usage() {
     cat << EOF
-Usage: autorecon-wrapped -o OUTDIR [-t TARGET] [-c CIDR] [-PE] [--tags TAGS] [-u USER] [-p PASSWORD] [-H NT_HASH] [-d DOMAIN]
+Usage: sudo autorecon-wrapped -o OUTDIR [-t TARGET...] [-c CIDR] [-PE] [--tags TAGS] [-u USER] [-p PASSWORD] [-H NT_HASH] [-d DOMAIN]
 
 Automated reconnaissance wrapper for rustscan, nmap, and autorecon.
+Must be run with sudo. Privileged tools (nmap, autorecon) run as root;
+everything else runs as the invoking user.
 
 OPTIONS:
     -o OUTDIR    Output directory for scan results (required)
     -t TARGET    (Optional) Target IP address, DNS name, or list of targets
-                 Formats: "192.168.1.1" or "target1 target2" or "target1,target2"
+                 Multiple -t flags, comma-separated, and space-separated all work.
+                 Supports IP ranges: 192.168.1.0-10 expands to .0 through .10
     -c CIDR      (Optional) CIDR range for NetExec SMB enumeration
                  Example: "192.168.1.0/24"
     -PE          (Optional) Add ICMP echo request to nmap scans (--nmap-append='-PE')
@@ -34,24 +37,55 @@ OPTIONS:
 NOTE: At least one of -t or -c must be provided.
 
 EXAMPLES:
-    autorecon-wrapped -o ./scans -t 192.168.1.1
-    autorecon-wrapped -o ./scans -t "192.168.1.1 192.168.1.2"
-    autorecon-wrapped -o ./scans -t "target1.com,target2.com"
-    autorecon-wrapped -o ./scans -c 192.168.1.0/24
-    autorecon-wrapped -o ./scans -t 192.168.1.1 -c 192.168.1.0/24
-    autorecon-wrapped -o ./scans -t 192.168.1.1 --tags ad-auth+enum
-    autorecon-wrapped -o ./scans -t 192.168.1.1 --tags ad-auth+enum
+    sudo autorecon-wrapped -o ./scans -t 192.168.1.1
+    sudo autorecon-wrapped -o ./scans -t 192.168.1.1 192.168.1.2
+    sudo autorecon-wrapped -o ./scans -t 192.168.1.0-10
+    sudo autorecon-wrapped -o ./scans -t target1.com,target2.com
+    sudo autorecon-wrapped -o ./scans -c 192.168.1.0/24
+    sudo autorecon-wrapped -o ./scans -t 192.168.1.1 -c 192.168.1.0/24
+    sudo autorecon-wrapped -o ./scans -t 192.168.1.1 --tags ad-auth+enum
 
 EOF
     exit 1
 }
 
-# Check if running as sudo
-if [[ $EUID -eq 0 ]]; then
-    echo -e "${RED}Error: This script should not be run as sudo/root${NC}"
-    echo "The script will elevate privileges when needed internally."
+# Expand IP ranges like 192.168.1.0-10 into individual IPs
+expand_range() {
+    local input="$1"
+    if [[ "$input" =~ ^([0-9]+\.[0-9]+\.[0-9]+\.)([0-9]+)-([0-9]+)$ ]]; then
+        local prefix="${BASH_REMATCH[1]}"
+        local start="${BASH_REMATCH[2]}"
+        local end="${BASH_REMATCH[3]}"
+        for ((i=start; i<=end; i++)); do
+            echo "${prefix}${i}"
+        done
+    else
+        echo "$input"
+    fi
+}
+
+# Require root (via sudo)
+if [[ $EUID -ne 0 ]]; then
+    echo -e "${RED}Error: This script must be run with sudo${NC}"
+    echo "Example: sudo autorecon-wrapped -o ./scans -t 192.168.1.1"
     exit 1
 fi
+
+if [[ -z "$SUDO_USER" ]]; then
+    echo -e "${RED}Error: SUDO_USER is not set. Run this script via sudo, not as root directly.${NC}"
+    exit 1
+fi
+
+# Resolve the invoking user's home and PATH for dropping privileges
+REAL_USER="$SUDO_USER"
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+REAL_GID=$(getent passwd "$REAL_USER" | cut -d: -f4)
+REAL_GROUP=$(getent group "$REAL_GID" | cut -d: -f1)
+
+# Helper: run a command as the invoking user (with their environment)
+run_as_user() {
+    sudo -u "$REAL_USER" --preserve-env=PATH,KRB5_CONFIG HOME="$REAL_HOME" "$@"
+}
 
 # Parse command line arguments
 TARGETS=""
@@ -125,6 +159,16 @@ while getopts "t:o:c:T:u:p:H:d:h" opt; do
     esac
 done
 
+# Collect remaining positional arguments as additional targets
+shift $((OPTIND - 1))
+for arg in "$@"; do
+    if [[ -n "$TARGETS" ]]; then
+        TARGETS="$TARGETS $arg"
+    else
+        TARGETS="$arg"
+    fi
+done
+
 # Validate required arguments
 if [[ -z "$OUTDIR" ]]; then
     echo -e "${RED}Error: Output directory (-o) is required${NC}"
@@ -136,11 +180,11 @@ if [[ -z "$TARGETS" && -z "$CIDR" ]]; then
     usage
 fi
 
-# Check for required tools
+# Check for required tools (check as user since tools are in user's PATH)
 MISSING_TOOLS=()
 if [[ -n "$TARGETS" ]]; then
     for tool in rustscan nmap autorecon; do
-        if ! command -v $tool &> /dev/null; then
+        if ! run_as_user bash -c "command -v $tool" &> /dev/null; then
             MISSING_TOOLS+=("$tool")
         fi
     done
@@ -149,7 +193,7 @@ fi
 # Check for CIDR-specific tools if CIDR is provided
 if [[ -n "$CIDR" ]]; then
     for tool in nxc ipmap; do
-        if ! command -v $tool &> /dev/null; then
+        if ! run_as_user bash -c "command -v $tool" &> /dev/null; then
             MISSING_TOOLS+=("$tool")
         fi
     done
@@ -169,103 +213,104 @@ mkdir -p "$OUTDIR"
 # Process CIDR if provided
 if [[ -n "$CIDR" ]]; then
     echo -e "${GREEN}[*] Processing CIDR range: $CIDR${NC}"
-    
-    # Host discovery scan
+
+    # Host discovery scan (root: needs raw sockets)
     echo -e "${YELLOW}[*] Running host discovery scan on CIDR range${NC}"
-    sudo nmap -PE -PM -PP -sn -n "$CIDR" -oG "$OUTDIR/host-discovery.gnmap"
-    
+    nmap -PE -PM -PP -sn -n "$CIDR" -oG "$OUTDIR/host-discovery.gnmap"
+
     if [[ -f "$OUTDIR/host-discovery.gnmap" ]]; then
         echo -e "${GREEN}[+] Host discovery completed: $OUTDIR/host-discovery.gnmap${NC}"
     else
         echo -e "${RED}[!] Failed to perform host discovery${NC}"
     fi
-    
-    # Generate hosts file
+
+    # Generate hosts file (user: nxc uses user config)
     echo -e "${YELLOW}[*] Generating hosts file from CIDR range${NC}"
-    nxc smb "$CIDR" --generate-hosts-file "$OUTDIR/hosts.txt"
-    
+    run_as_user nxc smb "$CIDR" --generate-hosts-file "$OUTDIR/hosts.txt"
+
     if [[ -f "$OUTDIR/hosts.txt" ]]; then
         echo -e "${YELLOW}[*] Loading hosts file into IP mapping${NC}"
-        sudo ipmap m "$OUTDIR/hosts.txt"
+        ipmap m "$OUTDIR/hosts.txt"
         echo -e "${GREEN}[+] Hosts file loaded successfully from: $OUTDIR/hosts.txt${NC}"
     else
         echo -e "${RED}[!] Failed to generate hosts file${NC}"
     fi
-    
-    # Generate Kerberos config
+
+    # Generate Kerberos config (user: nxc uses user config)
     echo -e "${YELLOW}[*] Generating Kerberos configuration${NC}"
-    nxc smb "$CIDR" --generate-krb5-file "$OUTDIR/krb5.conf"
-    
+    run_as_user nxc smb "$CIDR" --generate-krb5-file "$OUTDIR/krb5.conf"
+
     if [[ -f "$OUTDIR/krb5.conf" ]]; then
         export KRB5_CONFIG="$OUTDIR/krb5.conf"
-        
-        # Update or create ~/.config/.my_vars.env
-        mkdir -p ~/.config
-        if [[ -f ~/.config/.my_vars.env ]]; then
-            if grep -q "^KRB5_CONFIG=" ~/.config/.my_vars.env; then
+
+        # Update or create ~/.config/.my_vars.env (as user)
+        run_as_user mkdir -p "$REAL_HOME/.config"
+        if [[ -f "$REAL_HOME/.config/.my_vars.env" ]]; then
+            if grep -q "^KRB5_CONFIG=" "$REAL_HOME/.config/.my_vars.env"; then
                 # Replace existing entry
-                sed -i "s|^KRB5_CONFIG=.*|KRB5_CONFIG='$OUTDIR/krb5.conf'|" ~/.config/.my_vars.env
+                sed -i "s|^KRB5_CONFIG=.*|KRB5_CONFIG='$OUTDIR/krb5.conf'|" "$REAL_HOME/.config/.my_vars.env"
             else
                 # Add new entry
-                echo "KRB5_CONFIG='$OUTDIR/krb5.conf'" >> ~/.config/.my_vars.env
+                echo "KRB5_CONFIG='$OUTDIR/krb5.conf'" >> "$REAL_HOME/.config/.my_vars.env"
             fi
         else
             # Create file with entry
-            echo "KRB5_CONFIG='$OUTDIR/krb5.conf'" > ~/.config/.my_vars.env
+            echo "KRB5_CONFIG='$OUTDIR/krb5.conf'" > "$REAL_HOME/.config/.my_vars.env"
         fi
-        
+        chown "$REAL_USER":"$REAL_GROUP" "$REAL_HOME/.config/.my_vars.env"
+
         echo -e "${GREEN}[+] Kerberos configuration loaded and exported: KRB5_CONFIG=$OUTDIR/krb5.conf${NC}"
         echo -e "${GREEN}[+] KRB5_CONFIG saved to ~/.config/.my_vars.env${NC}"
     else
         echo -e "${RED}[!] Failed to generate Kerberos configuration${NC}"
     fi
-    
+
     # Parse discovered hosts and ask user
     if [[ -f "$OUTDIR/host-discovery.gnmap" ]]; then
         DISCOVERED_HOSTS=$(grep "Status: Up" "$OUTDIR/host-discovery.gnmap" | grep -oP 'Host: \K[0-9.]+')
-        
+
         if [[ -n "$DISCOVERED_HOSTS" ]]; then
             echo ""
             echo -e "${GREEN}Hosts found:${NC}"
             echo "$DISCOVERED_HOSTS"
             echo ""
-            
+
             read -p "Do you want to run target enumeration on these hosts? [Y/n]: " -r
             echo
-            
+
             if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
                 # Convert to space-separated list
                 TARGET_LIST=$(echo "$DISCOVERED_HOSTS" | tr '\n' ' ' | sed 's/ $//')
                 echo -e "${GREEN}[*] Rerunning with discovered targets${NC}"
                 echo ""
-                
+
                 # Build command for recursive call, preserving flags
                 RECURS_CMD="$0 -o \"$OUTDIR\" -t \"$TARGET_LIST\""
-                
+
                 if [[ -n "$NMAP_PE" ]]; then
                     RECURS_CMD="$RECURS_CMD -PE"
                 fi
-                
+
                 if [[ -n "$TAGS" ]]; then
                     RECURS_CMD="$RECURS_CMD --tags \"$TAGS\""
                 fi
-                
+
                 if [[ -n "$USER" ]]; then
                     RECURS_CMD="$RECURS_CMD -u \"$USER\""
                 fi
-                
+
                 if [[ -n "$PASSWORD" ]]; then
                     RECURS_CMD="$RECURS_CMD -p \"$PASSWORD\""
                 fi
-                
+
                 if [[ -n "$NT_HASH" ]]; then
                     RECURS_CMD="$RECURS_CMD -H \"$NT_HASH\""
                 fi
-                
+
                 if [[ -n "$DOMAIN" ]]; then
                     RECURS_CMD="$RECURS_CMD -d \"$DOMAIN\""
                 fi
-                
+
                 eval "exec $RECURS_CMD"
             else
                 echo -e "${YELLOW}[*] Skipping target enumeration${NC}"
@@ -274,27 +319,34 @@ if [[ -n "$CIDR" ]]; then
             echo -e "${YELLOW}[!] No hosts discovered in CIDR range${NC}"
         fi
     fi
-    
+
     echo ""
 fi
 
 # Process targets if provided
 if [[ -n "$TARGETS" ]]; then
-    # Normalize targets: replace commas with spaces
+    # Normalize targets: replace commas with spaces, then expand IP ranges
     TARGETS=$(echo "$TARGETS" | tr ',' ' ')
+    EXPANDED=""
+    for raw in $TARGETS; do
+        EXPANDED="$EXPANDED $(expand_range "$raw")"
+    done
+    TARGETS=$(echo "$EXPANDED" | xargs)
 
     # Process each target
     for t in $(echo "$TARGETS" | tr ' ' '\n'); do
     echo -e "${GREEN}[*] Processing target: $t${NC}"
-    
-    sudo mkdir -p "$OUTDIR/$t"
-    
+
+    mkdir -p "$OUTDIR/$t"
+
+    # rustscan doesn't need root
     echo -e "${YELLOW}[*] Running rustscan on $t${NC}"
-    rustscan -a $t -r 0-65535 -g | sudo tee "$OUTDIR/$t/TCP.txt"
-    
+    run_as_user rustscan -a $t -r 0-65535 -g | tee "$OUTDIR/$t/TCP.txt"
+
+    # nmap UDP scan needs root (raw sockets)
     echo -e "${YELLOW}[*] Running UDP scan on $t${NC}"
-    sudo nmap -vv --reason -Pn -sU --top-ports 100 -oN "$OUTDIR/$t/UDP.txt" $t
-    
+    nmap -vv --reason -Pn -sU --top-ports 100 -oN "$OUTDIR/$t/UDP.txt" $t
+
     TCP_PORTS=$(grep -oP '\[\K[0-9,]+(?=\])' "$OUTDIR/$t/TCP.txt" | head -1)
     UDP_PORTS=$(grep -oP '^\d+(?=/udp\s+open)' "$OUTDIR/$t/UDP.txt" | tr '\n' ',' | sed 's/,$//')
 
@@ -312,34 +364,36 @@ if [[ -n "$TARGETS" ]]; then
 
     if [[ -n "$PORTS" ]]; then
         echo -e "${YELLOW}[*] Running autorecon on $t with ports: $PORTS${NC}"
-        
+
         # Build autorecon command with optional flags
-        AUTORECON_CMD="sudo autorecon \"$t\" --ports $PORTS --config ~/cyber/AutoRecon/config.toml --global-file ~/cyber/AutoRecon/global.toml --plugins-dir ~/cyber/AutoRecon/Plugins --wpscan.api-token uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I --exclude-tags disabled --output \"$OUTDIR\""
-        
+        # autorecon needs root for nmap raw sockets; HOME is set to user's home
+        # so child processes (nxc, etc.) find the correct config files
+        AUTORECON_CMD="HOME=$REAL_HOME autorecon \"$t\" --ports $PORTS --config $REAL_HOME/cyber/AutoRecon/config.toml --global-file $REAL_HOME/cyber/AutoRecon/global.toml --plugins-dir $REAL_HOME/cyber/AutoRecon/Plugins --wpscan.api-token uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I --exclude-tags disabled --disable-keyboard-control --output \"$OUTDIR\""
+
         if [[ -n "$NMAP_PE" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD $NMAP_PE"
         fi
-        
+
         if [[ -n "$TAGS" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD --tags $TAGS"
         fi
-        
+
         if [[ -n "$USER" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD --global.username $USER"
         fi
-        
+
         if [[ -n "$PASSWORD" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD --global.password $PASSWORD"
         fi
-        
+
         if [[ -n "$NT_HASH" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD --global.nthash $NT_HASH"
         fi
-        
+
         if [[ -n "$DOMAIN" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD --global.domain $DOMAIN"
         fi
-        
+
         eval "$AUTORECON_CMD &"
     else
         echo -e "${RED}[!] No open ports found for $t, skipping autorecon${NC}"
@@ -348,7 +402,10 @@ if [[ -n "$TARGETS" ]]; then
 
     # Wait for all background jobs to complete
     wait
-    
+
+    # Fix ownership of output directory so user can access results
+    chown -R "$REAL_USER":"$REAL_GROUP" "$OUTDIR"
+
     echo -e "${GREEN}[*] All target scans completed${NC}"
 fi
 

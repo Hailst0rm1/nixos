@@ -47,6 +47,15 @@ in
       hash = "sha256-k4XeB7cddVYW0SVRi4yzEGZSQOPPhSAHHtunlzgaTRw=";
     };
 
+    # Include templates and static files that setuptools doesn't pick up automatically
+    postPatch = ''
+      cat >> pyproject.toml <<'EOF'
+
+      [tool.setuptools.package-data]
+      "src" = ["web/templates/**/*", "web/static/**/*"]
+      EOF
+    '';
+
     build-system = [python.pkgs.setuptools];
 
     dependencies = with python.pkgs; [
