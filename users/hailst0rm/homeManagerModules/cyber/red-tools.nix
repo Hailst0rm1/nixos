@@ -29,6 +29,7 @@
   logic-net = pkgs.callPackage "${nixosDir}/pkgs/logic-net/package.nix" {};
   manspider = pkgs-unstable.callPackage "${nixosDir}/pkgs/manspider/package.nix" {};
   mssqlclient-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/mssqlclient-ng/package.nix" {};
+  adpulse = pkgs-unstable.callPackage "${nixosDir}/pkgs/adpulse/package.nix" {};
   notsliver = pkgs-unstable.callPackage "${nixosDir}/pkgs/notsliver/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
@@ -46,8 +47,8 @@ in {
   config = lib.mkIf config.cyber.redTools.enable {
     # For var-tool
     programs.zsh.initContent = ''
-      # source ~/.config/.my_vars.env
-      source ~/.config/NotSliver/engagement.env
+      [[ -f ~/.config/.my_vars.env ]] && source ~/.config/.my_vars.env
+      [[ -f ~/.config/NotSliver/engagement.env ]] && source ~/.config/NotSliver/engagement.env
     '';
 
     home = {
@@ -173,6 +174,7 @@ in {
         bloodhound
         bloodhound-py # Bloodhound ingestor (remote SharpHound)
         manspider # SMB share spider - search filenames/content across networks
+        adpulse # Active Directory security scanner with 35 automated checks
 
         # === Command & Control (C2) ===
         sliver # C2 framework
