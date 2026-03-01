@@ -207,8 +207,9 @@ if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
     exit 1
 fi
 
-# Create output directory
+# Create output directory (owned by invoking user so non-root tools can write)
 mkdir -p "$OUTDIR"
+chown "$REAL_USER":"$REAL_GROUP" "$OUTDIR"
 
 # Process CIDR if provided
 if [[ -n "$CIDR" ]]; then
@@ -338,6 +339,7 @@ if [[ -n "$TARGETS" ]]; then
     echo -e "${GREEN}[*] Processing target: $t${NC}"
 
     mkdir -p "$OUTDIR/$t"
+    chown "$REAL_USER":"$REAL_GROUP" "$OUTDIR/$t"
 
     # rustscan doesn't need root
     echo -e "${YELLOW}[*] Running rustscan on $t${NC}"
