@@ -46,15 +46,10 @@
 in {
   config = lib.mkIf config.cyber.redTools.enable {
     # For var-tool
-    programs.zsh = {
-      initContent = ''
-        [[ -f ~/.config/.my_vars.env ]] && source ~/.config/.my_vars.env
-        [[ -f ~/.config/NotSliver/engagement.env ]] && source ~/.config/NotSliver/engagement.env
-      '';
-      shellAliases = {
-        vars = "source /home/${config.username}/.config/NotSliver/engagement.env";
-      };
-    };
+    programs.zsh.initContent = ''
+      [[ -f ~/.config/.my_vars.env ]] && source ~/.config/.my_vars.env
+      [[ -f ~/.config/NotSliver/engagement.env ]] && source ~/.config/NotSliver/engagement.env
+    '';
 
     home = {
       file = {
