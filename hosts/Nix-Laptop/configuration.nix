@@ -68,6 +68,10 @@ in {
         label = "Code Projects";
         path = "/home/hailst0rm/Code";
       };
+      "notsliver" = {
+        label = "NotSliver";
+        path = "/home/hailst0rm/.config/NotSliver";
+      };
     };
   };
 }

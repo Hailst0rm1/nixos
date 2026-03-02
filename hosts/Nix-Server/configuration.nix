@@ -416,6 +416,10 @@
         label = "Code Projects";
         path = "/mnt/nas/Code";
       };
+      "notsliver" = {
+        label = "NotSliver";
+        path = "/mnt/nas/Config/NotSliver";
+      };
     };
   };
 
