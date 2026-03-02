@@ -17,7 +17,7 @@ class WPScan(ServiceScan):
 		if self.get_option('api-token'):
 			api_token = ' --api-token ' + self.get_option('api-token')
 
-			service.execute('wpscan --url {http_scheme}://{addressv6}:{port}/ --no-update -e vp,vt,tt,cb,dbe,u,m --plugins-detection aggressive --plugins-version-detection aggressive -f cli-no-color' + api_token, outfile="{protocol}_{port}_{http_scheme}_wpscan.txt")
+			await service.execute('wpscan --url {http_scheme}://{addressv6}:{port}/ --no-update -e vp,vt,tt,cb,dbe,u,m --plugins-detection aggressive --plugins-version-detection aggressive -f cli-no-color' + api_token, outfile="{protocol}_{port}_{http_scheme}_wpscan.txt")
 
 
 	def manual(self, service, plugin_was_run):

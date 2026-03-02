@@ -20,7 +20,7 @@ ext = 'html,txt,xml,php,aspx,pdf,js,doc,docx,jpg,png,config,asp,jsp'
 wordlist = [
 	# '/home/hailst0rm/cyber/wordlists/seclists/Discovery/Web-Content/common.txt',
 	# '/home/hailst0rm/cyber/wordlists/seclists/Discovery/Web-Content/big.txt',
-	'/home/hailst0rm/cyber/wordlists/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt'
+	'/home/hailst0rm/cyber/wordlists/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-medium.txt'
 ]
 
 [enum4linux]
