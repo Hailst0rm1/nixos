@@ -148,5 +148,8 @@
     ]
     ++ lib.optionals osConfig.services.nas.client.enable [
       "file://${osConfig.services.nas.client.mountPoint} NAS"
+    ]
+    ++ lib.optionals config.cyber.redTools.enable [
+      "file://${config.home.homeDirectory}/cyber/postex-tools/payloads Payloads"
     ];
 }
