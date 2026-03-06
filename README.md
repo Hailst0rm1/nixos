@@ -182,7 +182,57 @@ sudo nixos-rebuild boot --flake ~/.nixos#<HOSTNAME>
 
 Reboot to activate the full configuration.
 
-### Method 3: Remote install (nixos-anywhere)
+### Method 3: Reliable install (interactive script)
+
+Uses the **two-step workflow** — runs `disko` separately, then `nixos-install`. The single-command `disko-install` (Method 1) builds the entire system closure *before* formatting the disk, meaning swap is unavailable during the build. This is the primary cause of OOM crashes, even on 8 GB machines. The two-step approach formats first, activates swap, then builds.
+
+An interactive script (`install.sh`) automates the entire process. It supports two modes:
+
+**Install mode** (default) — runs everything interactively:
+```shell
+git clone https://github.com/hailst0rm1/nixos
+cd nixos
+sudo ./install.sh
+```
+
+**Manual mode** — gathers values and outputs copy-pasteable commands without executing anything:
+```shell
+sudo ./install.sh manual
+```
+
+The script will:
+
+1. **Expand tmpfs** and offer to activate temporary swap (always prompted, not just low-RAM)
+2. **Show available disks** (`lsblk`) with model, size, and interface — prompt for the target device
+3. **List host configurations** from `hosts/` or **create a new host** interactively:
+   - Desktop environment (hyprland, gnome, xfce, or none)
+   - Laptop mode
+   - GPU drivers (none, Intel, NVIDIA, Intel + NVIDIA PRIME)
+   - Disko layout (default or new)
+   - Sops-nix, YubiKey, red team tools, OpenSSH toggles
+   - Generates `configuration.nix` with only non-default overrides
+   - Automatically adds the new host to `flake.nix`
+4. **List disko configurations** (`default` or `new`) and prompt for selection
+5. **Run disko** (`--mode destroy,format,mount`) — formats the disk, sets up LUKS encryption with interactive YubiKey enrollment, creates btrfs subvolumes, and activates swap
+6. **Generate hardware config** (`nixos-generate-config --no-filesystems`) — the `--no-filesystems` flag is important because disko already declares `fileSystems` and `swapDevices`
+7. **Copy the config** to `/mnt/etc/nixos/` and stage for flake evaluation (`git add -A` — flakes silently ignore untracked files)
+8. **Pre-build** the system closure (prompted, default yes) to catch config errors before writing to disk
+9. **Run `nixos-install`** with `--no-channel-copy` (irrelevant with flakes) and `--no-root-passwd` (passwords are set declaratively)
+10. On low-RAM systems, automatically limit build parallelism (`max-jobs=2, cores=2`)
+
+**Recovery if the install fails partway** — don't reformat. Remount the existing partitions with disko's non-destructive mode, then re-run install:
+
+```shell
+sudo nix run github:nix-community/disko/latest -- \
+  --mode mount --flake 'nixos#<HOSTNAME>'
+sudo nixos-install --root /mnt --flake '/mnt/etc/nixos#<HOSTNAME>' --no-channel-copy --no-root-passwd
+```
+
+`nixos-install` is safe to re-run — it skips store paths already present on the target.
+
+> **Tip:** Method 1 (`disko-install`) is simpler if you have **16+ GB RAM**. Use this method when RAM is limited or if Method 1 fails with OOM.
+
+### Method 4: Remote install (nixos-anywhere)
 
 For installing on remote machines via SSH (e.g. cloud VPS).
 
