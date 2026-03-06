@@ -334,6 +334,9 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
     # --- Generate the configuration.nix ---
     HOST_DIR="$SCRIPT_DIR/hosts/$HOSTNAME"
     mkdir -p "$HOST_DIR"
+    # Match ownership to the repo (script runs as root but repo is owned by live user)
+    REPO_OWNER=$(stat -c '%U:%G' "$SCRIPT_DIR")
+    chown "$REPO_OWNER" "$HOST_DIR"
 
     # Build the overrides section (only include non-default values)
     OVERRIDES=""
@@ -408,6 +411,7 @@ in {
 }
 NIXEOF
 
+    chown "$REPO_OWNER" "$HOST_DIR/configuration.nix"
     ok "Created $HOST_DIR/configuration.nix"
     echo ""
 
@@ -648,6 +652,8 @@ echo ""
 if [[ "$GENERATE_HW" == "true" ]]; then
     info "Generating hardware configuration..."
     nixos-generate-config --no-filesystems --root /mnt --show-hardware-config > "$HW_CONFIG"
+    # Match ownership to the repo so the live user can work with the file
+    chown "$(stat -c '%U:%G' "$SCRIPT_DIR")" "$HW_CONFIG"
     ok "Hardware config written to $HW_CONFIG"
     echo ""
 fi
