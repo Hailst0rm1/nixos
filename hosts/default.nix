@@ -97,7 +97,7 @@
     code-server.enable = lib.mkDefault false; # Web-based VS Code
     tailscaleAutoconnect = {
       enable = lib.mkDefault true;
-      authkeyFile = lib.mkDefault config.sops.secrets."services/tailscale/auth.key".path; # Needs updating every 90 days (okt 16)
+      authkeyFile = lib.mkIf config.security.sops.enable (lib.mkDefault config.sops.secrets."services/tailscale/auth.key".path); # Needs updating every 90 days (okt 16)
       advertiseExitNode = lib.mkDefault false;
       loginServer = lib.mkDefault "https://login.tailscale.com";
       exitNode = lib.mkDefault "100.84.181.70";

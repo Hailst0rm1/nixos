@@ -52,25 +52,28 @@ in {
     };
   };
 
-  services.syncthing-sync = {
-    enable = true;
-    folders = {
-      "nixos-config" = {
-        label = "NixOS Config";
-        path = "/home/hailst0rm/.nixos";
-        stignore = ''
-          .claude
-          .direnv
-          result
-        '';
-      };
-      "code" = {
-        label = "Code Projects";
-        path = "/home/hailst0rm/Code";
-      };
-      "notsliver" = {
-        label = "NotSliver";
-        path = "/home/hailst0rm/.config/NotSliver";
+  services = {
+    # mattermost.enable = true;
+    syncthing-sync = {
+      enable = true;
+      folders = {
+        "nixos-config" = {
+          label = "NixOS Config";
+          path = "/home/hailst0rm/.nixos";
+          stignore = ''
+            .claude
+            .direnv
+            result
+          '';
+        };
+        "code" = {
+          label = "Code Projects";
+          path = "/home/hailst0rm/Code";
+        };
+        "notsliver" = {
+          label = "NotSliver";
+          path = "/home/hailst0rm/.config/NotSliver";
+        };
       };
     };
   };

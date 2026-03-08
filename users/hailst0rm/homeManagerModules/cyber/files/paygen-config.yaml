@@ -3,6 +3,7 @@ recipes_dir: ~/Code/paygen-recipes/recipes
 preprocessors_dir: ~/Code/paygen-recipes/preprocessors
 ps_obfuscation_yaml: ~/Code/paygen-recipes/ps-obfuscation.yaml
 ps_features_yaml: ~/Code/paygen-recipes/ps-features.yaml
+cs_features_yaml: ~/Code/paygen-recipes/cs-features.yaml
 shellcodes_config: ~/Code/paygen-recipes/shellcodes.yaml
 
 # Build preferences
