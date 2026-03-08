@@ -20,7 +20,7 @@
     services.cloudflared = lib.mkIf (config.services.cloudflare.deviceType == "server") {
       enable = true;
       tunnels = {
-        "7a34e024-e936-477f-9a0e-e8e3624ee2a0" = {
+        "9b5db6b1-0e86-4c6d-b6cc-15b7e375c39b" = {
           credentialsFile = "${config.sops.secrets."services/cloudflared/creds".path}";
           default = "http_status:404";
         };
