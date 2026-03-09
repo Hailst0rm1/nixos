@@ -36,6 +36,7 @@
         echo -e "''${BOLD}Options:''${RESET}"
         echo -e "  ''${GREEN}--legacy''${RESET}              Use nixos-rebuild instead of nh"
         echo -e "  ''${GREEN}--debug''${RESET}               Show timing info for each step"
+        echo -e "  ''${GREEN}--no-auth''${RESET}             Skip GitHub auth; fetch-only with local file protection"
         echo -e "  ''${GREEN}--nh-flags ''${YELLOW}\"<args>\"''${RESET}   Pass extra arguments to nh"
         echo -e "  ''${GREEN}-h, --help''${RESET}            Show this help message"
         echo ""
@@ -49,6 +50,7 @@
         echo -e "''${BOLD}Examples:''${RESET}"
         echo -e "  ''${CYAN}${name}''${RESET}                              # Normal rebuild with nh"
         echo -e "  ''${CYAN}${name} --legacy''${RESET}                     # Use nixos-rebuild"
+        echo -e "  ''${CYAN}${name} --no-auth''${RESET}                    # Skip GitHub auth (no push/pull)"
         echo -e "  ''${CYAN}${name} --nh-flags \"--update\"''${RESET}        # Update flake.lock first"
         echo -e "  ''${CYAN}${name} --nh-flags \"--max-jobs 4\"''${RESET}    # Limit to 4 parallel jobs"
       }
@@ -63,6 +65,7 @@
       # Parse arguments
       use_legacy=false
       use_debug=false
+      use_no_auth=false
       nh_flags=""
       while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -72,6 +75,10 @@
             ;;
           --legacy)
             use_legacy=true
+            shift
+            ;;
+          --no-auth)
+            use_no_auth=true
             shift
             ;;
           --nh-flags)
@@ -120,46 +127,126 @@
         fi
       fi
 
-      # Test GitHub connectivity
-      echo -e "''${CYAN}🌐 Testing GitHub connectivity...''${RESET}"
-      notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless 2>/dev/null
+      # GitHub connectivity / remote sync
+      if [ "$use_no_auth" = true ]; then
+        echo -e "''${YELLOW}🔓 --no-auth mode: skipping GitHub authentication check''${RESET}"
+      else
+        # Test GitHub connectivity
+        echo -e "''${CYAN}🌐 Testing GitHub connectivity...''${RESET}"
+        notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless 2>/dev/null
 
-      if ! timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
-        echo -e "''${RED}''${BOLD}❌ Cannot reach GitHub. Check your internet connection.''${RESET}"
-        notify-send -e "${notifyName} Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical 2>/dev/null
-        popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
+        if ! timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
+          echo -e "''${RED}''${BOLD}❌ Cannot reach GitHub. Check your internet connection.''${RESET}"
+          notify-send -e "${notifyName} Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical 2>/dev/null
+          popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
 
-        exit 1
+          exit 1
+        fi
+        echo -e "''${GREEN}✅ GitHub connectivity OK''${RESET}"
       fi
-      echo -e "''${GREEN}✅ GitHub connectivity OK''${RESET}"
 
       ${lib.optionalString checkRemote ''
-        # Fetch remote changes to check if we're behind
-        echo -e "''${BLUE}📡 Fetching remote changes...''${RESET}"
-        STEP_START=$SECONDS
-        if ! git fetch origin master --quiet 2>/dev/null; then
-          echo -e "''${YELLOW}⚠️  Fetch failed (''${SECONDS-STEP_START}s), pruning stale refs and retrying...''${RESET}"
-          git remote prune origin
-          git fetch origin master --quiet || {
-            echo -e "''${RED}❌ Failed to fetch remote changes. Continuing with local state.''${RESET}"
-          }
-        fi
-        debug_timer "git fetch"
+        if [ "$use_no_auth" = true ]; then
+          # --no-auth: attempt a best-effort fetch with timeout
+          echo -e "''${BLUE}📡 Attempting fetch (no-auth, best-effort)...''${RESET}"
+          STEP_START=$SECONDS
+          if timeout 10 git fetch origin master --quiet 2>/dev/null; then
+            debug_timer "git fetch (no-auth)"
 
-        STEP_START=$SECONDS
-        LOCAL=$(git rev-parse HEAD)
-        REMOTE=$(git rev-parse origin/master)
-        debug_timer "rev-parse"
+            STEP_START=$SECONDS
+            LOCAL=$(git rev-parse HEAD)
+            REMOTE=$(git rev-parse origin/master 2>/dev/null || echo "")
+            debug_timer "rev-parse (no-auth)"
 
-        if [ "$LOCAL" != "$REMOTE" ]; then
-          BEHIND=$(git rev-list HEAD..origin/master --count)
-          echo -e "''${YELLOW}''${BOLD}⚠️  Warning: Local config is $BEHIND commit(s) behind remote.''${RESET}"
-          notify-send -e "NixOS Config Behind Remote" "Your config is $BEHIND commit(s) behind. Pull before rebuilding?" --icon=dialog-warning 2>/dev/null
-          read -p "Pull remote changes before rebuilding? (y/N): " -n 1 -r
-          echo
-          if [[ $REPLY =~ ^[Yy]$ ]]; then
-            echo -e "''${CYAN}⬇️  Pulling remote changes...''${RESET}"
-            git pull origin master
+            if [ -n "$REMOTE" ] && [ "$LOCAL" != "$REMOTE" ]; then
+              BEHIND=$(git rev-list HEAD..origin/master --count 2>/dev/null || echo "0")
+              if [ "$BEHIND" -gt 0 ] 2>/dev/null; then
+                echo -e "''${YELLOW}''${BOLD}⚠️  Warning: Local config is $BEHIND commit(s) behind remote.''${RESET}"
+                notify-send -e "NixOS Config Behind Remote" "Your config is $BEHIND commit(s) behind. Pull before rebuilding?" --icon=dialog-warning 2>/dev/null
+                read -p "Pull remote changes before rebuilding? (y/N): " -n 1 -r
+                echo
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                  HOSTNAME_VAL="${config.hostname}"
+
+                  # Back up local host-specific files before pulling
+                  echo -e "''${CYAN}📦 Backing up local host files before pull...''${RESET}"
+                  NO_AUTH_BACKUP_DIR=$(mktemp -d)
+
+                  # Collect files matching host-specific patterns
+                  NO_AUTH_BACKUP_FILES=()
+                  while IFS= read -r -d "" f; do
+                    NO_AUTH_BACKUP_FILES+=("$f")
+                  done < <(find . -path "./hosts/$HOSTNAME_VAL/*" -print0 2>/dev/null)
+                  while IFS= read -r -d "" f; do
+                    NO_AUTH_BACKUP_FILES+=("$f")
+                  done < <(find . -path "./users/*/hosts/$HOSTNAME_VAL.*" -print0 2>/dev/null)
+                  while IFS= read -r -d "" f; do
+                    NO_AUTH_BACKUP_FILES+=("$f")
+                  done < <(find . -path "./users/*/hosts/displays/$HOSTNAME_VAL.*" -print0 2>/dev/null)
+
+                  for f in "''${NO_AUTH_BACKUP_FILES[@]}"; do
+                    mkdir -p "$NO_AUTH_BACKUP_DIR/$(dirname "$f")"
+                    cp -a "$f" "$NO_AUTH_BACKUP_DIR/$f"
+                  done
+
+                  if [ ''${#NO_AUTH_BACKUP_FILES[@]} -gt 0 ]; then
+                    echo -e "''${BLUE}  Backed up ''${#NO_AUTH_BACKUP_FILES[@]} host-specific file(s)''${RESET}"
+                  fi
+
+                  # Pull remote changes
+                  echo -e "''${CYAN}⬇️  Pulling remote changes...''${RESET}"
+                  git pull origin master
+
+                  # Restore backed-up host-specific files
+                  echo -e "''${CYAN}📦 Restoring local host files after pull...''${RESET}"
+                  for f in "''${NO_AUTH_BACKUP_FILES[@]}"; do
+                    if [ -f "$NO_AUTH_BACKUP_DIR/$f" ]; then
+                      mkdir -p "$(dirname "$f")"
+                      cp -a "$NO_AUTH_BACKUP_DIR/$f" "$f"
+                    fi
+                  done
+
+                  # Clean up
+                  rm -rf "$NO_AUTH_BACKUP_DIR"
+
+                  if [ ''${#NO_AUTH_BACKUP_FILES[@]} -gt 0 ]; then
+                    echo -e "''${GREEN}✅ Restored ''${#NO_AUTH_BACKUP_FILES[@]} host-specific file(s)''${RESET}"
+                  fi
+                fi
+              fi
+            fi
+          else
+            debug_timer "git fetch (no-auth, failed)"
+            echo -e "''${YELLOW}⚠️  Fetch failed (no connectivity or auth). Continuing with local state.''${RESET}"
+          fi
+        else
+          # Fetch remote changes to check if we're behind
+          echo -e "''${BLUE}📡 Fetching remote changes...''${RESET}"
+          STEP_START=$SECONDS
+          if ! git fetch origin master --quiet 2>/dev/null; then
+            echo -e "''${YELLOW}⚠️  Fetch failed (''${SECONDS-STEP_START}s), pruning stale refs and retrying...''${RESET}"
+            git remote prune origin
+            git fetch origin master --quiet || {
+              echo -e "''${RED}❌ Failed to fetch remote changes. Continuing with local state.''${RESET}"
+            }
+          fi
+          debug_timer "git fetch"
+
+          STEP_START=$SECONDS
+          LOCAL=$(git rev-parse HEAD)
+          REMOTE=$(git rev-parse origin/master)
+          debug_timer "rev-parse"
+
+          if [ "$LOCAL" != "$REMOTE" ]; then
+            BEHIND=$(git rev-list HEAD..origin/master --count)
+            echo -e "''${YELLOW}''${BOLD}⚠️  Warning: Local config is $BEHIND commit(s) behind remote.''${RESET}"
+            notify-send -e "NixOS Config Behind Remote" "Your config is $BEHIND commit(s) behind. Pull before rebuilding?" --icon=dialog-warning 2>/dev/null
+            read -p "Pull remote changes before rebuilding? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+              echo -e "''${CYAN}⬇️  Pulling remote changes...''${RESET}"
+              git pull origin master
+            fi
           fi
         fi
       ''}
@@ -260,7 +347,10 @@
       echo -e "''${GREEN}''${BOLD}✅ Build Complete!''${RESET}"
 
       ${lib.optionalString promptCommit ''
-        ${lib.optionalString (!hasDesktop) ''
+        if [ "$use_no_auth" = true ]; then
+          echo -e "''${YELLOW}🔓 --no-auth mode: skipping commit/push''${RESET}"
+        else
+          ${lib.optionalString (!hasDesktop) ''
           # Server: sync changes (formatting etc.) back to NAS for git commit
           ${pkgs.rsync}/bin/rsync -a --delete \
             --exclude='result' \
@@ -269,26 +359,27 @@
           cd "$NIXOS_DIR"
         ''}
 
-        # Prompt user for an optional commit message
-        echo -e "''${BOLD}''${CYAN}📄 Modified files:''${RESET}"
-        if git diff --name-status | sed -e 's/^M/Modified: /' -e 's/^A/Added: /' -e 's/^D/Deleted: /'; then
-          :
-        else
-          echo -e "''${YELLOW}⚠️  No modified files detected.''${RESET}"
-        fi
-        echo ""
-        echo -e "''${CYAN}💾 Enter a commit message to save changes (leave empty to skip):''${RESET}"
-        read -rp "➜ " user_msg
+          # Prompt user for an optional commit message
+          echo -e "''${BOLD}''${CYAN}📄 Modified files:''${RESET}"
+          if git diff --name-status | sed -e 's/^M/Modified: /' -e 's/^A/Added: /' -e 's/^D/Deleted: /'; then
+            :
+          else
+            echo -e "''${YELLOW}⚠️  No modified files detected.''${RESET}"
+          fi
+          echo ""
+          echo -e "''${CYAN}💾 Enter a commit message to save changes (leave empty to skip):''${RESET}"
+          read -rp "➜ " user_msg
 
-        # Only commit and push if message is not empty
-        if [ -n "$user_msg" ]; then
-          echo -e "''${BLUE}📤 Committing and pushing changes...''${RESET}"
-          notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing 2>/dev/null
-          git add .
-          git commit -am "${config.hostname}: $user_msg ($current)"
-          git push && echo -e "''${GREEN}''${BOLD}✅ Pushed to GitHub!''${RESET}" || echo -e "''${RED}''${BOLD}❌ Push failed!''${RESET}"
-        else
-          echo -e "''${YELLOW}⏭️  Skipping commit (no message provided)''${RESET}"
+          # Only commit and push if message is not empty
+          if [ -n "$user_msg" ]; then
+            echo -e "''${BLUE}📤 Committing and pushing changes...''${RESET}"
+            notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing 2>/dev/null
+            git add .
+            git commit -am "${config.hostname}: $user_msg ($current)"
+            git push && echo -e "''${GREEN}''${BOLD}✅ Pushed to GitHub!''${RESET}" || echo -e "''${RED}''${BOLD}❌ Push failed!''${RESET}"
+          else
+            echo -e "''${YELLOW}⏭️  Skipping commit (no message provided)''${RESET}"
+          fi
         fi
       ''}
 

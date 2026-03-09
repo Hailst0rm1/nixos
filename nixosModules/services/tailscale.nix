@@ -12,7 +12,8 @@ in
       enable = mkEnableOption "tailscaleAutoconnect";
       authkeyFile = mkOption {
         type = types.str;
-        description = "The authkey to use for authentication with Tailscale";
+        default = "";
+        description = "Path to a file containing the Tailscale auth key.";
       };
 
       loginServer = mkOption {
@@ -44,7 +45,7 @@ in
       assertions = [
         {
           assertion = cfg.authkeyFile != "";
-          message = "authkeyFile must be set";
+          message = "services.tailscaleAutoconnect.authkeyFile must be set. Either specify a file path, enable sops (security.sops.enable = true), or set services.tailscaleAutoconnect.enable = false;";
         }
         {
           assertion = cfg.exitNodeAllowLanAccess -> cfg.exitNode != "";

@@ -142,6 +142,7 @@
       "file://${config.home.homeDirectory}/Documents"
       "file://${config.home.homeDirectory}/Pictures"
       "file://${config.home.homeDirectory}/Downloads"
+      "file://${config.nixosDir} NixOS"
     ]
     ++ lib.optionals osConfig.services.syncthing-sync.enable [
       "file://${config.home.homeDirectory}/Code"
