@@ -147,10 +147,11 @@
 
       ${lib.optionalString checkRemote ''
         if [ "$use_no_auth" = true ]; then
-          # --no-auth: attempt a best-effort fetch with timeout
-          echo -e "''${BLUE}📡 Attempting fetch (no-auth, best-effort)...''${RESET}"
+          # --no-auth: fetch via HTTPS (no SSH key needed for public repos)
+          echo -e "''${BLUE}📡 Fetching remote changes (no-auth, HTTPS)...''${RESET}"
           STEP_START=$SECONDS
-          if timeout 10 git fetch origin master --quiet 2>/dev/null; then
+          HTTPS_URL="https://github.com/hailst0rm1/nixos.git"
+          if timeout 10 git fetch "$HTTPS_URL" master:refs/remotes/origin/master --quiet 2>/dev/null; then
             debug_timer "git fetch (no-auth)"
 
             STEP_START=$SECONDS
@@ -193,9 +194,9 @@
                     echo -e "''${BLUE}  Backed up ''${#NO_AUTH_BACKUP_FILES[@]} host-specific file(s)''${RESET}"
                   fi
 
-                  # Pull remote changes
-                  echo -e "''${CYAN}⬇️  Pulling remote changes...''${RESET}"
-                  git pull origin master
+                  # Pull remote changes via HTTPS (no SSH key needed)
+                  echo -e "''${CYAN}⬇️  Pulling remote changes (HTTPS)...''${RESET}"
+                  git pull "$HTTPS_URL" master
 
                   # Restore backed-up host-specific files
                   echo -e "''${CYAN}📦 Restoring local host files after pull...''${RESET}"
