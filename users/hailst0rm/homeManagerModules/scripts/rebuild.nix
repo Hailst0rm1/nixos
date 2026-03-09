@@ -129,7 +129,18 @@
 
       # GitHub connectivity / remote sync
       if [ "$use_no_auth" = true ]; then
-        echo -e "''${YELLOW}🔓 --no-auth mode: skipping GitHub authentication check''${RESET}"
+        # Test HTTPS connectivity (no SSH key needed)
+        echo -e "''${CYAN}🌐 Testing GitHub connectivity (HTTPS)...''${RESET}"
+        notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless 2>/dev/null
+
+        if ! timeout 5 git ls-remote https://github.com/hailst0rm1/nixos.git HEAD &>/dev/null; then
+          echo -e "''${RED}''${BOLD}❌ Cannot reach GitHub. Check your internet connection.''${RESET}"
+          notify-send -e "${notifyName} Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical 2>/dev/null
+          popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
+
+          exit 1
+        fi
+        echo -e "''${GREEN}✅ GitHub connectivity OK''${RESET}"
       else
         # Test GitHub connectivity
         echo -e "''${CYAN}🌐 Testing GitHub connectivity...''${RESET}"

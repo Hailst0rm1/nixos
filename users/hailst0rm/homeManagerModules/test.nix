@@ -6,6 +6,5 @@
 }: {
   home.packages = [
     pkgs.vagrant
-    pkgs.kitty
   ];
 }
