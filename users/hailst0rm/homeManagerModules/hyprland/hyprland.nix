@@ -5,9 +5,7 @@
   config,
   ...
 }: let
-  defaultDisplay = pkgs.writeText "default-display" ''
-    [ ",highrr,auto,1" ];
-  '';
+  defaultDisplay = [",highrr,auto,1"];
 
   startScript = pkgs.writeShellScriptBin "start" ''
 
