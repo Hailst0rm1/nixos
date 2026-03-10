@@ -23,10 +23,10 @@
 
   winpeasExe = pkgs.stdenv.mkDerivation {
     pname = "winpeasExe";
-    version = "20260301-38d838d2";
+    version = "20260308-8a13be4d";
     src = pkgs.fetchurl {
-      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20260301-38d838d2/winPEASany_ofs.exe";
-      sha256 = "sha256-xGGwyzzvWgLECeYWTdOQX+cFT1mScfp/mtz0ojI9IsQ=";
+      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20260308-8a13be4d/winPEASany_ofs.exe";
+      sha256 = "sha256-OHKX0u2JuD1Jktb6EyqkXLlkZ7wqxJZGbsGzxX4u+zU=";
     };
     phases = ["installPhase"];
     installPhase = ''
@@ -51,10 +51,10 @@
 
   linpeas = pkgs.stdenv.mkDerivation {
     pname = "linpeas";
-    version = "20260301-38d838d2";
+    version = "20260308-8a13be4d";
     src = pkgs.fetchurl {
-      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20260301-38d838d2/linpeas_fat.sh";
-      sha256 = "sha256-XtCXbUGgFtcqN2yjJ+mH19S+l7rIBVCC5exuiOHPeqM=";
+      url = "https://github.com/peass-ng/PEASS-ng/releases/download/20260308-8a13be4d/linpeas_fat.sh";
+      sha256 = "sha256-DQwmRNbZwcS+Xt9gcsyYoKV3U5Tfibg0l3bhwl76v3A=";
     };
     phases = ["installPhase"];
     installPhase = ''

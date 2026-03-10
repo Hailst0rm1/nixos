@@ -293,13 +293,16 @@ ssh-keygen -t ed25519-sk -N "" -C "yubikey A" -f ~/.ssh/id_yubic
 
 **Register YubiKey for sudo (PAM u2f):**
 ```shell
+# Create the config directory
+mkdir -p ~/.config/Yubico
+
 # First key
-pamu2fcfg -u <username> > ~/u2f_keys
+pamu2fcfg -u <username> > ~/.config/Yubico/u2f_keys
 
 # Additional keys
-pamu2fcfg -n >> ~/u2f_keys
+pamu2fcfg -n >> ~/.config/Yubico/u2f_keys
 ```
-Add the contents to `secrets/<username>.yaml` under `keys/yubikey/<hostname>`.
+You can let sops handle them by adding the contents to `secrets/<username>.yaml` under `keys/yubikey/<hostname>` and remove the file
 
 ---
 
