@@ -31,6 +31,7 @@
   mssqlclient-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/mssqlclient-ng/package.nix" {};
   adpulse = pkgs-unstable.callPackage "${nixosDir}/pkgs/adpulse/package.nix" {};
   notsliver = pkgs-unstable.callPackage "${nixosDir}/pkgs/notsliver/package.nix" {};
+  krbrelayx = pkgs-unstable.callPackage "${nixosDir}/pkgs/krbrelayx/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
@@ -174,6 +175,7 @@ in {
         python312Packages.impacket # ntmlrelayx.py: Relays ntml requests
         (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
         coercer # Coerce a Windows server to authenticate on an arbitrary machine
+        krbrelayx # Kerberos relaying and unconstrained delegation abuse (incl. addspn, dnstool, printerbug)
 
         # === Discovery ===
         bloodhound

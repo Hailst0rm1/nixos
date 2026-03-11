@@ -119,6 +119,7 @@
       enable = lib.mkDefault true;
       servers = {
         nixos.enable = lib.mkDefault true;
+        discord.enable = lib.mkDefault true;
         obsidian.enable = lib.mkDefault true;
       };
     };

