@@ -15,6 +15,12 @@ python3.pkgs.buildPythonApplication {
     hash = "sha256-Wyg6qWXV1PUNnbSefeyPuFkzDlK1IDbPET380VAU9iU=";
   };
 
+  # Fix Python 3.13 compat: files().iterdir() yields PosixPath, not str
+  postPatch = ''
+    substituteInPlace lib/clients/__init__.py \
+      --replace-fail "for file in clients_dir.iterdir():" "for file in (f.name for f in clients_dir.iterdir()):"
+  '';
+
   propagatedBuildInputs = with python3.pkgs; [
     impacket
     ldap3
@@ -29,23 +35,37 @@ python3.pkgs.buildPythonApplication {
         dnspython
       ]);
   in ''
-    runHook preInstall
+        runHook preInstall
 
-    mkdir -p $out/lib/krbrelayx
-    cp -r *.py lib $out/lib/krbrelayx/
+        mkdir -p $out/lib/krbrelayx
+        cp -r *.py lib $out/lib/krbrelayx/
 
-    mkdir -p $out/bin
-    for script in krbrelayx addspn dnstool printerbug; do
-      cat > $out/bin/$script <<EOF
+        mkdir -p $out/bin
+        for script in krbrelayx addspn dnstool printerbug; do
+          cat > $out/bin/$script <<EOF
     #!${pythonWithDeps}/bin/python
-    import sys, os
-    sys.path.insert(0, "$out/lib/krbrelayx")
-    exec(open("$out/lib/krbrelayx/''${script}.py").read())
-    EOF
-      chmod +x $out/bin/$script
-    done
+    import sys, logging, runpy
 
-    runHook postInstall
+    # Fix impacket logger 'identity' KeyError: install a filter that ensures
+    # every log record has the 'identity' attribute before formatting
+    class _IdentityFix(logging.Filter):
+        def filter(self, record):
+            if not hasattr(record, 'identity'):
+                record.identity = ""
+            if not hasattr(record, 'bullet'):
+                record.bullet = '[*]'
+            return True
+
+    for h in logging.root.handlers:
+        h.addFilter(_IdentityFix())
+
+    sys.path.insert(0, "$out/lib/krbrelayx")
+    runpy.run_path("$out/lib/krbrelayx/''${script}.py", run_name="__main__")
+    EOF
+          chmod +x $out/bin/$script
+        done
+
+        runHook postInstall
   '';
 
   doCheck = false;
