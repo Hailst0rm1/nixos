@@ -121,6 +121,10 @@
           id = lib.mkDefault "S2G22M5-E6ITP5L-ENW6CX6-3LFHMZ4-CN4A5NV-V5KIKCC-YGHR4K3-7WVQJAF";
           addresses = lib.mkDefault ["tcp://nix-laptop:22000"];
         };
+        "Nix-Tower" = {
+          id = lib.mkDefault "MUNGAUE-QIPK4B2-VRH6XZD-4WMZ2RR-KYJS2IL-CR4CP22-44DM2XR-J442IAF";
+          addresses = lib.mkDefault ["tcp://nix-tower:22000"];
+        };
       };
     };
   };

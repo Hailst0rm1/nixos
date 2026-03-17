@@ -12,7 +12,7 @@
     version = "2025-09-15";
     src = pkgs.fetchurl {
       url = "https://github.com/Syslifters/offsec-tools/raw/refs/heads/main/bin/Rubeus.exe";
-      sha256 = "sha256-XBe/o6/AEV+jT51N0WGMzhCiaUjBfPJfv69y7hMDlTs=";
+      sha256 = "sha256-/oUEENeRNTZTx1ST+4kRb5P52X3BdExxiJg3k8/V1ZM=";
     };
     phases = ["installPhase"];
     installPhase = ''
