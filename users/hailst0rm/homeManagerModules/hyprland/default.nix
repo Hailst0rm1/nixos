@@ -83,7 +83,7 @@ in {
 
     wallpaper = lib.mkOption {
       type = lib.types.str;
-      default = "swww";
+      default = "mpvpaper";
       description = "The wallpaper manager for Hyprland.";
     };
 

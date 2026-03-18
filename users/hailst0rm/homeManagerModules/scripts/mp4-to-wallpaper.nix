@@ -16,34 +16,49 @@
         BLUE='\033[0;34m'
         NC='\033[0m' # No Color
 
-        # Check if ffmpeg is available
-        if ! command -v ffmpeg &> /dev/null; then
-            echo -e "''${RED}Error: ffmpeg is not installed''${NC}"
-            exit 1
-        fi
+        MODE="copy"  # Default: copy MP4 directly (for mpvpaper)
+
+        # Parse flags
+        while [[ "$1" == -* ]]; do
+            case "$1" in
+                --gif)
+                    MODE="gif"
+                    shift
+                    ;;
+                -h|--help)
+                    echo -e "Usage: mp4-to-wallpaper [--gif] <input.mp4> [duration] [fps] [resolution]"
+                    echo -e ""
+                    echo -e "Adds an MP4 video to a wallpaper category."
+                    echo -e ""
+                    echo -e "Options:"
+                    echo -e "  --gif    Convert to GIF (for swww). Default: copy MP4 directly (for mpvpaper)"
+                    echo -e ""
+                    echo -e "Examples:"
+                    echo -e "  mp4-to-wallpaper video.mp4              # Copy MP4 to category (mpvpaper)"
+                    echo -e "  mp4-to-wallpaper --gif video.mp4 5 30   # Convert to 5s GIF at 30fps (swww)"
+                    exit 0
+                    ;;
+                *)
+                    echo -e "''${RED}Unknown option: $1''${NC}"
+                    exit 1
+                    ;;
+            esac
+        done
 
         # Check if input file is provided
         if [ $# -eq 0 ]; then
             echo -e "''${RED}Error: No input file specified''${NC}"
-            echo -e "Usage: mp4-to-wallpaper <input.mp4> [duration] [fps] [resolution]"
-            echo -e "Example: mp4-to-wallpaper chickens.mp4 5 30 3840:2160"
+            echo -e "Usage: mp4-to-wallpaper [--gif] <input.mp4> [duration] [fps] [resolution]"
             exit 1
         fi
 
         INPUT_FILE="$1"
-        DURATION="''${2:-5}"          # Default: 5 seconds
-        FPS="''${3:-30}"              # Default: 30 fps
-        RESOLUTION="''${4:-3840:2160}" # Default: 4K resolution
 
         # Check if input file exists
         if [ ! -f "$INPUT_FILE" ]; then
             echo -e "''${RED}Error: File '$INPUT_FILE' not found''${NC}"
             exit 1
         fi
-
-        # Get the base name without extension
-        BASENAME=$(basename "$INPUT_FILE" .mp4)
-        OUTPUT_FILE="''${BASENAME}.gif"
 
         # Wallpaper directory
         WALLPAPER_DIR="${config.nixosDir}/assets/wallpapers"
@@ -76,7 +91,6 @@
         if [[ "$SELECTION" =~ ^[0-9]+$ ]] && [ "$SELECTION" -ge 1 ] && [ "$SELECTION" -le "''${#CATEGORIES[@]}" ]; then
             SELECTED_CATEGORY="''${CATEGORIES[$((SELECTION-1))]}"
         else
-            # Check if typed name exists
             for category in "''${CATEGORIES[@]}"; do
                 if [ "$category" = "$SELECTION" ]; then
                     SELECTED_CATEGORY="$category"
@@ -91,29 +105,58 @@
         fi
 
         TARGET_DIR="$WALLPAPER_DIR/$SELECTED_CATEGORY"
-        TARGET_PATH="$TARGET_DIR/$OUTPUT_FILE"
 
-        echo -e "\n''${BLUE}Converting MP4 to GIF...''${NC}"
-        echo -e "  Input:      $INPUT_FILE"
-        echo -e "  Output:     $TARGET_PATH"
-        echo -e "  Duration:   ''${DURATION}s"
-        echo -e "  FPS:        $FPS"
-        echo -e "  Resolution: $RESOLUTION"
-        echo ""
+        if [ "$MODE" = "copy" ]; then
+            # Direct copy for mpvpaper
+            BASENAME=$(basename "$INPUT_FILE")
+            TARGET_PATH="$TARGET_DIR/$BASENAME"
 
-        # Convert MP4 to GIF using ffmpeg
-        if ${pkgs.ffmpeg_6}/bin/ffmpeg -ss 0 -t "$DURATION" -i "$INPUT_FILE" \
-            -vf "fps=$FPS,scale=$RESOLUTION:flags=bicubic" \
-            "$TARGET_PATH" 2>&1 | grep -v "^frame="; then
-            echo -e "\n''${GREEN}✓ Successfully converted and saved to:''${NC}"
-            echo -e "  $TARGET_PATH"
+            echo -e "\n''${BLUE}Copying MP4 to wallpaper directory...''${NC}"
+            echo -e "  Input:  $INPUT_FILE"
+            echo -e "  Output: $TARGET_PATH"
 
-            # Show file size
-            FILE_SIZE=$(du -h "$TARGET_PATH" | cut -f1)
-            echo -e "  Size: $FILE_SIZE"
+            if cp "$INPUT_FILE" "$TARGET_PATH"; then
+                FILE_SIZE=$(du -h "$TARGET_PATH" | cut -f1)
+                echo -e "\n''${GREEN}Successfully copied to:''${NC}"
+                echo -e "  $TARGET_PATH"
+                echo -e "  Size: $FILE_SIZE"
+            else
+                echo -e "\n''${RED}Copy failed''${NC}"
+                exit 1
+            fi
         else
-            echo -e "\n''${RED}✗ Conversion failed''${NC}"
-            exit 1
+            # GIF conversion for swww
+            if ! command -v ffmpeg &> /dev/null; then
+                echo -e "''${RED}Error: ffmpeg is not installed''${NC}"
+                exit 1
+            fi
+
+            DURATION="''${2:-5}"
+            FPS="''${3:-30}"
+            RESOLUTION="''${4:-3840:2160}"
+
+            BASENAME=$(basename "$INPUT_FILE" .mp4)
+            TARGET_PATH="$TARGET_DIR/''${BASENAME}.gif"
+
+            echo -e "\n''${BLUE}Converting MP4 to GIF...''${NC}"
+            echo -e "  Input:      $INPUT_FILE"
+            echo -e "  Output:     $TARGET_PATH"
+            echo -e "  Duration:   ''${DURATION}s"
+            echo -e "  FPS:        $FPS"
+            echo -e "  Resolution: $RESOLUTION"
+            echo ""
+
+            if ${pkgs.ffmpeg_6}/bin/ffmpeg -ss 0 -t "$DURATION" -i "$INPUT_FILE" \
+                -vf "fps=$FPS,scale=$RESOLUTION:flags=bicubic" \
+                "$TARGET_PATH" 2>&1 | grep -v "^frame="; then
+                FILE_SIZE=$(du -h "$TARGET_PATH" | cut -f1)
+                echo -e "\n''${GREEN}Successfully converted and saved to:''${NC}"
+                echo -e "  $TARGET_PATH"
+                echo -e "  Size: $FILE_SIZE"
+            else
+                echo -e "\n''${RED}Conversion failed''${NC}"
+                exit 1
+            fi
         fi
       '')
     ];

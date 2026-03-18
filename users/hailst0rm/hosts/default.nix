@@ -53,7 +53,7 @@
       lockscreen = lib.mkDefault "hyprlock";
       appLauncher = lib.mkDefault "rofi";
       notifications = lib.mkDefault "hyprpanel";
-      wallpaper = lib.mkDefault "swww";
+      wallpaper = lib.mkDefault "mpvpaper";
       monitorOrientations = lib.mkDefault {
         "0" = "left";
         "1" = "left";

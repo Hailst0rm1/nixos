@@ -26,6 +26,8 @@
       mypy-protobuf
     ];
 
+    pythonRelaxDeps = ["mypy-protobuf"];
+
     pythonImportsCheck = ["sliver"];
 
     meta = {

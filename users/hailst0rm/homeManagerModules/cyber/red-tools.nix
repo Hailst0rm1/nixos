@@ -83,7 +83,7 @@ in {
       packages = with pkgs-unstable; [
         # === Testing corner ===
         # wireshark
-        wineWowPackages.wayland
+        wineWow64Packages.wayland
 
         # === Reconnaissance ===
 
