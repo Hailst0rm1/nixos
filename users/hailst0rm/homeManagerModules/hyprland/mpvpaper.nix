@@ -56,7 +56,6 @@
 
     echo "Starting mpvpaper with $(wc -l < "$PLAYLIST") wallpapers from $WALLPAPER_DIR"
     exec ${lib.getExe pkgs-unstable.mpvpaper} \
-      -f \
       -n 1800 \
       -p \
       -o "no-audio --loop-playlist --shuffle --hwdec=auto --panscan=1.0" \
