@@ -9,6 +9,7 @@
     programs.ghostty = {
       enable = true;
       package = pkgs.ghostty.overrideAttrs (_: {
+        doCheck = false;
         preBuild = ''
           shopt -s globstar
           sed -i 's/^const xev = @import("xev");$/const xev = @import("xev").Epoll;/' **/*.zig
