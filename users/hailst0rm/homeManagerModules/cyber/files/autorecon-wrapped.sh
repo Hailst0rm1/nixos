@@ -377,7 +377,7 @@ if [[ -n "$TARGETS" ]]; then
         fi
 
         if [[ -n "$TAGS" ]]; then
-            AUTORECON_CMD="$AUTORECON_CMD --tags $TAGS"
+            AUTORECON_CMD="$AUTORECON_CMD --tags default-port-scan,$TAGS"
         fi
 
         if [[ -n "$USER" ]]; then
