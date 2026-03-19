@@ -13,10 +13,10 @@ class ADPulse(ServiceScan):
 		self.match_port('tcp', [88, 389, 636, 3268, 3269])
 		self.run_once(True)
 
-	def check(self):
-		if which('adpulse') is None:
-			self.error('The program ADPulse could not be found. Make sure it is installed.')
-			return False
+	# def check(self):
+	# 	if which('adpulse') is None:
+	# 		self.error('The program ADPulse could not be found. Make sure it is installed.')
+	# 		return False
 
 	async def run(self, service):
 		if self.get_global('username') and self.get_global('domain'):

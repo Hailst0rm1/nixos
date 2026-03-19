@@ -1,20 +1,23 @@
 final: prev: {
   netexec = prev.netexec.overridePythonAttrs (old: {
-    version = "1.5.1";
-
-    src = prev.fetchFromGitHub {
-      owner = "Pennyw0rth";
-      repo = "NetExec";
-      tag = "v1.5.1";
-      hash = "sha256-BKqBmpA2cSKwC9zX++Z6yTSDIyr4iZVGC/Eea6zoMLQ=";
-    };
-
-    postPatch = ''
-      substituteInPlace pyproject.toml \
-        --replace-fail " @ git+https://github.com/fortra/impacket" "" \
-        --replace-fail " @ git+https://github.com/wbond/oscrypto" "" \
-        --replace-fail " @ git+https://github.com/Pennyw0rth/NfsClient" "" \
-        --replace-fail " @ git+https://github.com/Pennyw0rth/Certipy" ""
-    '';
+    # Fix 1: netexec 1.5.1 passes `signing=` to impacket's LDAPConnection,
+    # but the bundled impacket (0.14.0-unstable-2025-12-03) removed that parameter.
+    # Patch out the signing kwarg until nixpkgs fixes the version mismatch.
+    #
+    # Fix 2: check_ldaps_cbt crashes with SysCallError EPIPE when LDAPS is
+    # unavailable. Add EPIPE to the handled error list so it falls back gracefully.
+    #
+    # Only applies to 1.5.x+ (stable 1.4.0 doesn't have these issues).
+    postPatch =
+      (old.postPatch or "")
+      + final.lib.optionalString (final.lib.versionAtLeast old.version "1.5") ''
+        substituteInPlace nxc/protocols/ldap.py \
+          --replace-fail "url=ldap_url, baseDN=self.baseDN, dstIp=self.host, signing=False" \
+                         "url=ldap_url, baseDN=self.baseDN, dstIp=self.host" \
+          --replace-fail "url=ldap_url, baseDN=self.baseDN, dstIp=self.host, signing=self.auth_choice != \"simple\"" \
+                         "url=ldap_url, baseDN=self.baseDN, dstIp=self.host" \
+          --replace-fail '"ECONNRESET", "WSAECONNRESET", "Unexpected EOF"' \
+                         '"ECONNRESET", "WSAECONNRESET", "Unexpected EOF", "EPIPE"'
+      '';
   });
 }

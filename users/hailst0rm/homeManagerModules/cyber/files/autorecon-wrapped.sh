@@ -370,7 +370,8 @@ if [[ -n "$TARGETS" ]]; then
         # Build autorecon command with optional flags
         # autorecon needs root for nmap raw sockets; HOME is set to user's home
         # so child processes (nxc, etc.) find the correct config files
-        AUTORECON_CMD="HOME=$REAL_HOME autorecon \"$t\" --ports $PORTS --config $REAL_HOME/cyber/AutoRecon/config.toml --global-file $REAL_HOME/cyber/AutoRecon/global.toml --plugins-dir $REAL_HOME/cyber/AutoRecon/Plugins --wpscan.api-token uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I --exclude-tags disabled --disable-keyboard-control --output \"$OUTDIR\""
+        # PATH includes user's profile so plugin check() calls (shutil.which) find user-installed tools
+        AUTORECON_CMD="HOME=$REAL_HOME PATH=/etc/profiles/per-user/$REAL_USER/bin:\$PATH autorecon \"$t\" --ports $PORTS --config $REAL_HOME/cyber/AutoRecon/config.toml --global-file $REAL_HOME/cyber/AutoRecon/global.toml --plugins-dir $REAL_HOME/cyber/AutoRecon/Plugins --wpscan.api-token uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I --exclude-tags disabled --disable-keyboard-control --output \"$OUTDIR\""
 
         if [[ -n "$NMAP_PE" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD $NMAP_PE"

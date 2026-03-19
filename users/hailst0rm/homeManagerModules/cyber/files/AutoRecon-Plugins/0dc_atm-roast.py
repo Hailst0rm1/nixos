@@ -22,9 +22,9 @@ class ATMRoast(ServiceScan):
 			username = self.get_global('username')
 			if self.get_global('password'):
 				password = self.get_global('password')
-				await service.execute('atm roast {address} -u' + username + '-p ' + password, outfile='atm-roast.txt')
+				await service.execute('atm roast {address} -u ' + username + '-p ' + password, outfile='atm-roast.txt')
 			if self.get_global('nthash'):
 				nthash = self.get_global('nthash')
-				await service.execute('atm roast {address} -u' + username + '-H ' + nthash, outfile='atm-roast.txt')
+				await service.execute('atm roast {address} -u ' + username + '-H ' + nthash, outfile='atm-roast.txt')
 		else:
 			self.error('atm requires username global option to be set.')

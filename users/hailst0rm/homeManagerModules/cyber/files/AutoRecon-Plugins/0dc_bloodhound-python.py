@@ -23,9 +23,9 @@ class BloodhoundPython(ServiceScan):
 			username = self.get_global('username')
 			if self.get_global('password'):
 				password = self.get_global('password')
-				await service.execute('bloodhound-python -c all --zip -w 40 -u' + username + '-p ' + password + ' -d ' + domain + ' -ns {address}', outfile='bloodhound-python.txt')
+				await service.execute('bloodhound-python -c all --zip -w 40 -u ' + username + ' -p ' + password + ' -d ' + domain + ' -ns {address}', outfile='bloodhound-python.txt')
 			if self.get_global('nthash'):
 				nthash = self.get_global('nthash')
-				await service.execute('bloodhound-python -c all --zip -w 40 -u' + username + '--hashes ' + nthash + ' -d ' + domain + ' -ns {address}', outfile='bloodhound-python.txt')
+				await service.execute('bloodhound-python -c all --zip -w 40 -u ' + username + ' --hashes ' + nthash + ' -d ' + domain + ' -ns {address}', outfile='bloodhound-python.txt')
 		else:
 			self.error('bloodhound-python requires domain and username global options to be set.')
