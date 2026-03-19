@@ -18,7 +18,14 @@ class NetExec_DC_SMBEnum(ServiceScan):
 			return False
 
 	async def run(self, service):
-		if self.get_global('username'):
+		if self.get_global('ticket'):
+			await service.execute('nxc smb {address} --use-kcache -k --shares', outfile='netexec_dc_smbenum_shares.txt')
+			await service.execute('nxc smb {address} --use-kcache -k --pass-pol', outfile='netexec_dc_smbenum_pass_pol.txt')
+			await service.execute('nxc smb {address} --use-kcache -k --users', outfile='netexec_dc_smbenum_users.txt')
+			await service.execute('nxc smb {address} --use-kcache -k --local-group', outfile='netexec_dc_smbenum_local_group.txt')
+			await service.execute('nxc smb {address} --use-kcache -k -M gpp_autologin', outfile='netexec_dc_smbenum_gpp_autologin.txt')
+			await service.execute('nxc smb {address} --use-kcache -k -M gpp_password', outfile='netexec_dc_smbenum_gpp_password.txt')
+		elif self.get_global('username'):
 			username = self.get_global('username')
 			if self.get_global('password'):
 				password = self.get_global('password')
@@ -36,5 +43,13 @@ class NetExec_DC_SMBEnum(ServiceScan):
 				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' --local-group', outfile='netexec_dc_smbenum_local_group.txt')
 				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' -M gpp_autologin', outfile='netexec_dc_smbenum_gpp_autologin.txt')
 				await service.execute('nxc smb {address} -u ' + username + ' -H ' + nthash + ' -M gpp_password', outfile='netexec_dc_smbenum_gpp_password.txt')
+			if self.get_global('aeskey'):
+				aeskey = self.get_global('aeskey')
+				await service.execute('nxc smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --shares', outfile='netexec_dc_smbenum_shares.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --pass-pol', outfile='netexec_dc_smbenum_pass_pol.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --users', outfile='netexec_dc_smbenum_users.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --local-group', outfile='netexec_dc_smbenum_local_group.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -M gpp_autologin', outfile='netexec_dc_smbenum_gpp_autologin.txt')
+				await service.execute('nxc smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -M gpp_password', outfile='netexec_dc_smbenum_gpp_password.txt')
 		else:
 			self.error('netexec requires username global option to be set.')

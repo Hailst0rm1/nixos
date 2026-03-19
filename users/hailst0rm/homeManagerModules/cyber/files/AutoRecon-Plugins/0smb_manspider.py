@@ -19,7 +19,16 @@ class Manspider(ServiceScan):
 			return False
 
 	async def run(self, service):
-		if self.get_global('username'):
+		if self.get_global('ticket'):
+			# Search for credential-related filenames
+			await service.execute('manspider {address} -k -f passw user admin login cred secret -n -q', outfile='manspider_filenames_creds.txt')
+			# Search for sensitive file extensions
+			await service.execute('manspider {address} -k -e bat vbs ps1 pem key pfx kdbx 1pif opvault psafe3 ppk -n -q', outfile='manspider_extensions_sensitive.txt')
+			# Search spreadsheets and docs for password references
+			await service.execute('manspider {address} -k -c passw -e xlsx csv docx pdf txt -q', outfile='manspider_content_passwords.txt')
+			# Search for SSH keys by content
+			await service.execute("manspider {address} -k -e '' -c 'BEGIN .{{1,10}} PRIVATE KEY' -q", outfile='manspider_content_sshkeys.txt')
+		elif self.get_global('username'):
 			username = self.get_global('username')
 			if self.get_global('password'):
 				password = self.get_global('password')
@@ -41,3 +50,13 @@ class Manspider(ServiceScan):
 				await service.execute('manspider {address} -u ' + username + ' -H ' + nthash + ' -c passw -e xlsx csv docx pdf txt -q', outfile='manspider_content_passwords.txt')
 				# Search for SSH keys by content
 				await service.execute("manspider {address} -u " + username + " -H " + nthash + " -e '' -c 'BEGIN .{{1,10}} PRIVATE KEY' -q", outfile='manspider_content_sshkeys.txt')
+			if self.get_global('aeskey'):
+				aeskey = self.get_global('aeskey')
+				# Search for credential-related filenames
+				await service.execute('manspider {address} -u ' + username + ' --aes-key ' + aeskey + ' -f passw user admin login cred secret -n -q', outfile='manspider_filenames_creds.txt')
+				# Search for sensitive file extensions
+				await service.execute('manspider {address} -u ' + username + ' --aes-key ' + aeskey + ' -e bat vbs ps1 pem key pfx kdbx 1pif opvault psafe3 ppk -n -q', outfile='manspider_extensions_sensitive.txt')
+				# Search spreadsheets and docs for password references
+				await service.execute('manspider {address} -u ' + username + ' --aes-key ' + aeskey + ' -c passw -e xlsx csv docx pdf txt -q', outfile='manspider_content_passwords.txt')
+				# Search for SSH keys by content
+				await service.execute("manspider {address} -u " + username + " --aes-key " + aeskey + " -e '' -c 'BEGIN .{{1,10}} PRIVATE KEY' -q", outfile='manspider_content_sshkeys.txt')

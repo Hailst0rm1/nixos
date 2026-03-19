@@ -6,7 +6,8 @@ class OracleTNScmd(ServiceScan):
 	def __init__(self):
 		super().__init__()
 		self.name = "Oracle TNScmd"
-		self.tags = ['default', 'safe', 'databases']
+		self.tags = ['safe', 'databases'] # Removed 'default' to inactivate
+		# self.tags = ['default', 'safe', 'databases']
 
 	def configure(self):
 		self.match_service_name('^oracle')

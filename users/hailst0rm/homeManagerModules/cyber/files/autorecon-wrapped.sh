@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 # Usage function
 usage() {
     cat << EOF
-Usage: sudo autorecon-wrapped -o OUTDIR [-t TARGET...] [-c CIDR] [-PE] [--tags TAGS] [-u USER] [-p PASSWORD] [-H NT_HASH] [-d DOMAIN]
+Usage: sudo autorecon-wrapped -o OUTDIR [-t TARGET...] [-c CIDR] [-PE] [--tags TAGS] [-u USER] [-p PASSWORD] [-H NT_HASH] [--aesKey AES_KEY] [--use-kcache] [-d DOMAIN]
 
 Automated reconnaissance wrapper for rustscan, nmap, and autorecon.
 Must be run with sudo. Privileged tools (nmap, autorecon) run as root;
@@ -28,6 +28,8 @@ OPTIONS:
     -u USER      (Optional) Username for authentication (--global.username)
     -p PASSWORD  (Optional) Password for authentication (--global.password)
     -H NT_HASH   (Optional) NT hash for authentication (--global.nthash)
+    --aesKey KEY (Optional) AES key for authentication (--global.aeskey)
+    --use-kcache (Optional) Use Kerberos ccache ticket (--global.ticket)
     -d DOMAIN    (Optional) Domain for authentication (--global.domain)
     --tags TAGS  (Optional) Tags to determine which plugins should be included
                  Separate tags by + to group, separate groups with ,
@@ -84,7 +86,7 @@ REAL_GROUP=$(getent group "$REAL_GID" | cut -d: -f1)
 
 # Helper: run a command as the invoking user (with their environment)
 run_as_user() {
-    sudo -u "$REAL_USER" --preserve-env=PATH,KRB5_CONFIG HOME="$REAL_HOME" "$@"
+    sudo -u "$REAL_USER" --preserve-env=PATH,KRB5_CONFIG,KRB5CCNAME HOME="$REAL_HOME" "$@"
 }
 
 # Parse command line arguments
@@ -96,6 +98,8 @@ TAGS=""
 USER=""
 PASSWORD=""
 NT_HASH=""
+AES_KEY=""
+USE_KCACHE=""
 DOMAIN=""
 
 # Handle long options before getopts
@@ -113,13 +117,24 @@ for arg in "$@"; do
             TAGS="${arg#*=}"
             continue
             ;;
+        "--aesKey")
+            set -- "$@" "-A"
+            ;;
+        "--aesKey="*)
+            AES_KEY="${arg#*=}"
+            continue
+            ;;
+        "--use-kcache")
+            USE_KCACHE="true"
+            continue
+            ;;
         *)
             set -- "$@" "$arg"
             ;;
     esac
 done
 
-while getopts "t:o:c:T:u:p:H:d:h" opt; do
+while getopts "t:o:c:T:u:p:H:A:d:h" opt; do
     case $opt in
         t)
             TARGETS="$OPTARG"
@@ -141,6 +156,9 @@ while getopts "t:o:c:T:u:p:H:d:h" opt; do
             ;;
         H)
             NT_HASH="$OPTARG"
+            ;;
+        A)
+            AES_KEY="$OPTARG"
             ;;
         d)
             DOMAIN="$OPTARG"
@@ -308,6 +326,14 @@ if [[ -n "$CIDR" ]]; then
                     RECURS_CMD="$RECURS_CMD -H \"$NT_HASH\""
                 fi
 
+                if [[ -n "$AES_KEY" ]]; then
+                    RECURS_CMD="$RECURS_CMD --aesKey \"$AES_KEY\""
+                fi
+
+                if [[ -n "$USE_KCACHE" ]]; then
+                    RECURS_CMD="$RECURS_CMD --use-kcache"
+                fi
+
                 if [[ -n "$DOMAIN" ]]; then
                     RECURS_CMD="$RECURS_CMD -d \"$DOMAIN\""
                 fi
@@ -371,7 +397,7 @@ if [[ -n "$TARGETS" ]]; then
         # autorecon needs root for nmap raw sockets; HOME is set to user's home
         # so child processes (nxc, etc.) find the correct config files
         # PATH includes user's profile so plugin check() calls (shutil.which) find user-installed tools
-        AUTORECON_CMD="HOME=$REAL_HOME PATH=/etc/profiles/per-user/$REAL_USER/bin:\$PATH autorecon \"$t\" --ports $PORTS --config $REAL_HOME/cyber/AutoRecon/config.toml --global-file $REAL_HOME/cyber/AutoRecon/global.toml --plugins-dir $REAL_HOME/cyber/AutoRecon/Plugins --wpscan.api-token uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I --exclude-tags disabled --disable-keyboard-control --output \"$OUTDIR\""
+        AUTORECON_CMD="HOME=$REAL_HOME PATH=/etc/profiles/per-user/$REAL_USER/bin:\$PATH KRB5CCNAME=${KRB5CCNAME:-/tmp/krb5cc_$REAL_UID} autorecon \"$t\" --ports $PORTS --config $REAL_HOME/cyber/AutoRecon/config.toml --global-file $REAL_HOME/cyber/AutoRecon/global.toml --plugins-dir $REAL_HOME/cyber/AutoRecon/Plugins --wpscan.api-token uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I --exclude-tags disabled --disable-keyboard-control --output \"$OUTDIR\""
 
         if [[ -n "$NMAP_PE" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD $NMAP_PE"
@@ -391,6 +417,14 @@ if [[ -n "$TARGETS" ]]; then
 
         if [[ -n "$NT_HASH" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD --global.nthash $NT_HASH"
+        fi
+
+        if [[ -n "$AES_KEY" ]]; then
+            AUTORECON_CMD="$AUTORECON_CMD --global.aeskey $AES_KEY"
+        fi
+
+        if [[ -n "$USE_KCACHE" ]]; then
+            AUTORECON_CMD="$AUTORECON_CMD --global.ticket true"
         fi
 
         if [[ -n "$DOMAIN" ]]; then

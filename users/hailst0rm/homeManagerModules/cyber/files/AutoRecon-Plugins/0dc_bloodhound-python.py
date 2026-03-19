@@ -18,14 +18,21 @@ class BloodhoundPython(ServiceScan):
 			return False
 
 	async def run(self, service):
-		if self.get_global('domain') and self.get_global('username'):
+		if self.get_global('domain') and self.get_global('username') and self.get_global('ticket'):
+			domain = self.get_global('domain')
+			username = self.get_global('username')
+			await service.execute('bloodhound-python -c all --zip -w 40 -u ' + username + ' -k -no-pass -d ' + domain + ' -ns {address} -op {scandir}/', outfile='bloodhound-python.txt')
+		elif self.get_global('domain') and self.get_global('username'):
 			domain = self.get_global('domain')
 			username = self.get_global('username')
 			if self.get_global('password'):
 				password = self.get_global('password')
-				await service.execute('bloodhound-python -c all --zip -w 40 -u ' + username + ' -p ' + password + ' -d ' + domain + ' -ns {address}', outfile='bloodhound-python.txt')
+				await service.execute('bloodhound-python -c all --zip -w 40 -u ' + username + ' -p ' + password + ' -d ' + domain + ' -ns {address} -op {scandir}/', outfile='bloodhound-python.txt')
 			if self.get_global('nthash'):
 				nthash = self.get_global('nthash')
-				await service.execute('bloodhound-python -c all --zip -w 40 -u ' + username + ' --hashes ' + nthash + ' -d ' + domain + ' -ns {address}', outfile='bloodhound-python.txt')
+				await service.execute('bloodhound-python -c all --zip -w 40 -u ' + username + ' --hashes ' + nthash + ' -d ' + domain + ' -ns {address} -op {scandir}/', outfile='bloodhound-python.txt')
+			if self.get_global('aeskey'):
+				aeskey = self.get_global('aeskey')
+				await service.execute('bloodhound-python -c all --zip -w 40 -u ' + username + ' -aesKey ' + aeskey + ' -d ' + domain + ' -ns {address} -op {scandir}/', outfile='bloodhound-python.txt')
 		else:
 			self.error('bloodhound-python requires domain and username global options to be set.')

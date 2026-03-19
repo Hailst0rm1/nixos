@@ -19,7 +19,23 @@ class NetExec_Enum(ServiceScan):
 			return False
 
 	async def run(self, service):
-		if self.get_global('username'):
+		if self.get_global('ticket'):
+			await service.execute('nxc smb {address} --use-kcache -k -M coerce_plus', outfile='netexec_enum_coerce_plus.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --shares', outfile='netexec_enum_shares.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --filter-shares "read,write"', outfile='netexec_enum_shares-rw.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --filter-shares "read"', outfile='netexec_enum_shares-r.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --filter-shares "write"', outfile='netexec_enum_shares-w.txt')
+			await service.execute('netexec smb {address} --use-kcache -k -M spider_plus {scandir}/netexec_spider.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --disks', outfile='netexec_enum_disks.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --users', outfile='netexec_enum_users.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --rid-brute', outfile='netexec_enum_rid_brute.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --local-group', outfile='netexec_enum_local_groups.txt')
+			await service.execute('netexec smb {address} --use-kcache -k -M enum_av', outfile='netexec_enum_av.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --reg-sessions', outfile='netexec_enum_sessions.txt')
+			await service.execute('netexec smb {address} --use-kcache -k --tasklist', outfile='netexec_enum_tasklist.txt')
+			await service.execute('netexec smb {address} --use-kcache -k -M reg-winlogon', outfile='netexec_enum_reg_winlogon.txt')
+			await service.execute('netexec smb {address} --use-kcache -k -M ioxidresolver', outfile='netexec_enum_ioxidresolver.txt')
+		elif self.get_global('username'):
 			username = self.get_global('username')
 			if self.get_global('password'):
 				password = self.get_global('password')
@@ -55,5 +71,22 @@ class NetExec_Enum(ServiceScan):
 				await service.execute('netexec smb {address} -u ' + username + ' -H ' + nthash + ' --tasklist', outfile='netexec_enum_tasklist.txt')
 				await service.execute('netexec smb {address} -u ' + username + ' -H ' + nthash + ' -M reg-winlogon', outfile='netexec_enum_reg_winlogon.txt')
 				await service.execute('netexec smb {address} -u ' + username + ' -H ' + nthash + ' -M ioxidresolver', outfile='netexec_enum_ioxidresolver.txt')
+			if self.get_global('aeskey'):
+				aeskey = self.get_global('aeskey')
+				await service.execute('nxc smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -M coerce_plus', outfile='netexec_enum_coerce_plus.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --shares', outfile='netexec_enum_shares.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --filter-shares "read,write"', outfile='netexec_enum_shares-rw.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --filter-shares "read"', outfile='netexec_enum_shares-r.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --filter-shares "write"', outfile='netexec_enum_shares-w.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -M spider_plus {scandir}/netexec_spider.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --disks', outfile='netexec_enum_disks.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --users', outfile='netexec_enum_users.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --rid-brute', outfile='netexec_enum_rid_brute.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --local-group', outfile='netexec_enum_local_groups.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -M enum_av', outfile='netexec_enum_av.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --reg-sessions', outfile='netexec_enum_sessions.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} --tasklist', outfile='netexec_enum_tasklist.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -M reg-winlogon', outfile='netexec_enum_reg_winlogon.txt')
+				await service.execute('netexec smb {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -M ioxidresolver', outfile='netexec_enum_ioxidresolver.txt')
 		else:
 			await service.execute("nxc smb {address} -u '' -p '' -M coerce_plus", outfile='netexec_enum_coerce_plus.txt')

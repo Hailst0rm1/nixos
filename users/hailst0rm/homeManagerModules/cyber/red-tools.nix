@@ -203,6 +203,7 @@ in {
         wordlists # Note: This includes seclists
 
         # === Misc ===
+        krb5 # To manage kerberos tickets etc
         (writeShellScriptBin "cyberchef" ''          # For encoding/encryption etc
           ${config.browser} "${cyberchef}/share/cyberchef/index.html"
         '')

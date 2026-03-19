@@ -18,13 +18,18 @@ class ATMRoast(ServiceScan):
 			return False
 
 	async def run(self, service):
-		if self.get_global('username'):
+		if self.get_global('ticket'):
+			await service.execute('atm roast {address} --use-kcache -o {scandir}', outfile='atm-roast.txt')
+		elif self.get_global('username'):
 			username = self.get_global('username')
 			if self.get_global('password'):
 				password = self.get_global('password')
-				await service.execute('atm roast {address} -u ' + username + '-p ' + password, outfile='atm-roast.txt')
+				await service.execute('atm roast {address} -u ' + username + ' -p ' + password + ' -o {scandir}', outfile='atm-roast.txt')
 			if self.get_global('nthash'):
 				nthash = self.get_global('nthash')
-				await service.execute('atm roast {address} -u ' + username + '-H ' + nthash, outfile='atm-roast.txt')
+				await service.execute('atm roast {address} -u ' + username + ' -H ' + nthash + ' -o {scandir}', outfile='atm-roast.txt')
+			if self.get_global('aeskey'):
+				aeskey = self.get_global('aeskey')
+				await service.execute('atm roast {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -o {scandir}', outfile='atm-roast.txt')
 		else:
 			self.error('atm requires username global option to be set.')
