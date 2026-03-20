@@ -117,7 +117,7 @@ in {
 
         # Web
         # ipcrawler # Identify best wordlist
-        (whatweb.override {ruby_3_4 = ruby_3_3;}) # Web scanner (meta) - ruby 3.4 broke getoptlong
+        whatweb # Web scanner (meta) (OVERLAY: ruby 3.4 fix)
         nikto # Another web scanner
         gobuster # Directory busting
         ffuf # Fuzzing
