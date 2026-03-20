@@ -397,7 +397,7 @@ if [[ -n "$TARGETS" ]]; then
         # autorecon needs root for nmap raw sockets; HOME is set to user's home
         # so child processes (nxc, etc.) find the correct config files
         # PATH includes user's profile so plugin check() calls (shutil.which) find user-installed tools
-        AUTORECON_CMD="HOME=$REAL_HOME PATH=/etc/profiles/per-user/$REAL_USER/bin:\$PATH KRB5CCNAME=${KRB5CCNAME:-/tmp/krb5cc_$REAL_UID} autorecon \"$t\" --ports $PORTS --config $REAL_HOME/cyber/AutoRecon/config.toml --global-file $REAL_HOME/cyber/AutoRecon/global.toml --plugins-dir $REAL_HOME/cyber/AutoRecon/Plugins --wpscan.api-token uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I --exclude-tags disabled --disable-keyboard-control --output \"$OUTDIR\""
+        AUTORECON_CMD="HOME=$REAL_HOME PATH=/etc/profiles/per-user/$REAL_USER/bin:\$PATH KRB5CCNAME=\"${KRB5CCNAME:-/tmp/krb5cc_$REAL_UID}\" autorecon \"$t\" --ports $PORTS --config \"$REAL_HOME/cyber/AutoRecon/config.toml\" --global-file \"$REAL_HOME/cyber/AutoRecon/global.toml\" --plugins-dir \"$REAL_HOME/cyber/AutoRecon/Plugins\" --wpscan.api-token uhagbSupFhQPEsOzhP7VyA1FSuKoG8qx9WwXrWsWL4I --exclude-tags disabled --disable-keyboard-control --output \"$OUTDIR\""
 
         if [[ -n "$NMAP_PE" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD $NMAP_PE"
@@ -431,6 +431,7 @@ if [[ -n "$TARGETS" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD --global.domain $DOMAIN"
         fi
 
+        echo -e "${BLUE}[+] Running: $AUTORECON_CMD${NC}"
         eval "$AUTORECON_CMD &"
     else
         echo -e "${RED}[!] No open ports found for $t, skipping autorecon${NC}"

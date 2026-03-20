@@ -32,6 +32,7 @@
   adpulse = pkgs-unstable.callPackage "${nixosDir}/pkgs/adpulse/package.nix" {};
   notsliver = pkgs-unstable.callPackage "${nixosDir}/pkgs/notsliver/package.nix" {};
   krbrelayx = pkgs-unstable.callPackage "${nixosDir}/pkgs/krbrelayx/package.nix" {};
+  bloodyad = pkgs-unstable.callPackage "${nixosDir}/pkgs/bloodyad/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm = builtins.readFile ./files/atm.sh;
@@ -53,7 +54,7 @@ in {
         [[ -f ~/.config/NotSliver/engagement.env ]] && source ~/.config/NotSliver/engagement.env
       '';
       shellAliases = {
-        vars = "source /home/${config.username}/.config/NotSliver/engagement.env";
+        vars = "source /home/${config.username}/.config/NotSliver/engagement.env 2>/dev/null && echo '' && printf '\\033[0;36m%-14s\\033[0m : \\033[0;32m%s\\033[0m\\n' OUTDIR \"$OUTDIR\" C2 \"$C2\" TARGET \"$TARGET\" TARGETS \"$TARGETS\" CIDR \"$CIDR\" DC \"$DC\" ADCS_HOST \"$ADCS_HOST\" DOMAIN \"$DOMAIN\" USER \"$USER\" PASSWORD \"$PASSWORD\" NT_HASH \"$NT_HASH\" AES_KEY \"$AES_KEY\" KRB5_CONFIG \"$KRB5_CONFIG\" && echo ''";
       };
     };
 
@@ -182,6 +183,7 @@ in {
         bloodhound-py # Bloodhound ingestor (remote SharpHound)
         manspider # SMB share spider - search filenames/content across networks
         adpulse # Active Directory security scanner with 35 automated checks
+        bloodyad # AD privesc swiss army knife
 
         # === Command & Control (C2) ===
         sliver # C2 framework

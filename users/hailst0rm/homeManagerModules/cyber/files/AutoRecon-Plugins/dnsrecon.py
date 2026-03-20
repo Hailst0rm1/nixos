@@ -20,7 +20,7 @@ class DnsRecon(ServiceScan):
 
 	def manual(self, service, plugin_was_run):
 		service.add_manual_command('Use dnsrecon to automatically query data from the DNS server. You must specify the target domain name.', [
-			'dnsrecon -n {address} -d <DOMAIN-NAME> 2>&1 | tee {scandir}/{protocol}_{port}_dnsrecon_default_manual.txt'
+			'dnsrecon -n {address} -d <DOMAIN-NAME> 2>&1 | tee "{scandir}/{protocol}_{port}_dnsrecon_default_manual.txt"'
 		])
 
 	async def run(self, service):
