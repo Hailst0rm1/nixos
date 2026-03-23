@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 # Usage function
 usage() {
     cat << EOF
-Usage: sudo autorecon-wrapped -o OUTDIR [-t TARGET...] [-c CIDR] [-PE] [--tags TAGS] [-u USER] [-p PASSWORD] [-H NT_HASH] [--aesKey AES_KEY] [--use-kcache] [-d DOMAIN]
+Usage: sudo autorecon-wrapped -o OUTDIR [-t TARGET...] [-c CIDR] [-PE] [--tags TAGS] [-u USER] [-p PASSWORD] [-H NT_HASH] [--aesKey AES_KEY] [--use-kcache] [-d DOMAIN] [-dc-ip IP]
 
 Automated reconnaissance wrapper for rustscan, nmap, and autorecon.
 Must be run with sudo. Privileged tools (nmap, autorecon) run as root;
@@ -31,6 +31,7 @@ OPTIONS:
     --aesKey KEY (Optional) AES key for authentication (--global.aeskey)
     --use-kcache (Optional) Use Kerberos ccache ticket (--global.ticket)
     -d DOMAIN    (Optional) Domain for authentication (--global.domain)
+    -dc-ip IP    (Optional) Domain Controller IP (--global.dcip)
     --tags TAGS  (Optional) Tags to determine which plugins should be included
                  Separate tags by + to group, separate groups with ,
                  Example: "ad-auth+enum" or "default,http"
@@ -101,6 +102,7 @@ NT_HASH=""
 AES_KEY=""
 USE_KCACHE=""
 DOMAIN=""
+DCIP=""
 
 # Handle long options before getopts
 for arg in "$@"; do
@@ -128,13 +130,16 @@ for arg in "$@"; do
             USE_KCACHE="true"
             continue
             ;;
+        "-dc-ip")
+            set -- "$@" "-D"
+            ;;
         *)
             set -- "$@" "$arg"
             ;;
     esac
 done
 
-while getopts "t:o:c:T:u:p:H:A:d:h" opt; do
+while getopts "t:o:c:T:u:p:H:A:d:D:h" opt; do
     case $opt in
         t)
             TARGETS="$OPTARG"
@@ -162,6 +167,9 @@ while getopts "t:o:c:T:u:p:H:A:d:h" opt; do
             ;;
         d)
             DOMAIN="$OPTARG"
+            ;;
+        D)
+            DCIP="$OPTARG"
             ;;
         h)
             usage
@@ -338,6 +346,10 @@ if [[ -n "$CIDR" ]]; then
                     RECURS_CMD="$RECURS_CMD -d \"$DOMAIN\""
                 fi
 
+                if [[ -n "$DCIP" ]]; then
+                    RECURS_CMD="$RECURS_CMD -dc-ip \"$DCIP\""
+                fi
+
                 eval "exec $RECURS_CMD"
             else
                 echo -e "${YELLOW}[*] Skipping target enumeration${NC}"
@@ -429,6 +441,10 @@ if [[ -n "$TARGETS" ]]; then
 
         if [[ -n "$DOMAIN" ]]; then
             AUTORECON_CMD="$AUTORECON_CMD --global.domain $DOMAIN"
+        fi
+
+        if [[ -n "$DCIP" ]]; then
+            AUTORECON_CMD="$AUTORECON_CMD --global.dcip $DCIP"
         fi
 
         echo -e "${BLUE}[+] Running: $AUTORECON_CMD${NC}"

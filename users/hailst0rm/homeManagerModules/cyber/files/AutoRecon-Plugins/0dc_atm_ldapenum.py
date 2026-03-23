@@ -19,18 +19,23 @@ class ATM_LDAPEnum(ServiceScan):
 			return False
 
 	async def run(self, service):
+		domain = self.get_global('domain')
+		d = ' -d ' + domain if domain else ''
+		dcip = self.get_global('dcip')
+		k = ' --kdcHost ' + dcip if dcip else ''
+
 		if self.get_global('ticket'):
-			await service.execute('atm enum ldap {address} --use-kcache -o "{scandir}"', outfile='atm-enum-ldap.txt')
+			await service.execute('atm enum ldap {address} --use-kcache' + d + k + ' -o "{scandir}"', outfile='atm-enum-ldap.txt')
 		elif self.get_global('username'):
 			username = self.get_global('username')
 			if self.get_global('password'):
 				password = self.get_global('password')
-				await service.execute('atm enum ldap {address} -u ' + username + ' -p ' + password + ' -o "{scandir}"', outfile='atm-enum-ldap.txt')
+				await service.execute('atm enum ldap {address} -u ' + username + ' -p ' + password + d + k + ' -o "{scandir}"', outfile='atm-enum-ldap.txt')
 			if self.get_global('nthash'):
 				nthash = self.get_global('nthash')
-				await service.execute('atm enum ldap {address} -u ' + username + ' -H ' + nthash + ' -o "{scandir}"', outfile='atm-enum-ldap.txt')
+				await service.execute('atm enum ldap {address} -u ' + username + ' -H ' + nthash + d + k + ' -o "{scandir}"', outfile='atm-enum-ldap.txt')
 			if self.get_global('aeskey'):
 				aeskey = self.get_global('aeskey')
-				await service.execute('atm enum ldap {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address} -o "{scandir}"', outfile='atm-enum-ldap.txt')
+				await service.execute('atm enum ldap {address} -u ' + username + ' --aesKey ' + aeskey + ' --kdcHost {address}' + d + ' -o "{scandir}"', outfile='atm-enum-ldap.txt')
 		else:
 			self.error('atm enum ldap requires username global option to be set.')

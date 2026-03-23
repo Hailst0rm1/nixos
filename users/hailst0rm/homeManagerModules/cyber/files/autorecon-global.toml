@@ -6,8 +6,11 @@ help = 'A wordlist of usernames, useful for bruteforcing. Default: %(default)s'
 default = '/usr/share/seclists/Passwords/darkweb2017-top100.txt'
 help = 'A wordlist of passwords, useful for bruteforcing. Default: %(default)s'
 
+[global.dcip]
+help = 'The domain controller ip to use (if known). Used for DNS and/or Active Directory. Default: %(default)s'
+
 [global.domain]
-help = 'The domain to use (if known). Used for DNS and/or Active Directory. Default: %(default)s'
+help = 'The domain the user is tied to, or to target (e.g. subdomain recon), if known. Default: %(default)s'
 
 [global.username]
 help = 'The username to use when e.g. you have access to an AD account or account to bruteforce. Default: %(default)s'
