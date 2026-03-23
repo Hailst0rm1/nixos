@@ -90,7 +90,7 @@ class BloodhoundPython(ServiceScan):
 				await service.execute('cd "{scandir}" && bloodhound-python -c all --zip -w 40 -u ' + user_arg + ' -p ' + password + ' -d ' + d_value + ' -ns ' + ns, outfile='bloodhound-python.txt')
 			if self.get_global('nthash'):
 				nthash = self.get_global('nthash')
-				await service.execute('cd "{scandir}" && bloodhound-python -c all --zip -w 40 -u ' + user_arg + ' --hashes ' + nthash + ' -d ' + d_value + ' -ns ' + ns, outfile='bloodhound-python.txt')
+				await service.execute('cd "{scandir}" && bloodhound-python -c all --zip -w 40 -u ' + user_arg + ' --hashes :' + nthash + ' -d ' + d_value + ' -ns ' + ns, outfile='bloodhound-python.txt')
 			if self.get_global('aeskey'):
 				aeskey = self.get_global('aeskey')
 				await service.execute('cd "{scandir}" && bloodhound-python -c all --zip -w 40 -u ' + user_arg + ' -aesKey ' + aeskey + ' -d ' + d_value + ' -ns ' + ns, outfile='bloodhound-python.txt')

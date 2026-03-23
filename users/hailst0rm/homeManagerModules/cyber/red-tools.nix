@@ -54,7 +54,7 @@ in {
         [[ -f ~/.config/NotSliver/engagement.env ]] && source ~/.config/NotSliver/engagement.env
       '';
       shellAliases = {
-        vars = "source /home/${config.username}/.config/NotSliver/engagement.env 2>/dev/null && echo '' && printf '\\033[0;36m%-14s\\033[0m : \\033[0;32m%s\\033[0m\\n' OUTDIR \"$OUTDIR\" C2 \"$C2\" TARGET \"$TARGET\" TARGETS \"$TARGETS\" CIDR \"$CIDR\" DC \"$DC\" ADCS_HOST \"$ADCS_HOST\" DOMAIN \"$DOMAIN\" USER \"$USER\" PASSWORD \"$PASSWORD\" NT_HASH \"$NT_HASH\" AES_KEY \"$AES_KEY\" KRB5_CONFIG \"$KRB5_CONFIG\" && echo ''";
+        vars = "source /home/${config.username}/.config/NotSliver/engagement.env 2>/dev/null && echo '' && printf '\\033[0;36m%-14s\\033[0m : \\033[0;32m%s\\033[0m\\n' OUTDIR \"$OUTDIR\" C2 \"$C2\" TARGET \"$TARGET\" TARGETS \"$TARGETS\" CIDR \"$CIDR\" DC \"$DC\" ADCS_HOST \"$ADCS_HOST\" DOMAIN \"$DOMAIN\" USER \"$USER\" PASSWORD \"$PASSWORD\" NT_HASH \"$NT_HASH\" AES_KEY \"$AES_KEY\" KRB5_CONFIG \"$KRB5_CONFIG\" KRB5CCNAME \"$KRB5CCNAME\" && echo ''";
       };
     };
 
@@ -161,7 +161,7 @@ in {
         certipy # ADCS enumeration and exploitation tool
 
         # === Lateral Movement ===
-        evil-winrm # WinRM shell for hacking/pentesting
+        (pkgs.evil-winrm) # WinRM shell for hacking/pentesting
         netexec
         smbclient-ng # A GOOD smbclient
         mssqlclient-ng # Enhanced impacket mssqlclient for MSSQL interaction

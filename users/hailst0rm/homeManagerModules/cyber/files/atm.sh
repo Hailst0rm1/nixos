@@ -29,6 +29,7 @@ usage() {
   echo "  --kdcHost     Domain Controller to contact (used with --aesKey)"
   echo "  --use-kcache  Use Kerberos ccache ticket (no user/pass/hash needed)"
   echo "  -o            Output directory (will be created if it doesn't exist)"
+  echo "  --delegate    Account to delegate to (passed as --delegate to nxc)"
   echo "  --local-auth  Specify if it's a local account (ignored with --aesKey/--use-kcache)"
   echo "  -h            Show this help"
   exit 1
@@ -52,6 +53,7 @@ LOCAL_AUTH=0
 AESKEY=""
 KDCHOST=""
 DOMAIN=""
+DELEGATE=""
 USE_KCACHE=0
 USER_SET=0
 
@@ -68,6 +70,7 @@ for arg in "$@"; do
     ;;
   --aesKey) AESKEY_SET=1 ;;
   --kdcHost) KDCHOST_SET=1 ;;
+  --delegate) ;; # handled in main loop
   esac
 done
 
@@ -96,6 +99,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   --kdcHost)
     KDCHOST="$2"
+    shift 2
+    ;;
+  --delegate)
+    DELEGATE="$2"
     shift 2
     ;;
   -o)
@@ -255,6 +262,10 @@ if [[ $HAS_AUTH -eq 1 ]]; then
   # Add --kdcHost if set and not already added via --aesKey
   if [[ -n "$KDCHOST" && -z "$AESKEY" ]]; then
     BASE_AUTH_ARGS+=" --kdcHost $KDCHOST"
+  fi
+
+  if [[ -n "$DELEGATE" ]]; then
+    BASE_AUTH_ARGS+=" --delegate $DELEGATE"
   fi
 
   AUTH_ARGS="$BASE_AUTH_ARGS"
