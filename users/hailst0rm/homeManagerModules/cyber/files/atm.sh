@@ -356,11 +356,42 @@ elevated)
 
 verify)
   log "Starting service verification…"
+
+  # Build SSH auth args (no domain - SSH doesn't support -d)
+  SSH_AUTH_ARGS=""
+  if [[ $HAS_AUTH -eq 1 ]]; then
+    if [[ $USE_KCACHE -eq 1 ]]; then
+      SSH_AUTH_ARGS="--use-kcache -k"
+    else
+      SSH_AUTH_ARGS="-u $USER"
+      if [[ -n "$PASS" ]]; then
+        SSH_AUTH_ARGS+=" -p $PASS"
+      elif [[ -n "$HASH" ]]; then
+        SSH_AUTH_ARGS+=" -H $HASH"
+      elif [[ -n "$AESKEY" ]]; then
+        SSH_AUTH_ARGS+=" --aesKey $AESKEY --kdcHost $KDCHOST"
+      fi
+      if [[ -n "$KDCHOST" && -z "$AESKEY" ]]; then
+        SSH_AUTH_ARGS+=" --kdcHost $KDCHOST"
+      fi
+      if [[ -n "$DELEGATE" ]]; then
+        SSH_AUTH_ARGS+=" --delegate $DELEGATE"
+      fi
+    fi
+  fi
+
   run_nxc nxc smb "$TARGET" $AUTH_ARGS --shares
   run_nxc nxc rdp "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc winrm "$TARGET" $BASE_AUTH_ARGS
-  run_nxc nxc ssh "$TARGET" $BASE_AUTH_ARGS
-  run_nxc nxc mssql "$TARGET" $BASE_AUTH_ARGS
+  if [[ -z "$HASH" ]]; then
+    run_nxc nxc ssh "$TARGET" $SSH_AUTH_ARGS
+    if [[ -n "$DOMAIN" && -n "$USER" && $USE_KCACHE -eq 0 ]]; then
+      run_nxc nxc ssh "$TARGET" -u "${USER}@${DOMAIN}" -p "$PASS"
+    fi
+    run_nxc nxc mssql "$TARGET" $BASE_AUTH_ARGS
+  else
+    log "Skipping SSH and MSSQL (hash auth not supported)"
+  fi
   run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --query "(sAMAccountName=$USER)" "sAMAccountName memberOf"
 
   sed 's/\r/\n/g' "$LOGFILE" | rg -v Running >"$LOGFILE.tmp" && mv "$LOGFILE.tmp" "$LOGFILE"
