@@ -37,10 +37,10 @@
 
   privescCheck = pkgs.stdenv.mkDerivation {
     pname = "privescCheck";
-    version = "2026.01.30-1";
+    version = "2026.03.28-1";
     src = pkgs.fetchurl {
-      url = "https://github.com/itm4n/PrivescCheck/releases/latest/download/PrivescCheck.ps1";
-      sha256 = "sha256-ZqqoefNqynIt5TMePmwFSnM4EeVyXwxZXl0/iiR8R5g=";
+      url = "https://github.com/itm4n/PrivescCheck/releases/download/2026.03.28-1/PrivescCheck.ps1";
+      sha256 = "sha256-qepsxhb52QoAL5AsiMQwV95GGBnLBmICEcDXk3MOShU=";
     };
     phases = ["installPhase"];
     installPhase = ''

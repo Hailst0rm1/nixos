@@ -41,11 +41,11 @@
 in
   stdenv.mkDerivation rec {
     pname = "ligolo-mp";
-    version = "2.1.0";
+    version = "2.2.1";
 
     src = fetchurl {
       url = "https://github.com/ttpreport/ligolo-mp/releases/download/v${version}/ligolo-mp_linux_amd64";
-      sha256 = "sha256-W4k2ExJk5P4pjNvvmBilrL++3Haz9LMxbWKRWEsnYaI=";
+      sha256 = "sha256-f+/0CyWGyE7JVPMOl24rVfJHNYGhnUAUPnu8vYU3d5Y=";
     };
 
     dontUnpack = true;
