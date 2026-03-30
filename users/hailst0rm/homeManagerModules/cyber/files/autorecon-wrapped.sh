@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 # Usage function
 usage() {
     cat << EOF
-Usage: sudo autorecon-wrapped -o OUTDIR [-t TARGET...] [-c CIDR] [-PE] [--tags TAGS] [-u USER] [-p PASSWORD] [-H NT_HASH] [--aesKey AES_KEY] [--use-kcache] [-d DOMAIN] [-dc-ip IP]
+Usage: sudo autorecon-wrapped -o OUTDIR [-t TARGET...] [-c CIDR] [-PE] [--ports PORTS] [--tags TAGS] [-u USER] [-p PASSWORD] [-H NT_HASH] [--aesKey AES_KEY] [--use-kcache] [-d DOMAIN] [-dc-ip IP]
 
 Automated reconnaissance wrapper for rustscan, nmap, and autorecon.
 Must be run with sudo. Privileged tools (nmap, autorecon) run as root;
@@ -32,6 +32,11 @@ OPTIONS:
     --use-kcache (Optional) Use Kerberos ccache ticket (--global.ticket)
     -d DOMAIN    (Optional) Domain for authentication (--global.domain)
     -dc-ip IP    (Optional) Domain Controller IP (--global.dcip)
+    --ports PORTS (Optional) Comma separated list of ports / port ranges to scan.
+                 Specify TCP/UDP ports by prepending list with T:/U:
+                 To scan both TCP/UDP, put port(s) at start or specify B:
+                 e.g. 53,T:21-25,80,U:123,B:123
+                 If given, skips rustscan and nmap UDP port discovery.
     --tags TAGS  (Optional) Tags to determine which plugins should be included
                  Separate tags by + to group, separate groups with ,
                  Example: "ad-auth+enum" or "default,http"
@@ -103,6 +108,7 @@ AES_KEY=""
 USE_KCACHE=""
 DOMAIN=""
 DCIP=""
+MANUAL_PORTS=""
 
 # Handle long options before getopts
 for arg in "$@"; do
@@ -130,6 +136,13 @@ for arg in "$@"; do
             USE_KCACHE="true"
             continue
             ;;
+        "--ports")
+            set -- "$@" "-P"
+            ;;
+        "--ports="*)
+            MANUAL_PORTS="${arg#*=}"
+            continue
+            ;;
         "-dc-ip")
             set -- "$@" "-D"
             ;;
@@ -139,7 +152,7 @@ for arg in "$@"; do
     esac
 done
 
-while getopts "t:o:c:T:u:p:H:A:d:D:h" opt; do
+while getopts "t:o:c:T:u:p:H:A:d:D:P:h" opt; do
     case $opt in
         t)
             TARGETS="$OPTARG"
@@ -170,6 +183,9 @@ while getopts "t:o:c:T:u:p:H:A:d:D:h" opt; do
             ;;
         D)
             DCIP="$OPTARG"
+            ;;
+        P)
+            MANUAL_PORTS="$OPTARG"
             ;;
         h)
             usage
@@ -350,6 +366,10 @@ if [[ -n "$CIDR" ]]; then
                     RECURS_CMD="$RECURS_CMD -dc-ip \"$DCIP\""
                 fi
 
+                if [[ -n "$MANUAL_PORTS" ]]; then
+                    RECURS_CMD="$RECURS_CMD --ports \"$MANUAL_PORTS\""
+                fi
+
                 eval "exec $RECURS_CMD"
             else
                 echo -e "${YELLOW}[*] Skipping target enumeration${NC}"
@@ -379,26 +399,32 @@ if [[ -n "$TARGETS" ]]; then
     mkdir -p "$OUTDIR/$t"
     chown "$REAL_USER":"$REAL_GROUP" "$OUTDIR/$t"
 
-    # rustscan doesn't need root
-    echo -e "${YELLOW}[*] Running rustscan on $t${NC}"
-    run_as_user rustscan -a $t -r 0-65535 -g | tee "$OUTDIR/$t/TCP.txt"
+    if [[ -n "$MANUAL_PORTS" ]]; then
+        # Use manually specified ports, skip rustscan and nmap
+        PORTS="$MANUAL_PORTS"
+        echo -e "${YELLOW}[*] Using specified ports for $t: $PORTS${NC}"
+    else
+        # rustscan doesn't need root
+        echo -e "${YELLOW}[*] Running rustscan on $t${NC}"
+        run_as_user rustscan -a $t -r 0-65535 -g | tee "$OUTDIR/$t/TCP.txt"
 
-    # nmap UDP scan needs root (raw sockets)
-    echo -e "${YELLOW}[*] Running UDP scan on $t${NC}"
-    nmap -vv --reason -Pn -sU --top-ports 100 -oN "$OUTDIR/$t/UDP.txt" $t
+        # nmap UDP scan needs root (raw sockets)
+        echo -e "${YELLOW}[*] Running UDP scan on $t${NC}"
+        nmap -vv --reason -Pn -sU --top-ports 100 -oN "$OUTDIR/$t/UDP.txt" $t
 
-    TCP_PORTS=$(grep -oP '\[\K[0-9,]+(?=\])' "$OUTDIR/$t/TCP.txt" | head -1)
-    UDP_PORTS=$(grep -oP '^\d+(?=/udp\s+open)' "$OUTDIR/$t/UDP.txt" | tr '\n' ',' | sed 's/,$//')
+        TCP_PORTS=$(grep -oP '\[\K[0-9,]+(?=\])' "$OUTDIR/$t/TCP.txt" | head -1)
+        UDP_PORTS=$(grep -oP '^\d+(?=/udp\s+open)' "$OUTDIR/$t/UDP.txt" | tr '\n' ',' | sed 's/,$//')
 
-    PORTS=""
-    if [[ -n "$TCP_PORTS" ]]; then
-        PORTS="T:${TCP_PORTS}"
-    fi
-    if [[ -n "$UDP_PORTS" ]]; then
-        if [[ -n "$PORTS" ]]; then
-            PORTS="${PORTS},U:${UDP_PORTS}"
-        else
-            PORTS="U:${UDP_PORTS}"
+        PORTS=""
+        if [[ -n "$TCP_PORTS" ]]; then
+            PORTS="T:${TCP_PORTS}"
+        fi
+        if [[ -n "$UDP_PORTS" ]]; then
+            if [[ -n "$PORTS" ]]; then
+                PORTS="${PORTS},U:${UDP_PORTS}"
+            else
+                PORTS="U:${UDP_PORTS}"
+            fi
         fi
     fi
 
