@@ -388,10 +388,10 @@ verify)
     if [[ -n "$DOMAIN" && -n "$USER" && $USE_KCACHE -eq 0 ]]; then
       run_nxc nxc ssh "$TARGET" -u "${USER}@${DOMAIN}" -p "$PASS"
     fi
-    run_nxc nxc mssql "$TARGET" $BASE_AUTH_ARGS
   else
-    log "Skipping SSH and MSSQL (hash auth not supported)"
+    log "Skipping SSH (hash auth not supported)"
   fi
+  run_nxc nxc mssql "$TARGET" $BASE_AUTH_ARGS
   run_nxc nxc ldap "$TARGET" $BASE_AUTH_ARGS --query "(sAMAccountName=$USER)" "sAMAccountName memberOf"
 
   sed 's/\r/\n/g' "$LOGFILE" | rg -v Running >"$LOGFILE.tmp" && mv "$LOGFILE.tmp" "$LOGFILE"
