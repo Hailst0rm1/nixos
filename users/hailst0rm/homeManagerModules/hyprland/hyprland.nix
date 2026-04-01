@@ -18,6 +18,35 @@
 
   hyprland-preview-share-picker = pkgs.callPackage ../../../../pkgs/hyprland-preview-share-picker/package.nix {};
 
+  # Clipboard helpers: use Ctrl+Shift+C/V for terminals, Ctrl+C/V for everything else
+  clip-copy = pkgs.writeShellScript "clip-copy" ''
+    class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
+    case "$class" in
+      com.mitchellh.ghostty|org.wezfurlong.wezterm|kitty|Alacritty|foot)
+        hyprctl dispatch sendshortcut "CTRL SHIFT, C,"
+        # Strip HTML from clipboard - terminals set text/html which Electron apps
+        # misinterpret with line breaks between formatted spans
+        sleep 0.05
+        ${pkgs.wl-clipboard}/bin/wl-paste -n -t text/plain 2>/dev/null | ${pkgs.wl-clipboard}/bin/wl-copy
+        ;;
+      *)
+        hyprctl dispatch sendshortcut "CTRL, C,"
+        ;;
+    esac
+  '';
+
+  clip-paste = pkgs.writeShellScript "clip-paste" ''
+    class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
+    case "$class" in
+      com.mitchellh.ghostty|org.wezfurlong.wezterm|kitty|Alacritty|foot)
+        hyprctl dispatch sendshortcut "CTRL SHIFT, V,"
+        ;;
+      *)
+        hyprctl dispatch sendshortcut "CTRL, V,"
+        ;;
+    esac
+  '';
+
   cfg = config.importConfig.hyprland;
 in {
   config = lib.mkIf cfg.enable {
@@ -203,9 +232,9 @@ in {
             "$mainMod, P, pseudo, # dwindle"
             "$mainMod SHIFT, J, togglesplit, # dwindle"
 
-            # Clipboard
-            "$mainMod, C, sendshortcut, CTRL, Insert,"
-            "$mainMod, V, sendshortcut, SHIFT, Insert,"
+            # Clipboard (Ctrl+Shift+C/V for terminals, Ctrl+C/V for other apps)
+            "$mainMod, C, exec, ${clip-copy}"
+            "$mainMod, V, exec, ${clip-paste}"
             "$mainMod, A, sendshortcut, CTRL, A,"
             "$mainMod, X, sendshortcut, CTRL, X,"
             "$mainMod, Z, sendshortcut, CTRL, Z,"

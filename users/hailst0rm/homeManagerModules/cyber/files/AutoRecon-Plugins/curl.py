@@ -16,3 +16,4 @@ class Curl(ServiceScan):
 	async def run(self, service):
 		if service.protocol == 'tcp':
 			await service.execute('curl -sSik {http_scheme}://{addressv6}:{port}' + self.get_option('path'), outfile='{protocol}_{port}_{http_scheme}_curl.html')
+			await service.execute('curl -sSik {http_scheme}://{addressv6}:{port}' + self.get_option('path'), outfile='{protocol}_{port}_{http_scheme}_curl.txt')
