@@ -10,8 +10,13 @@ with lib; let
   # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
   # Installs to a persistent directory on first run; explicitly adds 'debug' to fix
   # broken werift-rtp dependency (it uses debug but doesn't declare it)
+  discordTokenPath =
+    if (config.sops.secrets ? "services/discord/token")
+    then config.sops.secrets."services/discord/token".path
+    else "/run/secrets/services/discord/token";
+
   discordMcpWrapper = pkgs.writeShellScript "discord-mcp-wrapper" ''
-    TOKEN_FILE="${config.sops.secrets."services/discord/token".path}"
+    TOKEN_FILE="${discordTokenPath}"
     if [ -f "$TOKEN_FILE" ]; then
       export DISCORD_TOKEN="$(cat "$TOKEN_FILE")"
     fi

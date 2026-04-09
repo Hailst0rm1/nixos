@@ -8,41 +8,48 @@
 
   options.importConfig.sops.enable = lib.mkEnableOption "Enable User-level sops-nix.";
 
-  config = lib.mkIf config.importConfig.sops.enable {
-    sops = {
-      age.keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
-      age.sshKeyPaths = []; # Only use the user age key, not host SSH keys
+  config = lib.mkMerge [
+    # When sops is disabled, prevent validation of secrets
+    (lib.mkIf (!config.importConfig.sops.enable) {
+      sops.validateSopsFiles = false;
+    })
 
-      defaultSopsFile = ../../../secrets/${config.username}.yaml;
-      validateSopsFiles = true;
+    (lib.mkIf config.importConfig.sops.enable {
+      sops = {
+        age.keyFile = "/home/${config.username}/.config/sops/age/keys.txt";
+        age.sshKeyPaths = []; # Only use the user age key, not host SSH keys
 
-      secrets = {
-        "keys/ssh/${config.username}" = {
-          path = "/home/${config.username}/.ssh/id_${config.username}";
+        defaultSopsFile = ../../../secrets/${config.username}.yaml;
+        validateSopsFiles = true;
+
+        secrets = {
+          "keys/ssh/${config.username}" = {
+            path = "/home/${config.username}/.ssh/id_${config.username}";
+          };
+          "keys/ssh/github" = {
+            path = "/home/${config.username}/.ssh/github";
+          };
+          "keys/ssh/yubia" = {
+            path = "/home/${config.username}/.ssh/yubia";
+          };
+          "keys/ssh/yubic" = {
+            path = "/home/${config.username}/.ssh/yubic";
+          };
+          "keys/yubikey/${config.hostname}" = {
+            path = "/home/${config.username}/.config/Yubico/u2f_keys";
+          };
+          "vpn/aws-leech" = {
+            path = "/home/${config.username}/.vpn/aws-leech.ovpn";
+          };
+          "vpn/htb" = {
+            path = "/home/${config.username}/.vpn/htb.ovpn";
+          };
+          "vpn/offsec" = {
+            path = "/home/${config.username}/.vpn/offsec.ovpn";
+          };
+          "services/discord/token" = {};
         };
-        "keys/ssh/github" = {
-          path = "/home/${config.username}/.ssh/github";
-        };
-        "keys/ssh/yubia" = {
-          path = "/home/${config.username}/.ssh/yubia";
-        };
-        "keys/ssh/yubic" = {
-          path = "/home/${config.username}/.ssh/yubic";
-        };
-        "keys/yubikey/${config.hostname}" = {
-          path = "/home/${config.username}/.config/Yubico/u2f_keys";
-        };
-        "vpn/aws-leech" = {
-          path = "/home/${config.username}/.vpn/aws-leech.ovpn";
-        };
-        "vpn/htb" = {
-          path = "/home/${config.username}/.vpn/htb.ovpn";
-        };
-        "vpn/offsec" = {
-          path = "/home/${config.username}/.vpn/offsec.ovpn";
-        };
-        "services/discord/token" = {};
       };
-    };
-  };
+    })
+  ];
 }

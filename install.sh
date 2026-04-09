@@ -149,9 +149,14 @@ prompt_bool() {
     local label="$1"
     local default_val="$2"
     if [[ "$default_val" == "true" ]]; then
-        if confirm_yes "$label?"; then echo "true"; else echo "false"; fi
+        # Prompt must go to stderr since stdout is captured by $()
+        echo -en "${CYAN}[?]${NC} $label? [Y/n] " >&2
+        read -r reply
+        if [[ -z "$reply" || "$reply" =~ ^[Yy]$ ]]; then echo "true"; else echo "false"; fi
     else
-        if confirm "$label?"; then echo "true"; else echo "false"; fi
+        echo -en "${CYAN}[?]${NC} $label? [y/N] " >&2
+        read -r reply
+        if [[ "$reply" =~ ^[Yy]$ ]]; then echo "true"; else echo "false"; fi
     fi
 }
 
@@ -163,7 +168,8 @@ prompt_string() {
     # Strip surrounding quotes
     default_val="${default_val#\"}"
     default_val="${default_val%\"}"
-    ask "$label [$default_val]: "
+    # Prompt must go to stderr since stdout is captured by $()
+    echo -en "${CYAN}[?]${NC} $label [$default_val]: " >&2
     read -r user_val
     if [[ -z "$user_val" ]]; then
         echo "$default_val"
@@ -1427,17 +1433,48 @@ fi
 # Step 9: Run disko (format + mount)
 # ---------------------------------------------------------------------------
 
-info "Running disko: destroy, format, and mount /dev/$DEVICE..."
-echo ""
+# Check if the disk already has LUKS partitions (i.e. previously formatted)
+ALREADY_FORMATTED=false
+if lsblk -n -o TYPE "/dev/$DEVICE" 2>/dev/null | grep -q "crypt"; then
+    ALREADY_FORMATTED=true
+elif blkid -t TYPE=crypto_LUKS "/dev/${DEVICE}"* 2>/dev/null | grep -q .; then
+    ALREADY_FORMATTED=true
+fi
 
-if ! nix --experimental-features "nix-command flakes" \
-    run github:nix-community/disko/latest -- \
-    --mode destroy,format,mount \
-    --flake "$SCRIPT_DIR#$HOSTNAME"; then
-    err "Disko formatting failed. Check the output above."
-    err "If the disk was partially formatted, you can try recovery:"
-    cmd "sudo nix run github:nix-community/disko/latest -- --mode mount --flake '$SCRIPT_DIR#$HOSTNAME'"
-    exit 1
+if [[ "$ALREADY_FORMATTED" == "true" ]]; then
+    warn "Disk /dev/$DEVICE appears to already be formatted with LUKS."
+    echo ""
+    if confirm "Skip formatting and just mount + install?"; then
+        info "Mounting existing disk..."
+        if ! nix --experimental-features "nix-command flakes" \
+            run github:nix-community/disko/latest -- \
+            --mode mount \
+            --flake "$SCRIPT_DIR#$HOSTNAME"; then
+            err "Disko mount failed. Try manually:"
+            cmd "sudo nix run github:nix-community/disko/latest -- --mode mount --flake '$SCRIPT_DIR#$HOSTNAME'"
+            exit 1
+        fi
+    else
+        info "Re-formatting /dev/$DEVICE..."
+        echo ""
+        # The format step may return non-zero due to interactive LUKS enrollment
+        # (gum confirm prompts) even when formatting succeeds, so we ignore its
+        # exit code and verify success by attempting the mount step.
+        nix --experimental-features "nix-command flakes" \
+            run github:nix-community/disko/latest -- \
+            --mode destroy,format,mount \
+            --flake "$SCRIPT_DIR#$HOSTNAME" || true
+    fi
+else
+    info "Formatting and mounting /dev/$DEVICE..."
+    echo ""
+    # The format step may return non-zero due to interactive LUKS enrollment
+    # (gum confirm prompts) even when formatting succeeds, so we ignore its
+    # exit code and verify success by attempting the mount step.
+    nix --experimental-features "nix-command flakes" \
+        run github:nix-community/disko/latest -- \
+        --mode destroy,format,mount \
+        --flake "$SCRIPT_DIR#$HOSTNAME" || true
 fi
 
 ok "Disko completed. Disk formatted and mounted at /mnt."

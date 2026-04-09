@@ -55,6 +55,9 @@ in {
         efi.canTouchEfiVariables = lib.mkIf (!config.removableMedia) true;
       };
 
+      # Ensure USB boot works for removable media installs
+      initrd.availableKernelModules = lib.mkIf config.removableMedia ["uas"];
+
       supportedFilesystems = {
         ntfs = true;
         btrfs = true;
