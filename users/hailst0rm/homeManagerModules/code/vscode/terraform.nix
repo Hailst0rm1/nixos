@@ -17,7 +17,7 @@
     programs.vscode = {
       profiles.default = {
         extensions = with pkgs.vscode-marketplace; [
-          _4ops.terraform
+          # _4ops.terraform
         ];
       };
     };

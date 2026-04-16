@@ -102,6 +102,18 @@ in {
       #colorScheme = "mocha"; # Uncomment if not using stylix
     };
 
+    # Default applications (MIME associations)
+    xdg.mimeApps = lib.mkIf cfg.firefox.enable {
+      enable = true;
+      defaultApplications = {
+        "application/pdf" = "firefox.desktop";
+        "text/html" = "firefox.desktop";
+        "x-scheme-handler/http" = "firefox.desktop";
+        "x-scheme-handler/https" = "firefox.desktop";
+      };
+    };
+    xdg.configFile."mimeapps.list".force = true;
+
     # Espanso service
     # TODO: https://mynixos.com/search?q=espanso
     services.espanso = lib.mkIf cfg.espanso.enable {

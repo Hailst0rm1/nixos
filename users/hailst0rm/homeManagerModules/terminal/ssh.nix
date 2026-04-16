@@ -10,12 +10,12 @@ in {
   options.importConfig.ssh.enable = lib.mkEnableOption "Enable ssh configuration.";
 
   config = lib.mkIf cfg.enable {
-    # Write public keys to ~/.ssh/
-    home.file = lib.listToAttrs (map (keyFile: {
+    # Write public keys to ~/.ssh/ (only when sops provides the private keys)
+    home.file = lib.mkIf config.importConfig.sops.enable (lib.listToAttrs (map (keyFile: {
         name = ".ssh/${keyFile}";
         value.source = keysDir + "/${keyFile}";
       })
-      pubKeys);
+      pubKeys));
 
     programs.ssh = {
       enable = true;
