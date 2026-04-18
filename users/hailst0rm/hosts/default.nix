@@ -101,6 +101,7 @@
     openconnect.enable = lib.mkDefault false;
     espanso.enable = lib.mkDefault false;
     aws-cvpn-wrapper.enable = lib.mkDefault false;
+    signal.enable = lib.mkDefault true;
     proton = {
       enableAll = lib.mkDefault true;
       mail.enable = lib.mkDefault false;

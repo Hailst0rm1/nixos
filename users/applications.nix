@@ -28,6 +28,7 @@ in {
     zen-browser.enable = lib.mkEnableOption "Enable Zen Browser.";
     claude-desktop.enable = lib.mkEnableOption "Enable Claude Desktop.";
     openconnect.enable = lib.mkEnableOption "Enable Openconnect.";
+    signal.enable = lib.mkEnableOption "Enable Signal Desktop.";
     espanso.enable = lib.mkEnableOption "Enable Espanso.";
     aws-cvpn-wrapper.enable = lib.mkEnableOption "Enable AWS CVPN Wrapper.";
 
@@ -73,6 +74,7 @@ in {
         })
       ])
       (lib.mkIf cfg.openconnect.enable [pkgs-unstable.openconnect])
+      (lib.mkIf cfg.signal.enable [pkgs-unstable.signal-desktop])
       (lib.mkIf cfg.aws-cvpn-wrapper.enable [(pkgs.callPackage ../pkgs/aws-cvpn-wrapper/package.nix {})])
 
       ## Proton Applications (with enableAll option)
