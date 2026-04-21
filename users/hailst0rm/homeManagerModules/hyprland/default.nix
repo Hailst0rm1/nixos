@@ -87,6 +87,22 @@ in {
       description = "The wallpaper manager for Hyprland.";
     };
 
+    quickshell = {
+      enable = lib.mkEnableOption "QuickShell desktop shell (replaces panel, notifications, lockscreen, screenshot)";
+
+      openweatherApiKey = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "OpenWeatherMap API key for weather widget.";
+      };
+
+      openweatherCityId = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "OpenWeatherMap City ID for weather data.";
+      };
+    };
+
     monitorOrientations = lib.mkOption {
       type = lib.types.attrsOf (lib.types.enum ["left" "right" "top" "bottom" "center"]);
       default = {};

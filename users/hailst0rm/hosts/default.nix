@@ -58,6 +58,7 @@
         "0" = "left";
         "1" = "left";
       };
+      quickshell.enable = lib.mkDefault false;
     };
   };
 
