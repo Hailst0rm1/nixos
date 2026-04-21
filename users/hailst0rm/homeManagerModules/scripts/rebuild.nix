@@ -156,7 +156,7 @@
         echo -e "''${GREEN}✅ GitHub connectivity OK''${RESET}"
       fi
 
-      # --no-auth: always check remote via HTTPS (runs for all commands)
+      # --no-auth: fetch remote via HTTPS and rebase local branch on top
       if [ "$use_no_auth" = true ]; then
         echo -e "''${BLUE}📡 Fetching remote changes (no-auth, HTTPS)...''${RESET}"
         STEP_START=$SECONDS
@@ -173,55 +173,18 @@
             BEHIND=$(git rev-list HEAD..origin/master --count 2>/dev/null || echo "0")
             if [ "$BEHIND" -gt 0 ] 2>/dev/null; then
               echo -e "''${YELLOW}''${BOLD}⚠️  Warning: Local config is $BEHIND commit(s) behind remote.''${RESET}"
-              notify-send -e "NixOS Config Behind Remote" "Your config is $BEHIND commit(s) behind. Pull before rebuilding?" --icon=dialog-warning 2>/dev/null
-              read -p "Pull remote changes before rebuilding? (y/N): " -n 1 -r
+              notify-send -e "NixOS Config Behind Remote" "Your config is $BEHIND commit(s) behind. Rebase before rebuilding?" --icon=dialog-warning 2>/dev/null
+              read -p "Rebase on remote changes before rebuilding? (y/N): " -n 1 -r
               echo
               if [[ $REPLY =~ ^[Yy]$ ]]; then
-                HOSTNAME_VAL="${config.hostname}"
-
-                # Back up local host-specific files before pulling
-                echo -e "''${CYAN}📦 Backing up local host files before pull...''${RESET}"
-                NO_AUTH_BACKUP_DIR=$(mktemp -d)
-
-                # Collect files matching host-specific patterns
-                NO_AUTH_BACKUP_FILES=()
-                while IFS= read -r -d "" f; do
-                  NO_AUTH_BACKUP_FILES+=("$f")
-                done < <(find . -path "./hosts/$HOSTNAME_VAL/*" -print0 2>/dev/null)
-                while IFS= read -r -d "" f; do
-                  NO_AUTH_BACKUP_FILES+=("$f")
-                done < <(find . -path "./users/*/hosts/$HOSTNAME_VAL.*" -print0 2>/dev/null)
-                while IFS= read -r -d "" f; do
-                  NO_AUTH_BACKUP_FILES+=("$f")
-                done < <(find . -path "./users/*/hosts/displays/$HOSTNAME_VAL.*" -print0 2>/dev/null)
-
-                for f in "''${NO_AUTH_BACKUP_FILES[@]}"; do
-                  mkdir -p "$NO_AUTH_BACKUP_DIR/$(dirname "$f")"
-                  cp -a "$f" "$NO_AUTH_BACKUP_DIR/$f"
-                done
-
-                if [ ''${#NO_AUTH_BACKUP_FILES[@]} -gt 0 ]; then
-                  echo -e "''${BLUE}  Backed up ''${#NO_AUTH_BACKUP_FILES[@]} host-specific file(s)''${RESET}"
-                fi
-
-                # Pull remote changes via HTTPS (no SSH key needed)
-                echo -e "''${CYAN}⬇️  Pulling remote changes (HTTPS)...''${RESET}"
-                git pull "$HTTPS_URL" master
-
-                # Restore backed-up host-specific files
-                echo -e "''${CYAN}📦 Restoring local host files after pull...''${RESET}"
-                for f in "''${NO_AUTH_BACKUP_FILES[@]}"; do
-                  if [ -f "$NO_AUTH_BACKUP_DIR/$f" ]; then
-                    mkdir -p "$(dirname "$f")"
-                    cp -a "$NO_AUTH_BACKUP_DIR/$f" "$f"
-                  fi
-                done
-
-                # Clean up
-                rm -rf "$NO_AUTH_BACKUP_DIR"
-
-                if [ ''${#NO_AUTH_BACKUP_FILES[@]} -gt 0 ]; then
-                  echo -e "''${GREEN}✅ Restored ''${#NO_AUTH_BACKUP_FILES[@]} host-specific file(s)''${RESET}"
+                echo -e "''${CYAN}⬇️  Rebasing on remote changes...''${RESET}"
+                if git rebase origin/master; then
+                  echo -e "''${GREEN}✅ Rebased successfully.''${RESET}"
+                else
+                  echo -e "''${RED}''${BOLD}❌ Rebase failed. Resolve conflicts then run: git rebase --continue''${RESET}"
+                  notify-send -e "${notifyName} Failed!" "Rebase failed — resolve conflicts manually" --icon=dialog-error --urgency=critical 2>/dev/null
+                  popd >/dev/null 2>/dev/null
+                  exit 1
                 fi
               fi
             fi

@@ -320,7 +320,43 @@ The configuration provides three commands (via the rebuild script):
 
 All commands auto-format with `alejandra`, show a git diff, and optionally commit + push.
 
-Pass `--legacy` to use `nixos-rebuild` instead of `nh`. Pass `--nh-flags "..."` for extra nh arguments.
+| Flag | Description |
+|------|-------------|
+| `--legacy` | Use `nixos-rebuild` instead of `nh` |
+| `--no-auth` | Skip SSH auth — fetch/rebase via HTTPS, skip commit/push |
+| `--debug` | Show timing info for each step |
+| `--nh-flags "..."` | Pass extra arguments to `nh` |
+
+#### Local-only hosts (no-auth workflow)
+
+For hosts that don't push to the repo (e.g. lab machines, portable installs), use `--no-auth`. This workflow uses a **local git branch** that rebases on top of `master`, keeping local config separate without merge conflicts.
+
+**One-time setup:**
+```bash
+cd ~/.nixos
+git checkout -b <hostname>       # Create a local branch (e.g. nix-lab)
+
+# Create your host config files:
+#   hosts/<HOSTNAME>/configuration.nix
+#   hosts/<HOSTNAME>/hardware-configuration.nix
+#   users/<username>/hosts/<HOSTNAME>.nix
+
+git add hosts/<HOSTNAME>/ users/*/hosts/<HOSTNAME>.*
+git commit -m "<HOSTNAME>: initial local config"
+```
+
+**Daily usage:**
+```bash
+nix-pull --no-auth               # Fetch + rebase local branch on remote master (HTTPS)
+nix-switch --no-auth             # Build + switch, skip commit/push
+nix-boot --no-auth               # Build for next boot, skip commit/push
+```
+
+The `--no-auth` flag:
+- Fetches from GitHub over **HTTPS** (no SSH key needed)
+- Uses `git rebase` instead of `git pull` to keep local commits on top
+- Skips commit/push after a successful build
+- Since local host files only exist on the local branch, rebases are always clean
 
 ### Configuration
 

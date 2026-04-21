@@ -110,7 +110,28 @@
 
         # Pull config to git wherever you are
         nix-pull() {
-          git -C ~/.nixos pull "$@"
+          if [[ "$1" == "--no-auth" ]]; then
+            echo -e '\033[0;36m📡 Fetching remote changes (HTTPS, no-auth)...\033[0m'
+            git -C ~/.nixos fetch https://github.com/hailst0rm1/nixos.git master:refs/remotes/origin/master --quiet 2>/dev/null || {
+              echo -e '\033[0;31m❌ Fetch failed. Check your internet connection.\033[0m'
+              return 1
+            }
+            local LOCAL=$(git -C ~/.nixos rev-parse HEAD)
+            local REMOTE=$(git -C ~/.nixos rev-parse origin/master 2>/dev/null)
+            if [ "$LOCAL" = "$REMOTE" ]; then
+              echo -e '\033[0;32m✅ Already up to date.\033[0m'
+            else
+              local BEHIND=$(git -C ~/.nixos rev-list HEAD..origin/master --count 2>/dev/null || echo "0")
+              echo -e "\033[0;33m⬇️  Rebasing $BEHIND commit(s) from remote...\033[0m"
+              git -C ~/.nixos rebase origin/master || {
+                echo -e '\033[0;31m❌ Rebase failed. Resolve conflicts in ~/.nixos then run: git rebase --continue\033[0m'
+                return 1
+              }
+              echo -e '\033[0;32m✅ Rebased successfully.\033[0m'
+            fi
+          else
+            git -C ~/.nixos pull "$@"
+          fi
         }
 
         # Unalias gp from oh-my-zsh git plugin so our function can be defined
