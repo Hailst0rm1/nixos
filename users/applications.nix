@@ -114,7 +114,9 @@ in {
         "x-scheme-handler/https" = "firefox.desktop";
       };
     };
-    xdg.configFile."mimeapps.list".force = true;
+    xdg.configFile = lib.mkIf cfg.firefox.enable {
+      "mimeapps.list".force = true;
+    };
 
     # Espanso service
     # TODO: https://mynixos.com/search?q=espanso

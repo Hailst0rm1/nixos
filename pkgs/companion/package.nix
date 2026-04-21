@@ -10,13 +10,13 @@
   # Pre-fetch node_modules as a fixed-output derivation
   bun-modules = stdenv.mkDerivation {
     pname = "the-vibe-companion-bun-modules";
-    version = "0.94.0";
+    version = "0.95.0";
 
     src = fetchFromGitHub {
       owner = "The-Vibe-Company";
       repo = "companion";
-      rev = "the-companion-v0.94.0";
-      hash = "sha256-gh/FQ4gYoDZntFtAv/+SqL0ONcI34qjGDoB/XjeLKqI=";
+      rev = "the-companion-v0.95.0";
+      hash = "sha256-JJyoD1sUKQ9OaJgfmoHFTx+B0rMUijS0/F6TSFtlIgU=";
     };
 
     nativeBuildInputs = [bun cacert nodejs];
@@ -40,18 +40,18 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-Fc6CDHhg/lrwrnoHUEA37Il7SQawBHo4S4Rho+7iPrw=";
+    outputHash = "sha256-JpaMNtdwrFijverZ66Zanb4UkRp+Gy+scHDI4DVdaoo=";
   };
 in
   stdenv.mkDerivation rec {
     pname = "the-vibe-companion";
-    version = "0.94.0";
+    version = "0.95.0";
 
     src = fetchFromGitHub {
       owner = "The-Vibe-Company";
       repo = "companion";
       rev = "the-companion-v${version}";
-      hash = "sha256-gh/FQ4gYoDZntFtAv/+SqL0ONcI34qjGDoB/XjeLKqI=";
+      hash = "sha256-JJyoD1sUKQ9OaJgfmoHFTx+B0rMUijS0/F6TSFtlIgU=";
     };
 
     nativeBuildInputs = [
@@ -109,7 +109,6 @@ in
       runHook postInstall
     '';
 
-    # Tests require a full build environment and API keys
     doCheck = false;
 
     meta = with lib; {
@@ -117,17 +116,7 @@ in
       longDescription = ''
         The Vibe Companion is a web UI that lets you run multiple Claude Code sessions
         simultaneously. It provides real-time streaming of responses, visual feedback on
-        tool calls, and permission controls. The application reverse-engineered the
-        undocumented WebSocket protocol used by Claude Code CLI to provide a browser-based
-        interface for agent interactions.
-
-        Features:
-        - Multiple concurrent Claude Code sessions
-        - Real-time streaming responses
-        - Tool call visibility with approval controls
-        - Session persistence and auto-recovery
-        - Environment profile management
-        - Git worktree integration
+        tool calls, and permission controls.
       '';
       homepage = "https://github.com/The-Vibe-Company/companion";
       license = licenses.mit;
