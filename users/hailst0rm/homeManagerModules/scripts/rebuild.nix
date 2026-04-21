@@ -181,10 +181,34 @@
                 if git rebase origin/master; then
                   echo -e "''${GREEN}✅ Rebased successfully.''${RESET}"
                 else
-                  echo -e "''${RED}''${BOLD}❌ Rebase failed. Resolve conflicts then run: git rebase --continue''${RESET}"
-                  notify-send -e "${notifyName} Failed!" "Rebase failed — resolve conflicts manually" --icon=dialog-error --urgency=critical 2>/dev/null
-                  popd >/dev/null 2>/dev/null
-                  exit 1
+                  # Auto-resolve known per-host files by keeping local version
+                  conflict_files=$(git diff --name-only --diff-filter=U 2>/dev/null)
+                  auto_resolved=true
+                  for f in $conflict_files; do
+                    case "$f" in
+                      pkgs/companion/package.nix)
+                        echo -e "''${YELLOW}⚠️  Auto-resolving $f (keeping local version)''${RESET}"
+                        git checkout --ours "$f"
+                        git add "$f"
+                        ;;
+                      *)
+                        auto_resolved=false
+                        ;;
+                    esac
+                  done
+                  if [ "$auto_resolved" = true ] && [ -n "$conflict_files" ]; then
+                    GIT_EDITOR=true git rebase --continue || {
+                      echo -e "''${RED}''${BOLD}❌ Rebase failed. Resolve conflicts then run: git rebase --continue''${RESET}"
+                      notify-send -e "${notifyName} Failed!" "Rebase failed — resolve conflicts manually" --icon=dialog-error --urgency=critical 2>/dev/null
+                      popd >/dev/null 2>/dev/null
+                      exit 1
+                    }
+                  elif [ "$auto_resolved" = false ]; then
+                    echo -e "''${RED}''${BOLD}❌ Rebase failed. Resolve conflicts then run: git rebase --continue''${RESET}"
+                    notify-send -e "${notifyName} Failed!" "Rebase failed — resolve conflicts manually" --icon=dialog-error --urgency=critical 2>/dev/null
+                    popd >/dev/null 2>/dev/null
+                    exit 1
+                  fi
                 fi
               fi
             fi

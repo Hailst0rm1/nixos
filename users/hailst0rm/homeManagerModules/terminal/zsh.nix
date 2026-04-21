@@ -124,8 +124,30 @@
               local BEHIND=$(git -C ~/.nixos rev-list HEAD..origin/master --count 2>/dev/null || echo "0")
               echo -e "\033[0;33m⬇️  Rebasing $BEHIND commit(s) from remote...\033[0m"
               git -C ~/.nixos rebase origin/master || {
-                echo -e '\033[0;31m❌ Rebase failed. Resolve conflicts in ~/.nixos then run: git rebase --continue\033[0m'
-                return 1
+                # Auto-resolve known per-host files by keeping local version
+                local conflict_files=$(git -C ~/.nixos diff --name-only --diff-filter=U 2>/dev/null)
+                local auto_resolved=true
+                for f in $conflict_files; do
+                  case "$f" in
+                    pkgs/companion/package.nix)
+                      echo -e "\033[0;33m⚠️  Auto-resolving $f (keeping local version)\033[0m"
+                      git -C ~/.nixos checkout --ours "$f"
+                      git -C ~/.nixos add "$f"
+                      ;;
+                    *)
+                      auto_resolved=false
+                      ;;
+                  esac
+                done
+                if [ "$auto_resolved" = true ] && [ -n "$conflict_files" ]; then
+                  git -C ~/.nixos rebase --continue || {
+                    echo -e '\033[0;31m❌ Rebase failed. Resolve conflicts in ~/.nixos then run: git rebase --continue\033[0m'
+                    return 1
+                  }
+                elif [ "$auto_resolved" = false ]; then
+                  echo -e '\033[0;31m❌ Rebase failed. Resolve conflicts in ~/.nixos then run: git rebase --continue\033[0m'
+                  return 1
+                fi
               }
               echo -e '\033[0;32m✅ Rebased successfully.\033[0m'
             fi
