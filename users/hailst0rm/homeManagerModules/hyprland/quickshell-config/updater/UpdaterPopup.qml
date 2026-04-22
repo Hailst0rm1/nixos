@@ -100,7 +100,7 @@ Item {
             Text {
                 Layout.alignment: Qt.AlignHCenter
                 text: "New version available"
-                font.family: "JetBrainsMono Nerd Font Mono"
+                font.family: "Iosevka Nerd Font"
                 font.weight: Font.Medium
                 font.pixelSize: window.s(13)
                 color: window.subtext0
@@ -113,21 +113,21 @@ Item {
 
                 Text { 
                     text: window.localVersion
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: window.s(16)
                     color: window.text 
                 }
                 
                 Text { 
                     text: ""
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: window.s(16)
                     color: window.subtext0 
                 }
                 
                 Text { 
                     text: window.remoteVersion
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.weight: Font.Black
                     font.pixelSize: window.s(28)
                     color: window.green 
@@ -161,7 +161,7 @@ Item {
                     Text {
                         width: changelogScroll.availableWidth
                         text: window.commitMessage
-                        font.family: "JetBrainsMono Nerd Font Mono"
+                        font.family: "Iosevka Nerd Font"
                         font.pixelSize: window.s(13)
                         color: window.subtext0
                         wrapMode: Text.WordWrap
@@ -265,7 +265,7 @@ Item {
                     
                     Text { 
                         text: "󰚰"
-                        font.family: "JetBrainsMono Nerd Font Mono"
+                        font.family: "Iosevka Nerd Font"
                         font.pixelSize: window.s(18)
                         color: updateBtn.fillLevel > 0.5 ? window.crust : window.green 
                         Behavior on color { ColorAnimation { duration: 150 } }
@@ -273,7 +273,7 @@ Item {
                     
                     Text { 
                         text: updateBtn.fillLevel > 0 ? "HOLDING..." : "UPDATE"
-                        font.family: "JetBrainsMono Nerd Font Mono"
+                        font.family: "Iosevka Nerd Font"
                         font.weight: Font.Black
                         font.pixelSize: window.s(14)
                         color: updateBtn.fillLevel > 0.5 ? window.crust : window.green 

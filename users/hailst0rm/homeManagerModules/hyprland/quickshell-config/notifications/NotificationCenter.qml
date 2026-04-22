@@ -33,7 +33,7 @@ Item {
 
                 Text {
                     text: "Notifications"
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.weight: Font.Bold
                     font.pixelSize: 18 * root.uiScale
                     color: _theme.text
@@ -42,7 +42,7 @@ Item {
 
                 Text {
                     text: notifList.count > 0 ? notifList.count + " items" : ""
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: 12 * root.uiScale
                     color: _theme.overlay1
                     verticalAlignment: Text.AlignVCenter
@@ -61,7 +61,7 @@ Item {
                         id: clearLabel
                         anchors.centerIn: parent
                         text: "Clear All"
-                        font.family: "JetBrainsMono Nerd Font Mono"
+                        font.family: "Iosevka Nerd Font"
                         font.weight: Font.Medium
                         font.pixelSize: 13 * root.uiScale
                         color: _theme.red
@@ -99,7 +99,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "No notifications"
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: 14 * root.uiScale
                     color: _theme.overlay0
                 }
@@ -161,7 +161,7 @@ Item {
 
                         Text {
                             text: modelData.appName || "System"
-                            font.family: "JetBrainsMono Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.weight: Font.Medium
                             font.pixelSize: 11 * root.uiScale
                             color: _theme.overlay1
@@ -171,7 +171,7 @@ Item {
 
                         Text {
                             text: modelData.summary || ""
-                            font.family: "JetBrainsMono Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.weight: Font.Bold
                             font.pixelSize: 14 * root.uiScale
                             color: _theme.text
@@ -181,7 +181,7 @@ Item {
 
                         Text {
                             text: modelData.body || ""
-                            font.family: "JetBrainsMono Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.pixelSize: 12 * root.uiScale
                             color: _theme.subtext0
                             Layout.fillWidth: true

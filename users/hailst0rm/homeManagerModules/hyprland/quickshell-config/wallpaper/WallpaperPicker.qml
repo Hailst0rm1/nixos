@@ -1311,7 +1311,7 @@ Item {
                     text: window.currentNotification
                     
                     color: _theme.text
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: window.s(14)
                     font.bold: true
                     elide: Text.ElideRight
@@ -1353,7 +1353,7 @@ Item {
                             text: modelData.label
                             anchors.centerIn: parent
                             color: window.currentFilter === modelData.name ? _theme.text : Qt.rgba(_theme.text.r, _theme.text.g, _theme.text.b, 0.7)
-                            font.family: "JetBrainsMono Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.pixelSize: window.s(14)
                             font.bold: window.currentFilter === modelData.name
                             Behavior on color { ColorAnimation { duration: 400; easing.type: Easing.OutQuart } }
@@ -1540,7 +1540,7 @@ Item {
                     Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuad } }
                     
                     color: _theme.text
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: window.s(16) 
                     clip: true
                     

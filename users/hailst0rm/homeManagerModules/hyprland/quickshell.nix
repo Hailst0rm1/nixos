@@ -33,14 +33,12 @@ in {
       };
 
       # Weather API configuration — reads key from sops at runtime
-      "quickshell/calendar/.env" = {
-        text =
-          ''
-            OPENWEATHER_KEY_FILE=${openweatherKeyPath}
-            OPENWEATHER_CITY_ID=${qsCfg.openweatherCityId}
-            OPENWEATHER_UNIT=metric
-          '';
-      };
+      # No leading whitespace — weather.sh uses `export $(grep -v '^#' .env | xargs)`
+      "quickshell/calendar/.env".text = lib.concatStringsSep "\n" ([
+        "OPENWEATHER_KEY_FILE=${openweatherKeyPath}"
+        "OPENWEATHER_CITY_ID=${qsCfg.openweatherCityId}"
+        "OPENWEATHER_UNIT=metric"
+      ]);
     };
 
     # Hyprland integration
@@ -80,6 +78,9 @@ in {
     home.packages = with pkgs; [
       quickshell
 
+      # Icon font (Nerd Font for QML icon glyphs)
+      nerd-fonts.iosevka
+
       # Screenshot/recording
       grim
       slurp
@@ -90,6 +91,7 @@ in {
       # Audio/media
       playerctl
       pamixer
+      pulseaudio # pactl — needed by volume/audio scripts
       cava
 
       # Network/Bluetooth

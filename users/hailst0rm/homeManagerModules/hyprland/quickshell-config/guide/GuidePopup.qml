@@ -617,7 +617,7 @@ Item {
                             Text { 
                                 anchors.centerIn: parent
                                 text: "󰣇"
-                                font.family: "JetBrainsMono Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: root.s(20)
                                 color: root.base 
                             }
@@ -628,7 +628,7 @@ Item {
                             spacing: root.s(2)
                             Text { 
                                 text: "Imperative"
-                                font.family: "JetBrainsMono Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.weight: Font.Black
                                 font.pixelSize: root.s(15)
                                 color: root.text
@@ -636,7 +636,7 @@ Item {
                             }
                             Text { 
                                 text: "v" + (root.dotsVersion !== "Loading..." ? root.dotsVersion : "...")
-                                font.family: "JetBrainsMono Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: root.s(11)
                                 color: root.subtext0
                                 Layout.alignment: Qt.AlignLeft 
@@ -674,7 +674,7 @@ Item {
                                 Text { 
                                     anchors.centerIn: parent
                                     text: root.tabIcons[index]
-                                    font.family: "JetBrainsMono Nerd Font Mono"
+                                    font.family: "Iosevka Nerd Font"
                                     font.pixelSize: root.s(18)
                                     color: parent.parent.parent.isActive ? root.ambientPurple : root.subtext0
                                     Behavior on color { ColorAnimation { duration: 150 } } 
@@ -683,7 +683,7 @@ Item {
                             
                             Text { 
                                 text: root.tabNames[index]
-                                font.family: "JetBrainsMono Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.weight: parent.parent.isActive ? Font.Bold : Font.Medium
                                 font.pixelSize: root.s(13)
                                 color: parent.parent.isActive ? root.text : root.subtext0
@@ -747,13 +747,13 @@ Item {
                         RowLayout {
                             Layout.alignment: Qt.AlignHCenter
                             spacing: root.s(6)
-                            Text { text: "󰚰"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(14); color: root.green }
-                            Text { text: "Update Available"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.green }
+                            Text { text: "󰚰"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(14); color: root.green }
+                            Text { text: "Update Available"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.green }
                         }
                         
                         Text {
                             text: root.dotsVersion + "  " + root.remoteVersion
-                            font.family: "JetBrainsMono Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.pixelSize: root.s(10)
                             color: root.subtext0
                             Layout.alignment: Qt.AlignHCenter
@@ -793,7 +793,7 @@ Item {
                         Text { 
                             id: arrowText
                             text: ""
-                            font.family: "JetBrainsMono Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.pixelSize: root.s(16)
                             color: closeHover.containsMouse ? root.red : root.subtext0
                             Behavior on color { ColorAnimation { duration: 150 } } 
@@ -964,7 +964,7 @@ Item {
                                         Text { 
                                             anchors.centerIn: parent
                                             text: ""
-                                            font.family: "JetBrainsMono Nerd Font Mono"
+                                            font.family: "Iosevka Nerd Font"
                                             font.pixelSize: root.s(42)
                                             color: root.text
                                             visible: root.faceIconPath === ""
@@ -982,7 +982,7 @@ Item {
                                 
                                 Text { 
                                     text: root.sysUser
-                                    font.family: "JetBrainsMono Nerd Font Mono"
+                                    font.family: "Iosevka Nerd Font"
                                     font.weight: Font.Black
                                     font.pixelSize: root.s(24)
                                     color: root.text 
@@ -990,7 +990,7 @@ Item {
                                 
                                 Text { 
                                     text: "@" + root.sysHost
-                                    font.family: "JetBrainsMono Nerd Font Mono"
+                                    font.family: "Iosevka Nerd Font"
                                     font.pixelSize: root.s(14)
                                     color: root.subtext0 
                                 }
@@ -1007,13 +1007,13 @@ Item {
                                     spacing: root.s(15)
                                     RowLayout { 
                                         spacing: root.s(6)
-                                        Text { text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root.blue } 
-                                        Text { text: root.sysOS; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Medium; font.pixelSize: root.s(12); color: root.subtext0 } 
+                                        Text { text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.blue } 
+                                        Text { text: root.sysOS; font.family: "Iosevka Nerd Font"; font.weight: Font.Medium; font.pixelSize: root.s(12); color: root.subtext0 } 
                                     }
                                     RowLayout { 
                                         spacing: root.s(6)
-                                        Text { text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root.peach } 
-                                        Text { text: root.sysKernel; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Medium; font.pixelSize: root.s(12); color: root.subtext0 } 
+                                        Text { text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.peach } 
+                                        Text { text: root.sysKernel; font.family: "Iosevka Nerd Font"; font.weight: Font.Medium; font.pixelSize: root.s(12); color: root.subtext0 } 
                                     }
                                 }
                                 
@@ -1021,10 +1021,10 @@ Item {
                                     spacing: root.s(15)
                                     RowLayout { 
                                         spacing: root.s(6)
-                                        Text { text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root.green } 
+                                        Text { text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.green } 
                                         Text { 
                                             text: root.sysCPU
-                                            font.family: "JetBrainsMono Nerd Font Mono"
+                                            font.family: "Iosevka Nerd Font"
                                             font.weight: Font.Medium
                                             font.pixelSize: root.s(12)
                                             color: root.subtext0
@@ -1034,10 +1034,10 @@ Item {
                                     }
                                     RowLayout { 
                                         spacing: root.s(6)
-                                        Text { text: "󰢮"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root.yellow } 
+                                        Text { text: "󰢮"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.yellow } 
                                         Text { 
                                             text: root.sysGPU
-                                            font.family: "JetBrainsMono Nerd Font Mono"
+                                            font.family: "Iosevka Nerd Font"
                                             font.weight: Font.Medium
                                             font.pixelSize: root.s(12)
                                             color: root.subtext0
@@ -1080,7 +1080,7 @@ Item {
                                 color: root.surface0
                                 border.color: root.surface2
                                 border.width: 1
-                                Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(20); color: root.text } 
+                                Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(20); color: root.text } 
                             }
                             
                             Row {
@@ -1090,7 +1090,7 @@ Item {
                                     model: [ { l: "i", c: root.red }, { l: "l", c: root.peach }, { l: "y", c: root.yellow }, { l: "a", c: root.green }, { l: "m", c: root.sapphire }, { l: "i", c: root.blue }, { l: "r", c: root.mauve }, { l: "o", c: root.pink } ]
                                     Text { 
                                         text: modelData.l
-                                        font.family: "JetBrainsMono Nerd Font Mono"
+                                        font.family: "Iosevka Nerd Font"
                                         font.weight: Font.Black
                                         font.pixelSize: root.s(14)
                                         color: modelData.c
@@ -1112,7 +1112,7 @@ Item {
                                 Text { 
                                     anchors.centerIn: parent
                                     text: ""
-                                    font.family: "JetBrainsMono Nerd Font Mono"
+                                    font.family: "Iosevka Nerd Font"
                                     font.pixelSize: root.s(14)
                                     color: authorMa.containsMouse ? root.mauve : root.subtext0
                                     Behavior on color { ColorAnimation { duration: 150 } } 
@@ -1156,8 +1156,8 @@ Item {
                                 RowLayout { 
                                     anchors.centerIn: parent
                                     spacing: root.s(10)
-                                    Text { text: modelData.icon; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root[modelData.color] } 
-                                    Text { text: modelData.name; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } 
+                                    Text { text: modelData.icon; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root[modelData.color] } 
+                                    Text { text: modelData.name; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } 
                                 }
                                 
                                 MouseArea { 
@@ -1179,7 +1179,7 @@ Item {
 
                     Text { 
                         text: "System Architecture"
-                        font.family: "JetBrainsMono Nerd Font Mono"
+                        font.family: "Iosevka Nerd Font"
                         font.weight: Font.Black
                         font.pixelSize: root.s(24)
                         color: root.text
@@ -1218,7 +1218,7 @@ Item {
                                         anchors.verticalCenter: parent.verticalCenter
                                         width: root.s(36)
                                         height: root.s(36)
-                                        Text { anchors.centerIn: parent; text: model.icon; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(22); color: root[model.clr] } 
+                                        Text { anchors.centerIn: parent; text: model.icon; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(22); color: root[model.clr] } 
                                     }
                                     
                                     Column { 
@@ -1227,8 +1227,8 @@ Item {
                                         anchors.right: parent.right
                                         anchors.verticalCenter: parent.verticalCenter
                                         spacing: root.s(2)
-                                        Text { text: model.pkg; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(14); color: root.text } 
-                                        Text { text: model.role; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(11); color: root.subtext0 } 
+                                        Text { text: model.pkg; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(14); color: root.text } 
+                                        Text { text: model.role; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } 
                                     }
                                 }
                                 
@@ -1291,8 +1291,8 @@ Item {
                                 spacing: root.s(15)
 
                                 RowLayout {
-                                    Text { text: "󰇄"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.mauve }
-                                    Text { text: "System Specifications"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(14); color: root.text }
+                                    Text { text: "󰇄"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.mauve }
+                                    Text { text: "System Specifications"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(14); color: root.text }
                                 }
                                 Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(root.surface1, 0.5) }
 
@@ -1304,35 +1304,35 @@ Item {
                                     
                                     RowLayout { 
                                         spacing: root.s(12)
-                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.blue, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.blue } } 
-                                        ColumnLayout { spacing: root.s(2); Text { text: "Operating System"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysOS; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
+                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.blue, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.blue } } 
+                                        ColumnLayout { spacing: root.s(2); Text { text: "Operating System"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysOS; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
                                     }
                                     RowLayout { 
                                         spacing: root.s(12)
-                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.peach, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.peach } } 
-                                        ColumnLayout { spacing: root.s(2); Text { text: "Kernel Version"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysKernel; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
+                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.peach, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.peach } } 
+                                        ColumnLayout { spacing: root.s(2); Text { text: "Kernel Version"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysKernel; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
                                     }
                                     RowLayout { 
                                         spacing: root.s(12)
-                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.green, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.green } } 
-                                        ColumnLayout { spacing: root.s(2); Text { text: "Active User"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysUser + "@" + root.sysHost; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
+                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.green, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.green } } 
+                                        ColumnLayout { spacing: root.s(2); Text { text: "Active User"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysUser + "@" + root.sysHost; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
                                     }
                                     RowLayout { 
                                         spacing: root.s(12)
-                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.yellow, 0.15); Text { anchors.centerIn: parent; text: "󰔟"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.yellow } } 
-                                        ColumnLayout { spacing: root.s(2); Text { text: "System Uptime"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysUptime; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
-                                    }
-                                    RowLayout { 
-                                        Layout.columnSpan: 2
-                                        spacing: root.s(12)
-                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.sapphire, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.sapphire } } 
-                                        ColumnLayout { spacing: root.s(2); Text { text: "Processor (CPU)"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysCPU; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text; elide: Text.ElideRight; Layout.maximumWidth: root.s(450) } } 
+                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.yellow, 0.15); Text { anchors.centerIn: parent; text: "󰔟"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.yellow } } 
+                                        ColumnLayout { spacing: root.s(2); Text { text: "System Uptime"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysUptime; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
                                     }
                                     RowLayout { 
                                         Layout.columnSpan: 2
                                         spacing: root.s(12)
-                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.red, 0.15); Text { anchors.centerIn: parent; text: "󰢮"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.red } } 
-                                        ColumnLayout { spacing: root.s(2); Text { text: "Graphics (GPU)"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysGPU; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text; elide: Text.ElideRight; Layout.maximumWidth: root.s(450) } } 
+                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.sapphire, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.sapphire } } 
+                                        ColumnLayout { spacing: root.s(2); Text { text: "Processor (CPU)"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysCPU; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text; elide: Text.ElideRight; Layout.maximumWidth: root.s(450) } } 
+                                    }
+                                    RowLayout { 
+                                        Layout.columnSpan: 2
+                                        spacing: root.s(12)
+                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.red, 0.15); Text { anchors.centerIn: parent; text: "󰢮"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.red } } 
+                                        ColumnLayout { spacing: root.s(2); Text { text: "Graphics (GPU)"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysGPU; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text; elide: Text.ElideRight; Layout.maximumWidth: root.s(450) } } 
                                     }
                                 }
                             }
@@ -1404,14 +1404,14 @@ Item {
                                             ColumnLayout { 
                                                 anchors.centerIn: parent
                                                 spacing: root.s(2)
-                                                Text { text: iIcon; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(26); color: root[cKey]; Layout.alignment: Qt.AlignHCenter } 
-                                                Text { text: txtValue; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(18); color: root.text; Layout.alignment: Qt.AlignHCenter } 
+                                                Text { text: iIcon; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(26); color: root[cKey]; Layout.alignment: Qt.AlignHCenter } 
+                                                Text { text: txtValue; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(18); color: root.text; Layout.alignment: Qt.AlignHCenter } 
                                             }
                                         }
                                         
                                         Text { 
                                             text: tTitle; 
-                                            font.family: "JetBrainsMono Nerd Font Mono"; 
+                                            font.family: "Iosevka Nerd Font"; 
                                             font.weight: Font.Bold; 
                                             font.pixelSize: root.s(12); 
                                             color: root.subtext0; 
@@ -1437,12 +1437,12 @@ Item {
                                 spacing: root.s(10)
                                 
                                 RowLayout {
-                                    Text { text: "󰋊"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root.mauve }
-                                    Text { text: "Storage"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; color: root.text; font.pixelSize: root.s(14) }
+                                    Text { text: "󰋊"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.mauve }
+                                    Text { text: "Storage"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; color: root.text; font.pixelSize: root.s(14) }
                                     Item { Layout.fillWidth: true }
                                     Text { 
                                         text: root.formatBytes(root.globalUsedDisk) + " / " + root.formatBytes(root.globalTotalDisk) + " (" + (root.globalTotalDisk > 0 ? Math.round((root.globalUsedDisk / root.globalTotalDisk) * 100) : 0) + "%)"
-                                        font.family: "JetBrainsMono Nerd Font Mono"
+                                        font.family: "Iosevka Nerd Font"
                                         font.pixelSize: root.s(12)
                                         color: root.subtext0 
                                     }
@@ -1520,7 +1520,7 @@ Item {
                                         Text { 
                                             anchors.centerIn: parent
                                             text: root.netState === 0 ? "GO" : (root.netState === 4 ? "󰑐" : "󰑮")
-                                            font.family: root.netState === 0 ? "JetBrainsMono Nerd Font Mono" : "JetBrainsMono Nerd Font Mono"
+                                            font.family: root.netState === 0 ? "Iosevka Nerd Font" : "Iosevka Nerd Font"
                                             font.weight: Font.Black
                                             font.pixelSize: root.netState === 0 ? root.s(28) : root.s(32)
                                             color: (root.netState > 0 && root.netState < 4) ? root.blue : root.text
@@ -1538,7 +1538,7 @@ Item {
                                     }
                                     Text { 
                                         text: "SPEEDTEST"
-                                        font.family: "JetBrainsMono Nerd Font Mono"
+                                        font.family: "Iosevka Nerd Font"
                                         font.weight: Font.Bold
                                         font.pixelSize: root.s(9)
                                         color: root.subtext0
@@ -1585,14 +1585,14 @@ Item {
                                     Item { 
                                         Layout.preferredWidth: root.s(16)
                                         Layout.preferredHeight: root.s(16)
-                                        Text { anchors.centerIn: parent; text: "󰅸"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root.peach } 
+                                        Text { anchors.centerIn: parent; text: "󰅸"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.peach } 
                                     } 
-                                    Text { text: "PING"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.subtext0 } 
+                                    Text { text: "PING"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.subtext0 } 
                                 }
                                 RowLayout { 
                                     spacing: root.s(4)
-                                    Text { text: root.netState >= 2 ? root.displayPing.toFixed(0) : "..."; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text } 
-                                    Text { text: "ms"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(12); color: root.subtext0; Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: root.s(5); visible: root.netState >= 2 } 
+                                    Text { text: root.netState >= 2 ? root.displayPing.toFixed(0) : "..."; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text } 
+                                    Text { text: "ms"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(12); color: root.subtext0; Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: root.s(5); visible: root.netState >= 2 } 
                                 }
                             }
                             
@@ -1605,14 +1605,14 @@ Item {
                                     Item { 
                                         Layout.preferredWidth: root.s(16)
                                         Layout.preferredHeight: root.s(16)
-                                        Text { anchors.centerIn: parent; text: "󰇚"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root.green } 
+                                        Text { anchors.centerIn: parent; text: "󰇚"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.green } 
                                     } 
-                                    Text { text: "DOWNLOAD"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.subtext0 } 
+                                    Text { text: "DOWNLOAD"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.subtext0 } 
                                 }
                                 RowLayout { 
                                     spacing: root.s(4)
-                                    Text { text: root.netState >= 3 ? root.displayDown.toFixed(1) : "..."; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.green } 
-                                    Text { text: "Mbps"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(12); color: root.subtext0; Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: root.s(5); visible: root.netState >= 3 } 
+                                    Text { text: root.netState >= 3 ? root.displayDown.toFixed(1) : "..."; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.green } 
+                                    Text { text: "Mbps"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(12); color: root.subtext0; Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: root.s(5); visible: root.netState >= 3 } 
                                 }
                             }
                             
@@ -1625,14 +1625,14 @@ Item {
                                     Item { 
                                         Layout.preferredWidth: root.s(16)
                                         Layout.preferredHeight: root.s(16)
-                                        Text { anchors.centerIn: parent; text: "󰕒"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root.mauve } 
+                                        Text { anchors.centerIn: parent; text: "󰕒"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.mauve } 
                                     } 
-                                    Text { text: "UPLOAD"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.subtext0 } 
+                                    Text { text: "UPLOAD"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.subtext0 } 
                                 }
                                 RowLayout { 
                                     spacing: root.s(4)
-                                    Text { text: root.netState >= 4 ? root.displayUp.toFixed(1) : "..."; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.mauve } 
-                                    Text { text: "Mbps"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(12); color: root.subtext0; Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: root.s(5); visible: root.netState >= 4 } 
+                                    Text { text: root.netState >= 4 ? root.displayUp.toFixed(1) : "..."; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.mauve } 
+                                    Text { text: "Mbps"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(12); color: root.subtext0; Layout.alignment: Qt.AlignBottom; Layout.bottomMargin: root.s(5); visible: root.netState >= 4 } 
                                 }
                             }
                         }
@@ -1667,8 +1667,8 @@ Item {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: root.s(4)
-                            Text { text: "Interactive Modules"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text }
-                            Text { text: "Use arrow keys or select below to preview. Double-click or press Enter to toggle."; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(13); color: root.subtext0 }
+                            Text { text: "Interactive Modules"; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text }
+                            Text { text: "Use arrow keys or select below to preview. Double-click or press Enter to toggle."; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(13); color: root.subtext0 }
                         }
                         
                         Item { Layout.fillWidth: true } 
@@ -1688,8 +1688,8 @@ Item {
                             RowLayout { 
                                 anchors.centerIn: parent
                                 spacing: root.s(8)
-                                Text { text: "󰐊"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(20); color: root.base } 
-                                Text { text: "PLAY"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(14); color: root.base } 
+                                Text { text: "󰐊"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(20); color: root.base } 
+                                Text { text: "PLAY"; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(14); color: root.base } 
                             }
                             
                             MouseArea { 
@@ -1789,11 +1789,11 @@ Item {
                                         height: root.s(28)
                                         radius: root.s(6)
                                         color: Qt.alpha(root.base, 0.5)
-                                        Text { anchors.centerIn: parent; text: model.icon; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(14); color: isSelected ? root.ambientBlue : root.text } 
+                                        Text { anchors.centerIn: parent; text: model.icon; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(14); color: isSelected ? root.ambientBlue : root.text } 
                                     } 
                                     Text { 
                                         text: model.title
-                                        font.family: "JetBrainsMono Nerd Font Mono"
+                                        font.family: "Iosevka Nerd Font"
                                         font.weight: Font.Bold
                                         font.pixelSize: root.s(12)
                                         color: root.text
@@ -1804,7 +1804,7 @@ Item {
                                 }
                                 Text { 
                                     text: model.desc
-                                    font.family: "JetBrainsMono Nerd Font Mono"
+                                    font.family: "Iosevka Nerd Font"
                                     font.pixelSize: root.s(10)
                                     color: root.subtext0
                                     Layout.alignment: Qt.AlignLeft
@@ -1855,8 +1855,8 @@ Item {
                     anchors.bottomMargin: root.s(20)
                     spacing: root.s(20)
 
-                    Text { text: "Navigation & Control"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text; Layout.alignment: Qt.AlignVCenter }
-                    Text { text: "Click any row below to instantly execute the keybind command."; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(14); color: root.subtext0; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: "Navigation & Control"; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: "Click any row below to instantly execute the keybind command."; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(14); color: root.subtext0; Layout.alignment: Qt.AlignVCenter }
                     
                     ScrollView {
                         Layout.fillWidth: true
@@ -1885,7 +1885,7 @@ Item {
                                     anchors.margins: root.s(10)
                                     spacing: root.s(10)
                                     
-                                    Text { text: "Workspaces (SUPER + 1-9)"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text; Layout.alignment: Qt.AlignVCenter }
+                                    Text { text: "Workspaces (SUPER + 1-9)"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text; Layout.alignment: Qt.AlignVCenter }
                                     Item { Layout.fillWidth: true }
                                     
                                     Repeater {
@@ -1898,7 +1898,7 @@ Item {
                                             color: wsMa.containsMouse ? root.surface1 : root.surface0
                                             border.color: wsMa.containsMouse ? root.peach : "transparent"
                                             border.width: 1
-                                            Text { anchors.centerIn: parent; text: parent.wsNum; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.peach }
+                                            Text { anchors.centerIn: parent; text: parent.wsNum; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.peach }
                                             MouseArea { id: wsMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", wsNum.toString()]) }
                                         }
                                     }
@@ -1942,10 +1942,10 @@ Item {
                                                     color: root.surface0
                                                     border.color: root.surface2
                                                     border.width: 1
-                                                    Text { id: k1Text; anchors.centerIn: parent; text: model.k1; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(11); color: root.peach } 
+                                                    Text { id: k1Text; anchors.centerIn: parent; text: model.k1; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(11); color: root.peach } 
                                                 } 
                                                 
-                                                Text { text: "+"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(12); color: root.overlay0; visible: model.k2 !== ""; anchors.verticalCenter: parent.verticalCenter } 
+                                                Text { text: "+"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(12); color: root.overlay0; visible: model.k2 !== ""; anchors.verticalCenter: parent.verticalCenter } 
                                                 
                                                 Rectangle { 
                                                     width: k2Text.implicitWidth + root.s(16)
@@ -1955,14 +1955,14 @@ Item {
                                                     border.color: root.surface2
                                                     border.width: 1
                                                     visible: model.k2 !== ""
-                                                    Text { id: k2Text; anchors.centerIn: parent; text: model.k2; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(11); color: root.peach } 
+                                                    Text { id: k2Text; anchors.centerIn: parent; text: model.k2; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(11); color: root.peach } 
                                                 } 
                                             }
                                         }
                                         
                                         Text { 
                                             text: model.action
-                                            font.family: "JetBrainsMono Nerd Font Mono"
+                                            font.family: "Iosevka Nerd Font"
                                             font.pixelSize: root.s(13)
                                             color: root.text
                                             Layout.fillWidth: true
@@ -2008,7 +2008,7 @@ Item {
                     anchors.bottomMargin: root.s(20)
                     spacing: root.s(20)
 
-                    Text { text: "Theming Engine"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: "Theming Engine"; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text; Layout.alignment: Qt.AlignVCenter }
                     
                     Rectangle {
                         Layout.fillWidth: true
@@ -2034,9 +2034,9 @@ Item {
                                     height: root.s(60)
                                     radius: root.s(10)
                                     color: root.surface1
-                                    Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(28); color: root.text } 
+                                    Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(28); color: root.text } 
                                 } 
-                                Text { text: "Wallpaper"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.text; Layout.alignment: Qt.AlignHCenter } 
+                                Text { text: "Wallpaper"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.text; Layout.alignment: Qt.AlignHCenter } 
                             }
                             
                             Item { 
@@ -2091,7 +2091,7 @@ Item {
                                 ColumnLayout { 
                                     anchors.centerIn: parent
                                     spacing: root.s(8)
-                                    Text { text: "Matugen Core"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(15); color: root.ambientPurple; Layout.alignment: Qt.AlignHCenter } 
+                                    Text { text: "Matugen Core"; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(15); color: root.ambientPurple; Layout.alignment: Qt.AlignHCenter } 
                                     RowLayout { 
                                         spacing: root.s(4)
                                         Layout.alignment: Qt.AlignHCenter
@@ -2160,15 +2160,15 @@ Item {
                                     height: root.s(60)
                                     radius: root.s(10)
                                     color: root.surface1
-                                    Text { anchors.centerIn: parent; text: "󰏘"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(28); color: root.text } 
+                                    Text { anchors.centerIn: parent; text: "󰏘"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(28); color: root.text } 
                                 } 
-                                Text { text: "Templates"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.text; Layout.alignment: Qt.AlignHCenter } 
+                                Text { text: "Templates"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.text; Layout.alignment: Qt.AlignHCenter } 
                             }
                             Item { Layout.fillWidth: true } 
                         }
                     }
 
-                    Text { text: "When you change wallpapers, Matugen extracts the dominant colors and injects them directly into these configuration files in real-time:"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(13); color: root.subtext0; Layout.fillWidth: true; wrapMode: Text.WordWrap; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: "When you change wallpapers, Matugen extracts the dominant colors and injects them directly into these configuration files in real-time:"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(13); color: root.subtext0; Layout.fillWidth: true; wrapMode: Text.WordWrap; Layout.alignment: Qt.AlignVCenter }
 
                     GridLayout {
                         Layout.fillWidth: true
@@ -2205,9 +2205,9 @@ Item {
                                     Item { 
                                         Layout.preferredWidth: root.s(24)
                                         Layout.alignment: Qt.AlignVCenter
-                                        Text { anchors.centerIn: parent; text: modelData.i; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(16); color: root[modelData.c] } 
+                                        Text { anchors.centerIn: parent; text: modelData.i; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root[modelData.c] } 
                                     } 
-                                    Text { text: modelData.f; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Medium; font.pixelSize: root.s(12); color: root.text; Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter } 
+                                    Text { text: modelData.f; font.family: "Iosevka Nerd Font"; font.weight: Font.Medium; font.pixelSize: root.s(12); color: root.text; Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter } 
                                 }
                                 MouseArea { id: tplMa; anchors.fill: parent; hoverEnabled: true }
                             }
@@ -2257,8 +2257,8 @@ Item {
                     anchors.bottomMargin: root.s(20)
                     spacing: root.s(15)
 
-                    Text { text: "Weather Configuration"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text; Layout.alignment: Qt.AlignVCenter }
-                    Text { text: "To use the weather widget, please enter your OpenWeatherMap API Key.\nThen, search for your city's exact City ID on OpenWeatherMap and enter it below."; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(13); color: root.subtext0; Layout.fillWidth: true; wrapMode: Text.WordWrap; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: "Weather Configuration"; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(28); color: root.text; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: "To use the weather widget, please enter your OpenWeatherMap API Key.\nThen, search for your city's exact City ID on OpenWeatherMap and enter it below."; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(13); color: root.subtext0; Layout.fillWidth: true; wrapMode: Text.WordWrap; Layout.alignment: Qt.AlignVCenter }
                     
                     Rectangle {
                         Layout.fillWidth: true
@@ -2273,13 +2273,13 @@ Item {
                             anchors.fill: parent
                             anchors.margins: root.s(10)
                             spacing: root.s(10)
-                            Text { text: "󰌆"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.subtext0 }
+                            Text { text: "󰌆"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.subtext0 }
                             TextInput { 
                                 id: apiKeyInput
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 verticalAlignment: TextInput.AlignVCenter
-                                font.family: "JetBrainsMono Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: root.s(13)
                                 color: root.text
                                 clip: true
@@ -2296,7 +2296,7 @@ Item {
                                 Text { 
                                     anchors.centerIn: parent
                                     text: weatherTab.apiKeyVisible ? "󰈈" : "󰈉"
-                                    font.family: "JetBrainsMono Nerd Font Mono"
+                                    font.family: "Iosevka Nerd Font"
                                     font.pixelSize: root.s(18)
                                     color: eyeMa.containsMouse ? root.blue : root.subtext0
                                     Behavior on color { ColorAnimation { duration: 150 } } 
@@ -2321,7 +2321,7 @@ Item {
                             anchors.fill: parent
                             anchors.margins: root.s(10)
                             verticalAlignment: TextInput.AlignVCenter
-                            font.family: "JetBrainsMono Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.pixelSize: root.s(13)
                             color: root.text
                             clip: true
@@ -2334,7 +2334,7 @@ Item {
                         Layout.fillWidth: true
                         spacing: root.s(15)
                         Layout.topMargin: root.s(10)
-                        Text { text: "Units:"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text }
+                        Text { text: "Units:"; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text }
                         
                         RowLayout {
                             spacing: root.s(5)
@@ -2353,7 +2353,7 @@ Item {
                                     Text { 
                                         anchors.centerIn: parent
                                         text: modelData
-                                        font.family: "JetBrainsMono Nerd Font Mono"
+                                        font.family: "Iosevka Nerd Font"
                                         font.pixelSize: root.s(11)
                                         font.capitalization: Font.Capitalize
                                         color: weatherTab.selectedUnit === modelData ? root.mauve : root.subtext0 
@@ -2383,8 +2383,8 @@ Item {
                             RowLayout { 
                                 anchors.centerIn: parent
                                 spacing: root.s(8)
-                                Text { text: "󰆓"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: root.s(18); color: root.base } 
-                                Text { text: "Save Config"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: root.s(14); color: root.base } 
+                                Text { text: "󰆓"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.base } 
+                                Text { text: "Save Config"; font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: root.s(14); color: root.base } 
                             }
                             
                             MouseArea { 
@@ -2415,7 +2415,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "coming soon"
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: root.s(24)
                     color: root.subtext0
                 }
@@ -2437,7 +2437,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: "coming soon"
-                    font.family: "JetBrainsMono Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: root.s(24)
                     color: root.subtext0
                 }

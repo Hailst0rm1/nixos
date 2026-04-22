@@ -1,98 +1,112 @@
 #!/usr/bin/env bash
 
 # ============================================================================
-# 1. ZOMBIE PREVENTION
-# Kills any older instances of this script. When Quickshell reloads, 
-# it can leave the old listener pipelines running in the background infinitely.
+# Workspace state daemon for QuickShell TopBar
+# Outputs per-monitor workspace JSON for hyprsplit compatibility.
+# Each monitor reads /tmp/qs_workspaces_<monitor_name>.json
 # ============================================================================
+
+# 1. ZOMBIE PREVENTION
 for pid in $(pgrep -f "quickshell/workspaces.sh"); do
     if [ "$pid" != "$$" ] && [ "$pid" != "$PPID" ]; then
         kill -9 "$pid" 2>/dev/null
     fi
 done
 
-# Cleanly kill immediate children (like socat) when the script exits normally
 cleanup() {
     pkill -P $$ 2>/dev/null
 }
 trap cleanup EXIT SIGTERM SIGINT
 
 # --- Special Cleanup for Network/Bluetooth ---
-# The network toggle starts a background bluetooth scan that must be killed explicitly.
 BT_PID_FILE="$HOME/.cache/bt_scan_pid"
-
 if [ -f "$BT_PID_FILE" ]; then
     kill $(cat "$BT_PID_FILE") 2>/dev/null
     rm -f "$BT_PID_FILE"
 fi
-
-# Ensure bluetooth scan is explicitly turned off (timeout prevents deadlocks on fresh installs)
 (timeout 2 bluetoothctl scan off > /dev/null 2>&1) &
-# ---------------------------------------------
 
-# Configuration: Parse from settings.json dynamically, fallback to 8
+# Configuration
 SETTINGS_FILE="$HOME/.config/hypr/settings.json"
-SEQ_END=$(jq -r '.workspaceCount // 8' "$SETTINGS_FILE" 2>/dev/null)
-# Double check it is a valid integer to prevent jq errors later
-if ! [[ "$SEQ_END" =~ ^[0-9]+$ ]]; then
-    SEQ_END=8
+WS_PER_MON=$(jq -r '.workspaceCount // 5' "$SETTINGS_FILE" 2>/dev/null)
+if ! [[ "$WS_PER_MON" =~ ^[0-9]+$ ]]; then
+    WS_PER_MON=5
 fi
 
 print_workspaces() {
-    # Get raw data with a timeout fallback
+    local spaces active_id monitors
+
     spaces=$(timeout 2 hyprctl workspaces -j 2>/dev/null)
-    active=$(timeout 2 hyprctl activeworkspace -j 2>/dev/null | jq '.id')
+    monitors=$(timeout 2 hyprctl monitors -j 2>/dev/null)
 
-    # Failsafe if hyprctl crashes to prevent jq from outputting errors
-    if [ -z "$spaces" ] || [ -z "$active" ]; then return; fi
+    if [ -z "$spaces" ] || [ -z "$monitors" ]; then return; fi
 
-    # Generate the JSON and write it atomically to prevent UI flickering
-    echo "$spaces" | jq --unbuffered --argjson a "$active" --arg end "$SEQ_END" -c '
-        # Create a map of workspace ID -> workspace data for easy lookup
-        (map( { (.id|tostring): . } ) | add) as $s
-        |
-        # Iterate from 1 to SEQ_END
+    # For each monitor, output its workspace slice
+    echo "$monitors" | jq -c '.[]' | while read -r mon; do
+        local mon_name mon_id active_ws ws_start ws_end
+
+        mon_name=$(echo "$mon" | jq -r '.name')
+        mon_id=$(echo "$mon" | jq -r '.id')
+        active_ws=$(echo "$mon" | jq -r '.activeWorkspace.id')
+
+        # hyprsplit workspace ranges: monitor 0 → 1-N, monitor 1 → N+1-2N, etc.
+        ws_start=$(( mon_id * WS_PER_MON + 1 ))
+        ws_end=$(( (mon_id + 1) * WS_PER_MON ))
+
+        echo "$spaces" | jq --unbuffered --argjson active "$active_ws" \
+            --argjson ws_start "$ws_start" --argjson ws_end "$ws_end" \
+            --argjson ws_per_mon "$WS_PER_MON" -c '
+            (map( { (.id|tostring): . } ) | add) as $s
+            |
+            [range($ws_start; $ws_end + 1)] | to_entries | map(
+                .value as $real_id |
+                (.key + 1) as $display_id |
+
+                (if $real_id == $active then "active"
+                 elif ($s[$real_id|tostring] != null and $s[$real_id|tostring].windows > 0) then "occupied"
+                 else "empty" end) as $state |
+
+                (if $s[$real_id|tostring] != null then $s[$real_id|tostring].lastwindowtitle else "Empty" end) as $win |
+
+                {
+                    id: $display_id,
+                    real_id: $real_id,
+                    state: $state,
+                    tooltip: $win
+                }
+            )
+        ' > "/tmp/qs_workspaces_${mon_name}.tmp"
+
+        mv "/tmp/qs_workspaces_${mon_name}.tmp" "/tmp/qs_workspaces_${mon_name}.json"
+    done
+
+    # Also write a combined file for backwards compatibility
+    echo "$spaces" | jq --unbuffered --argjson a "$(echo "$monitors" | jq '[.[].activeWorkspace.id]')" \
+        --arg end "$WS_PER_MON" -c '
+        (map( { (.id|tostring): . } ) | add) as $s |
         [range(1; ($end|tonumber) + 1)] | map(
             . as $i |
-            # Determine state: active -> occupied -> empty
-            (if $i == $a then "active"
+            (if ($a | index($i)) then "active"
              elif ($s[$i|tostring] != null and $s[$i|tostring].windows > 0) then "occupied"
              else "empty" end) as $state |
-
-            # Get window title for tooltip (if exists)
             (if $s[$i|tostring] != null then $s[$i|tostring].lastwindowtitle else "Empty" end) as $win |
-
-            {
-                id: $i,
-                state: $state,
-                tooltip: $win
-            }
+            { id: $i, state: $state, tooltip: $win }
         )
     ' > /tmp/qs_workspaces.tmp
-    
     mv /tmp/qs_workspaces.tmp /tmp/qs_workspaces.json
 }
 
 # Print initial state
 print_workspaces
 
-# ============================================================================
 # 2. THE EVENT DEBOUNCER
-# Listen to Hyprland socket wrapped in an infinite loop
-# ============================================================================
 while true; do
     socat -u UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock - | while read -r line; do
         case "$line" in
             workspace*|focusedmon*|activewindow*|createwindow*|closewindow*|movewindow*|destroyworkspace*)
-                
-                # -> THE FIX <-
-                # Hyprland emits HUNDREDS of events a second when you move/resize windows.
-                # This reads and discards all subsequent events arriving within a 50ms window.
-                # It bundles the storm into a single UI update, completely preventing CPU clogging!
                 while read -t 0.05 -r extra_line; do
                     continue
                 done
-
                 print_workspaces
                 ;;
         esac

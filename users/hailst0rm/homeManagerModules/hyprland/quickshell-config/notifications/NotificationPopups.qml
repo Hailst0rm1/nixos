@@ -214,7 +214,7 @@ PanelWindow {
 
                         Text {
                             text: model.appName || "System"
-                            font.family: "JetBrainsMono Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.weight: Font.Medium
                             font.pixelSize: 12 * popupWindow.uiScale
                             color: _theme.overlay1
@@ -229,7 +229,7 @@ PanelWindow {
                                 id: hiddenSummary
                                 text: delegateRoot.fullSummary
                                 width: parent.width
-                                font.family: "JetBrainsMono Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.weight: Font.Bold
                                 font.pixelSize: 15 * popupWindow.uiScale
                                 wrapMode: Text.Wrap
@@ -254,7 +254,7 @@ PanelWindow {
                                 id: hiddenBody
                                 text: delegateRoot.fullBody
                                 width: parent.width
-                                font.family: "JetBrainsMono Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.weight: Font.Medium
                                 font.pixelSize: 13 * popupWindow.uiScale
                                 wrapMode: Text.Wrap
