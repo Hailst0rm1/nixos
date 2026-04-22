@@ -646,7 +646,7 @@ Variants {
                                 id: helpMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle guide"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh toggle guide"])
                             }
                         }
 
@@ -672,7 +672,7 @@ Variants {
                                 id: searchMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/rofi_show.sh drun"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "rofi -show drun"])
                             }
                         }
 
@@ -698,7 +698,7 @@ Variants {
                                 id: settingsMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle settings"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh toggle settings"])
                             }
                         }
 
@@ -745,7 +745,7 @@ Variants {
                                 hoverEnabled: true
                                 onClicked: {
                                     barWindow.updateAvailable = false;
-                                    Quickshell.execDetached(["bash", "-c", "rm -f ~/.cache/qs_update_pending && ~/.config/hypr/scripts/qs_manager.sh toggle updater"]);
+                                    Quickshell.execDetached(["bash", "-c", "rm -f ~/.cache/qs_update_pending && ~/.config/quickshell/qs_manager.sh toggle updater"]);
                                 }
                             }
                         }
@@ -864,7 +864,7 @@ Variants {
                                     id: wsPillMouse
                                     hoverEnabled: true
                                     anchors.fill: parent
-                                    onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh " + wsName])
+                                    onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh " + wsName])
                                 }
                             }
                         }
@@ -926,7 +926,7 @@ Variants {
                                 width: infoLayout.width
                                 height: innerMediaLayout.height
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle music"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh toggle music"])
                                 
                                 Row {
                                     id: infoLayout
@@ -1078,7 +1078,7 @@ Variants {
                         id: centerMouse
                         anchors.fill: parent
                         hoverEnabled: true
-                        onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle calendar"])
+                        onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh toggle calendar"])
                     }
 
                     RowLayout {
@@ -1334,7 +1334,7 @@ Variants {
                                         width: Math.min(implicitWidth, barWindow.s(100)); elide: Text.ElideRight 
                                     }
                                 }
-                                MouseArea { id: wifiMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle network wifi"]) }
+                                MouseArea { id: wifiMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh toggle network wifi"]) }
                             }
 
                             // Bluetooth
@@ -1385,7 +1385,7 @@ Variants {
                                         width: Math.min(implicitWidth, barWindow.s(100)); elide: Text.ElideRight 
                                     }
                                 }
-                                MouseArea { id: btMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle network bt"]) }
+                                MouseArea { id: btMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh toggle network bt"]) }
                             }
 
                             // Volume
@@ -1435,7 +1435,7 @@ Variants {
                                         color: barWindow.isSoundActive ? mocha.base : mocha.text; 
                                     }
                                 }
-                                MouseArea { id: volMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle volume"]) }
+                                MouseArea { id: volMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh toggle volume"]) }
                             }
 
                             // Battery (or Power button for Desktop)
@@ -1488,7 +1488,7 @@ Variants {
                                         Behavior on color { ColorAnimation { duration: 300 } }
                                     }
                                 }
-                                MouseArea { id: batMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle battery"]) }
+                                MouseArea { id: batMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/qs_manager.sh toggle battery"]) }
                             }
                         }
                     }
@@ -1546,7 +1546,7 @@ Variants {
                             hoverEnabled: true
                             onClicked: {
                                 barWindow.isRecording = false; 
-                                Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/screenshot.sh"]); 
+                                Quickshell.execDetached(["bash", "-c", "~/.config/quickshell/screenshot.sh"]); 
                             }
                         }
                     }                   

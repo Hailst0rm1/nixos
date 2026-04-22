@@ -724,7 +724,7 @@ PanelWindow {
     function performQrScan() {
         Quickshell.execDetached(["bash", "-c", "rm -f /tmp/qs_qr_result"])
         root.isScanningQr = true; root.showQrPopup = false; qrModel.clear()
-        let cmd = `bash ~/.config/hypr/scripts/screenshot.sh --geometry "${root.geometryString}" --scan-qr`
+        let cmd = `bash ~/.config/quickshell/screenshot.sh --geometry "${root.geometryString}" --scan-qr`
         Quickshell.execDetached(["bash", "-c", cmd])
         qrWaitTimer.start()
     }   
@@ -742,7 +742,7 @@ PanelWindow {
     }
     
     function executeCapture(openEditor, isRecord) {
-        let cmd = `bash ~/.config/hypr/scripts/screenshot.sh --geometry "${root.geometryString}"`
+        let cmd = `bash ~/.config/quickshell/screenshot.sh --geometry "${root.geometryString}"`
         if (isRecord) {
             cmd += " --record"
             cmd += ` --desk-vol ${root.deskVol} --desk-mute ${root.deskMute}`
