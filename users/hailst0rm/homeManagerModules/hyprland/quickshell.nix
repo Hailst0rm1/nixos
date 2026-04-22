@@ -37,6 +37,7 @@ in {
     # Hyprland integration
     wayland.windowManager.hyprland.settings = {
       exec-once = [
+        "swww-daemon"
         "quickshell -p ~/.config/quickshell/Main.qml"
         "quickshell -p ~/.config/quickshell/TopBar.qml"
         "python3 ~/.config/quickshell/focustime/focus_daemon.py &"
@@ -46,6 +47,8 @@ in {
       layerrule = [
         "blur, quickshell"
         "ignorezero, quickshell"
+        "blur, qs-master"
+        "ignorezero, qs-master"
       ];
     };
 

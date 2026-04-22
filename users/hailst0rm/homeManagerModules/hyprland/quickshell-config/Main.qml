@@ -23,8 +23,15 @@ PanelWindow {
 
     WlrLayershell.namespace: "qs-master"
     WlrLayershell.layer: WlrLayer.Overlay
-    
-    exclusionMode: ExclusionMode.Ignore 
+
+    anchors {
+        top: true
+        bottom: true
+        left: true
+        right: true
+    }
+
+    exclusionMode: ExclusionMode.Ignore
     focusable: true
 
     width: Screen.width
