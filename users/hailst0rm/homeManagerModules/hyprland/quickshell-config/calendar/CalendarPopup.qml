@@ -512,7 +512,7 @@ Item {
                 anchors.centerIn: parent
                 anchors.verticalCenterOffset: window.centerOffset
                 text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].icon : ""
-                font.family: "Iosevka Nerd Font"
+                font.family: "JetBrainsMono Nerd Font Mono"
                 font.pixelSize: window.s(800)
                 color: window.activeWeatherHex
                 opacity: (0.03 + (0.01 * Math.sin(window.globalOrbitAngle * 4))) * window.introAmbient * window.weatherContentOpacity
@@ -636,7 +636,7 @@ Item {
                         spacing: window.s(2)
                         Text {
                             text: Qt.formatTime(window.currentTime, "HH:mm")
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.weight: Font.Black
                             font.pixelSize: window.s(84)
                             color: window.text
@@ -644,7 +644,7 @@ Item {
                         }
                         Text {
                             text: Qt.formatTime(window.currentTime, ":ss")
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.weight: Font.Bold
                             font.pixelSize: window.s(32)
                             color: window.textAccent
@@ -659,7 +659,7 @@ Item {
                     Text {
                         Layout.alignment: Qt.AlignHCenter
                         text: Qt.formatDateTime(window.currentTime, "dddd, MMMM dd")
-                        font.family: "JetBrains Mono"
+                        font.family: "JetBrainsMono Nerd Font Mono"
                         font.weight: Font.Bold
                         font.pixelSize: window.s(16)
                         color: window.subtext0
@@ -723,14 +723,14 @@ Item {
                                     Text { 
                                         Layout.alignment: Qt.AlignHCenter
                                         text: modelData.time
-                                        font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(12)
+                                        font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: window.s(12)
                                         color: isHighlighted ? window.base : (hrMa.containsMouse ? window.text : window.overlay1)
                                     }
                                     
                                     Text { 
                                         Layout.alignment: Qt.AlignHCenter
                                         text: modelData.icon || (window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].icon : "")
-                                        font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
+                                        font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: window.s(18)
                                         color: isHighlighted ? window.base : (modelData.hex || window.text)
                                         
                                         transform: Translate { y: hrMa.containsMouse ? window.s(-3) : 0 }
@@ -739,7 +739,7 @@ Item {
                                     
                                     Text { 
                                         Layout.alignment: Qt.AlignHCenter; text: modelData.temp + "°"
-                                        font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(14)
+                                        font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Black; font.pixelSize: window.s(14)
                                         color: isHighlighted ? window.base : window.text 
                                     }
                                 }
@@ -786,7 +786,7 @@ Item {
                             opacity: window.targetMonthOffset !== 0 ? 1.0 : 0.0
                             visible: opacity > 0
                             Behavior on opacity { NumberAnimation { duration: 200 } }
-                            Text { anchors.centerIn: parent; text: "󰃭"; font.family: "Iosevka Nerd Font"; color: window.text; font.pixelSize: window.s(16) }
+                            Text { anchors.centerIn: parent; text: "󰃭"; font.family: "JetBrainsMono Nerd Font Mono"; color: window.text; font.pixelSize: window.s(16) }
                             MouseArea { 
                                 id: homeMa; anchors.fill: parent; hoverEnabled: window.targetMonthOffset !== 0; 
                                 onClicked: if (window.targetMonthOffset !== 0) window.setMonthOffset(0) 
@@ -796,14 +796,14 @@ Item {
                         Rectangle {
                             width: window.s(32); height: window.s(32); radius: window.s(16)
                             color: prevMa.containsMouse ? window.surface1 : "transparent"
-                            Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; color: window.text; font.pixelSize: window.s(16) }
+                            Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; color: window.text; font.pixelSize: window.s(16) }
                             MouseArea { id: prevMa; anchors.fill: parent; hoverEnabled: true; onClicked: window.setMonthOffset(window.targetMonthOffset - 1) }
                         }
                         
                         Text {
                             Layout.fillWidth: true
                             text: window.targetMonthName.toUpperCase()
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.weight: Font.Black
                             font.pixelSize: window.s(16)
                             color: window.text
@@ -816,14 +816,14 @@ Item {
                         Rectangle {
                             width: window.s(32); height: window.s(32); radius: window.s(16)
                             color: nextMa.containsMouse ? window.surface1 : "transparent"
-                            Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; color: window.text; font.pixelSize: window.s(16) }
+                            Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; color: window.text; font.pixelSize: window.s(16) }
                             MouseArea { id: nextMa; anchors.fill: parent; hoverEnabled: true; onClicked: window.setMonthOffset(window.targetMonthOffset + 1) }
                         }
 
                         Rectangle {
                             width: window.s(32); height: window.s(32); radius: window.s(16)
                             color: diaryMa.containsMouse ? window.surface1 : "transparent"
-                            Text { anchors.centerIn: parent; text: "+"; font.family: "Iosevka Nerd Font"; color: diaryMa.containsMouse ? window.mauve : window.text; font.pixelSize: window.s(32) }
+                            Text { anchors.centerIn: parent; text: "+"; font.family: "JetBrainsMono Nerd Font Mono"; color: diaryMa.containsMouse ? window.mauve : window.text; font.pixelSize: window.s(32) }
                             MouseArea { 
                                 id: diaryMa; anchors.fill: parent; hoverEnabled: true; 
                                 onClicked: Quickshell.execDetached(["bash", window.scriptsDir + "/diary_manager.sh"]) 
@@ -839,7 +839,7 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData
-                                font.family: "JetBrains Mono"
+                                font.family: "JetBrainsMono Nerd Font Mono"
                                 font.weight: Font.Black
                                 font.pixelSize: window.s(14)
                                 color: window.overlay0
@@ -876,7 +876,7 @@ Item {
                                 Text {
                                     anchors.centerIn: parent
                                     text: dayNum
-                                    font.family: "JetBrains Mono"
+                                    font.family: "JetBrainsMono Nerd Font Mono"
                                     font.weight: isToday ? Font.Black : Font.Bold
                                     font.pixelSize: window.s(14)
                                     color: isToday ? window.base : (isCurrentMonth ? window.text : window.surface0)
@@ -924,7 +924,7 @@ Item {
                             }
                             
                             Text { 
-                                anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
+                                anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: window.s(18)
                                 color: parent.containsMouse ? window.textAccent : window.overlay1
                                 transform: Translate { x: parent.containsMouse ? window.s(-5) : wPrevMa.pulseOffset }
                                 Behavior on transform { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
@@ -935,7 +935,7 @@ Item {
                             Layout.preferredWidth: window.s(110) 
                             horizontalAlignment: Text.AlignHCenter 
                             text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].day_full.toUpperCase() : "LOADING..."
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.weight: Font.Black
                             font.pixelSize: window.s(16)
                             color: window.text
@@ -953,7 +953,7 @@ Item {
                             }
                             
                             Text { 
-                                anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
+                                anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: window.s(18)
                                 color: parent.containsMouse ? window.textAccent : window.overlay1
                                 transform: Translate { x: parent.containsMouse ? window.s(5) : wNextMa.pulseOffset }
                                 Behavior on transform { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
@@ -969,7 +969,7 @@ Item {
                         Text {
                             Layout.alignment: Qt.AlignHCenter 
                             text: Math.round(window.displayedTemp) + "°"
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.weight: Font.Black
                             font.pixelSize: window.s(84)
                             color: window.tempGlowColor
@@ -983,7 +983,7 @@ Item {
                         Text {
                             Layout.alignment: Qt.AlignHCenter
                             text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].desc : ""
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.weight: Font.Bold
                             font.pixelSize: window.s(16)
                             color: window.textAccent
@@ -1090,7 +1090,7 @@ Item {
                                     Text {
                                         anchors.centerIn: parent
                                         text: gaugeWrapper.gaugeVal
-                                        font.family: "JetBrains Mono"
+                                        font.family: "JetBrainsMono Nerd Font Mono"
                                         font.weight: Font.Black
                                         font.pixelSize: window.s(14)
                                         color: window.text
@@ -1104,14 +1104,14 @@ Item {
                                     
                                     Text { 
                                         text: gaugeWrapper.gaugeIcon
-                                        font.family: "Iosevka Nerd Font"
+                                        font.family: "JetBrainsMono Nerd Font Mono"
                                         font.pixelSize: window.s(14)
                                         color: gaugeMa.containsMouse ? window.textAccent : window.overlay0
                                         Behavior on color { ColorAnimation { duration: 200 } }
                                     }
                                     Text { 
                                         text: gaugeWrapper.gaugeLbl
-                                        font.family: "JetBrains Mono"
+                                        font.family: "JetBrainsMono Nerd Font Mono"
                                         font.weight: Font.Bold
                                         font.pixelSize: window.s(12)
                                         color: window.overlay0 
@@ -1247,12 +1247,12 @@ Item {
                         
                         Rectangle {
                             width: window.s(40); height: window.s(40); radius: window.s(20); color: window.surface0
-                            Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18); color: window.textAccent }
+                            Text { anchors.centerIn: parent; text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: window.s(18); color: window.textAccent }
                         }
                         
                         Text { 
                             text: window.scheduleData ? window.scheduleData.header : "Loading Schedule..."
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.weight: Font.Bold
                             font.pixelSize: window.s(16)
                             color: window.overlay0
@@ -1269,8 +1269,8 @@ Item {
                             RowLayout {
                                 anchors.centerIn: parent
                                 spacing: window.s(6)
-                                Text { text: "Open Web"; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(14); color: schLinkMa.containsMouse ? window.base : window.text }
-                                Text { text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(14); color: schLinkMa.containsMouse ? window.base : window.text }
+                                Text { text: "Open Web"; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: window.s(14); color: schLinkMa.containsMouse ? window.base : window.text }
+                                Text { text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: window.s(14); color: schLinkMa.containsMouse ? window.base : window.text }
                             }
                             
                             MouseArea {
@@ -1286,7 +1286,7 @@ Item {
 
                         Text {
                             text: "Data stream offline. No scheduled events."
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.italic: true
                             font.pixelSize: window.s(14)
                             color: window.overlay0
@@ -1396,7 +1396,7 @@ Item {
 
                                                 Text {
                                                     text: modelData.subject || ""
-                                                    font.family: "JetBrains Mono"
+                                                    font.family: "JetBrainsMono Nerd Font Mono"
                                                     font.weight: Font.Black
                                                     font.pixelSize: window.s(16)
                                                     color: classNode.isActive ? window.mauve : (classNode.isPast ? window.overlay0 : window.text)
@@ -1407,15 +1407,15 @@ Item {
                                                 RowLayout {
                                                     visible: !modelData.is_compact
                                                     spacing: window.s(8)
-                                                    Text { text: "󰅐"; font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(14); color: classNode.isActive ? window.mauve : window.overlay1 }
-                                                    Text { text: modelData.time || ""; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(14); color: classNode.isActive ? window.text : window.overlay1 }
+                                                    Text { text: "󰅐"; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: window.s(14); color: classNode.isActive ? window.mauve : window.overlay1 }
+                                                    Text { text: modelData.time || ""; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: window.s(14); color: classNode.isActive ? window.text : window.overlay1 }
                                                 }
 
                                                 RowLayout {
                                                     visible: !modelData.is_compact && (modelData.room || "") !== ""
                                                     spacing: window.s(8)
-                                                    Text { text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(14); color: classNode.isPast ? window.surface2 : window.peach }
-                                                    Text { text: modelData.room || ""; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(14); color: window.subtext1; elide: Text.ElideRight; Layout.fillWidth: true }
+                                                    Text { text: ""; font.family: "JetBrainsMono Nerd Font Mono"; font.pixelSize: window.s(14); color: classNode.isPast ? window.surface2 : window.peach }
+                                                    Text { text: modelData.room || ""; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.Bold; font.pixelSize: window.s(14); color: window.subtext1; elide: Text.ElideRight; Layout.fillWidth: true }
                                                 }
                                             }
 
@@ -1453,7 +1453,7 @@ Item {
                                                     id: breakText
                                                     anchors.centerIn: parent
                                                     text: modelData.desc || ""
-                                                    font.family: "JetBrains Mono"
+                                                    font.family: "JetBrainsMono Nerd Font Mono"
                                                     font.weight: Font.Bold
                                                     font.pixelSize: window.s(14)
                                                     color: window.mauve

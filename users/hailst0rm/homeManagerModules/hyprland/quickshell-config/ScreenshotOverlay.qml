@@ -185,8 +185,8 @@ PanelWindow {
 
         RowLayout {
             anchors.centerIn: parent; spacing: s(6)
-            Text { font.family: "Iosevka Nerd Font"; text: tBtn.iconTxt; color: tBtn.isDanger ? _theme.red : _theme.text; font.pixelSize: s(18) }
-            Text { id: txt; visible: tBtn.label !== ""; font.family: "JetBrains Mono"; font.weight: Font.DemiBold; text: tBtn.label; color: tBtn.isDanger ? _theme.red : _theme.text; font.pixelSize: s(13) }
+            Text { font.family: "JetBrainsMono Nerd Font Mono"; text: tBtn.iconTxt; color: tBtn.isDanger ? _theme.red : _theme.text; font.pixelSize: s(18) }
+            Text { id: txt; visible: tBtn.label !== ""; font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.DemiBold; text: tBtn.label; color: tBtn.isDanger ? _theme.red : _theme.text; font.pixelSize: s(13) }
         }
         MouseArea { id: maBtn; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: tBtn.clicked() }
     }
@@ -202,7 +202,7 @@ PanelWindow {
             Text {
                 anchors.centerIn: parent
                 text: root.isVideoMode ? "Click Record (Portal handles area selection)" : "Select region to capture"
-                font.family: "JetBrains Mono"; font.weight: Font.DemiBold; font.pixelSize: s(24); color: _theme.text
+                font.family: "JetBrainsMono Nerd Font Mono"; font.weight: Font.DemiBold; font.pixelSize: s(24); color: _theme.text
             }
         }
         Item {
@@ -400,7 +400,7 @@ PanelWindow {
 
                 Text {
                     anchors.centerIn: parent
-                    font.family: "Iosevka Nerd Font"
+                    font.family: "JetBrainsMono Nerd Font Mono"
                     text: parent.parent.mutedValue ? parent.parent.iconOff : parent.parent.iconOn
                     color: parent.parent.mutedValue ? _theme.red : _theme.text
                     font.pixelSize: s(16)
@@ -437,7 +437,7 @@ PanelWindow {
                 width: s(20); height: s(30); color: "transparent"
                 Text {
                     anchors.centerIn: parent
-                    font.family: "Iosevka Nerd Font"
+                    font.family: "JetBrainsMono Nerd Font Mono"
                     text: toolbar.popUpwards ? "󰅃" : "󰅀"
                     color: _theme.text
                     font.pixelSize: s(16)
@@ -501,14 +501,14 @@ PanelWindow {
                         Layout.fillWidth: true; Layout.fillHeight: true; radius: s(14)
                         color: !root.isVideoMode ? _theme.surface2 : "transparent"
                         Behavior on color { ColorAnimation { duration: 200 } }
-                        Text { anchors.centerIn: parent; font.family: "Iosevka Nerd Font"; text: "󰄄"; color: !root.isVideoMode ? _theme.text : _theme.subtext0; font.pixelSize: s(16) }
+                        Text { anchors.centerIn: parent; font.family: "JetBrainsMono Nerd Font Mono"; text: "󰄄"; color: !root.isVideoMode ? _theme.text : _theme.subtext0; font.pixelSize: s(16) }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.isVideoMode = false }
                     }
                     Rectangle {
                         Layout.fillWidth: true; Layout.fillHeight: true; radius: s(14)
                         color: root.isVideoMode ? _theme.surface2 : "transparent"
                         Behavior on color { ColorAnimation { duration: 200 } }
-                        Text { anchors.centerIn: parent; font.family: "Iosevka Nerd Font"; text: ""; color: root.isVideoMode ? _theme.text : _theme.subtext0; font.pixelSize: s(16) }
+                        Text { anchors.centerIn: parent; font.family: "JetBrainsMono Nerd Font Mono"; text: ""; color: root.isVideoMode ? _theme.text : _theme.subtext0; font.pixelSize: s(16) }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.isVideoMode = true }
                     }
                 }
@@ -582,7 +582,7 @@ PanelWindow {
                 Text {
                     text: model.qText
                     color: model.qSuccess ? _theme.text : _theme.red
-                    font.family: "JetBrains Mono"
+                    font.family: "JetBrainsMono Nerd Font Mono"
                     font.pixelSize: s(13)
                     font.weight: Font.DemiBold
                     Layout.maximumWidth: s(400)

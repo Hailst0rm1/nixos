@@ -432,7 +432,7 @@ Item {
                                             spacing: window.s(4)
                                             Text { 
                                                 Layout.alignment: Qt.AlignHCenter
-                                                font.family: "Iosevka Nerd Font"
+                                                font.family: "JetBrainsMono Nerd Font Mono"
                                                 font.pixelSize: window.s(38)
                                                 color: window.selectedResAccent
                                                 text: "󰍹"
@@ -440,7 +440,7 @@ Item {
                                             }
                                             Text { 
                                                 Layout.alignment: Qt.AlignHCenter
-                                                font.family: "JetBrains Mono"
+                                                font.family: "JetBrainsMono Nerd Font Mono"
                                                 font.weight: Font.Bold
                                                 font.pixelSize: window.s(16)
                                                 color: window.text
@@ -448,7 +448,7 @@ Item {
                                             }
                                             Text { 
                                                 Layout.alignment: Qt.AlignHCenter
-                                                font.family: "JetBrains Mono"
+                                                font.family: "JetBrainsMono Nerd Font Mono"
                                                 font.pixelSize: window.s(12)
                                                 color: window.subtext0
                                                 text: window.currentSimW + "x" + window.currentSimH + " @ " + (monitorsModel.count > 0 ? monitorsModel.get(0).rate : "60") + "Hz" 
@@ -596,7 +596,7 @@ Item {
                                                 spacing: 2
                                                 Text { 
                                                     Layout.alignment: Qt.AlignHCenter
-                                                    font.family: "Iosevka Nerd Font"
+                                                    font.family: "JetBrainsMono Nerd Font Mono"
                                                     font.pixelSize: 32
                                                     color: isActive ? window.selectedResAccent : window.text
                                                     text: "󰍹"
@@ -604,7 +604,7 @@ Item {
                                                 }
                                                 Text { 
                                                     Layout.alignment: Qt.AlignHCenter
-                                                    font.family: "JetBrains Mono"
+                                                    font.family: "JetBrainsMono Nerd Font Mono"
                                                     font.weight: Font.Black
                                                     font.pixelSize: 13
                                                     color: window.text
@@ -612,7 +612,7 @@ Item {
                                                 }
                                                 Text { 
                                                     Layout.alignment: Qt.AlignHCenter
-                                                    font.family: "JetBrains Mono"
+                                                    font.family: "JetBrainsMono Nerd Font Mono"
                                                     font.pixelSize: 10
                                                     color: window.subtext0
                                                     text: model.resW + "x" + model.resH + " @ " + model.rate + "Hz" 
@@ -805,7 +805,7 @@ Item {
                                     spacing: window.s(8)
                                     
                                     Text { 
-                                        font.family: "JetBrains Mono"
+                                        font.family: "JetBrainsMono Nerd Font Mono"
                                         font.weight: isSel ? Font.Black : Font.Bold
                                         font.pixelSize: window.s(16)
                                         color: isSel ? accentColor : window.text
@@ -816,7 +816,7 @@ Item {
                                     Item { Layout.fillWidth: true } 
                                     
                                     Text { 
-                                        font.family: "JetBrains Mono"
+                                        font.family: "JetBrainsMono Nerd Font Mono"
                                         font.pixelSize: window.s(12)
                                         color: isSel ? window.text : window.overlay0
                                         text: modelData.resW + "x" + modelData.resH
@@ -909,7 +909,7 @@ Item {
                                 Text { 
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: sliderContainer.rates[index]
-                                    font.family: "JetBrains Mono"
+                                    font.family: "JetBrainsMono Nerd Font Mono"
                                     font.pixelSize: window.s(13)
                                     font.weight: sliderContainer.currentIndex === index ? Font.Bold : Font.Normal
                                     color: sliderContainer.currentIndex === index ? window.selectedRateAccent : window.overlay0
@@ -1041,14 +1041,14 @@ Item {
                         spacing: window.s(8)
                         
                         Text { 
-                            font.family: "Iosevka Nerd Font"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.pixelSize: window.s(20)
                             color: window.crust
                             text: "󰸵" 
                         }
                         
                         Text { 
-                            font.family: "JetBrains Mono"
+                            font.family: "JetBrainsMono Nerd Font Mono"
                             font.weight: Font.Black
                             font.pixelSize: window.s(14)
                             color: window.crust

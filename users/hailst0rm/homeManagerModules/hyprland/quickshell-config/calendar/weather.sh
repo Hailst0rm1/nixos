@@ -10,7 +10,7 @@ view_file="${cache_dir}/view_id"
 daily_cache_file="${cache_dir}/daily_weather_cache.json"
 next_day_cache_file="${cache_dir}/next_day_precache.json"
 env_tracker_file="${cache_dir}/.env_tracker"
-ENV_FILE="$(dirname "$0")/.env"
+ENV_FILE="$HOME/.config/quickshell/calendar/.env"
 
 # API Settings
 # Load environment variables silently

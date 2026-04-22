@@ -90,7 +90,7 @@ in {
     quickshell = {
       enable = lib.mkEnableOption "QuickShell desktop shell (replaces panel, notifications, lockscreen, screenshot)";
 
-      openweatherApiKey = lib.mkOption {
+      openweatherKey = lib.mkOption {
         type = lib.types.str;
         default = "";
         description = "OpenWeatherMap API key for weather widget.";
