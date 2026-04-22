@@ -54,7 +54,7 @@
 
     # Set initial wallpaper immediately, then loop
     while true; do
-      BG=$(find "$WALLPAPER_DIR" \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) 2>/dev/null | shuf -n1)
+      BG=$(find "$WALLPAPER_DIR" \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) 2>/dev/null | shuf -n1 || true)
       if [ -z "$BG" ]; then
         echo "WARNING: No wallpapers found in $WALLPAPER_DIR"
         sleep 60
