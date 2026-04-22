@@ -3,11 +3,9 @@
   pkgs-unstable,
   lib,
   config,
-  osConfig,
   ...
 }: let
   defaultDisplay = [",highrr,auto,1"];
-  isLaptop = osConfig.laptop or false;
 
   startScript = pkgs.writeShellScriptBin "start" ''
 
@@ -112,15 +110,15 @@ in {
         };
 
         decoration = {
-          active_opacity = if isLaptop then 1.0 else 0.95;
-          inactive_opacity = if isLaptop then 0.95 else 0.9;
+          active_opacity = 0.95;
+          inactive_opacity = 0.9;
           rounding = 5;
           blur = {
-            size = if isLaptop then 4 else 8;
-            passes = if isLaptop then 1 else 2;
+            size = 8;
+            passes = 2;
           };
           shadow = {
-            enabled = !isLaptop;
+            enabled = true;
             range = 5;
             render_power = 3;
             color = lib.mkForce "rgb(${lib.removePrefix "#" cfg.accentColourHex})";

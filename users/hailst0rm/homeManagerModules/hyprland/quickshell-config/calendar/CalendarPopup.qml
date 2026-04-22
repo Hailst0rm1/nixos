@@ -1002,7 +1002,7 @@ Item {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.margins: window.s(40)
-                width: window.s(320)
+                width: window.s(380)
                 height: window.s(420)
                 z: 10 
 
