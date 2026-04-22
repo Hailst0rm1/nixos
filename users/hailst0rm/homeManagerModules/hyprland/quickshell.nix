@@ -25,9 +25,9 @@ in {
       };
 
       # Weather API configuration
-      "quickshell/calendar/.env" = lib.mkIf (qsCfg.openweatherApiKey != "") {
+      "quickshell/calendar/.env" = lib.mkIf (qsCfg.openweatherKey != "") {
         text = ''
-          OPENWEATHER_KEY=${qsCfg.openweatherApiKey}
+          OPENWEATHER_KEY=${qsCfg.openweatherKey}
           OPENWEATHER_CITY_ID=${qsCfg.openweatherCityId}
           OPENWEATHER_UNIT=metric
         '';
@@ -78,8 +78,7 @@ in {
       imagemagick # Screenshot editing
       socat # Hyprland socket communication
 
-      # Python for focus timer and wallpaper scripts
-      (python3.withPackages (_ps: []))
+      # Python for focus timer and wallpaper scripts (python3 provided by utils.nix)
     ];
   };
 }
