@@ -16,6 +16,7 @@
     hyprland = {
       enable = false;
       accentColour = "pink";
+      quickshell.ilyamiro.enable = false;
     };
   };
 
@@ -35,6 +36,7 @@
     spotify.enable = false;
     claude-desktop.enable = false;
     proton.enableAll = false;
+    signal.enable = false;
   };
 
   services = {

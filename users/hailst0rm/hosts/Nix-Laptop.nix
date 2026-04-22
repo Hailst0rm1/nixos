@@ -4,6 +4,7 @@
   # Override only what's different from default
   importConfig.hyprland = {
     accentColour = "green";
+    wallpaper = "swww";
     monitorOrientations = {
       "eDP-1" = "left"; # Middle horizontal monitor (1920x1080)
       "DP-3" = "center"; # Middle horizontal monitor (1920x1080)
