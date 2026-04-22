@@ -28,6 +28,7 @@ Item {
     // COLORS (Dynamic Matugen Palette)
     // -------------------------------------------------------------------------
     MatugenColors { id: _theme }
+    SystemConfig { id: sysConfig }
     readonly property color base: _theme.base
     readonly property color mantle: _theme.mantle
     readonly property color crust: _theme.crust
@@ -314,7 +315,8 @@ Item {
                 // LEFT SIDE: NOTIFICATION CENTER
                 // ==========================================
                 Item {
-                    Layout.preferredWidth: window.s(320)
+                    Layout.preferredWidth: sysConfig.isLaptop ? window.s(320) : -1
+                    Layout.fillWidth: !sysConfig.isLaptop
                     Layout.fillHeight: true
 
                     ColumnLayout {
@@ -631,14 +633,125 @@ Item {
                                 }
                             }
                         }
+
+                        // --- Desktop-only: Action Buttons & Power Profiles ---
+                        RowLayout {
+                            visible: !sysConfig.isLaptop
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: window.s(55)
+                            Layout.maximumHeight: window.s(55)
+                            spacing: window.s(10)
+
+                            opacity: introActions
+                            transform: Translate { y: window.s(20) * (1.0 - introActions) }
+
+                            Repeater {
+                                model: ListModel {
+                                    ListElement { cmd: "bash ~/.config/quickshell/lock.sh"; icon: ""; baseColor: "mauve"; weight: 1.0 }
+                                    ListElement { cmd: "bash ~/.config/quickshell/lock.sh & systemctl suspend"; icon: "ᶻ 𝗓 𐰁"; baseColor: "blue"; weight: 1.0 }
+                                    ListElement { cmd: "systemctl reboot"; icon: "󰑓"; baseColor: "yellow"; weight: 2.5 }
+                                    ListElement { cmd: "systemctl poweroff -i"; icon: ""; baseColor: "red"; weight: 3.5 }
+                                }
+
+                                delegate: Rectangle {
+                                    id: deskActionCapsule
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: window.s(55)
+                                    radius: window.s(12)
+
+                                    property color c1: window[baseColor] || window.surface1
+                                    color: deskActionMa.containsMouse ? window.surface1 : window.surface0
+                                    border.color: deskActionMa.containsMouse ? c1 : window.surface2
+                                    border.width: deskActionMa.containsMouse ? 2 : 1
+
+                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                    Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: icon
+                                        font.family: "Iosevka Nerd Font"
+                                        font.pixelSize: window.s(22)
+                                        color: deskActionMa.containsMouse ? c1 : window.overlay1
+                                        Behavior on color { ColorAnimation { duration: 200 } }
+                                    }
+
+                                    MouseArea {
+                                        id: deskActionMa
+                                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                        property bool isHeld: false
+                                        onPressed: { if (weight > 1.5) { isHeld = true; deskHoldTimer.start(); } }
+                                        onReleased: { deskHoldTimer.stop(); isHeld = false; if (weight <= 1.5) { Quickshell.execDetached(["sh", "-c", cmd]); Quickshell.execDetached(["sh", "-c", "echo 'close' > /tmp/qs_widget_state"]); } }
+                                        Timer { id: deskHoldTimer; interval: 500; onTriggered: { Quickshell.execDetached(["sh", "-c", cmd]); Quickshell.execDetached(["sh", "-c", "echo 'close' > /tmp/qs_widget_state"]); } }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            visible: !sysConfig.isLaptop
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: window.s(44)
+                            radius: window.s(12)
+                            color: window.surface0
+                            border.color: window.surface1
+                            border.width: 1
+
+                            opacity: introProfiles
+                            transform: Translate { y: window.s(15) * (1.0 - introProfiles) }
+
+                            Rectangle {
+                                id: deskSliderPill
+                                width: (parent.width - window.s(2)) / 3
+                                height: parent.height - window.s(2)
+                                y: window.s(1)
+                                radius: window.s(10)
+                                x: {
+                                    if (window.powerProfile === "performance") return window.s(1);
+                                    if (window.powerProfile === "balanced") return width + window.s(1);
+                                    return (width * 2) + window.s(1);
+                                }
+                                Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
+                                gradient: Gradient {
+                                    orientation: Gradient.Horizontal
+                                    GradientStop { position: 0.0; color: window.profileStart; Behavior on color { ColorAnimation{duration:400} } }
+                                    GradientStop { position: 1.0; color: window.profileEnd; Behavior on color { ColorAnimation{duration:400} } }
+                                }
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent; spacing: 0
+                                Repeater {
+                                    model: ListModel {
+                                        ListElement { name: "performance"; icon: "󰓅"; label: "Perform" }
+                                        ListElement { name: "balanced"; icon: "󰗑"; label: "Balance" }
+                                        ListElement { name: "power-saver"; icon: "󰌪"; label: "Saver" }
+                                    }
+                                    delegate: Item {
+                                        id: deskProfileDelegate
+                                        required property string name
+                                        required property string icon
+                                        required property string label
+                                        Layout.fillWidth: true; Layout.fillHeight: true
+                                        RowLayout {
+                                            anchors.centerIn: parent; spacing: window.s(6)
+                                            Text { font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(15); color: window.powerProfile === deskProfileDelegate.name ? window.crust : (deskProfMa.containsMouse ? window.text : window.subtext0); text: deskProfileDelegate.icon; Behavior on color { ColorAnimation { duration: 200 } } }
+                                            Text { font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: window.s(11); color: window.powerProfile === deskProfileDelegate.name ? window.crust : (deskProfMa.containsMouse ? window.text : window.subtext0); text: deskProfileDelegate.label; Behavior on color { ColorAnimation { duration: 200 } } }
+                                        }
+                                        MouseArea { id: deskProfMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Quickshell.execDetached(["bash", "-c", "powerprofilesctl set " + deskProfileDelegate.name]); sysPoller.running = true; } }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
                 // ==========================================
-                // RIGHT SIDE: HARDWARE & BATTERY CORE
+                // RIGHT SIDE: HARDWARE & BATTERY CORE (laptop only)
                 // ==========================================
                 Item {
-                    Layout.preferredWidth: window.s(480)
+                    visible: sysConfig.isLaptop
+                    Layout.preferredWidth: sysConfig.isLaptop ? window.s(480) : 0
                     Layout.fillHeight: true
 
                     // Radar Rings (Centered on the Hardware Panel so it aligns perfectly with the gauge)
@@ -790,10 +903,11 @@ Item {
                         }
                     }
 
-                    // CENTRAL CORE & BATTERY RING 
+                    // CENTRAL CORE & BATTERY RING (laptop only)
                     Item {
                         anchors.fill: parent
                         z: 1
+                        visible: sysConfig.isLaptop
                         
                         opacity: introCore
                         transform: Translate { y: window.s(25) * (1 - introCore) }
@@ -1039,8 +1153,9 @@ Item {
                         anchors.margins: window.s(25)
                         spacing: window.s(15)
 
-                        // 1. HARDWARE CONTROLS DOCK (Sliders)
+                        // 1. HARDWARE CONTROLS DOCK (Brightness — laptop only)
                         Rectangle {
+                            visible: sysConfig.isLaptop
                             Layout.fillWidth: true
                             Layout.preferredHeight: window.s(96)
                             radius: window.s(14)
@@ -1056,8 +1171,9 @@ Item {
                                 anchors.margins: window.s(14)
                                 spacing: window.s(12)
 
-                                // Brightness Slider
+                                // Brightness Slider (laptop only — desktop has no backlight)
                                 RowLayout {
+                                    visible: sysConfig.isLaptop
                                     Layout.fillWidth: true
                                     spacing: window.s(15)
 
@@ -1132,105 +1248,7 @@ Item {
                                     }
                                 }
 
-                                // Volume Slider
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    spacing: window.s(15)
-
-                                    Rectangle {
-                                        Layout.preferredWidth: window.s(32)
-                                        Layout.preferredHeight: window.s(32)
-                                        radius: window.s(16)
-                                        color: volIconMa.containsMouse ? window.surface1 : "transparent"
-                                        border.color: volIconMa.containsMouse ? window.profileStart : "transparent"
-                                        Behavior on color { ColorAnimation { duration: 150 } }
-                                        Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: window.sysMuted || window.sysVolume === 0 ? "󰖁" : (window.sysVolume > 50 ? "󰕾" : "󰖀")
-                                            font.family: "Iosevka Nerd Font"
-                                            font.pixelSize: window.s(22)
-                                            color: window.sysMuted ? window.overlay0 : window.profileStart
-                                            Behavior on color { ColorAnimation { duration: 200 } }
-                                        }
-                                        MouseArea {
-                                            id: volIconMa
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                volSyncDelay.stop();
-                                                window.isDraggingVol = true; 
-                                                window.sysMuted = !window.sysMuted;
-                                                Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]);
-                                                volSyncDelay.restart();
-                                            }
-                                        }
-                                    }
-
-                                    Item {
-                                        Layout.fillWidth: true
-                                        height: window.s(18)
-                                        
-                                        Timer {
-                                            id: volCmdThrottle
-                                            interval: 50
-                                            property int targetPct: -1
-                                            onTriggered: {
-                                                if (targetPct >= 0) {
-                                                    if (targetPct > 0 && window.sysMuted) {
-                                                        window.sysMuted = false;
-                                                        Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "0"]);
-                                                    }
-                                                    Quickshell.execDetached(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", targetPct + "%"]);
-                                                    targetPct = -1;
-                                                }
-                                            }
-                                        }
-
-                                        Rectangle {
-                                            anchors.fill: parent
-                                            radius: window.s(9)
-                                            color: window.surface1
-                                            border.color: window.surface2
-                                            border.width: 1
-                                            clip: true
-
-                                            Rectangle {
-                                                height: parent.height
-                                                width: parent.width * (window.sysVolume / 100)
-                                                radius: window.s(9)
-                                                opacity: window.sysMuted ? 0.5 : (volMa.containsMouse ? 1.0 : 0.85)
-                                                Behavior on opacity { NumberAnimation { duration: 200 } }
-                                                Behavior on width { enabled: !window.isDraggingVol; NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
-
-                                                gradient: Gradient {
-                                                    orientation: Gradient.Horizontal
-                                                    GradientStop { position: 0.0; color: window.sysMuted ? window.surface2 : window.profileStart; Behavior on color { ColorAnimation { duration: 300 } } }
-                                                    GradientStop { position: 1.0; color: window.sysMuted ? Qt.lighter(window.surface2, 1.15) : window.profileEnd; Behavior on color { ColorAnimation { duration: 300 } } }
-                                                }
-                                            }
-                                        }
-                                        MouseArea {
-                                            id: volMa
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onPressed: (mouse) => { volSyncDelay.stop(); window.isDraggingVol = true; updateVol(mouse.x); }
-                                            onPositionChanged: (mouse) => { if (pressed) updateVol(mouse.x); }
-                                            onReleased: { volSyncDelay.restart(); }
-                                            
-                                            function updateVol(mx) {
-                                                let pct = Math.max(0, Math.min(100, Math.round((mx / width) * 100)));
-                                                window.sysVolume = pct;
-                                                volCmdThrottle.targetPct = pct;
-                                                if (!volCmdThrottle.running) volCmdThrottle.start();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                        }
                         }
 
                         // 2. SYSTEM ACTIONS DOCK
@@ -1241,8 +1259,8 @@ Item {
                             
                             Repeater {
                                 model: ListModel {
-                                    ListElement { cmd: "hyprlock"; icon: ""; baseColor: "mauve"; weight: 1.0 }
-                                    ListElement { cmd: "hyprlock & systemctl suspend"; icon: "ᶻ 𝗓 𐰁"; baseColor: "blue"; weight: 1.0 }
+                                    ListElement { cmd: "bash ~/.config/quickshell/lock.sh"; icon: ""; baseColor: "mauve"; weight: 1.0 }
+                                    ListElement { cmd: "bash ~/.config/quickshell/lock.sh & systemctl suspend"; icon: "ᶻ 𝗓 𐰁"; baseColor: "blue"; weight: 1.0 }
                                     ListElement { cmd: "systemctl reboot"; icon: "󰑓"; baseColor: "yellow"; weight: 2.5 }
                                     ListElement { cmd: "systemctl poweroff -i"; icon: ""; baseColor: "red"; weight: 3.5 }
                                 }
@@ -1448,30 +1466,35 @@ Item {
                                     }
                                     
                                     delegate: Item {
+                                        id: profileDelegate
+                                        required property string name
+                                        required property string icon
+                                        required property string label
+
                                         Layout.fillWidth: true
                                         Layout.fillHeight: true
-                                        
+
                                         RowLayout {
                                             anchors.centerIn: parent
                                             spacing: window.s(8)
                                             Text {
                                                 font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
-                                                color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
-                                                text: icon
+                                                color: window.powerProfile === profileDelegate.name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
+                                                text: profileDelegate.icon
                                                 Behavior on color { ColorAnimation { duration: 200 } }
                                             }
                                             Text {
                                                 font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: window.s(13)
-                                                color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
-                                                text: label
+                                                color: window.powerProfile === profileDelegate.name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
+                                                text: profileDelegate.label
                                                 Behavior on color { ColorAnimation { duration: 200 } }
                                             }
                                         }
-                                        
+
                                         MouseArea {
                                             id: profileMa
                                             anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                            onClicked: { Quickshell.execDetached(["powerprofilesctl", "set", name]); sysPoller.running = true; }
+                                            onClicked: { Quickshell.execDetached(["bash", "-c", "powerprofilesctl set " + profileDelegate.name]); sysPoller.running = true; }
                                         }
                                     }
                                 }

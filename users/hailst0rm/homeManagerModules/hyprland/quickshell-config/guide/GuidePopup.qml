@@ -93,7 +93,7 @@ Item {
     Keys.onReturnPressed: {
         if (currentTab === 3) { 
             let target = modulesDataModel.get(selectedModuleIndex).target;
-            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", target]);
+            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/quickshell/qs_manager.sh", "toggle", target]);
             event.accepted = true;
         }
     }
@@ -240,6 +240,7 @@ Item {
     property int cpuUsage: 0
     property int memUsage: 0
     property int sysTemp: 0
+    property int gpuUsage: 0
     property real globalTotalDisk: 1
     property real globalUsedDisk: 0
 
@@ -263,7 +264,8 @@ Item {
             "c2=($(awk '/^cpu / {print $2+$3+$4+$6+$7+$8, $5}' /proc/stat)); act=$((c2[0] - c1[0])); tot=$((act + c2[1] - c1[1])); " +
             "cpu=$((tot > 0 ? act * 100 / tot : 0)); mem=$(awk '/MemTotal/ {t=$2} /MemAvailable/ {a=$2} END {print int((t-a)/t*100)}' /proc/meminfo); " +
             "temp=$(cat /sys/class/thermal/thermal_zone*/temp 2>/dev/null | head -n1 || echo 0); up=$(awk '{print int($1/3600)\"h \"int(($1%3600)/60)\"m\"}' /proc/uptime 2>/dev/null || echo '0h 0m'); " +
-            "echo \"$cpu|$mem|$((temp / 1000))|$up\""
+            "gpu=$(cat /sys/class/drm/card*/device/gpu_busy_percent 2>/dev/null | head -n1); [ -z \"$gpu\" ] && gpu=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -n1); [ -z \"$gpu\" ] && gpu=0; " +
+            "echo \"$cpu|$mem|$((temp / 1000))|$up|$gpu\""
         ]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -273,6 +275,7 @@ Item {
                     root.memUsage = parseInt(parts[1]) || 0;
                     root.sysTemp = parseInt(parts[2]) || 0;
                     root.sysUptime = parts[3];
+                    if (parts.length >= 5) root.gpuUsage = parseInt(parts[4]) || 0;
                 }
             }
         }
@@ -388,7 +391,7 @@ Item {
     property int currentTab: 0
     property int selectedModuleIndex: 0
     property var tabNames: ["System", "Settings", "Resources", "Modules", "Keybinds", "Matugen", "Weather", "Greeter", "About"]
-    property var tabIcons: ["", "", "󰣖", "󰣆", "󰌌", "󰏘", "󰖐", "󰍃", ""]
+    property var tabIcons: ["󱄅", "", "󰣖", "󰣆", "󰌌", "󰏘", "󰖐", "󰍃", ""]
 
     property real introBase: 0.0
     property real introSidebar: 0.0
@@ -519,7 +522,7 @@ Item {
             easing.type: Easing.InQuart 
         }
         ScriptAction { 
-            script: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]) 
+            script: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/quickshell/qs_manager.sh", "close"]) 
         }
     }
 
@@ -616,7 +619,7 @@ Item {
                             color: root.ambientPurple
                             Text { 
                                 anchors.centerIn: parent
-                                text: "󰣇"
+                                text: "󱄅"
                                 font.family: "Iosevka Nerd Font"
                                 font.pixelSize: root.s(20)
                                 color: root.base 
@@ -710,7 +713,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 if (index === 1) { // 1 = Settings Tab
-                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", "settings"]);
+                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/quickshell/qs_manager.sh", "toggle", "settings"]);
                                 } else {
                                     root.currentTab = index;
                                 }
@@ -1007,7 +1010,7 @@ Item {
                                     spacing: root.s(15)
                                     RowLayout { 
                                         spacing: root.s(6)
-                                        Text { text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.blue } 
+                                        Text { text: "󱄅"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.blue } 
                                         Text { text: root.sysOS; font.family: "Iosevka Nerd Font"; font.weight: Font.Medium; font.pixelSize: root.s(12); color: root.subtext0 } 
                                     }
                                     RowLayout { 
@@ -1167,7 +1170,7 @@ Item {
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
                                         if (modelData.isToggle) {
-                                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", "settings"]);
+                                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/quickshell/qs_manager.sh", "toggle", "settings"]);
                                         } else {
                                             root.currentTab = modelData.targetTab;
                                         }
@@ -1177,71 +1180,6 @@ Item {
                         }
                     }
 
-                    Text { 
-                        text: "System Architecture"
-                        font.family: "Iosevka Nerd Font"
-                        font.weight: Font.Black
-                        font.pixelSize: root.s(24)
-                        color: root.text
-                        Layout.alignment: Qt.AlignVCenter
-                        Layout.topMargin: root.s(5) 
-                    }
-                    
-                    GridLayout {
-                        Layout.fillWidth: true
-                        columns: 2
-                        rowSpacing: root.s(15)
-                        columnSpacing: root.s(15)
-                        
-                        Repeater {
-                            model: systemDataModel
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: root.s(60)
-                                radius: root.s(10)
-                                color: sysCardMa.containsMouse ? Qt.alpha(root[model.clr], 0.1) : Qt.alpha(root.surface0, 0.4)
-                                border.color: sysCardMa.containsMouse ? root[model.clr] : root.surface1
-                                border.width: 1
-                                scale: sysCardMa.pressed ? 0.98 : 1.0
-                                
-                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuart } }
-                                Behavior on color { ColorAnimation { duration: 200 } }
-                                Behavior on border.color { ColorAnimation { duration: 200 } }
-                                
-                                Item {
-                                    anchors.fill: parent
-                                    anchors.margins: root.s(10)
-                                    
-                                    Item { 
-                                        id: sysIconBox
-                                        anchors.left: parent.left
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: root.s(36)
-                                        height: root.s(36)
-                                        Text { anchors.centerIn: parent; text: model.icon; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(22); color: root[model.clr] } 
-                                    }
-                                    
-                                    Column { 
-                                        anchors.left: sysIconBox.right
-                                        anchors.leftMargin: root.s(15)
-                                        anchors.right: parent.right
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        spacing: root.s(2)
-                                        Text { text: model.pkg; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(14); color: root.text } 
-                                        Text { text: model.role; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } 
-                                    }
-                                }
-                                
-                                MouseArea { 
-                                    id: sysCardMa
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: Quickshell.execDetached(["xdg-open", model.link]) 
-                                }
-                            }
-                        }
-                    }
                     Item { Layout.fillHeight: true }
                 }
             }
@@ -1304,7 +1242,7 @@ Item {
                                     
                                     RowLayout { 
                                         spacing: root.s(12)
-                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.blue, 0.15); Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.blue } } 
+                                        Rectangle { width: root.s(36); height: root.s(36); radius: root.s(8); color: Qt.alpha(root.blue, 0.15); Text { anchors.centerIn: parent; text: "󱄅"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18); color: root.blue } } 
                                         ColumnLayout { spacing: root.s(2); Text { text: "Operating System"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(11); color: root.subtext0 } Text { text: root.sysOS; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } } 
                                     }
                                     RowLayout { 
@@ -1341,20 +1279,20 @@ Item {
                         // --- Circular Gauges ---
                         GridLayout {
                             Layout.fillWidth: true
-                            columns: 3
+                            columns: 4
                             columnSpacing: root.s(15)
-                            
+
                             Repeater {
-                                model: 3
+                                model: 4
                                 Rectangle {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: root.s(200)
                                     radius: root.s(16)
-                                    property real targetValue: index === 0 ? root.cpuUsage : (index === 1 ? root.memUsage : Math.min(root.sysTemp, 100))
-                                    property string txtValue: index === 0 ? root.cpuUsage + "%" : (index === 1 ? root.memUsage + "%" : (root.sysTemp > 0 ? root.sysTemp + "°C" : "N/A"))
-                                    property string cKey: index === 0 ? "sapphire" : (index === 1 ? "peach" : "red")
-                                    property string tTitle: index === 0 ? "CPU LOAD" : (index === 1 ? "MEMORY" : "THERMALS")
-                                    property string iIcon: index === 0 ? "" : (index === 1 ? "󰍛" : "")
+                                    property real targetValue: index === 0 ? root.cpuUsage : (index === 1 ? root.gpuUsage : (index === 2 ? root.memUsage : Math.min(root.sysTemp, 100)))
+                                    property string txtValue: index === 0 ? root.cpuUsage + "%" : (index === 1 ? root.gpuUsage + "%" : (index === 2 ? root.memUsage + "%" : (root.sysTemp > 0 ? root.sysTemp + "°C" : "N/A")))
+                                    property string cKey: index === 0 ? "sapphire" : (index === 1 ? "green" : (index === 2 ? "peach" : "red"))
+                                    property string tTitle: index === 0 ? "CPU LOAD" : (index === 1 ? "GPU LOAD" : (index === 2 ? "MEMORY" : "THERMALS"))
+                                    property string iIcon: index === 0 ? "󰍛" : (index === 1 ? "󰾲" : (index === 2 ? "" : ""))
 
                                     color: Qt.alpha(root.surface0, 0.4)
                                     border.color: Qt.alpha(root[cKey], 0.2)
@@ -1697,7 +1635,7 @@ Item {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", modulesDataModel.get(root.selectedModuleIndex).target]) 
+                                onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/quickshell/qs_manager.sh", "toggle", modulesDataModel.get(root.selectedModuleIndex).target]) 
                             }
                         }
                     }
@@ -1826,7 +1764,7 @@ Item {
                                 }
                                 onDoubleClicked: { 
                                     root.selectedModuleIndex = index; 
-                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", model.target]) 
+                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/quickshell/qs_manager.sh", "toggle", model.target]) 
                                 } 
                             }
                         }
@@ -1899,7 +1837,7 @@ Item {
                                             border.color: wsMa.containsMouse ? root.peach : "transparent"
                                             border.width: 1
                                             Text { anchors.centerIn: parent; text: parent.wsNum; font.family: "Iosevka Nerd Font"; font.weight: Font.Bold; font.pixelSize: root.s(12); color: root.peach }
-                                            MouseArea { id: wsMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", wsNum.toString()]) }
+                                            MouseArea { id: wsMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/quickshell/qs_manager.sh", wsNum.toString()]) }
                                         }
                                     }
                                 }

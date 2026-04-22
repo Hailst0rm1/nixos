@@ -58,7 +58,10 @@
         "0" = "left";
         "1" = "left";
       };
-      quickshell.enable = lib.mkDefault false;
+      quickshell.ilyamiro = {
+        enable = lib.mkDefault true;
+        openweatherCityId = lib.mkDefault "2673730";
+      };
     };
   };
 

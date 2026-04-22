@@ -536,8 +536,8 @@ PanelWindow {
             ToolbarBtn { visible: !root.isVideoMode; iconTxt: "󰄄"; label: "Capture"; onClicked: root.executeCapture(false, false) }
             ToolbarBtn { visible: root.isVideoMode; iconTxt: "󰑊"; label: "Record"; isDanger: true; onClicked: root.executeCapture(false, true) }
 
-            ToolbarBtn { visible: !root.isVideoMode; iconTxt: "󰏫"; onClicked: root.executeCapture(true, false) }
-            ToolbarBtn { visible: !root.isVideoMode; iconTxt: "⿻"; onClicked: root.performQrScan() }
+            ToolbarBtn { visible: !root.isVideoMode; iconTxt: "󰏫"; label: "Edit"; onClicked: root.executeCapture(true, false) }
+            ToolbarBtn { visible: !root.isVideoMode; iconTxt: "󰐲"; label: "QR"; onClicked: root.performQrScan() }
 
             Rectangle { width: s(2); Layout.fillHeight: true; Layout.topMargin: s(10); Layout.bottomMargin: s(10); color: _theme.surface0; radius: s(1) }
             

@@ -87,7 +87,7 @@ in {
       description = "The wallpaper manager for Hyprland.";
     };
 
-    quickshell = {
+    quickshell.ilyamiro = {
       enable = lib.mkEnableOption "QuickShell desktop shell (replaces panel, notifications, lockscreen, screenshot)";
 
       openweatherCityId = lib.mkOption {

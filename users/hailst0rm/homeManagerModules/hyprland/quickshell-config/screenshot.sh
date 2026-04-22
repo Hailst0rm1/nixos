@@ -249,8 +249,24 @@ if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ]; then
     fi
 
     # Mode: Screenshot
-    GRIM_CMD="grim -"
-    [ -n "$GEOMETRY" ] && GRIM_CMD="grim -g \"$GEOMETRY\" -"
+    # On multi-monitor, the overlay geometry is screen-relative but grim needs
+    # global compositor coordinates. Offset by the focused monitor's position.
+    if [ -n "$GEOMETRY" ]; then
+        MON_INFO=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | "\(.x) \(.y)"')
+        MON_X=$(echo "$MON_INFO" | awk '{print $1}')
+        MON_Y=$(echo "$MON_INFO" | awk '{print $2}')
+        MON_X=${MON_X:-0}; MON_Y=${MON_Y:-0}
+
+        # Parse "X,Y WxH" and add monitor offset
+        SEL_X=$(echo "$GEOMETRY" | sed 's/,.*//')
+        SEL_Y=$(echo "$GEOMETRY" | sed 's/.*,//;s/ .*//')
+        SEL_WH=$(echo "$GEOMETRY" | sed 's/.* //')
+        GEOMETRY="$((SEL_X + MON_X)),$((SEL_Y + MON_Y)) $SEL_WH"
+
+        GRIM_CMD="grim -g \"$GEOMETRY\" -"
+    else
+        GRIM_CMD="grim -"
+    fi
 
     if [ "$EDIT_MODE" = true ]; then
         eval $GRIM_CMD | GSK_RENDERER=gl satty --filename - --output-filename "$FILENAME" --init-tool brush --copy-command wl-copy

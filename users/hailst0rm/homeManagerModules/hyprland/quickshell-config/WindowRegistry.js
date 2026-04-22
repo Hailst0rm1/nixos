@@ -8,8 +8,8 @@ function getScale(mw, userScale) {
     if (r <= 1.0) {
         baseScale = Math.max(0.35, Math.pow(r, 0.85));
     } else {
-        // Cap at 1.0 for ultrawide/large monitors at native (non-HiDPI) resolution
-        baseScale = Math.min(1.0, Math.pow(r, 0.5));
+        // Gentle scale-up for ultrawide/large monitors — log curve avoids oversizing
+        baseScale = 1.0 + Math.log(r) * 0.25;
     }
 
     return baseScale * (userScale !== undefined ? userScale : 1.0);
@@ -19,11 +19,13 @@ function s(val, scale) {
     return Math.round(val * scale);
 }
 
-function getLayout(name, mx, my, mw, mh, userScale) {
+function getLayout(name, mx, my, mw, mh, userScale, isLaptop) {
     let scale = getScale(mw, userScale);
 
+    let batW = isLaptop ? s(801, scale) : s(400, scale);
+    let batH = isLaptop ? s(760, scale) : s(620, scale);
     let base = {
-        "battery":   { w: s(801, scale), h: s(760, scale), rx: mw - s(821, scale), ry: s(70, scale), comp: "battery/BatteryPopup.qml" },
+        "battery":   { w: batW, h: batH, rx: mw - batW - s(20, scale), ry: s(70, scale), comp: "battery/BatteryPopup.qml" },
         "volume":    { w: s(480, scale), h: s(760, scale), rx: mw - s(500, scale), ry: s(70, scale), comp: "volume/VolumePopup.qml" },
         "calendar":  { w: s(1450, scale), h: s(750, scale), rx: Math.floor((mw/2)-(s(1450, scale)/2)), ry: s(70, scale), comp: "calendar/CalendarPopup.qml" },
         "music":     { w: s(700, scale), h: s(620, scale), rx: s(12, scale), ry: s(70, scale), comp: "music/MusicPopup.qml" },
@@ -36,8 +38,7 @@ function getLayout(name, mx, my, mw, mh, userScale) {
         "updater":   { w: s(450, scale), h: s(350, scale), rx: Math.floor((mw/2)-(s(450, scale)/2)), ry: Math.floor((mh/2)-(s(350, scale)/2)), comp: "updater/UpdaterPopup.qml" },
         "notifications": { w: s(800, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "notifications/NotificationCenter.qml" },
         "sidepanel": { w: s(600, scale), h: mh - s(56, scale), rx: mw - s(604, scale), ry: s(56, scale), comp: "sidepanel/SidePanel.qml" },
-        "wallpaper": { w: mw, h: s(650, scale), rx: 0, ry: Math.floor((mh/2)-(s(650, scale)/2)), comp: "wallpaper/WallpaperPicker.qml" },
-        "hidden":    { w: 1, h: 1, rx: -5000 - mx, ry: -5000 - my, comp: "" } 
+        "hidden":    { w: 1, h: 1, rx: -5000 - mx, ry: -5000 - my, comp: "" }
     };
 
     if (!base[name]) return null;

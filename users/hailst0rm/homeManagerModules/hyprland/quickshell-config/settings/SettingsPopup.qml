@@ -68,7 +68,7 @@ Item {
     property real setUiScale: 1.0
     property bool setOpenGuideAtStartup: true
     property bool setTopbarHelpIcon: true
-    property int setWorkspaceCount: 8
+    property int setWorkspaceCount: 5
     property string setWallpaperDir: {
         const dir = Quickshell.env("WALLPAPER_DIR")
         return (dir && dir !== "") 

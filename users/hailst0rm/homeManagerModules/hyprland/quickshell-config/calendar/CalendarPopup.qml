@@ -421,14 +421,34 @@ Item {
         calendarTransitionAnim.start();
     }
 
+    // ISO week number helper
+    function isoWeekNumber(date) {
+        let d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        let yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    }
+
+    // Match a calendar date to a forecast index (0-4), or -1 if not covered
+    function forecastIndexForDate(year, month, day) {
+        if (!window.weatherData || !window.weatherData.forecast) return -1;
+        let target = new Date(year, month, day);
+        target.setHours(0, 0, 0, 0);
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let diffDays = Math.round((target - today) / 86400000);
+        if (diffDays >= 0 && diffDays < window.weatherData.forecast.length) return diffDays;
+        return -1;
+    }
+
     function updateCalendarGrid() {
         let d = new Date(window.currentTime.getTime());
-        d.setDate(1); 
+        d.setDate(1);
         d.setMonth(d.getMonth() + window.monthOffset);
 
         let targetMonth = d.getMonth();
         let targetYear = d.getFullYear();
-        
+
         let actualToday = new Date();
         let isRealCurrentMonth = (actualToday.getMonth() === targetMonth && actualToday.getFullYear() === targetYear);
         let todayDate = actualToday.getDate();
@@ -436,22 +456,57 @@ Item {
         window.targetMonthName = Qt.formatDateTime(d, "MMMM yyyy");
 
         let firstDay = new Date(targetYear, targetMonth, 1).getDay();
-        firstDay = (firstDay === 0) ? 6 : firstDay - 1; 
+        firstDay = (firstDay === 0) ? 6 : firstDay - 1;
 
         let daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
         let daysInPrevMonth = new Date(targetYear, targetMonth, 0).getDate();
 
         calendarModel.clear();
 
+        // Build flat day array first (42 days)
+        let days = [];
+        let prevMonth = targetMonth === 0 ? 11 : targetMonth - 1;
+        let prevYear = targetMonth === 0 ? targetYear - 1 : targetYear;
         for (let i = firstDay - 1; i >= 0; i--) {
-            calendarModel.append({ dayNum: (daysInPrevMonth - i).toString(), isCurrentMonth: false, isToday: false });
+            let dn = daysInPrevMonth - i;
+            days.push({ dayNum: dn.toString(), isCurrentMonth: false, isToday: false,
+                         forecastIdx: forecastIndexForDate(prevYear, prevMonth, dn) });
         }
         for (let i = 1; i <= daysInMonth; i++) {
-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate) });
+            days.push({ dayNum: i.toString(), isCurrentMonth: true,
+                         isToday: (isRealCurrentMonth && i === todayDate),
+                         forecastIdx: forecastIndexForDate(targetYear, targetMonth, i) });
         }
-        let remaining = 42 - calendarModel.count;
+        let nextMonth = targetMonth === 11 ? 0 : targetMonth + 1;
+        let nextYear = targetMonth === 11 ? targetYear + 1 : targetYear;
+        let remaining = 42 - days.length;
         for (let i = 1; i <= remaining; i++) {
-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: false, isToday: false });
+            days.push({ dayNum: i.toString(), isCurrentMonth: false, isToday: false,
+                         forecastIdx: forecastIndexForDate(nextYear, nextMonth, i) });
+        }
+
+        // Insert into model with week number labels at the start of each row (8 columns)
+        for (let row = 0; row < 6; row++) {
+            // Compute the date of the Monday (first day) of this row for week number
+            let dayIdx = row * 7;
+            let mondayDate;
+            if (dayIdx < firstDay) {
+                // Previous month
+                mondayDate = new Date(prevYear, prevMonth, parseInt(days[dayIdx].dayNum));
+            } else if (dayIdx < firstDay + daysInMonth) {
+                mondayDate = new Date(targetYear, targetMonth, parseInt(days[dayIdx].dayNum));
+            } else {
+                mondayDate = new Date(nextYear, nextMonth, parseInt(days[dayIdx].dayNum));
+            }
+            let wn = isoWeekNumber(mondayDate);
+            calendarModel.append({ dayNum: wn.toString(), isCurrentMonth: false, isToday: false,
+                                    isWeekLabel: true, forecastIdx: -1 });
+            for (let col = 0; col < 7; col++) {
+                let item = days[dayIdx + col];
+                calendarModel.append({ dayNum: item.dayNum, isCurrentMonth: item.isCurrentMonth,
+                                        isToday: item.isToday, isWeekLabel: false,
+                                        forecastIdx: item.forecastIdx });
+            }
         }
     }
 
@@ -758,13 +813,13 @@ Item {
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.margins: window.s(40)
-                width: window.s(320)
+                width: window.s(350)
                 height: window.s(420)
-                color: Qt.alpha(window.surface0, 0.2) 
+                color: Qt.alpha(window.surface0, 0.2)
                 radius: window.s(14)
                 border.color: Qt.alpha(window.surface1, 0.4)
                 border.width: 1
-                z: 10 
+                z: 10
 
                 opacity: introCalendar
                 transform: Translate { x: window.s(-40) * (1.0 - introCalendar) }
@@ -834,6 +889,8 @@ Item {
 
                     RowLayout {
                         Layout.fillWidth: true
+                        // Week number column spacer
+                        Item { Layout.preferredWidth: window.s(22) }
                         Repeater {
                             model: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
                             Text {
@@ -851,39 +908,87 @@ Item {
                     GridLayout {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        columns: 7
+                        columns: 8
                         rowSpacing: window.s(6)
-                        columnSpacing: window.s(6)
+                        columnSpacing: window.s(4)
 
                         opacity: window.calendarContentOpacity
                         transform: Translate { x: window.calendarContentOffset }
 
                         Repeater {
                             model: calendarModel
+                            Loader {
+                                Layout.fillWidth: !isWeekLabel
+                                Layout.fillHeight: !isWeekLabel
+                                Layout.preferredWidth: isWeekLabel ? window.s(22) : -1
+
+                                sourceComponent: isWeekLabel ? weekLabelComponent : dayCellComponent
+
+                                property string _dayNum: dayNum
+                                property bool _isCurrentMonth: isCurrentMonth
+                                property bool _isToday: isToday
+                                property bool _isWeekLabel: isWeekLabel
+                                property int _forecastIdx: forecastIdx
+                            }
+                        }
+                    }
+
+                    Component {
+                        id: weekLabelComponent
+                        Text {
+                            text: _dayNum
+                            font.family: "Iosevka Nerd Font"
+                            font.weight: Font.Bold
+                            font.pixelSize: window.s(11)
+                            color: window.overlay0
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Component {
+                        id: dayCellComponent
+                        Rectangle {
+                            property bool hasForecast: _forecastIdx >= 0
+
+                            color: _isToday ? window.textAccent : (dayMa2.containsMouse ? Qt.alpha(window.surface2, 0.4) : "transparent")
+                            radius: window.s(10)
+                            scale: dayMa2.containsMouse ? 1.2 : 1.0
+                            border.color: _isToday ? window.surface0 : (hasForecast && dayMa2.containsMouse ? window.mauve : (dayMa2.containsMouse ? window.overlay0 : "transparent"))
+                            border.width: _isToday || dayMa2.containsMouse ? 1 : 0
+
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+
+                            // Small weather dot indicator for days with forecast
                             Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                
-                                color: isToday ? window.textAccent : (dayMa.containsMouse ? Qt.alpha(window.surface2, 0.4) : "transparent")
-                                radius: window.s(10)
-                                scale: dayMa.containsMouse ? 1.2 : 1.0
-                                border.color: isToday ? window.surface0 : (dayMa.containsMouse ? window.overlay0 : "transparent")
-                                border.width: isToday || dayMa.containsMouse ? 1 : 0
-                                
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: window.s(2)
+                                width: window.s(4); height: window.s(4); radius: window.s(2)
+                                color: _isToday ? window.base : window.mauve
+                                visible: hasForecast && !_isToday
+                                opacity: 0.7
+                            }
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: dayNum
-                                    font.family: "Iosevka Nerd Font"
-                                    font.weight: isToday ? Font.Black : Font.Bold
-                                    font.pixelSize: window.s(14)
-                                    color: isToday ? window.base : (isCurrentMonth ? window.text : window.surface0)
-                                    Behavior on color { ColorAnimation { duration: 200 } }
+                            Text {
+                                anchors.centerIn: parent
+                                text: _dayNum
+                                font.family: "Iosevka Nerd Font"
+                                font.weight: _isToday ? Font.Black : Font.Bold
+                                font.pixelSize: window.s(14)
+                                color: _isToday ? window.base : (_isCurrentMonth ? window.text : window.surface0)
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                            }
+
+                            MouseArea {
+                                id: dayMa2; anchors.fill: parent; hoverEnabled: true
+                                cursorShape: hasForecast ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                onClicked: {
+                                    if (hasForecast) {
+                                        window.setWeatherView(_forecastIdx);
+                                    }
                                 }
-
-                                MouseArea { id: dayMa; anchors.fill: parent; hoverEnabled: true }
                             }
                         }
                     }

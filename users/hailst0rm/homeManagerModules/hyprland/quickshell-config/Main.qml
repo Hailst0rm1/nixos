@@ -12,6 +12,8 @@ import "notifications" as Notifs
 PanelWindow {
     id: masterWindow
     color: "transparent"
+
+    SystemConfig { id: sysConfig }
     
     IpcHandler {
         target: "main"
@@ -24,6 +26,9 @@ PanelWindow {
     WlrLayershell.namespace: "qs-master"
     WlrLayershell.layer: WlrLayer.Overlay
 
+    // Follow the cursor so widgets open on the active monitor
+    screen: Quickshell.cursorScreen
+
     anchors {
         top: true
         bottom: true
@@ -34,8 +39,8 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     focusable: true
 
-    width: Screen.width
-    height: Screen.height
+    width: screen.width
+    height: screen.height
 
     visible: isVisible
 
@@ -182,14 +187,11 @@ PanelWindow {
     }
 
     function getLayout(name) {
-        return Registry.getLayout(name, 0, 0, Screen.width, Screen.height, masterWindow.globalUiScale);
+        return Registry.getLayout(name, 0, 0, masterWindow.width, masterWindow.height, masterWindow.globalUiScale, sysConfig.isLaptop);
     }
 
-    Connections {
-        target: Screen
-        function onWidthChanged() { handleNativeScreenChange(); }
-        function onHeightChanged() { handleNativeScreenChange(); }
-    }
+    onWidthChanged: handleNativeScreenChange()
+    onHeightChanged: handleNativeScreenChange()
 
     function handleNativeScreenChange() {
         if (masterWindow.currentActive === "hidden") return;
@@ -301,12 +303,10 @@ PanelWindow {
                 prepTimer.start();
                 
             } else {
-                // Morphing directly between widgets (including wallpaper)
+                // Morphing directly between widgets
                 masterWindow.morphDuration = 500;
                 masterWindow.disableMorph = false;
-                
-                // If transitioning to wallpaper, make the previous widget disappear significantly faster
-                masterWindow.exitDuration = (newWidget === "wallpaper") ? 100 : 300;
+                masterWindow.exitDuration = 300;
                 
                 executeSwitch(newWidget, arg, false);
             }
@@ -333,8 +333,7 @@ PanelWindow {
         masterWindow.targetW = t.w;
         masterWindow.targetH = t.h;
         
-        let props = newWidget === "wallpaper" ? { "widgetArg": arg } : {};
-        props["notifModel"] = masterWindow.notifModel;
+        let props = {"notifModel": masterWindow.notifModel};
 
         if (immediate) {
             widgetStack.replace(t.comp, props, StackView.Immediate);

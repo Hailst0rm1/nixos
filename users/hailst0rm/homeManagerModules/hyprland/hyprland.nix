@@ -216,7 +216,7 @@ in {
 
             # Windows
             "$mainMod, Q, killactive,"
-            "$mainMod SHIFT, M, exit,"
+
             "$mainMod SHIFT, F, togglefloating,"
             "$mainMod, F, fullscreen,"
             "$mainMod, G, togglegroup,"
@@ -251,7 +251,7 @@ in {
             # "$mainMod, B, exec, GTK_IM_MODULE=simple ${config.terminal} -e htop"
             "$mainMod, B, exec, missioncenter"
           ]
-          ++ lib.optionals (!cfg.quickshell.enable) [
+          ++ lib.optionals (!cfg.quickshell.ilyamiro.enable) [
             ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
           ]
           ++ [
