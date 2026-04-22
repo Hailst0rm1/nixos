@@ -3,7 +3,10 @@
 
   # Override only what's different from default
   importConfig.hyprland = {
-    quickshell.enable = true;
+    quickshell = {
+      enable = true;
+      openweatherCityId = "2673730";
+    };
     accentColour = "sky";
     monitorOrientations = {
       "DP-6" = "center";

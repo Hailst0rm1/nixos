@@ -48,6 +48,7 @@
             path = "/home/${config.username}/.vpn/offsec.ovpn";
           };
           "services/discord/token" = {};
+          "services/openweather" = {};
         };
       };
     })

@@ -7,6 +7,14 @@
 }: let
   cfg = config.importConfig.hyprland;
   qsCfg = cfg.quickshell;
+
+  # Resolve sops secret path for OpenWeather API key
+  openweatherKeyPath =
+    if (config.sops.secrets ? "services/openweather")
+    then config.sops.secrets."services/openweather".path
+    else "";
+
+  qs = "~/.config/quickshell/qs_manager.sh";
 in {
   config = lib.mkIf (cfg.enable && qsCfg.enable) {
     # Override conflicting components
@@ -24,13 +32,14 @@ in {
         recursive = true;
       };
 
-      # Weather API configuration
-      "quickshell/calendar/.env" = lib.mkIf (qsCfg.openweatherKey != "") {
-        text = ''
-          OPENWEATHER_KEY=${qsCfg.openweatherKey}
-          OPENWEATHER_CITY_ID=${qsCfg.openweatherCityId}
-          OPENWEATHER_UNIT=metric
-        '';
+      # Weather API configuration — reads key from sops at runtime
+      "quickshell/calendar/.env" = {
+        text =
+          ''
+            OPENWEATHER_KEY_FILE=${openweatherKeyPath}
+            OPENWEATHER_CITY_ID=${qsCfg.openweatherCityId}
+            OPENWEATHER_UNIT=metric
+          '';
       };
     };
 
@@ -42,6 +51,21 @@ in {
         "quickshell -p ~/.config/quickshell/TopBar.qml"
         "python3 ~/.config/quickshell/focustime/focus_daemon.py &"
         "bash ~/.config/quickshell/workspaces.sh &"
+      ];
+
+      bind = [
+        # Screenshot (QuickShell overlay)
+        ", PRINT, exec, bash ~/.config/quickshell/screenshot.sh"
+        # QuickShell widget toggles
+        "$mainMod, S, exec, bash ${qs} toggle calendar"
+        "$mainMod SHIFT, N, exec, bash ${qs} toggle notifications"
+        "$mainMod SHIFT, W, exec, bash ${qs} toggle wallpaper"
+        "$mainMod SHIFT, B, exec, bash ${qs} toggle battery"
+        "$mainMod SHIFT, V, exec, bash ${qs} toggle volume"
+        "$mainMod SHIFT, G, exec, bash ${qs} toggle guide"
+        "$mainMod SHIFT, P, exec, bash ${qs} toggle settings"
+        "$mainMod SHIFT, T, exec, bash ${qs} toggle focustime"
+        "$mainMod SHIFT, D, exec, bash ${qs} toggle monitors"
       ];
 
       layerrule = [

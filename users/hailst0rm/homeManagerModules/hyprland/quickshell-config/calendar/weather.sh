@@ -12,16 +12,19 @@ next_day_cache_file="${cache_dir}/next_day_precache.json"
 env_tracker_file="${cache_dir}/.env_tracker"
 ENV_FILE="$HOME/.config/quickshell/calendar/.env"
 
-# API Settings
 # Load environment variables silently
 if [ -f "$ENV_FILE" ]; then
     export $(grep -v '^#' "$ENV_FILE" | xargs)
 fi
 
-# API Settings from .env
-KEY="$OPENWEATHER_KEY"
+# API key: read from sops secret file if OPENWEATHER_KEY_FILE is set, else use OPENWEATHER_KEY
+if [ -n "$OPENWEATHER_KEY_FILE" ] && [ -f "$OPENWEATHER_KEY_FILE" ]; then
+    KEY="$(cat "$OPENWEATHER_KEY_FILE" | tr -d '[:space:]')"
+else
+    KEY="$OPENWEATHER_KEY"
+fi
 ID="$OPENWEATHER_CITY_ID"
-UNIT="${OPENWEATHER_UNIT:-metric}" # Default to metric if not set
+UNIT="${OPENWEATHER_UNIT:-metric}"
 
 mkdir -p "${cache_dir}"
 
