@@ -33,6 +33,9 @@ in {
         enable = true;
       };
 
+      # Required for Plymouth graphical splash to work
+      initrd.systemd.enable = true;
+
       kernelPackages = lib.mkIf (kernel == "zen") pkgs.linuxKernel.packages.linux_zen;
 
       # Bootloader
