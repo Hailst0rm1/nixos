@@ -27,7 +27,7 @@ function getLayout(name, mx, my, mw, mh, userScale, isLaptop) {
     let base = {
         "battery":   { w: batW, h: batH, rx: mw - batW - s(20, scale), ry: s(70, scale), comp: "battery/BatteryPopup.qml" },
         "volume":    { w: s(480, scale), h: s(760, scale), rx: mw - s(500, scale), ry: s(70, scale), comp: "volume/VolumePopup.qml" },
-        "calendar":  { w: s(1450, scale), h: s(750, scale), rx: Math.floor((mw/2)-(s(1450, scale)/2)), ry: s(70, scale), comp: "calendar/CalendarPopup.qml" },
+        "calendar":  { w: Math.min(s(1450, scale), mw - s(24, scale)), h: s(750, scale), rx: Math.max(s(12, scale), Math.floor((mw/2)-(Math.min(s(1450, scale), mw - s(24, scale))/2))), ry: s(70, scale), comp: "calendar/CalendarPopup.qml" },
         "music":     { w: s(700, scale), h: s(620, scale), rx: s(12, scale), ry: s(70, scale), comp: "music/MusicPopup.qml" },
         "network":   { w: s(900, scale), h: s(700, scale), rx: mw - s(920, scale), ry: s(70, scale), comp: "network/NetworkPopup.qml" },
         "stewart":   { w: s(800, scale), h: s(600, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(600, scale)/2)), comp: "stewart/stewart.qml" },

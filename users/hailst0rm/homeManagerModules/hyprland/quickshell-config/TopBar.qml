@@ -284,7 +284,7 @@ Variants {
             property color batDynamicColor: {
                 if (isCharging) return mocha.green;
                 if (batCap <= 20) return mocha.red;
-                return mocha.text; 
+                return sysConfig.accent;
             }
 
             // ==========================================
