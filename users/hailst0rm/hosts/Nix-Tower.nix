@@ -3,6 +3,7 @@
 
   # Override only what's different from default
   importConfig.hyprland = {
+    quickshell.enable = true;
     accentColour = "sky";
     monitorOrientations = {
       "DP-6" = "center";

@@ -255,7 +255,6 @@ in {
             ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
           ]
           ++ [
-
             # Workspaces
             "$mainMod, O, overview:toggle, all"
             "$mainMod, D, split:swapactiveworkspaces, current +1"
