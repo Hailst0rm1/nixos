@@ -105,10 +105,11 @@ in {
         "$mainMod SHIFT, N, exec, bash ${qs} toggle notifications"
         "$mainMod SHIFT, B, exec, bash ${qs} toggle battery"
         "$mainMod SHIFT, V, exec, bash ${qs} toggle volume"
-        # "$mainMod SHIFT, G, exec, bash ${qs} toggle guide"
+        "$mainMod SHIFT, M, exec, bash ${qs} toggle music"
+        "$mainMod SHIFT, A, exec, bash ${qs} toggle guide"
         "$mainMod SHIFT, S, exec, bash ${qs} toggle settings"
         "$mainMod SHIFT, T, exec, bash ${qs} toggle focustime"
-        "$mainMod SHIFT, M, exec, bash ${qs} toggle monitors"
+        "$mainMod SHIFT, D, exec, bash ${qs} toggle monitors"
       ];
 
       windowrulev2 = [

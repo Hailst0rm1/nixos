@@ -28,7 +28,7 @@ function getLayout(name, mx, my, mw, mh, userScale, isLaptop) {
         "battery":   { w: batW, h: batH, rx: mw - batW - s(20, scale), ry: s(70, scale), comp: "battery/BatteryPopup.qml" },
         "volume":    { w: s(480, scale), h: s(760, scale), rx: mw - s(500, scale), ry: s(70, scale), comp: "volume/VolumePopup.qml" },
         "calendar":  { w: s(1520, scale), h: s(750, scale), rx: Math.floor((mw/2)-(s(1520, scale)/2)), ry: s(70, scale), comp: "calendar/CalendarPopup.qml" },
-        "music":     { w: s(700, scale), h: s(620, scale), rx: s(12, scale), ry: s(70, scale), comp: "music/MusicPopup.qml" },
+        "music":     { w: s(700, scale), h: s(620, scale), rx: mw - s(720, scale), ry: s(70, scale), comp: "music/MusicPopup.qml" },
         "network":   { w: s(900, scale), h: s(700, scale), rx: mw - s(920, scale), ry: s(70, scale), comp: "network/NetworkPopup.qml" },
         "stewart":   { w: s(800, scale), h: s(600, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(600, scale)/2)), comp: "stewart/stewart.qml" },
         "monitors":  { w: s(850, scale), h: s(580, scale), rx: Math.floor((mw/2)-(s(850, scale)/2)), ry: Math.floor((mh/2)-(s(580, scale)/2)), comp: "monitors/MonitorPopup.qml" },

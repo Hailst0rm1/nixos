@@ -5,7 +5,7 @@
   importConfig.hyprland = {
     accentColour = "sky";
     monitorOrientations = {
-      "DP-6" = "center";
+      "DP-1" = "center";
       "DP-2" = "top";
       "DP-3" = "top";
     };

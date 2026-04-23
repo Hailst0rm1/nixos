@@ -634,12 +634,12 @@ Item {
                             }
                         }
 
-                        // --- Desktop-only: Action Buttons & Power Profiles ---
+                        // --- Desktop-only: Action Buttons (hold-to-confirm) ---
                         RowLayout {
                             visible: !sysConfig.isLaptop
                             Layout.fillWidth: true
-                            Layout.preferredHeight: window.s(55)
-                            Layout.maximumHeight: window.s(55)
+                            Layout.preferredHeight: window.s(75)
+                            Layout.maximumHeight: window.s(75)
                             spacing: window.s(10)
 
                             opacity: introActions
@@ -656,89 +656,151 @@ Item {
                                 delegate: Rectangle {
                                     id: deskActionCapsule
                                     Layout.fillWidth: true
-                                    Layout.preferredHeight: window.s(55)
-                                    radius: window.s(12)
+                                    Layout.fillHeight: true
+                                    radius: window.s(14)
 
                                     property color c1: window[baseColor] || window.surface1
+                                    property color c2: Qt.lighter(c1, 1.2)
+
                                     color: deskActionMa.containsMouse ? window.surface1 : window.surface0
                                     border.color: deskActionMa.containsMouse ? c1 : window.surface2
                                     border.width: deskActionMa.containsMouse ? 2 : 1
-
                                     Behavior on color { ColorAnimation { duration: 200 } }
                                     Behavior on border.color { ColorAnimation { duration: 200 } }
 
+                                    scale: deskActionMa.pressed ? (0.98 - (0.01 * weight)) : (deskActionMa.containsMouse ? 1.08 : 1.0)
+                                    Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuart } }
+
+                                    property real fillLevel: 0.0
+                                    property bool triggered: false
+                                    property real flashOpacity: 0.0
+
+                                    Canvas {
+                                        id: deskWaveCanvas
+                                        anchors.fill: parent
+
+                                        property real wavePhase: 0.0
+                                        NumberAnimation on wavePhase {
+                                            running: deskActionCapsule.fillLevel > 0.0 && deskActionCapsule.fillLevel < 1.0
+                                            loops: Animation.Infinite
+                                            from: 0; to: Math.PI * 2; duration: 800
+                                        }
+                                        onWavePhaseChanged: requestPaint()
+                                        Connections { target: deskActionCapsule; function onFillLevelChanged() { deskWaveCanvas.requestPaint() } }
+
+                                        onPaint: {
+                                            var ctx = getContext("2d");
+                                            ctx.clearRect(0, 0, width, height);
+                                            if (deskActionCapsule.fillLevel <= 0.001) return;
+
+                                            var r = window.s(14);
+                                            var fillY = height * (1.0 - deskActionCapsule.fillLevel);
+                                            ctx.save();
+                                            ctx.beginPath();
+                                            ctx.moveTo(r, 0);
+                                            ctx.lineTo(width - r, 0);
+                                            ctx.arcTo(width, 0, width, r, r);
+                                            ctx.lineTo(width, height - r);
+                                            ctx.arcTo(width, height, width - r, height, r);
+                                            ctx.lineTo(r, height);
+                                            ctx.arcTo(0, height, 0, height - r, r);
+                                            ctx.lineTo(0, r);
+                                            ctx.arcTo(0, 0, r, 0, r);
+                                            ctx.closePath();
+                                            ctx.clip();
+
+                                            ctx.beginPath();
+                                            ctx.moveTo(0, fillY);
+                                            if (deskActionCapsule.fillLevel < 0.99) {
+                                                var waveAmp = window.s(10) * Math.sin(deskActionCapsule.fillLevel * Math.PI);
+                                                var cp1y = fillY + Math.sin(wavePhase) * waveAmp;
+                                                var cp2y = fillY + Math.cos(wavePhase + Math.PI) * waveAmp;
+                                                ctx.bezierCurveTo(width * 0.33, cp2y, width * 0.66, cp1y, width, fillY);
+                                                ctx.lineTo(width, height);
+                                                ctx.lineTo(0, height);
+                                            } else {
+                                                ctx.lineTo(width, 0);
+                                                ctx.lineTo(width, height);
+                                                ctx.lineTo(0, height);
+                                            }
+                                            ctx.closePath();
+
+                                            var grad = ctx.createLinearGradient(0, 0, 0, height);
+                                            grad.addColorStop(0, deskActionCapsule.c1.toString());
+                                            grad.addColorStop(1, deskActionCapsule.c2.toString());
+                                            ctx.fillStyle = grad;
+                                            ctx.fill();
+                                            ctx.restore();
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        anchors.fill: parent; radius: window.s(14); color: "#ffffff"
+                                        opacity: deskActionCapsule.flashOpacity
+                                        PropertyAnimation on opacity { id: deskFlashAnim; to: 0; duration: 500; easing.type: Easing.OutExpo }
+                                    }
+
                                     Text {
                                         anchors.centerIn: parent
-                                        text: icon
                                         font.family: "Iosevka Nerd Font"
                                         font.pixelSize: window.s(22)
-                                        color: deskActionMa.containsMouse ? c1 : window.overlay1
-                                        Behavior on color { ColorAnimation { duration: 200 } }
+                                        color: deskActionMa.containsMouse ? window.text : window.subtext0
+                                        text: icon
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                    }
+
+                                    Item {
+                                        anchors.left: parent.left; anchors.right: parent.right; anchors.bottom: parent.bottom
+                                        height: deskActionCapsule.height * deskActionCapsule.fillLevel
+                                        clip: true
+
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            y: (deskActionCapsule.height / 2) - (height / 2) - (deskActionCapsule.height - parent.height)
+                                            font.family: "Iosevka Nerd Font"
+                                            font.pixelSize: window.s(22)
+                                            color: window.crust
+                                            text: icon
+                                        }
                                     }
 
                                     MouseArea {
                                         id: deskActionMa
-                                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                        property bool isHeld: false
-                                        onPressed: { if (weight > 1.5) { isHeld = true; deskHoldTimer.start(); } }
-                                        onReleased: { deskHoldTimer.stop(); isHeld = false; if (weight <= 1.5) { Quickshell.execDetached(["sh", "-c", cmd]); Quickshell.execDetached(["sh", "-c", "echo 'close' > /tmp/qs_widget_state"]); } }
-                                        Timer { id: deskHoldTimer; interval: 500; onTriggered: { Quickshell.execDetached(["sh", "-c", cmd]); Quickshell.execDetached(["sh", "-c", "echo 'close' > /tmp/qs_widget_state"]); } }
-                                    }
-                                }
-                            }
-                        }
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: deskActionCapsule.triggered ? Qt.ArrowCursor : Qt.PointingHandCursor
 
-                        Rectangle {
-                            visible: !sysConfig.isLaptop
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: window.s(44)
-                            radius: window.s(12)
-                            color: window.surface0
-                            border.color: window.surface1
-                            border.width: 1
-
-                            opacity: introProfiles
-                            transform: Translate { y: window.s(15) * (1.0 - introProfiles) }
-
-                            Rectangle {
-                                id: deskSliderPill
-                                width: (parent.width - window.s(2)) / 3
-                                height: parent.height - window.s(2)
-                                y: window.s(1)
-                                radius: window.s(10)
-                                x: {
-                                    if (window.powerProfile === "performance") return window.s(1);
-                                    if (window.powerProfile === "balanced") return width + window.s(1);
-                                    return (width * 2) + window.s(1);
-                                }
-                                Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
-                                gradient: Gradient {
-                                    orientation: Gradient.Horizontal
-                                    GradientStop { position: 0.0; color: window.profileStart; Behavior on color { ColorAnimation{duration:400} } }
-                                    GradientStop { position: 1.0; color: window.profileEnd; Behavior on color { ColorAnimation{duration:400} } }
-                                }
-                            }
-
-                            RowLayout {
-                                anchors.fill: parent; spacing: 0
-                                Repeater {
-                                    model: ListModel {
-                                        ListElement { name: "performance"; icon: "󰓅"; label: "Perform" }
-                                        ListElement { name: "balanced"; icon: "󰗑"; label: "Balance" }
-                                        ListElement { name: "power-saver"; icon: "󰌪"; label: "Saver" }
-                                    }
-                                    delegate: Item {
-                                        id: deskProfileDelegate
-                                        required property string name
-                                        required property string icon
-                                        required property string label
-                                        Layout.fillWidth: true; Layout.fillHeight: true
-                                        RowLayout {
-                                            anchors.centerIn: parent; spacing: window.s(6)
-                                            Text { font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(15); color: window.powerProfile === deskProfileDelegate.name ? window.crust : (deskProfMa.containsMouse ? window.text : window.subtext0); text: deskProfileDelegate.icon; Behavior on color { ColorAnimation { duration: 200 } } }
-                                            Text { font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: window.s(11); color: window.powerProfile === deskProfileDelegate.name ? window.crust : (deskProfMa.containsMouse ? window.text : window.subtext0); text: deskProfileDelegate.label; Behavior on color { ColorAnimation { duration: 200 } } }
+                                        onPressed: {
+                                            if (!deskActionCapsule.triggered) {
+                                                deskDrainAnim.stop();
+                                                deskFillAnim.start();
+                                            }
                                         }
-                                        MouseArea { id: deskProfMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Quickshell.execDetached(["bash", "-c", "powerprofilesctl set " + deskProfileDelegate.name]); sysPoller.running = true; } }
+                                        onReleased: {
+                                            if (!deskActionCapsule.triggered && deskActionCapsule.fillLevel < 1.0) {
+                                                deskFillAnim.stop();
+                                                deskDrainAnim.start();
+                                            }
+                                        }
+                                    }
+
+                                    NumberAnimation {
+                                        id: deskFillAnim; target: deskActionCapsule; property: "fillLevel"; to: 1.0
+                                        duration: (550 * weight) * (1.0 - deskActionCapsule.fillLevel); easing.type: Easing.InSine
+                                        onFinished: {
+                                            deskActionCapsule.triggered = true; deskActionCapsule.flashOpacity = 0.6; deskFlashAnim.start();
+                                            deskExitTimer.start();
+                                        }
+                                    }
+
+                                    NumberAnimation {
+                                        id: deskDrainAnim; target: deskActionCapsule; property: "fillLevel"; to: 0.0
+                                        duration: 1500 * deskActionCapsule.fillLevel; easing.type: Easing.OutQuad
+                                    }
+
+                                    Timer {
+                                        id: deskExitTimer; interval: 500
+                                        onTriggered: { Quickshell.execDetached(["sh", "-c", cmd]); Quickshell.execDetached(["sh", "-c", "echo 'close' > /tmp/qs_widget_state"]); }
                                     }
                                 }
                             }
