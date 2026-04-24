@@ -4,19 +4,133 @@
   config,
   lib,
   ...
-}: {
+}: let
+  # ── Shared config: used by both user (Home Manager) and root (system-level) ──
+  sharedAliases = ''
+    alias sudo="sudo "
+    alias ..="cd .."
+    alias cl="clear"
+    alias q="exit"
+    alias s="source"
+    alias ":q"="exit"
+    alias ls="${pkgs-unstable.lsd}/bin/lsd"
+    alias la="${pkgs-unstable.lsd}/bin/lsd -lah"
+    alias tree="${pkgs-unstable.lsd}/bin/lsd --tree -a"
+    alias cat="${pkgs-unstable.bat}/bin/bat -pp"
+    alias lat="${pkgs-unstable.bat}/bin/bat -p"
+    alias less="${pkgs-unstable.bat}/bin/bat"
+    alias lgit="${pkgs.lazygit}/bin/lazygit"
+    alias du="${pkgs-unstable.dust}/bin/dust"
+    alias diff="${pkgs-unstable.difftastic}/bin/difft"
+  '';
+
+  sharedKeybindings = ''
+    # Navigation
+    bindkey '^a' end-of-line # CTRL+A
+    bindkey '^[[105;5u' beginning-of-line # CTRL+I
+    bindkey '^b' backward-word # CTRL+B
+    bindkey '^w' forward-word # CTRL+W
+    bindkey '^h' backward-char # CTRL+H
+    bindkey '^l' forward-char # CTRL+L
+
+    # History
+    bindkey '^k' history-search-backward # CTRL+K
+    bindkey '^j' history-search-forward # CTRL+J
+
+    # Modifying
+    bindkey '^[^H' backward-kill-word # CTRL+ALT+Backspace
+    bindkey '^f' autosuggest-accept # CTRL+F
+    bindkey '^d' kill-line # CTRL+D
+    bindkey '^u' undo # CTRL+U
+
+    bindkey '^[[108;6u' clear-screen # CTRL+SHIFT+L
+
+    # Hotkey insertions
+    bindkey -s '^Xgc' 'git commit -m ""\C-h'
+  '';
+
+  sharedCompletionStyle = ''
+    zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+    zstyle ':completion:*' menu no
+    zstyle ':completion:*' special-dirs false
+    zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '${pkgs-unstable.lsd}/bin/lsd -A --color always --icon always $realpath'
+    zstyle ':fzf-tab:complete:cd:*' fzf-preview '${pkgs-unstable.lsd}/bin/lsd -A --color always --icon always $realpath'
+    zstyle ':fzf-tab:*' fzf-flags --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+      --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+      --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
+      --color=selected-bg:#45475a \
+      --multi \
+      --bind=tab:accept
+  '';
+
+  sharedFzfOpts = ''
+    export FZF_DEFAULT_OPTS=" \
+      --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+      --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+      --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
+      --color=selected-bg:#45475a \
+      --multi"
+  '';
+
+  sharedPluginInit = ''
+    # Source/Load Zinit
+    export ZINIT_HOME="${pkgs.zinit}/share/zinit"
+    source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null
+
+    # Plugins
+    zinit light zsh-users/zsh-completions
+    zinit light Aloxaf/fzf-tab
+    zinit light zsh-users/zsh-autosuggestions
+  '';
+
+  sharedPostInit = ''
+    # FZF keybindings and completions
+    source "${pkgs.fzf}/share/fzf/key-bindings.zsh" 2>/dev/null
+    source "${pkgs.fzf}/share/fzf/completion.zsh" 2>/dev/null
+
+    # See hidden files
+    setopt glob_dots
+
+    # Smart cd
+    eval "$(${pkgs-unstable.zoxide}/bin/zoxide init --cmd cd zsh)"
+
+    # Syntax highlighting (must be last)
+    zinit light zsh-users/zsh-syntax-highlighting
+  '';
+
+  # ── Root init script: written to a file that utils.nix sources at runtime ──
+  rootInitScript = pkgs.writeText "root-zsh-init.sh" ''
+    ${sharedPluginInit}
+
+    # Oh-My-Posh (root theme with skull)
+    eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config /home/hailst0rm/.config/oh-my-posh/.omp-zsh-root.toml)"
+
+    ${sharedAliases}
+    ${sharedKeybindings}
+    ${sharedCompletionStyle}
+    ${sharedFzfOpts}
+    ${sharedPostInit}
+  '';
+in {
+  # Expose the root init script path for utils.nix to reference
+  options.zshRootInitScript = lib.mkOption {
+    type = lib.types.path;
+    default = rootInitScript;
+    internal = true;
+  };
+
   config = lib.mkIf (config.shell == "zsh") {
     home.file = {
       ".local/share/zsh/zinit".source = "${pkgs.zinit}/share/zinit";
       ".local/share/zsh/zinit".recursive = true;
       ".local/share/zsh/fzf".source = "${pkgs.fzf}/share/fzf";
+
+      # Root init script — deployed to a known path for system-level sourcing
+      ".config/zsh/root-init.zsh".source = rootInitScript;
     };
 
     programs.zsh = {
       enable = true;
-      #enableCompletion = true;
-      #autosuggestion.enable = true;
-      #syntaxHighlighting.enable = true;
       dotDir = "${config.home.homeDirectory}/.config/zsh";
 
       history = {
@@ -43,15 +157,9 @@
           then config.importConfig.hyprland.appLauncher
           else ""
         }"
-        export GIT_EXTERNAL_DIFF="difft" # Using difftastic for git diffs
+        export GIT_EXTERNAL_DIFF="difft"
         export ZINIT_HOME="$HOME/.local/share/zsh/zinit"
-        export FZF_DEFAULT_OPTS="--color=16"
-        export FZF_DEFAULT_OPTS=" \
-        --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
-        --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
-        --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
-        --color=selected-bg:#45475a \
-        --multi"
+        ${sharedFzfOpts}
       '';
 
       shellAliases = {
@@ -78,7 +186,6 @@
         ldocker = "lazydocker";
         ljournal = "lazyjournal";
         du = "dust";
-        # top = "bottom";
         pss = "procs";
         diff = "difft";
       };
@@ -256,74 +363,23 @@
         # Source/Load Zinit
         source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null
 
-        # Load completions
-        #autoload -Uz compinit && compinit
-
         # Add in zsh plugins
         zinit light zsh-users/zsh-completions # Command flag completions
         zinit light Aloxaf/fzf-tab # Fzf window for commands
-        #zinit light marlonrichert/zsh-autocomplete # Used for constant history box
         zinit light zsh-users/zsh-autosuggestions # Inline suggestion
-        # zinit light jeffreytse/zsh-vi-mode # Vim bindings
 
         # Oh-My-Posh
         eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ~/.config/oh-my-posh/.omp-zsh.toml)"
 
-        # === Keybindings ===
-
-        # Navigation
-        bindkey '^a' end-of-line # CTRL+A
-        bindkey '^[[105;5u' beginning-of-line # CTRL+I
-        bindkey '^b' backward-word # CTRL+B
-        bindkey '^w' forward-word # CTRL+W
-        bindkey '^h' backward-char # CTRL+H
-        bindkey '^l' forward-char # CTRL+L
-
-        # History
-        bindkey '^k' history-search-backward # CTRL+K
-        bindkey '^j' history-search-forward # CTRL+J
-        #bindkey '^r' history-incremental-search-backward # CTRL+R
-
-        # Modifying
-        bindkey '^[^H' backward-kill-word # CTRL+ALT+Backspace
-        bindkey '^f' autosuggest-accept # CTRL+F
-        bindkey '^d' kill-line # CTRL+D
-        bindkey '^u' undo # CTRL+U
-        #bindkey '^y' redo # CTRL+Y
-
-        # New line (not working yet)
-        # bindkey '^\^^M' self-insert-unmeta # CTRL+ENTER
-
-        bindkey '^[[108;6u' clear-screen # CTRL+SHIFT+L
-
-        # Hotkey insertions
-        bindkey -s '^Xgc' 'git commit -m ""\C-h' # Insert git commit template with cursor in quotes
-
-        # === ===
+        ${sharedKeybindings}
 
         # Completion styling
-        zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
         zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
-        zstyle ':completion:*' menu no
-        zstyle ':completion:*' special-dirs false
-        zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'lsd -A --color always --icon always $realpath'
-        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'lsd -A --color always --icon always $realpath'
-        zstyle ':fzf-tab:*' fzf-flags --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
-          --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
-          --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
-          --color=selected-bg:#45475a \
-          --multi \
-          --bind=tab:accept
-        #zstyle ':autocomplete:*' default-context history-incremental-search-backward
-        #zstyle ':autocomplete:history-search:*' list-lines 8  # int
-        #zstyle ':autocomplete:*' min-input 1
+        ${sharedCompletionStyle}
 
         # Load FZF Keybindings and Completions
         source ~/.local/share/zsh/fzf/key-bindings.zsh
         source ~/.local/share/zsh/fzf/completion.zsh
-
-        # Replay deferred commands
-        #zinit cdreplay -q
 
         # See hidden files
         setopt glob_dots
