@@ -37,51 +37,126 @@ in {
       enable = true;
       package = pkgs-unstable.claude-code;
 
-      # Coding preferences and context (CLAUDE.md equivalent)
+      # Global behavioral guidelines (Karpathy-inspired) → ~/.claude/CLAUDE.md
       memory.text = ''
-        # Coding Style & Preferences
+        # CLAUDE.md
 
-        ## General
-        - Use clear, descriptive variable and function names
-        - Prefer explicit over implicit
-        - Write idiomatic code for each language
-        - Include error handling and edge cases
-        - Add comments for complex logic, not obvious code
+        Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
-        ## NixOS Specific
-        - Follow Nix best practices and RFC conventions
-        - Use `lib.mkEnableOption` for boolean options
-        - Use `lib.mkIf` for conditional configuration
-        - Prefer `pkgs-unstable` for latest versions when needed
-        - Structure modules with proper imports and options
-        - Use `let...in` for complex attribute sets
-        - Prefer functional programming patterns
+        **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
-        ## Security & Red Teaming
-        - Follow OPSEC principles in all code
+        ## 1. Think Before Coding
+
+        **Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+        Before implementing:
+        - State your assumptions explicitly. If uncertain, ask.
+        - If multiple interpretations exist, present them - don't pick silently.
+        - If a simpler approach exists, say so. Push back when warranted.
+        - If something is unclear, stop. Name what's confusing. Ask.
+
+        ## 2. Simplicity First
+
+        **Minimum code that solves the problem. Nothing speculative.**
+
+        - No features beyond what was asked.
+        - No abstractions for single-use code.
+        - No "flexibility" or "configurability" that wasn't requested.
+        - No error handling for impossible scenarios.
+        - If you write 200 lines and it could be 50, rewrite it.
+
+        Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+        ## 3. Surgical Changes
+
+        **Touch only what you must. Clean up only your own mess.**
+
+        When editing existing code:
+        - Don't "improve" adjacent code, comments, or formatting.
+        - Don't refactor things that aren't broken.
+        - Match existing style, even if you'd do it differently.
+        - If you notice unrelated dead code, mention it - don't delete it.
+
+        When your changes create orphans:
+        - Remove imports/variables/functions that YOUR changes made unused.
+        - Don't remove pre-existing dead code unless asked.
+
+        The test: Every changed line should trace directly to the user's request.
+
+        ## 4. Goal-Driven Execution
+
+        **Define success criteria. Loop until verified.**
+
+        Transform tasks into verifiable goals:
+        - "Add validation" → "Write tests for invalid inputs, then make them pass"
+        - "Fix the bug" → "Write a test that reproduces it, then make it pass"
+        - "Refactor X" → "Ensure tests pass before and after"
+
+        For multi-step tasks, state a brief plan:
+        ```
+        1. [Step] → verify: [check]
+        2. [Step] → verify: [check]
+        3. [Step] → verify: [check]
+        ```
+
+        Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+        ---
+
+        **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+      '';
+
+      # General Nix ecosystem knowledge → ~/.claude/rules/nix-ecosystem.md
+      rules.nix-ecosystem = ''
+        # Nix Ecosystem
+
+        General knowledge for working in any Nix-based environment.
+
+        ## Package Discovery & Experimentation
+        - Search for packages: `nix search nixpkgs <query>`
+        - Try a package without installing: `nix shell nixpkgs#<package>` or `nix run nixpkgs#<package>`
+        - Check package info: `nix eval nixpkgs#<package>.meta.description`
+        - Use the MCP nixos tool to search packages, options, and documentation
+
+        ## Development Environments with direnv
+        Add a `shell.nix` or `default.nix` to the project directory:
+        ```nix
+        # save as shell.nix
+        { pkgs ? import <nixpkgs> {}}:
+        pkgs.mkShell {
+          packages = [ pkgs.hello ];
+        }
+        ```
+        Then enable direnv:
+        ```shell
+        echo "use nix" >> .envrc
+        direnv allow
+        ```
+        For flake-based projects, use `use flake` instead of `use nix` in `.envrc`.
+
+        ## Flakes
+        - `nix flake show` — inspect flake outputs
+        - `nix flake check` — validate a flake
+        - `nix flake update` — update all inputs
+        - `nix flake lock --update-input <input>` — update a single input
+
+        ## Secrets Management
+        - Use sops-nix for managing secrets in NixOS configurations
         - Never hardcode credentials or sensitive data
-        - Use proper secret management (sops-nix, etc.)
-        - Document security implications
-        - Consider defensive coding practices
+        - Secret files are encrypted at rest and decrypted at activation time
+        - Access secrets via `config.sops.secrets.<name>.path`
+
+        ## Debugging
+        - `nix repl` — interactive Nix evaluator; load a flake with `:lf .`
+        - `nix eval` — evaluate an expression without building
+        - `nix build --print-build-logs` — see full build output
+        - `nixos-rebuild build` — verify a NixOS config builds without switching
+
+        ## Security
+        - Follow OPSEC principles in all code
         - Think adversarially about code execution
-
-        ## Code Organization
-        - Keep functions small and focused (single responsibility)
-        - Group related functionality
-        - Use meaningful file and directory names
-        - Maintain consistent formatting (nixfmt for Nix)
-
-        ## Documentation
-        - Write clear commit messages (conventional commits style)
-        - Document non-obvious design decisions
-        - Include usage examples for complex functions
-        - Keep README files up to date
-
-        ## Testing & Validation
-        - Test configuration changes before deployment
-        - Use `nixos-rebuild build` to verify before switch
-        - Validate syntax with appropriate linters
-        - Consider edge cases and failure modes
+        - Consider defensive coding practices
+        - Document security implications of changes
       '';
 
       # MCP (Model Context Protocol) servers
@@ -151,7 +226,7 @@ in {
       settings = {
         # Editor preferences (if claude-code supports this)
         editor = {
-          tabSize = 2;
+          tabSize = 4;
           insertSpaces = true;
         };
 
