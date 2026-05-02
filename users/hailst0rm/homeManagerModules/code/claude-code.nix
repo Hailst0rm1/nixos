@@ -3,8 +3,16 @@
   lib,
   pkgs,
   pkgs-unstable,
+  inputs,
   ...
 }: let
+  notebooklm-py = pkgs.callPackage ../../../../pkgs/notebooklm-py/package.nix {};
+
+  notebooklm-skill = builtins.fetchurl {
+    url = "https://raw.githubusercontent.com/teng-lin/notebooklm-py/main/SKILL.md";
+    sha256 = "0pqyjpd1wwfzcc4xh20p2hh53nlwxcz23jw6q19zm7cgwk22fpxh";
+  };
+
   # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
   # Installs to a persistent directory on first run; explicitly adds 'debug' to fix
   # broken werift-rtp dependency (it uses debug but doesn't declare it)
@@ -12,6 +20,32 @@
     if (config.sops.secrets ? "services/discord/token")
     then config.sops.secrets."services/discord/token".path
     else "/run/secrets/services/discord/token";
+
+  perplexityKeyPath =
+    if (config.sops.secrets ? "services/perplexity/api-key")
+    then config.sops.secrets."services/perplexity/api-key".path
+    else "/run/secrets/services/perplexity/api-key";
+
+  perplexityMcpWrapper = pkgs.writeShellScript "perplexity-mcp-wrapper" ''
+    KEY_FILE="${perplexityKeyPath}"
+    if [ -f "$KEY_FILE" ]; then
+      export PERPLEXITY_API_KEY="$(cat "$KEY_FILE")"
+    fi
+    exec ${pkgs-unstable.perplexity-mcp}/bin/perplexity-mcp "$@"
+  '';
+
+  exaKeyPath =
+    if (config.sops.secrets ? "services/exa/api-key")
+    then config.sops.secrets."services/exa/api-key".path
+    else "/run/secrets/services/exa/api-key";
+
+  exaMcpWrapper = pkgs.writeShellScript "exa-mcp-wrapper" ''
+    KEY_FILE="${exaKeyPath}"
+    if [ -f "$KEY_FILE" ]; then
+      export EXA_API_KEY="$(cat "$KEY_FILE")"
+    fi
+    exec ${pkgs.nodejs}/bin/npx -y exa-mcp-server "$@"
+  '';
 
   discordMcpWrapper = pkgs.writeShellScript "discord-mcp-wrapper" ''
     TOKEN_FILE="${discordTokenPath}"
@@ -33,9 +67,24 @@ in {
   options.code.claude-code.enable = lib.mkEnableOption "Enable Claude Code CLI";
 
   config = lib.mkIf config.code.claude-code.enable {
+    # Ensure direnv is active inside Claude's shell environment so
+    # project-specific shell.nix / flake.nix envs are available to tool calls
+    programs.zsh.envExtra = lib.mkAfter ''
+      if command -v direnv >/dev/null; then
+        if [[ -n "$CLAUDECODE" ]]; then
+          eval "$(direnv hook zsh)"
+          eval "$(DIRENV_LOG_FORMAT= direnv export zsh)"
+          direnv status --json | ${pkgs.jq}/bin/jq -e ".state.foundRC.allowed==0" >/dev/null || direnv allow >/dev/null 2>&1
+        fi
+      fi
+    '';
+
     programs.claude-code = {
       enable = true;
       package = pkgs-unstable.claude-code;
+
+      # Skills
+      skills.notebooklm = builtins.readFile notebooklm-skill;
 
       # Global behavioral guidelines (Karpathy-inspired) → ~/.claude/CLAUDE.md
       memory.text = ''
@@ -185,6 +234,18 @@ in {
           args = [];
         };
 
+        # Perplexity AI search
+        perplexity = {
+          command = "${perplexityMcpWrapper}";
+          args = [];
+        };
+
+        # Exa web search and crawling
+        exa = {
+          command = "${exaMcpWrapper}";
+          args = [];
+        };
+
         # GitHub integration (if needed for PR reviews, issues, etc.)
         # github = {
         #   command = "npx";
@@ -224,6 +285,65 @@ in {
 
       # Additional settings
       settings = {
+        showThinkingSummaries = true;
+        cleanupPeriodDays = 14;
+        includeCoAuthoredBy = false;
+
+        permissions = {
+          allow = [
+            "Read"
+            "Glob"
+            "Grep"
+            "LS"
+            "Edit"
+            "MultiEdit"
+            "Write"
+            "Bash(git status)"
+            "Bash(git diff *)"
+            "Bash(git log *)"
+            "Bash(git add *)"
+            "Bash(git commit *)"
+            "Bash(git checkout *)"
+            "Bash(git branch *)"
+            "Bash(nix *)"
+            "Bash(nixfmt *)"
+            "Bash(nixos-rebuild build *)"
+          ];
+          deny = [
+            "Bash(sops:*)"
+            "Bash(age:*)"
+            "Read(/run/secrets/**)"
+            "Read(/run/secrets.d/**)"
+            "Read(/home/hailst0rm/.config/sops/**)"
+            "Read(/home/hailst0rm/.config/sops-nix/**)"
+          ];
+        };
+
+        env = {
+          CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
+        };
+
+        # Plugins
+        enabledPlugins = {
+          "skill-creator@claude-plugins-official" = true;
+          "obsidian@obsidian-skills" = true;
+        };
+
+        extraKnownMarketplaces = {
+          claude-plugins-official = {
+            source = {
+              source = "github";
+              repo = "anthropics/claude-plugins-official";
+            };
+          };
+          obsidian-skills = {
+            source = {
+              source = "github";
+              repo = "kepano/obsidian-skills";
+            };
+          };
+        };
+
         # Editor preferences (if claude-code supports this)
         editor = {
           tabSize = 4;
@@ -243,33 +363,8 @@ in {
       nodejs # For npm/npx MCP servers
       git # For git MCP server
 
-      # Add companion package
-      companion
-
-      # Claude Web launcher script
-      (pkgs.writeShellScriptBin "claude-web" ''
-        #!/usr/bin/env bash
-
-        # Colours
-        GREEN='\033[0;32m'
-        BLUE='\033[0;34m'
-        RESET='\033[0m'
-
-        echo -e "''${BLUE}🚀 Starting The Vibe Companion...''${RESET}"
-
-        # Start companion in background
-        the-vibe-companion &>/dev/null &
-        COMPANION_PID=$!
-
-        # Wait a moment for it to start
-        sleep 2
-
-        # Open browser to localhost:3456
-        echo -e "''${BLUE}🌐 Opening http://localhost:3456 in browser...''${RESET}"
-        ${config.browser} http://localhost:3456 &>/dev/null &
-
-        echo -e "''${GREEN}✓ Done!''${RESET}"
-      '')
+      # NotebookLM automation CLI
+      notebooklm-py
     ];
   };
 }

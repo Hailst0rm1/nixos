@@ -236,7 +236,7 @@ in {
                 local auto_resolved=true
                 for f in $conflict_files; do
                   case "$f" in
-                    pkgs/companion/package.nix)
+                    pkgs/claudecodeui/package.nix)
                       echo -e "\033[0;33m⚠️  Auto-resolving $f (keeping local version)\033[0m"
                       git -C ~/.nixos checkout --ours "$f"
                       git -C ~/.nixos add "$f"

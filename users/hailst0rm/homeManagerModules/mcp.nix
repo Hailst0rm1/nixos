@@ -2,10 +2,37 @@
   config,
   lib,
   pkgs,
+  pkgs-unstable,
   ...
 }:
 with lib; let
   cfg = config.services.claude-mcp;
+
+  perplexityKeyPath =
+    if (config.sops.secrets ? "services/perplexity/api-key")
+    then config.sops.secrets."services/perplexity/api-key".path
+    else "/run/secrets/services/perplexity/api-key";
+
+  perplexityMcpWrapper = pkgs.writeShellScript "perplexity-mcp-wrapper" ''
+    KEY_FILE="${perplexityKeyPath}"
+    if [ -f "$KEY_FILE" ]; then
+      export PERPLEXITY_API_KEY="$(cat "$KEY_FILE")"
+    fi
+    exec ${pkgs-unstable.perplexity-mcp}/bin/perplexity-mcp "$@"
+  '';
+
+  exaKeyPath =
+    if (config.sops.secrets ? "services/exa/api-key")
+    then config.sops.secrets."services/exa/api-key".path
+    else "/run/secrets/services/exa/api-key";
+
+  exaMcpWrapper = pkgs.writeShellScript "exa-mcp-wrapper" ''
+    KEY_FILE="${exaKeyPath}"
+    if [ -f "$KEY_FILE" ]; then
+      export EXA_API_KEY="$(cat "$KEY_FILE")"
+    fi
+    exec ${pkgs.nodejs}/bin/npx -y exa-mcp-server "$@"
+  '';
 
   # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
   # Installs to a persistent directory on first run; explicitly adds 'debug' to fix
@@ -47,15 +74,16 @@ with lib; let
         args = [];
       };
     })
-    // (optionalAttrs cfg.servers.obsidian.enable {
-      mcp-obsidian = {
-        command = "uvx";
-        args = ["mcp-obsidian"];
-        env = {
-          OBSIDIAN_API_KEY = cfg.servers.obsidian.apiKey;
-          OBSIDIAN_HOST = cfg.servers.obsidian.host;
-          OBSIDIAN_PORT = toString cfg.servers.obsidian.port;
-        };
+    // (optionalAttrs cfg.servers.perplexity.enable {
+      perplexity = {
+        command = "${perplexityMcpWrapper}";
+        args = [];
+      };
+    })
+    // (optionalAttrs cfg.servers.exa.enable {
+      exa = {
+        command = "${exaMcpWrapper}";
+        args = [];
       };
     });
 
@@ -73,26 +101,12 @@ in {
         enable = mkEnableOption "Discord MCP server (read servers, channels, messages)";
       };
 
-      obsidian = {
-        enable = mkEnableOption "Obsidian MCP server";
+      perplexity = {
+        enable = mkEnableOption "Perplexity AI search MCP server";
+      };
 
-        apiKey = mkOption {
-          type = types.str;
-          default = "";
-          description = "Obsidian Local REST API key. Set this to the API key from the Obsidian Local REST API plugin.";
-        };
-
-        host = mkOption {
-          type = types.str;
-          default = "localhost";
-          description = "Obsidian REST API host.";
-        };
-
-        port = mkOption {
-          type = types.port;
-          default = 27124;
-          description = "Obsidian REST API port.";
-        };
+      exa = {
+        enable = mkEnableOption "Exa web search MCP server";
       };
     };
   };

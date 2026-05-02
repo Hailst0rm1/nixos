@@ -119,13 +119,14 @@
   };
 
   services = {
-    companion.enable = lib.mkDefault false; # Claude Code Web UI
+    claudecodeui.enable = lib.mkDefault true; # Claude Code UI Web Interface
     claude-mcp = {
       enable = lib.mkDefault true;
       servers = {
         nixos.enable = lib.mkDefault true;
         discord.enable = lib.mkDefault true;
-        obsidian.enable = lib.mkDefault true;
+        perplexity.enable = lib.mkDefault true;
+        exa.enable = lib.mkDefault true;
       };
     };
     whisperStt = {

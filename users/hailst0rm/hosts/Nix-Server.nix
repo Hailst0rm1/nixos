@@ -40,7 +40,7 @@
   };
 
   services = {
-    companion.enable = true; # Claude Code Web UI
+    claudecodeui.enable = true; # Claude Code UI Web Interface
     whisperStt.enable = false;
   };
 }

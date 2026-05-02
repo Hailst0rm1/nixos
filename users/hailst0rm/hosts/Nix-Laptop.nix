@@ -14,6 +14,7 @@
   };
 
   code.claude-code.enable = true;
+  services.claudecodeui.enable = true;
 
   applications = {
     youtube-music.enable = true;

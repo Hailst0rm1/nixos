@@ -186,7 +186,7 @@
                   auto_resolved=true
                   for f in $conflict_files; do
                     case "$f" in
-                      pkgs/companion/package.nix)
+                      pkgs/claudecodeui/package.nix)
                         echo -e "''${YELLOW}⚠️  Auto-resolving $f (keeping local version)''${RESET}"
                         git checkout --ours "$f"
                         git add "$f"

@@ -49,6 +49,8 @@
           };
           "services/discord/token" = {};
           "services/openweather" = {};
+          "services/perplexity/api-key" = {};
+          "services/exa/api-key" = {};
         };
       };
     })
