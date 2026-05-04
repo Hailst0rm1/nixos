@@ -47,6 +47,22 @@
     exec ${pkgs.nodejs}/bin/npx -y exa-mcp-server "$@"
   '';
 
+  n8nApiKeyPath =
+    if (config.sops.secrets ? "services/n8n/api-key")
+    then config.sops.secrets."services/n8n/api-key".path
+    else "/run/secrets/services/n8n/api-key";
+
+  n8nMcpWrapper = pkgs.writeShellScript "n8n-mcp-wrapper" ''
+    KEY_FILE="${n8nApiKeyPath}"
+    if [ -f "$KEY_FILE" ]; then
+      export N8N_API_KEY="$(cat "$KEY_FILE")"
+    fi
+    export N8N_API_URL="http://nix-server:5678"
+    export WEBHOOK_SECURITY_MODE="permissive"
+    export MCP_MODE="stdio"
+    exec ${pkgs.nodejs}/bin/npx -y n8n-mcp "$@"
+  '';
+
   discordMcpWrapper = pkgs.writeShellScript "discord-mcp-wrapper" ''
     TOKEN_FILE="${discordTokenPath}"
     if [ -f "$TOKEN_FILE" ]; then
@@ -243,6 +259,12 @@ in {
         # Exa web search and crawling
         exa = {
           command = "${exaMcpWrapper}";
+          args = [];
+        };
+
+        # n8n workflow automation
+        n8n = {
+          command = "${n8nMcpWrapper}";
           args = [];
         };
 

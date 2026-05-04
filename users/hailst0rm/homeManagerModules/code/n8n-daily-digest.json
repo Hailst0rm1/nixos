@@ -1,0 +1,225 @@
+{
+  "name": "Daily News Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Daily 7AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCFig7skuwYrCIGy0tuZHA2Q"
+      },
+      "id": "rss-yt-seankochel",
+      "name": "YT: Sean Kochel",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [250, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCy8ntxFEudOCRZYT1f7ya9Q"
+      },
+      "id": "rss-yt-13cubed",
+      "name": "YT: 13Cubed",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [250, 250]
+    },
+    {
+      "parameters": {
+        "url": "https://github.com/volcengine/OpenViking/releases.atom"
+      },
+      "id": "rss-gh-openviking",
+      "name": "GH: OpenViking",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [250, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://github.com/n8n-io/n8n/releases.atom"
+      },
+      "id": "rss-gh-n8n",
+      "name": "GH: n8n",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [250, 550]
+    },
+    {
+      "parameters": {
+        "url": "https://www.bleepingcomputer.com/feed/"
+      },
+      "id": "rss-bleeping",
+      "name": "BleepingComputer",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [250, 700]
+    },
+    {
+      "parameters": {
+        "url": "https://trendshift.io/feed?language=&spoken_language_code=en",
+        "method": "GET"
+      },
+      "id": "http-trendshift",
+      "name": "TrendShift AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [250, 850]
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "merge-all",
+      "name": "Merge All",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [550, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter to last 24 hours and format items\nconst now = new Date();\nconst oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);\n\nconst items = $input.all();\nconst filtered = [];\n\nfor (const item of items) {\n  const data = item.json;\n  \n  // Try to parse date from common RSS fields\n  const dateStr = data.pubDate || data.isoDate || data.published || data.updated || data.date || '';\n  const itemDate = dateStr ? new Date(dateStr) : null;\n  \n  // Include if date is within 24h or if we can't determine the date\n  if (!itemDate || itemDate >= oneDayAgo) {\n    filtered.push({\n      json: {\n        title: data.title || 'No title',\n        source: data.creator || data.author || data['dc:creator'] || 'Unknown',\n        link: data.link || data.url || '',\n        description: (data.contentSnippet || data.description || data.summary || '').substring(0, 200),\n        date: dateStr\n      }\n    });\n  }\n}\n\n// Format as text for the AI\nconst text = filtered.map((item, i) => \n  `${i+1}. [${item.json.title}]\\n   Source: ${item.json.source}\\n   Link: ${item.json.link}\\n   Summary: ${item.json.description}\\n   Date: ${item.json.date}`\n).join('\\n\\n');\n\nreturn [{ json: { itemCount: filtered.length, digest: text, items: filtered.map(i => i.json) } }];"
+      },
+      "id": "code-filter",
+      "name": "Filter & Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.digest }}",
+        "options": {
+          "systemMessage": "You are a news curator for a cybersecurity and AI professional. From the items provided, select ONLY those relevant to: AI, machine learning, LLMs, offensive security, zero-days, ransomware, critical CVEs, new security tools, or notable open-source releases. Ignore general advisories, product announcements, marketing content, and routine updates.\n\nWrite a concise daily briefing with bullet points for each selected item (max 2 sentences each). Group by category:\n\n## AI & ML\n## Security\n## Tools & Releases\n## Videos\n\nIf a category has no items, omit it. Keep the total briefing under 500 words."
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Summarizer",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "llm-model",
+      "name": "LLM Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8080/news-digest",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Title",
+              "value": "Daily News Digest"
+            },
+            {
+              "name": "Priority",
+              "value": "3"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.output }}"
+      },
+      "id": "ntfy-send",
+      "name": "Send to ntfy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1300, 300]
+    }
+  ],
+  "connections": {
+    "Daily 7AM": {
+      "main": [
+        [
+          {"node": "YT: Sean Kochel", "type": "main", "index": 0},
+          {"node": "YT: 13Cubed", "type": "main", "index": 0},
+          {"node": "GH: OpenViking", "type": "main", "index": 0},
+          {"node": "GH: n8n", "type": "main", "index": 0},
+          {"node": "BleepingComputer", "type": "main", "index": 0},
+          {"node": "TrendShift AI", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "YT: Sean Kochel": {
+      "main": [
+        [{"node": "Merge All", "type": "main", "index": 0}]
+      ]
+    },
+    "YT: 13Cubed": {
+      "main": [
+        [{"node": "Merge All", "type": "main", "index": 0}]
+      ]
+    },
+    "GH: OpenViking": {
+      "main": [
+        [{"node": "Merge All", "type": "main", "index": 0}]
+      ]
+    },
+    "GH: n8n": {
+      "main": [
+        [{"node": "Merge All", "type": "main", "index": 0}]
+      ]
+    },
+    "BleepingComputer": {
+      "main": [
+        [{"node": "Merge All", "type": "main", "index": 0}]
+      ]
+    },
+    "TrendShift AI": {
+      "main": [
+        [{"node": "Merge All", "type": "main", "index": 0}]
+      ]
+    },
+    "Merge All": {
+      "main": [
+        [{"node": "Filter & Format", "type": "main", "index": 0}]
+      ]
+    },
+    "Filter & Format": {
+      "main": [
+        [{"node": "AI Summarizer", "type": "main", "index": 0}]
+      ]
+    },
+    "AI Summarizer": {
+      "main": [
+        [{"node": "Send to ntfy", "type": "main", "index": 0}]
+      ]
+    },
+    "LLM Model": {
+      "ai_languageModel": [
+        [{"node": "AI Summarizer", "type": "ai_languageModel", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "pinData": {}
+}

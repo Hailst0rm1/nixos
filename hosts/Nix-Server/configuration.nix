@@ -360,6 +360,8 @@
         activeRecordSaltFile = config.sops.secrets."services/gitlab/recordSalt".path;
       };
     };
+    n8n.podman.enable = true;
+    notebooklm-bridge.enable = true;
     podman.enable = true;
     openssh.enable = true;
     cloudflare = {
