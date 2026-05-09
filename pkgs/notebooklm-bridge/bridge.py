@@ -49,12 +49,6 @@ class Handler(BaseHTTPRequestHandler):
         links = body.get("links", [])
         include_trending = body.get("include_trending", False)
 
-        if not links:
-            self.send_response(400)
-            self.end_headers()
-            self.wfile.write(b'{"error": "no links"}')
-            return
-
         today = date.today().strftime("%Y-%m-%d")
         title = "Daily Digest " + today
 
@@ -91,16 +85,18 @@ class Handler(BaseHTTPRequestHandler):
                 log(f"failed to add source: {link} — {err}")
 
         if not source_ids:
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({
+            log("no sources added, creating empty notebook")
+            response = {
                 "notebook_id": notebook_id,
                 "title": title,
                 "sources_added": 0,
                 "sources_failed": sources_failed,
-                "error": "no sources were added successfully",
-            }).encode())
+                "audio_generated": False,
+            }
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
             return
 
         # Wait for all sources to be indexed before prompting
@@ -115,16 +111,21 @@ class Handler(BaseHTTPRequestHandler):
             "For each, include the repository name with link, star count, and description."
         ) if include_trending else ""
 
+        links_list = "\n".join(f"- {link}" for link in links if link.startswith("http"))
+
         summary_prompt = (
             "Create a structured summary with the following format:\n\n"
             "## Daily Digest Summary\n"
             "A short combined summary of all the resources (2-3 sentences).\n\n"
             "## Links & Highlights\n"
-            "A list where each item is the link to the resource followed by a one sentence summary.\n\n"
+            "A list where each item is a one sentence summary followed by the source URL in parentheses. "
+            "Example: 'Claude Just Solved Session Limits: Anthropic's new SpaceX partnership doubles Claude Code limits. (https://youtube.com/watch?v=abc123)'\n\n"
             "## Detailed Summaries\n"
             "For each link, write a paragraph-length summary of the content."
             f"{trending_section}\n\n"
-            "Include every source. Use the original link URL for each item.\n\n"
+            "Here are the source URLs — you MUST use these exact URLs in your output:\n"
+            f"{links_list}\n\n"
+            "Match each source's content to its URL above. "
             "Do not end with questions, suggestions, or offers to do more. "
             "Just provide the summary and stop."
         )
@@ -141,9 +142,11 @@ class Handler(BaseHTTPRequestHandler):
         audio_prompt = (
             "Create a daily news briefing podcast. "
             "Focus on what matters for a cybersecurity and AI professional. "
-            "Cover each topic in depth."
+            "Keep the total podcast under 20 minutes. "
+            "Spend no more than 5 minutes per resource. "
+            "Be concise and move quickly between topics."
         )
-        out, err, rc = run_cmd(["generate", "audio", audio_prompt, "--notebook", notebook_id, "--length", "long", "--json"])
+        out, err, rc = run_cmd(["generate", "audio", audio_prompt, "--notebook", notebook_id, "--json"])
         if rc == 0:
             log("audio generation started")
         else:

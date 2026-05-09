@@ -68,6 +68,7 @@
   # IDE for coding
   code = {
     claude-code.enable = lib.mkDefault false;
+    codex.enable = lib.mkDefault false;
     helix = {
       enable = lib.mkDefault true;
       languages = {

@@ -35,6 +35,7 @@ in {
         N8N_PORT = toString cfg.port;
         N8N_DIAGNOSTICS_ENABLED = "false";
         N8N_VERSION_NOTIFICATIONS_ENABLED = "false";
+        N8N_SECURE_COOKIE = "false";
         NOTEBOOKLM_BRIDGE_URL = "http://127.0.0.1:9090";
       };
     };

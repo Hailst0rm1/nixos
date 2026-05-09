@@ -25,6 +25,7 @@
 
   code.vscode.enable = false;
   code.claude-code.enable = true;
+  code.codex.enable = true;
 
   applications = {
     bitwarden.enable = false;

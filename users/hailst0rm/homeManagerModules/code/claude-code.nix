@@ -7,10 +7,18 @@
   ...
 }: let
   notebooklm-py = pkgs.callPackage ../../../../pkgs/notebooklm-py/package.nix {};
+  codeburn = pkgs.callPackage ../../../../pkgs/codeburn/package.nix {};
+
+  gsd-repo = pkgs.fetchFromGitHub {
+    owner = "gsd-build";
+    repo = "get-shit-done";
+    rev = "main";
+    hash = "sha256-l9NnhpEbHzc7EUOIm0/kv3o5hY4jxlLZN2CMpEh5Axs=";
+  };
 
   notebooklm-skill = builtins.fetchurl {
     url = "https://raw.githubusercontent.com/teng-lin/notebooklm-py/main/SKILL.md";
-    sha256 = "0pqyjpd1wwfzcc4xh20p2hh53nlwxcz23jw6q19zm7cgwk22fpxh";
+    sha256 = "1nyyncqshbpikid0mxnm61dqf5fwv6mchjkn8xj2z13d5av40k4y";
   };
 
   # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
@@ -348,7 +356,9 @@ in {
         # Plugins
         enabledPlugins = {
           "skill-creator@claude-plugins-official" = true;
+          "superpowers@claude-plugins-official" = true;
           "obsidian@obsidian-skills" = true;
+          "context-mode@context-mode" = true;
         };
 
         extraKnownMarketplaces = {
@@ -362,6 +372,12 @@ in {
             source = {
               source = "github";
               repo = "kepano/obsidian-skills";
+            };
+          };
+          context-mode = {
+            source = {
+              source = "github";
+              repo = "mksglu/context-mode";
             };
           };
         };
@@ -379,6 +395,20 @@ in {
       };
     };
 
+    # GSD (Get Shit Done) commands and agents
+    home.file.".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
+    home.file.".claude/agents" = {
+      source = "${gsd-repo}/agents";
+      recursive = true;
+    };
+
+    # VS Code settings for Claude Code extension (only when VS Code is enabled)
+    programs.vscode.profiles.default.userSettings = lib.mkIf config.code.vscode.enable {
+      "claudeCode.allowDangerouslySkipPermissions" = true;
+      "claudeCode.enableNewConversationShortcut" = true;
+      "claudeCode.claudeProcessWrapper" = "${pkgs-unstable.claude-code}/bin/claude";
+    };
+
     # Ensure required dependencies are available
     home.packages = with pkgs; [
       uv # For Python MCP servers
@@ -387,6 +417,9 @@ in {
 
       # NotebookLM automation CLI
       notebooklm-py
+
+      # AI coding token usage tracker
+      codeburn
     ];
   };
 }

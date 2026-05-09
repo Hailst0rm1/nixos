@@ -362,6 +362,8 @@
     };
     n8n.podman.enable = true;
     notebooklm-bridge.enable = true;
+    rsshub.enable = true;
+    hermes-agent.enable = true;
     podman.enable = true;
     openssh.enable = true;
     cloudflare = {
