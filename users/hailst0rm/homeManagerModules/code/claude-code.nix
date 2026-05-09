@@ -21,16 +21,21 @@
     sha256 = "1nyyncqshbpikid0mxnm61dqf5fwv6mchjkn8xj2z13d5av40k4y";
   };
 
+  git-workflow-skill = builtins.fetchurl {
+    url = "https://raw.githubusercontent.com/affaan-m/everything-claude-code/main/skills/git-workflow/SKILL.md";
+    sha256 = "0yj08gdk7dy2wwrd4z9x1088812g0v5ix6pikcj4mphxkzy08zd6";
+  };
+
   # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
   # Installs to a persistent directory on first run; explicitly adds 'debug' to fix
   # broken werift-rtp dependency (it uses debug but doesn't declare it)
   discordTokenPath =
-    if (config.sops.secrets ? "services/discord/token")
+    if config.importConfig.sops.enable
     then config.sops.secrets."services/discord/token".path
     else "/run/secrets/services/discord/token";
 
   perplexityKeyPath =
-    if (config.sops.secrets ? "services/perplexity/api-key")
+    if config.importConfig.sops.enable
     then config.sops.secrets."services/perplexity/api-key".path
     else "/run/secrets/services/perplexity/api-key";
 
@@ -43,7 +48,7 @@
   '';
 
   exaKeyPath =
-    if (config.sops.secrets ? "services/exa/api-key")
+    if config.importConfig.sops.enable
     then config.sops.secrets."services/exa/api-key".path
     else "/run/secrets/services/exa/api-key";
 
@@ -56,7 +61,7 @@
   '';
 
   n8nApiKeyPath =
-    if (config.sops.secrets ? "services/n8n/api-key")
+    if config.importConfig.sops.enable
     then config.sops.secrets."services/n8n/api-key".path
     else "/run/secrets/services/n8n/api-key";
 
@@ -69,6 +74,19 @@
     export WEBHOOK_SECURITY_MODE="permissive"
     export MCP_MODE="stdio"
     exec ${pkgs.nodejs}/bin/npx -y n8n-mcp "$@"
+  '';
+
+  githubPatPath =
+    if config.importConfig.sops.enable
+    then config.sops.secrets."services/github/pat".path
+    else "/run/secrets/services/github/pat";
+
+  githubMcpWrapper = pkgs.writeShellScript "github-mcp-wrapper" ''
+    KEY_FILE="${githubPatPath}"
+    if [ -f "$KEY_FILE" ]; then
+      export GITHUB_PERSONAL_ACCESS_TOKEN="$(cat "$KEY_FILE")"
+    fi
+    exec ${pkgs.nodejs}/bin/npx -y @modelcontextprotocol/server-github "$@"
   '';
 
   discordMcpWrapper = pkgs.writeShellScript "discord-mcp-wrapper" ''
@@ -109,6 +127,7 @@ in {
 
       # Skills
       skills.notebooklm = builtins.readFile notebooklm-skill;
+      skills.git-workflow = builtins.readFile git-workflow-skill;
 
       # Global behavioral guidelines (Karpathy-inspired) → ~/.claude/CLAUDE.md
       memory.text = ''
@@ -232,60 +251,6 @@ in {
         - Document security implications of changes
       '';
 
-      # MCP (Model Context Protocol) servers
-      mcpServers = {
-        # NixOS-specific tooling
-        nixos = {
-          command = "nix";
-          args = ["run" "github:utensils/mcp-nixos" "--"];
-        };
-
-        # Filesystem access (useful for workspace operations)
-        filesystem = {
-          command = "npx";
-          args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
-        };
-
-        # Git operations
-        git = {
-          command = "uvx";
-          args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
-        };
-
-        # Discord integration (read servers, channels, messages)
-        discord = {
-          command = "${discordMcpWrapper}";
-          args = [];
-        };
-
-        # Perplexity AI search
-        perplexity = {
-          command = "${perplexityMcpWrapper}";
-          args = [];
-        };
-
-        # Exa web search and crawling
-        exa = {
-          command = "${exaMcpWrapper}";
-          args = [];
-        };
-
-        # n8n workflow automation
-        n8n = {
-          command = "${n8nMcpWrapper}";
-          args = [];
-        };
-
-        # GitHub integration (if needed for PR reviews, issues, etc.)
-        # github = {
-        #   command = "npx";
-        #   args = ["-y" "@modelcontextprotocol/server-github"];
-        #   env = {
-        #     GITHUB_PERSONAL_ACCESS_TOKEN = ""; # Set via environment or sops
-        #   };
-        # };
-      };
-
       # Custom commands for common workflows
       # commands = {
       #   # NixOS rebuild shortcut
@@ -316,6 +281,43 @@ in {
       # Additional settings
       settings = {
         showThinkingSummaries = true;
+
+        # MCP (Model Context Protocol) servers
+        # Defined in settings (not mcpServers option) so both CLI and VSCode can use them
+        mcpServers = {
+          nixos = {
+            command = "nix";
+            args = ["run" "github:utensils/mcp-nixos" "--"];
+          };
+          filesystem = {
+            command = "npx";
+            args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
+          };
+          git = {
+            command = "uvx";
+            args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
+          };
+          discord = {
+            command = "${discordMcpWrapper}";
+            args = [];
+          };
+          perplexity = {
+            command = "${perplexityMcpWrapper}";
+            args = [];
+          };
+          exa = {
+            command = "${exaMcpWrapper}";
+            args = [];
+          };
+          n8n = {
+            command = "${n8nMcpWrapper}";
+            args = [];
+          };
+          github = {
+            command = "${githubMcpWrapper}";
+            args = [];
+          };
+        };
         cleanupPeriodDays = 14;
         includeCoAuthoredBy = false;
 
@@ -359,6 +361,7 @@ in {
           "superpowers@claude-plugins-official" = true;
           "obsidian@obsidian-skills" = true;
           "context-mode@context-mode" = true;
+          "n8n-skills@n8n-skills" = true;
         };
 
         extraKnownMarketplaces = {
@@ -372,6 +375,12 @@ in {
             source = {
               source = "github";
               repo = "kepano/obsidian-skills";
+            };
+          };
+          n8n-skills = {
+            source = {
+              source = "github";
+              repo = "czlonkowski/n8n-skills";
             };
           };
           context-mode = {

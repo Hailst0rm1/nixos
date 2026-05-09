@@ -52,6 +52,7 @@
           "services/perplexity/api-key" = {};
           "services/exa/api-key" = {};
           "services/n8n/api-key" = {};
+          "services/github/pat" = {};
         };
       };
     })
