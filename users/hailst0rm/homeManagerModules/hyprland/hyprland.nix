@@ -306,19 +306,19 @@ in {
         bindl = [
           ",switch:on:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, disable\""
           ",switch:off:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, 1920x1200,0x0,1\""
-          ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+          ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
           ", XF86AudioPlay, exec, playerctl play-pause"
           ", XF86AudioPrev, exec, playerctl previous"
           ", XF86AudioNext, exec, playerctl next"
-          ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+          ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle && bash ~/.config/quickshell/osd/osd_trigger.sh mic"
           ", XF86KbdLightOnOff, exec, toggle-backlit-keys"
         ];
 
         bindel = [
-          ", XF86MonBrightnessUp, exec, brightnessctl set +5%"
-          ", XF86MonBrightnessDown, exec, brightnessctl set 5%-"
-          ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
-          ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+          ", XF86MonBrightnessUp, exec, brightnessctl set +5% && bash ~/.config/quickshell/osd/osd_trigger.sh brightness"
+          ", XF86MonBrightnessDown, exec, brightnessctl set 5%- && bash ~/.config/quickshell/osd/osd_trigger.sh brightness"
+          ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
+          ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
         ];
 
         exec-once = [

@@ -124,6 +124,8 @@ in {
         "ignorezero, quickshell"
         "blur, qs-master"
         "ignorezero, qs-master"
+        "blur, qs-osd"
+        "ignorezero, qs-osd"
       ];
     };
 

@@ -8,6 +8,7 @@ import Quickshell.Services.Notifications
 import "WindowRegistry.js" as Registry
 
 import "notifications" as Notifs
+import "osd" as Osd
 
 PanelWindow {
     id: masterWindow
@@ -146,6 +147,12 @@ PanelWindow {
         uiScale: masterWindow.globalUiScale
     }
     // =========================================================
+
+    // --- OSD BAR (volume / brightness / mic) ---
+    Osd.OsdBar {
+        id: osdBar
+        uiScale: masterWindow.globalUiScale
+    }
 
     onGlobalUiScaleChanged: {
         handleNativeScreenChange();
