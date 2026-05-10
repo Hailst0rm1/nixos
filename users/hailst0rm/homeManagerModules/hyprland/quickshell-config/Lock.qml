@@ -414,19 +414,21 @@ ShellRoot {
                                 layer.enabled: true 
                             }
 
-                            Rectangle {
+                            Image {
+                                id: lockIconImg
                                 anchors.fill: parent
-                                radius: height / 2
-                                color: Qt.rgba(root.surface0.r, root.surface0.g, root.surface0.b, 0.5)
+                                source: Qt.resolvedUrl("lock-icon.png")
+                                fillMode: Image.PreserveAspectCrop
+                                visible: false
+                                smooth: true
+                            }
+
+                            MultiEffect {
+                                source: lockIconImg
+                                anchors.fill: lockIconImg
+                                maskEnabled: true
+                                maskSource: avatarMask
                                 visible: avatarImg.status !== Image.Ready
-                                
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "󰄽"
-                                    font.family: "Iosevka Nerd Font"
-                                    font.pixelSize: 64 * screenRoot.sc
-                                    color: root.subtext0
-                                }
                             }
 
                             Image {
@@ -434,7 +436,7 @@ ShellRoot {
                                 anchors.fill: parent
                                 source: screenRoot.faceIconPath !== "" ? screenRoot.faceIconPath : ""
                                 fillMode: Image.PreserveAspectCrop
-                                visible: false 
+                                visible: false
                                 cache: false
                                 asynchronous: true
                             }
@@ -1167,7 +1169,7 @@ ShellRoot {
                             anchors.centerIn: parent
                             text: "󰌿"
                             font.family: "Iosevka Nerd Font"
-                            font.pixelSize: 64 * screenRoot.sc 
+                            font.pixelSize: 64 * screenRoot.sc
                             color: root.text
                             opacity: 1.0
                             scale: 1.0
@@ -1179,7 +1181,7 @@ ShellRoot {
                             anchors.centerIn: parent
                             text: "󰌾"
                             font.family: "Iosevka Nerd Font"
-                            font.pixelSize: 64 * screenRoot.sc 
+                            font.pixelSize: 64 * screenRoot.sc
                             color: root.text
                             opacity: 0.0
                             scale: 1.6

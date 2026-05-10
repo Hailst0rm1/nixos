@@ -55,6 +55,7 @@
     mkdir -p $out
     cp -rL ${./quickshell-config}/* $out/
     cp ${systemConfigQml} $out/SystemConfig.qml
+    cp ${qsCfg.lockIcon} $out/lock-icon.png
   '';
 in {
   config = lib.mkIf (cfg.enable && qsCfg.enable) {

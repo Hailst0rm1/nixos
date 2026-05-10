@@ -95,6 +95,12 @@ in {
         default = "";
         description = "OpenWeatherMap City ID for weather data.";
       };
+
+      lockIcon = lib.mkOption {
+        type = lib.types.path;
+        default = ../../../../assets/images/nixos-logo.png;
+        description = "Icon image displayed in the lock screen circle.";
+      };
     };
 
     monitorOrientations = lib.mkOption {
