@@ -11,23 +11,43 @@
   cfg = config.services.whisperStt;
   hyprlandCfg = config.importConfig.hyprland;
 
+  hasNvidia = osConfig.graphicDriver.nvidia.enable;
+
   # Device selection based on NVIDIA availability
   device =
-    if osConfig.graphicDriver.nvidia.enable
+    if hasNvidia
     then "cuda"
     else "cpu";
 
   # Compute type for optimal performance
   computeType =
-    if osConfig.graphicDriver.nvidia.enable
+    if hasNvidia
     then "float16"
     else "int8";
+
+  # CUDA-enabled whisper-ctranslate2 when NVIDIA is available
+  ctranslate2-cuda = pkgs.ctranslate2.override {
+    withCUDA = true;
+    withCuDNN = true;
+  };
+
+  whisper-ctranslate2-pkg =
+    if hasNvidia
+    then
+      pkgs.whisper-ctranslate2.override {
+        python3Packages = pkgs.python3Packages.overrideScope (_: pyprev: {
+          ctranslate2 = pyprev.ctranslate2.override {
+            ctranslate2-cpp = ctranslate2-cuda;
+          };
+        });
+      }
+    else pkgs.whisper-ctranslate2;
 
   # Main speech-to-text script
   whisperStt = pkgs.writeShellApplication {
     name = "whisper-stt";
     runtimeInputs = with pkgs; [
-      whisper-ctranslate2
+      whisper-ctranslate2-pkg
       pulseaudio # for parecord
       wl-clipboard
       wtype
@@ -208,7 +228,7 @@ in {
   config = lib.mkIf (hyprlandCfg.enable && cfg.enable) {
     # Add required packages
     home.packages = [
-      pkgs.whisper-ctranslate2
+      whisper-ctranslate2-pkg
       whisperStt
       toggleWhisper
       pkgs.wtype
