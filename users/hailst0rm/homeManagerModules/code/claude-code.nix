@@ -16,16 +16,6 @@
     hash = "sha256-l9NnhpEbHzc7EUOIm0/kv3o5hY4jxlLZN2CMpEh5Axs=";
   };
 
-  notebooklm-skill = builtins.fetchurl {
-    url = "https://raw.githubusercontent.com/teng-lin/notebooklm-py/main/SKILL.md";
-    sha256 = "1nyyncqshbpikid0mxnm61dqf5fwv6mchjkn8xj2z13d5av40k4y";
-  };
-
-  git-workflow-skill = builtins.fetchurl {
-    url = "https://raw.githubusercontent.com/affaan-m/everything-claude-code/main/skills/git-workflow/SKILL.md";
-    sha256 = "0yj08gdk7dy2wwrd4z9x1088812g0v5ix6pikcj4mphxkzy08zd6";
-  };
-
   # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
   # Installs to a persistent directory on first run; explicitly adds 'debug' to fix
   # broken werift-rtp dependency (it uses debug but doesn't declare it)
@@ -125,9 +115,8 @@ in {
       enable = true;
       package = pkgs-unstable.claude-code;
 
-      # Skills
-      skills.notebooklm = builtins.readFile notebooklm-skill;
-      skills.git-workflow = builtins.readFile git-workflow-skill;
+      # Skills (managed via skillsDir, see ../../../../skills/)
+      skillsDir = ../../../../skills;
 
       # Global behavioral guidelines (Karpathy-inspired) → ~/.claude/CLAUDE.md
       memory.text = ''
