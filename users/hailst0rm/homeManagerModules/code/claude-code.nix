@@ -267,46 +267,45 @@ in {
       #   # };
       # };
 
+      # MCP (Model Context Protocol) servers
+      mcpServers = {
+        nixos = {
+          command = "nix";
+          args = ["run" "github:utensils/mcp-nixos" "--"];
+        };
+        filesystem = {
+          command = "npx";
+          args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
+        };
+        git = {
+          command = "uvx";
+          args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
+        };
+        discord = {
+          command = "${discordMcpWrapper}";
+          args = [];
+        };
+        perplexity = {
+          command = "${perplexityMcpWrapper}";
+          args = [];
+        };
+        exa = {
+          command = "${exaMcpWrapper}";
+          args = [];
+        };
+        n8n = {
+          command = "${n8nMcpWrapper}";
+          args = [];
+        };
+        github = {
+          command = "${githubMcpWrapper}";
+          args = [];
+        };
+      };
+
       # Additional settings
       settings = {
         showThinkingSummaries = true;
-
-        # MCP (Model Context Protocol) servers
-        # Defined in settings (not mcpServers option) so both CLI and VSCode can use them
-        mcpServers = {
-          nixos = {
-            command = "nix";
-            args = ["run" "github:utensils/mcp-nixos" "--"];
-          };
-          filesystem = {
-            command = "npx";
-            args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
-          };
-          git = {
-            command = "uvx";
-            args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
-          };
-          discord = {
-            command = "${discordMcpWrapper}";
-            args = [];
-          };
-          perplexity = {
-            command = "${perplexityMcpWrapper}";
-            args = [];
-          };
-          exa = {
-            command = "${exaMcpWrapper}";
-            args = [];
-          };
-          n8n = {
-            command = "${n8nMcpWrapper}";
-            args = [];
-          };
-          github = {
-            command = "${githubMcpWrapper}";
-            args = [];
-          };
-        };
         cleanupPeriodDays = 14;
         includeCoAuthoredBy = false;
 
@@ -404,7 +403,7 @@ in {
     programs.vscode.profiles.default.userSettings = lib.mkIf config.code.vscode.enable {
       "claudeCode.allowDangerouslySkipPermissions" = true;
       "claudeCode.enableNewConversationShortcut" = true;
-      "claudeCode.claudeProcessWrapper" = "${pkgs-unstable.claude-code}/bin/claude";
+      "claudeCode.claudeProcessWrapper" = "${config.programs.claude-code.finalPackage}/bin/claude";
     };
 
     # Ensure required dependencies are available
