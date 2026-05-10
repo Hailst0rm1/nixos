@@ -37,6 +37,7 @@
         echo -e "  ''${GREEN}--legacy''${RESET}              Use nixos-rebuild instead of nh"
         echo -e "  ''${GREEN}--debug''${RESET}               Show timing info for each step"
         echo -e "  ''${GREEN}--no-auth''${RESET}             Skip GitHub auth; fetch-only with local file protection"
+        echo -e "  ''${GREEN}--no-diff''${RESET}             Skip git diff display (used on auto-retry)"
         echo -e "  ''${GREEN}--nh-flags ''${YELLOW}\"<args>\"''${RESET}   Pass extra arguments to nh"
         echo -e "  ''${GREEN}-h, --help''${RESET}            Show this help message"
         echo ""
@@ -66,6 +67,7 @@
       use_legacy=false
       use_debug=false
       use_no_auth=false
+      use_no_diff=false
       nh_flags=""
       while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -79,6 +81,10 @@
             ;;
           --no-auth)
             use_no_auth=true
+            shift
+            ;;
+          --no-diff)
+            use_no_diff=true
             shift
             ;;
           --nh-flags)
@@ -276,7 +282,8 @@
         BUILD_FROM="$NIXOS_DIR"
       ''}
 
-      # Show changes
+      # Show changes (skip with --no-diff for auto-retry)
+      if [ "$use_no_diff" != true ]; then
       ${
         if checkRemote
         then ''
@@ -311,8 +318,9 @@
           fi
         ''
       }
+      fi
 
-      # Rebuild and exit on failure
+      # Rebuild and capture output for hash mismatch detection
       echo ""
       echo -e "''${GREEN}''${BOLD}🔨 ${buildingMsg}...''${RESET}"
       notify-send -e "${notifyName}" "${buildingMsg} for ${config.hostname}..." --icon=system-software-update 2>/dev/null
@@ -320,24 +328,53 @@
       # Ensure nh uses the resolved directory
       export NH_FLAKE="$BUILD_FROM"
 
+      REBUILD_LOG=$(mktemp)
+      rebuild_failed=false
+      set -o pipefail
       if [ "$use_legacy" = true ]; then
         echo -e "''${YELLOW}📦 Using legacy nixos-rebuild...''${RESET}"
-        sudo nixos-rebuild ${action} --flake "$BUILD_FROM#${config.hostname}" || {
-          echo ""
-          echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
-          notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null
-          popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
-          exit 1
-        }
+        sudo nixos-rebuild ${action} --flake "$BUILD_FROM#${config.hostname}" 2>&1 | tee "$REBUILD_LOG" || rebuild_failed=true
       else
-        nh os ${action} --diff always $nh_flags || {
-          echo ""
-          echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
-          notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null
-          popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
-          exit 1
-        }
+        nh os ${action} --diff always $nh_flags 2>&1 | tee "$REBUILD_LOG" || rebuild_failed=true
       fi
+      set +o pipefail
+
+      if [ "$rebuild_failed" = true ]; then
+        # Check for hash mismatch and auto-fix (only retry once)
+        if [ "''${NIX_REBUILD_RETRY:-}" != "1" ] && grep -q "hash mismatch in fixed-output derivation" "$REBUILD_LOG"; then
+          OLD_HASH=$(grep "specified:" "$REBUILD_LOG" | head -1 | awk '{print $NF}')
+          NEW_HASH=$(grep "got:" "$REBUILD_LOG" | head -1 | awk '{print $NF}')
+          if [ -n "$OLD_HASH" ] && [ -n "$NEW_HASH" ]; then
+            HASH_FILE=$(grep -rl "$OLD_HASH" "$NIXOS_DIR" --include="*.nix" | head -1)
+            if [ -n "$HASH_FILE" ]; then
+              echo ""
+              echo -e "''${YELLOW}''${BOLD}🔧 Hash mismatch detected! Auto-fixing...''${RESET}"
+              echo -e "  ''${CYAN}File:''${RESET} $HASH_FILE"
+              echo -e "  ''${RED}Old:''${RESET}  $OLD_HASH"
+              echo -e "  ''${GREEN}New:''${RESET}  $NEW_HASH"
+              sed -i "s|$OLD_HASH|$NEW_HASH|g" "$HASH_FILE"
+              echo -e "''${GREEN}✅ Hash updated. Retrying build...''${RESET}"
+              rm -f "$REBUILD_LOG"
+              export NIX_REBUILD_RETRY=1
+              # Reconstruct flags for retry
+              RETRY_ARGS="--no-diff"
+              [ "$use_legacy" = true ] && RETRY_ARGS="$RETRY_ARGS --legacy"
+              [ "$use_debug" = true ] && RETRY_ARGS="$RETRY_ARGS --debug"
+              [ "$use_no_auth" = true ] && RETRY_ARGS="$RETRY_ARGS --no-auth"
+              [ -n "$nh_flags" ] && RETRY_ARGS="$RETRY_ARGS --nh-flags \"$nh_flags\""
+              exec "$0" $RETRY_ARGS
+            fi
+          fi
+        fi
+        # Normal failure path
+        echo ""
+        echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
+        notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null
+        rm -f "$REBUILD_LOG"
+        popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
+        exit 1
+      fi
+      rm -f "$REBUILD_LOG"
 
       ${lib.optionalString promptCommit ''
         # Get current generation metadata

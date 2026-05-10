@@ -12,8 +12,8 @@
   gsd-repo = pkgs.fetchFromGitHub {
     owner = "gsd-build";
     repo = "get-shit-done";
-    rev = "main";
-    hash = "sha256-l9NnhpEbHzc7EUOIm0/kv3o5hY4jxlLZN2CMpEh5Axs=";
+    rev = "v1.9.13";
+    hash = "sha256-zm6Qr5Fk8AvlG7PcJOGBeed+PfbEPzE0swIljlgzyuY=";
   };
 
   # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
