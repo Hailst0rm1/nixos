@@ -30,6 +30,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     focusable: false
     color: "transparent"
+    visible: osdWindow.osdVisible
 
     width: screen.width
     height: s(60)

@@ -93,6 +93,7 @@
     openssh.enable = lib.mkDefault false;
     mattermost.enable = lib.mkDefault false;
     ollama.enable = lib.mkDefault false;
+    hermes-agent.enable = lib.mkDefault false;
     open-webui.enable = lib.mkDefault false; # UI for local AI
     code-server.enable = lib.mkDefault false; # Web-based VS Code
     tailscaleAutoconnect = {

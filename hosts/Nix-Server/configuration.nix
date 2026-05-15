@@ -364,6 +364,8 @@
     notebooklm-bridge.enable = true;
     rsshub.enable = true;
     hermes-agent.enable = true;
+    hermes-agent.signal.enable = true;
+    hermes-agent.dashboard.enable = true;
     podman.enable = true;
     openssh.enable = true;
     cloudflare = {

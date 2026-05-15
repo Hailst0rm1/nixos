@@ -39,6 +39,14 @@
         secrets."keys/yubikey/${config.hostname}" = {};
         secrets."services/cloudflared/creds" = lib.mkIf config.services.cloudflared.enable {};
         secrets."services/tailscale/auth.key" = lib.mkIf config.services.tailscaleAutoconnect.enable {};
+        secrets."services/hermes-agent/env" = lib.mkIf config.services.hermes-agent.enable {
+          owner = "hailst0rm";
+          mode = "0400";
+        };
+        secrets."services/signal-cli/account" = lib.mkIf config.services.hermes-agent.signal.enable {
+          owner = "hailst0rm";
+          mode = "0400";
+        };
         secrets."services/ghost/pontonsecurity/cert.pem" = lib.mkIf config.services.ghost.enable {
           group = "nginx";
           mode = "0440";
