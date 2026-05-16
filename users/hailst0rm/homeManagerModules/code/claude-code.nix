@@ -96,7 +96,14 @@
     exec ${pkgs.nodejs}/bin/node "$MCP_DIR/node_modules/discord-self-mcp/dist/index.js" "$@"
   '';
 in {
-  options.code.claude-code.enable = lib.mkEnableOption "Enable Claude Code CLI";
+  options.code.claude-code = {
+    enable = lib.mkEnableOption "Enable Claude Code CLI";
+    n8n.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable n8n MCP server and skills for Claude Code.";
+    };
+  };
 
   config = lib.mkIf config.code.claude-code.enable {
     # Ensure direnv is active inside Claude's shell environment so
@@ -268,40 +275,43 @@ in {
       # };
 
       # MCP (Model Context Protocol) servers
-      mcpServers = {
-        nixos = {
-          command = "nix";
-          args = ["run" "github:utensils/mcp-nixos" "--"];
+      mcpServers =
+        {
+          nixos = {
+            command = "nix";
+            args = ["run" "github:utensils/mcp-nixos" "--"];
+          };
+          filesystem = {
+            command = "npx";
+            args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
+          };
+          git = {
+            command = "uvx";
+            args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
+          };
+          discord = {
+            command = "${discordMcpWrapper}";
+            args = [];
+          };
+          perplexity = {
+            command = "${perplexityMcpWrapper}";
+            args = [];
+          };
+          exa = {
+            command = "${exaMcpWrapper}";
+            args = [];
+          };
+          github = {
+            command = "${githubMcpWrapper}";
+            args = [];
+          };
+        }
+        // lib.optionalAttrs config.code.claude-code.n8n.enable {
+          n8n = {
+            command = "${n8nMcpWrapper}";
+            args = [];
+          };
         };
-        filesystem = {
-          command = "npx";
-          args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
-        };
-        git = {
-          command = "uvx";
-          args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
-        };
-        discord = {
-          command = "${discordMcpWrapper}";
-          args = [];
-        };
-        perplexity = {
-          command = "${perplexityMcpWrapper}";
-          args = [];
-        };
-        exa = {
-          command = "${exaMcpWrapper}";
-          args = [];
-        };
-        n8n = {
-          command = "${n8nMcpWrapper}";
-          args = [];
-        };
-        github = {
-          command = "${githubMcpWrapper}";
-          args = [];
-        };
-      };
 
       # Additional settings
       settings = {
@@ -344,40 +354,46 @@ in {
         };
 
         # Plugins
-        enabledPlugins = {
-          "skill-creator@claude-plugins-official" = true;
-          "superpowers@claude-plugins-official" = true;
-          "obsidian@obsidian-skills" = true;
-          "context-mode@context-mode" = true;
-          "n8n-skills@n8n-skills" = true;
-        };
+        enabledPlugins =
+          {
+            "skill-creator@claude-plugins-official" = true;
+            "superpowers@claude-plugins-official" = true;
+            "obsidian@obsidian-skills" = true;
+            "context-mode@context-mode" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.n8n.enable {
+            "n8n-skills@n8n-skills" = true;
+          };
 
-        extraKnownMarketplaces = {
-          claude-plugins-official = {
-            source = {
-              source = "github";
-              repo = "anthropics/claude-plugins-official";
+        extraKnownMarketplaces =
+          {
+            claude-plugins-official = {
+              source = {
+                source = "github";
+                repo = "anthropics/claude-plugins-official";
+              };
+            };
+            obsidian-skills = {
+              source = {
+                source = "github";
+                repo = "kepano/obsidian-skills";
+              };
+            };
+            context-mode = {
+              source = {
+                source = "github";
+                repo = "mksglu/context-mode";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.n8n.enable {
+            n8n-skills = {
+              source = {
+                source = "github";
+                repo = "czlonkowski/n8n-skills";
+              };
             };
           };
-          obsidian-skills = {
-            source = {
-              source = "github";
-              repo = "kepano/obsidian-skills";
-            };
-          };
-          n8n-skills = {
-            source = {
-              source = "github";
-              repo = "czlonkowski/n8n-skills";
-            };
-          };
-          context-mode = {
-            source = {
-              source = "github";
-              repo = "mksglu/context-mode";
-            };
-          };
-        };
 
         # Editor preferences (if claude-code supports this)
         editor = {

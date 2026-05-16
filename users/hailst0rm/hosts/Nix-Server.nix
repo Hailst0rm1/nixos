@@ -64,7 +64,7 @@ in {
     Service = {
       Type = "oneshot";
       WorkingDirectory = "/mnt/nas/Code/notebooklm-news";
-      ExecStart = "${config.home.profileDirectory}/bin/claude --print -p \"Execute the workflow in workflows/daily_digest.md. Run each tool and report results.\"";
+      ExecStart = "${config.home.profileDirectory}/bin/claude --print --dangerously-skip-permissions --permission-mode bypassPermissions --no-session-persistence -p \"You are an autonomous agent running a daily news digest workflow. Execute the workflow defined in workflows/daily_digest.md by running each tool in sequence. If any tool fails, diagnose the error, attempt a fix, verify it works, and update the workflow documentation with what you learned. Output a final summary of sources added, audio status, and any errors encountered.\"";
       TimeoutStartSec = "20min";
       StandardOutput = "journal";
       StandardError = "journal";
