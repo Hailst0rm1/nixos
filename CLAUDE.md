@@ -15,7 +15,6 @@ users/<user>/hosts/default.nix   HM defaults (lib.mkDefault values)
 users/<user>/hosts/<host>.nix    Per-host HM overrides
 pkgs/              Custom package derivations (pkgs/<name>/package.nix)
 overlays/          Auto-loaded overlays (overlays/<name>.nix)
-skills/            Claude Code skills (managed via skillsDir)
 disko/             Declarative disk partitioning configs
 secrets/           sops-nix encrypted YAML files
 ```

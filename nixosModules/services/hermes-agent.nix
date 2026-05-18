@@ -14,11 +14,6 @@ in {
       default = 8333;
       description = "Port Hermes Agent gateway listens on.";
     };
-    dataDir = lib.mkOption {
-      type = lib.types.str;
-      default = "/var/lib/hermes-agent";
-      description = "Persistent data directory.";
-    };
     signal = {
       enable = lib.mkEnableOption "signal-cli HTTP daemon for Hermes Signal integration";
       port = lib.mkOption {
@@ -60,12 +55,9 @@ in {
         DynamicUser = false;
         User = "hailst0rm";
         Environment = [
-          "HOME=${cfg.dataDir}"
           "HERMES_PORT=${toString cfg.port}"
         ];
         EnvironmentFile = config.sops.secrets."services/hermes-agent/env".path;
-        StateDirectory = "hermes-agent";
-        WorkingDirectory = cfg.dataDir;
       };
     };
 
@@ -83,8 +75,6 @@ in {
         RestartSec = 10;
         DynamicUser = false;
         User = "hailst0rm";
-        Environment = ["HOME=${cfg.dataDir}"];
-        WorkingDirectory = cfg.dataDir;
       };
     };
 
@@ -98,17 +88,8 @@ in {
         RestartSec = 10;
         DynamicUser = false;
         User = "hailst0rm";
-        Environment = [
-          "HOME=${cfg.dataDir}"
-        ];
         EnvironmentFile = config.sops.secrets."services/hermes-agent/env".path;
-        WorkingDirectory = cfg.dataDir;
       };
     };
-
-    systemd.tmpfiles.rules = [
-      "d ${cfg.dataDir} 0750 hailst0rm users -"
-      "d ${cfg.dataDir}/.hermes 0750 hailst0rm users -"
-    ];
   };
 }

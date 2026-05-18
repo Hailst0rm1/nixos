@@ -122,8 +122,8 @@ in {
       enable = true;
       package = pkgs-unstable.claude-code;
 
-      # Skills (managed via skillsDir, see ../../../../skills/)
-      skillsDir = ../../../../skills;
+      # Skills (managed via skillsDir, see ./skills/)
+      skillsDir = ./skills;
 
       # Global behavioral guidelines (Karpathy-inspired) → ~/.claude/CLAUDE.md
       memory.text = ''
@@ -358,6 +358,7 @@ in {
           {
             "skill-creator@claude-plugins-official" = true;
             "superpowers@claude-plugins-official" = true;
+            "frontend-design@claude-plugins-official" = true;
             "obsidian@obsidian-skills" = true;
             "context-mode@context-mode" = true;
           }

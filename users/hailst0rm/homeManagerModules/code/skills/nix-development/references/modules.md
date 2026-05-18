@@ -181,6 +181,32 @@ HM modules receive these arguments:
 - `pkgs-unstable` — unstable packages (via extraSpecialArgs)
 - `inputs` — flake inputs (via extraSpecialArgs)
 
+## Formatting Conventions
+
+### Group options under shared attribute sets
+
+When multiple options share a prefix, combine them into a single attribute set block rather than using dot notation on separate lines.
+
+Bad:
+```nix
+claude.enable = true;
+claude.skills.enable = true;
+claude.skills.path = ./skills;
+```
+
+Good:
+```nix
+claude = {
+  enable = true;
+  skills = {
+    enable = true;
+    path = ./skills;
+  };
+};
+```
+
+This applies to all Nix configuration — NixOS modules, Home Manager, flake outputs, etc.
+
 ## Anti-Patterns
 
 - **Manual imports for auto-imported modules** — files in `nixosModules/` and `homeManagerModules/` are auto-imported; adding them to `imports` causes duplicate definition errors
