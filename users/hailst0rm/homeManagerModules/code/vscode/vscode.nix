@@ -57,6 +57,7 @@ in {
             github.copilot # Inline code completions
             # github.copilot-chat  # Copilot chat interface
             anthropic.claude-code # Claude Code AI assistant
+            openai.chatgpt # OpenAI Codex
 
             # === Functionality ===
             eamodio.gitlens # Git + insights

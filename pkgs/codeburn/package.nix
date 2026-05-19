@@ -6,7 +6,7 @@
 }: let
   litellmPricing = fetchurl {
     url = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
-    hash = "sha256-SIB15unK5HuUL8OhFYtrBlcikFxK+xjiEix43q0Kg98=";
+    hash = "sha256-Q7Z0A0QijDSQRHq28RcqgU7k1CorvwbYMDHa1m/OmQA=";
   };
 in
   buildNpmPackage rec {
