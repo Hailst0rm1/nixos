@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report outdated GitHub-sourced Nix package fetches.
+"""Report and experimentally update GitHub-sourced Nix package fetches.
 
 This intentionally treats the Nix repo as the source of truth:
 - no manually maintained package watchlist
@@ -10,7 +10,12 @@ It detects GitHub sources in derivation-like blocks using:
 - fetchFromGitHub
 - fetchurl/fetchzip/fetchTarball/fetchgit with GitHub URLs
 
-The report is read-only: it does not update packages, hashes, branches, or commits.
+Default mode is read-only. Experimental auto-update mode is deliberately narrow:
+- only unique, outdated, unpinned fetchFromGitHub source packages
+- only package files under pkgs/<name>/package.nix by default
+- updates version/rev/hash
+- runs a narrow nix build
+- rolls back the edited file on failure unless --keep-failed is passed
 """
 from __future__ import annotations
 
@@ -19,6 +24,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -26,7 +32,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-SCANNER_VERSION = 1
+SCANNER_VERSION = 2
 DEFAULT_CACHE = ".hermes-cache/nix-github-fetches.json"
 
 # Generated policy, not a human-maintained watchlist.
@@ -77,6 +83,11 @@ class ReportItem(FetchItem):
 
 def run(cmd: list[str], cwd: Path | None = None, timeout: int = 60) -> str:
     return subprocess.check_output(cmd, cwd=cwd, text=True, timeout=timeout, stderr=subprocess.STDOUT)
+
+
+def run_result(cmd: list[str], cwd: Path | None = None, timeout: int = 600) -> tuple[int, str]:
+    proc = subprocess.run(cmd, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=timeout)
+    return proc.returncode, proc.stdout
 
 
 def strip_comments(text: str) -> str:
@@ -385,28 +396,45 @@ def build_report(items: list[FetchItem]) -> list[ReportItem]:
     return reports
 
 
-def markdown_report(root: Path, reports: list[ReportItem], include_ok: bool = False, include_unknown: bool = True) -> str:
+def unique_reports(reports: list[ReportItem]) -> list[ReportItem]:
+    unique: list[ReportItem] = []
+    seen = set()
+    for row in reports:
+        key = (row.package, row.owner.lower(), row.repo.lower(), row.source_kind, row.current, row.latest, row.path)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(row)
+    return unique
+
+
+def markdown_report(
+    root: Path,
+    reports: list[ReportItem],
+    include_ok: bool = False,
+    include_unknown: bool = True,
+    total_discovered: int | None = None,
+) -> str:
     counts = {status: sum(1 for r in reports if r.status == status) for status in ["update", "ok", "unknown", "pinned"]}
+    total = total_discovered if total_discovered is not None else len(reports)
+    header_count = (
+        f"Reported GitHub package/source fetches: **{len(reports)}** · Total discovered: **{total}**"
+        if total_discovered is not None and total_discovered != len(reports)
+        else f"Scanned GitHub package/source fetches: **{len(reports)}**"
+    )
     lines = [
         "# Nix GitHub package update report",
         "",
         f"Repo: `{root}`",
-        f"Scanned GitHub package/source fetches: **{len(reports)}**",
+        header_count,
         f"Updates: **{counts['update']}** · OK: **{counts['ok']}** · Unknown: **{counts['unknown']}** · Pinned: **{counts['pinned']}**",
         "",
     ]
 
-    def table(title: str, rows: list[ReportItem], columns: list[str]) -> None:
+    def table(title: str, rows: list[ReportItem]) -> None:
         lines.append(f"## {title}")
         lines.append("")
-        unique_rows: list[ReportItem] = []
-        seen_rows = set()
-        for row in rows:
-            key = (row.package, row.owner.lower(), row.repo.lower(), row.source_kind, row.current, row.latest, row.path)
-            if key in seen_rows:
-                continue
-            seen_rows.add(key)
-            unique_rows.append(row)
+        unique_rows = unique_reports(rows)
         if not unique_rows:
             lines.append("None.")
             lines.append("")
@@ -422,13 +450,127 @@ def markdown_report(root: Path, reports: list[ReportItem], include_ok: bool = Fa
             )
         lines.append("")
 
-    table("Likely updates", [r for r in reports if r.status == "update"], [])
-    table("Pinned / intentionally ignored", [r for r in reports if r.status == "pinned"], [])
+    table("Likely updates", [r for r in reports if r.status == "update"])
+    table("Pinned / intentionally ignored", [r for r in reports if r.status == "pinned"])
     if include_ok:
-        table("Current", [r for r in reports if r.status == "ok"], [])
+        table("Current", [r for r in reports if r.status == "ok"])
     if include_unknown:
-        table("Unknown / needs custom strategy", [r for r in reports if r.status == "unknown"], [])
+        table("Unknown / needs custom strategy", [r for r in reports if r.status == "unknown"])
     return "\n".join(lines).rstrip() + "\n"
+
+
+def prefetch_github(owner: str, repo: str, tag: str, root: Path) -> tuple[str | None, str]:
+    code, output = run_result(["nix", "flake", "prefetch", f"github:{owner}/{repo}/{tag}", "--json"], cwd=root, timeout=180)
+    if code != 0:
+        return None, output
+    try:
+        data = json.loads(output[output.find("{"):])
+        return data.get("hash"), output
+    except Exception as exc:
+        return None, output + f"\nFailed to parse prefetch JSON: {exc}"
+
+
+def replace_unique(text: str, pattern: str, replacement: str, label: str) -> tuple[str, str | None]:
+    new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+    if count != 1:
+        return text, f"Could not replace unique {label}"
+    return new_text, None
+
+
+def apply_auto_update(root: Path, reports: list[ReportItem], package: str, *, dry_run: bool, keep_failed: bool) -> dict[str, Any]:
+    matches = [r for r in reports if r.status == "update" and r.package == package]
+    if not matches:
+        matches = [r for r in reports if r.status == "update" and r.path == package]
+    if len(matches) != 1:
+        return {"ok": False, "error": f"Expected exactly one outdated match for {package!r}, found {len(matches)}", "matches": [asdict(m) for m in matches]}
+    item = matches[0]
+    if item.pinned:
+        return {"ok": False, "error": "Refusing to update pinned item", "item": asdict(item)}
+    if item.kind != "fetchFromGitHub" or item.source_kind != "source":
+        return {"ok": False, "error": "Experimental auto-update only supports fetchFromGitHub source items", "item": asdict(item)}
+    if not item.latest or not item.latest_normalised:
+        return {"ok": False, "error": "No comparable latest tag", "item": asdict(item)}
+    if not item.path.startswith("pkgs/") or not item.path.endswith("/package.nix"):
+        return {"ok": False, "error": "Refusing by default: package is not pkgs/<name>/package.nix", "item": asdict(item)}
+
+    path = root / item.path
+    original = path.read_text()
+    new_hash, prefetch_output = prefetch_github(item.owner, item.repo, item.latest, root)
+    if not new_hash:
+        return {"ok": False, "error": "Prefetch failed", "item": asdict(item), "prefetch_output": prefetch_output[-4000:]}
+
+    updated = original
+    # Use normalised version without v-prefix for version attr, matching existing notebooklm-py style.
+    new_version = item.latest_normalised
+    updated, err = replace_unique(updated, r'(\bversion\s*=\s*")([^"]+)("\s*;)', rf'\g<1>{new_version}\g<3>', "version")
+    if err:
+        return {"ok": False, "error": err, "item": asdict(item)}
+    # If rev is templated as v${version}, updating version is enough and safer.
+    if item.rev_or_url and "${version}" in item.rev_or_url:
+        pass
+    else:
+        old_rev = re.escape(item.rev_or_url or "")
+        if item.rev_or_url:
+            candidate, err = replace_unique(updated, rf'(\brev\s*=\s*"){old_rev}("\s*;)', rf'\g<1>{item.latest}\g<2>', "rev")
+            if err and "${version}" in updated:
+                err = None
+            else:
+                updated = candidate
+        else:
+            updated, err = replace_unique(updated, r'(\brev\s*=\s*")([^"]+)("\s*;)', rf'\g<1>{item.latest}\g<3>', "rev")
+        if err:
+            return {"ok": False, "error": err, "item": asdict(item)}
+    updated, err = replace_unique(updated, r'(\b(?:hash|sha256)\s*=\s*")sha256-[^"]+("\s*;)', rf'\g<1>{new_hash}\g<2>', "hash/sha256")
+    if err:
+        return {"ok": False, "error": err, "item": asdict(item)}
+
+    if dry_run:
+        return {
+            "ok": True,
+            "dry_run": True,
+            "item": asdict(item),
+            "new_version": new_version,
+            "new_rev": item.latest,
+            "new_hash": new_hash,
+            "would_change": original != updated,
+        }
+
+    backup = path.with_suffix(path.suffix + ".auto-update.bak")
+    backup.write_text(original)
+    path.write_text(updated)
+    build_cmd = [
+        "nix",
+        "build",
+        "--impure",
+        "--expr",
+        f"let pkgs = import <nixpkgs> {{}}; in pkgs.callPackage ./{item.path} {{}}",
+        "--no-link",
+        "--print-out-paths",
+    ]
+    code, build_output = run_result(build_cmd, cwd=root, timeout=600)
+    if code != 0:
+        if not keep_failed:
+            path.write_text(original)
+        backup.unlink(missing_ok=True)
+        return {
+            "ok": False,
+            "error": "Build failed" + ("; file left edited" if keep_failed else "; file rolled back"),
+            "item": asdict(item),
+            "build_command": " ".join(build_cmd),
+            "build_output": build_output[-8000:],
+            "rolled_back": not keep_failed,
+        }
+    backup.unlink(missing_ok=True)
+    return {
+        "ok": True,
+        "dry_run": False,
+        "item": asdict(item),
+        "new_version": new_version,
+        "new_rev": item.latest,
+        "new_hash": new_hash,
+        "build_command": " ".join(build_cmd),
+        "build_output": build_output.strip(),
+    }
 
 
 def main() -> int:
@@ -440,6 +582,9 @@ def main() -> int:
     parser.add_argument("--include-ok", action="store_true")
     parser.add_argument("--hide-unknown", action="store_true")
     parser.add_argument("--updates-only", action="store_true", help="Only print when updates exist; exit 0 silently otherwise")
+    parser.add_argument("--auto-update", metavar="PACKAGE_OR_PATH", help="Experimental: update one simple fetchFromGitHub package and build it")
+    parser.add_argument("--dry-run", action="store_true", help="With --auto-update, show intended edit without writing/building")
+    parser.add_argument("--keep-failed", action="store_true", help="With --auto-update, keep edits if the build fails instead of rolling back")
     args = parser.parse_args()
 
     root = Path(args.root).expanduser().resolve()
@@ -449,8 +594,13 @@ def main() -> int:
 
     items = load_or_scan_inventory(root, cache_path, args.no_cache)
     reports = build_report(items)
-    updates = [r for r in reports if r.status == "update"]
 
+    if args.auto_update:
+        result = apply_auto_update(root, reports, args.auto_update, dry_run=args.dry_run, keep_failed=args.keep_failed)
+        print(json.dumps(result, indent=2))
+        return 0 if result.get("ok") else 1
+
+    updates = [r for r in reports if r.status == "update"]
     if args.updates_only and not updates:
         return 0
 
@@ -458,10 +608,12 @@ def main() -> int:
         print(json.dumps({"root": str(root), "count": len(reports), "items": [asdict(r) for r in reports]}, indent=2))
     else:
         include_unknown = not args.hide_unknown
+        total_discovered = None
         if args.updates_only:
+            total_discovered = len(reports)
             reports = [r for r in reports if r.status in {"update", "pinned"}]
             include_unknown = False
-        print(markdown_report(root, reports, include_ok=args.include_ok, include_unknown=include_unknown))
+        print(markdown_report(root, reports, include_ok=args.include_ok, include_unknown=include_unknown, total_discovered=total_discovered))
     return 0
 
 
