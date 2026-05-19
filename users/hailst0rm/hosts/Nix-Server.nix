@@ -42,7 +42,7 @@ in {
     discord.enable = false;
     firefox.enable = false;
     libreOffice.enable = false;
-    obsidian.enable = false;
+    # obsidian.enable = false;
     remmina.enable = false;
     spotify.enable = false;
     claude-desktop.enable = false;
@@ -53,6 +53,11 @@ in {
   services = {
     claudecodeui.enable = true; # Claude Code UI Web Interface
     whisperStt.enable = false;
+    obsidian-sync = {
+      enable = true;
+      vaultName = "wiki"; # Set your remote vault name
+      vaultPath = "/home/hailst0rm/Obsidian/wiki"; # Set your local vault path
+    };
   };
 
   # Daily News Digest - Claude Code Agent

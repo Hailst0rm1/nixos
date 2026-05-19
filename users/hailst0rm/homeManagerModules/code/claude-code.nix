@@ -12,8 +12,8 @@
   gsd-repo = pkgs.fetchFromGitHub {
     owner = "gsd-build";
     repo = "get-shit-done";
-    rev = "v1.9.13";
-    hash = "sha256-zm6Qr5Fk8AvlG7PcJOGBeed+PfbEPzE0swIljlgzyuY=";
+    rev = "v1.42.3";
+    hash = "sha256-ylfH91jnyAkORAlon0CMko48DzeLYvSN1jhyDDKwnWU=";
   };
 
   # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
@@ -351,6 +351,7 @@ in {
 
         env = {
           CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
+          CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
         };
 
         # Plugins

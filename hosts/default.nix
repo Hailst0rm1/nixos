@@ -106,6 +106,7 @@
       exitNodeAllowLanAccess = lib.mkDefault true;
     };
     nas.enable = lib.mkDefault false;
+    proton-bridge.enable = lib.mkDefault false;
 
     syncthing-sync = {
       enable = lib.mkDefault false;

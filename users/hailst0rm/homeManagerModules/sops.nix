@@ -53,6 +53,8 @@
           "services/exa/api-key" = {};
           "services/n8n/api-key" = {};
           "services/github/pat" = {};
+          "services/kie/api-key" = {};
+          "services/obsidian/e2ee-password" = {};
         };
       };
     })

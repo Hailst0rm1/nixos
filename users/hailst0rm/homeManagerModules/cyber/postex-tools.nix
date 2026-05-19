@@ -164,10 +164,10 @@
 
   mssqland = pkgs.stdenv.mkDerivation {
     pname = "mssqland";
-    version = "1.4";
+    version = "2.0";
     src = pkgs.fetchurl {
-      url = "https://github.com/n3rada/MSSQLand/releases/download/v1.4/MSSQLand.exe";
-      sha256 = "sha256-DaXNajcIbkn/3mDHXdKc/vq8z1OpP5AVifdSV1XC+OI=";
+      url = "https://github.com/n3rada/MSSQLand/releases/download/v2.0/MSSQLand.exe";
+      sha256 = "sha256-ABP8DksUn/nbAj+YoV2Kr8ptqxd7Xjat77cMpNNSDJ8=";
     };
     phases = ["installPhase"];
     installPhase = ''
@@ -176,18 +176,17 @@
     '';
   };
 
-  adPEAS-Light = pkgs.stdenv.mkDerivation {
-    # adPEAS-Light (all modules without sharphound)
-    pname = "adPEAS-Light";
-    version = "v0.8.28";
+  adPEAS = pkgs.stdenv.mkDerivation {
+    pname = "adPEAS";
+    version = "v2.0.4";
     src = pkgs.fetchurl {
-      url = "https://github.com/61106960/adPEAS/raw/refs/heads/main/adPEAS-Light.ps1";
-      sha256 = "sha256-p/hPvSmQLIZ7xRWZlhtrdtQd4vIG4JCaDzTLw8ZTVYc=";
+      url = "https://github.com/61106960/adPEAS/raw/refs/tags/v2.0.4/adPEAS_obf.ps1";
+      sha256 = "sha256-bLJpockKlbiq9ULbzMAPGpLRcWPnmv95w/CQtPgbFMo=";
     };
     phases = ["installPhase"];
     installPhase = ''
       mkdir -p $out
-      install -m755 $src $out/adPEAS-Light.ps1
+      install -m755 $src $out/adPEAS_obf.ps1
     '';
   };
 in {
@@ -209,7 +208,7 @@ in {
         cp -f ${pspy}/pspy "${config.home.homeDirectory}/cyber/postex-tools/pspy"
         cp -f ${privescCheck}/PrivescCheck.ps1 "${config.home.homeDirectory}/cyber/postex-tools/PrivescCheck.ps1"
         cp -f ${sigmaPotato}/SigmaPotato.exe "${config.home.homeDirectory}/cyber/postex-tools/SigmaPotato.exe"
-        cp -f ${adPEAS-Light}/adPEAS-Light.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS-Light.ps1"
+        cp -f ${adPEAS}/adPEAS_obf.ps1 "${config.home.homeDirectory}/cyber/postex-tools/adPEAS_obf.ps1"
         cp -f ${group3r}/Group3r.exe "${config.home.homeDirectory}/cyber/postex-tools/Group3r.exe"
         cp -f ${snaffler}/Snaffler.exe "${config.home.homeDirectory}/cyber/postex-tools/Snaffler.exe"
         cp -f ${mssqland}/MSSQLand.exe "${config.home.homeDirectory}/cyber/postex-tools/MSSQLand.exe"

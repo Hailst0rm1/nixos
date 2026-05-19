@@ -55,11 +55,11 @@
   # sgn - Shikata Ga Nai encoder
   sgn = stdenv.mkDerivation {
     pname = "sgn";
-    version = "2.0.1";
+    version = "2.0.2";
 
     src = fetchurl {
-      url = "https://github.com/EgeBalci/sgn/releases/download/v2.0.1/sgn_linux_amd64_2.0.1.zip";
-      hash = "sha256-Q86tjya5j60h4uFuDZjakuSWBrNHYWwaXuxcC8xJIFY=";
+      url = "https://github.com/EgeBalci/sgn/releases/download/v2.0.2/sgn_linux_amd64_2.0.2.zip";
+      hash = "sha256-z2IJ5LzdmZOLr9zI6ZmI/WnQt+97+YmBI+3OibY/uQM=";
     };
 
     nativeBuildInputs = [unzip autoPatchelfHook];

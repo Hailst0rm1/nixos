@@ -5,13 +5,13 @@
 }:
 buildGoModule rec {
   pname = "psobf";
-  version = "1.1.5";
+  version = "2.0.1";
 
   src = fetchFromGitHub {
     owner = "TaurusOmar";
     repo = "psobf";
     rev = "v${version}";
-    hash = "sha256-4GHr9aISzyppwRBgRcA8mye+KHksk8uxCO6dhFgu+4g=";
+    hash = "sha256-jN0xfAGC+KPpBee+BKBt6n3RHXp12YvDFsBbh4WQUxM=";
   };
 
   vendorHash = null;

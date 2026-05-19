@@ -392,6 +392,7 @@
       port = 8443;
     };
 
+    proton-bridge.enable = true;
     nas = {
       enable = true;
       diskId = "usb-Samsung_Portable_SSD_T5_1234568390CD-0:0";
