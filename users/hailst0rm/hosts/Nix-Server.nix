@@ -35,6 +35,8 @@ in {
   code.claude-code.enable = true;
   code.codex.enable = true;
 
+  home.packages = [pkgs.gws];
+
   applications = {
     bitwarden.enable = false;
     discord.enable = false;
@@ -71,7 +73,7 @@ in {
       Environment = [
         "HOME=${config.home.homeDirectory}"
         "NOTEBOOKLM_BIN=${notebooklm-py}/bin/notebooklm"
-        "PATH=${python}/bin:${notebooklm-py}/bin:${config.home.profileDirectory}/bin:/run/current-system/sw/bin"
+        "PATH=${python}/bin:${notebooklm-py}/bin:${pkgs.yt-dlp}/bin:${config.home.profileDirectory}/bin:/run/current-system/sw/bin"
       ];
     };
   };
