@@ -470,11 +470,223 @@ def prefetch_github(owner: str, repo: str, tag: str, root: Path) -> tuple[str | 
         return None, output + f"\nFailed to parse prefetch JSON: {exc}"
 
 
+def prefetch_file(url: str, root: Path) -> tuple[str | None, str]:
+    code, output = run_result(["nix", "store", "prefetch-file", "--json", "--hash-type", "sha256", url], cwd=root, timeout=240)
+    if code != 0:
+        return None, output
+    try:
+        data = json.loads(output[output.find("{"):])
+        return data.get("hash"), output
+    except Exception as exc:
+        return None, output + f"\nFailed to parse prefetch JSON: {exc}"
+
+
 def replace_unique(text: str, pattern: str, replacement: str, label: str) -> tuple[str, str | None]:
     new_text, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
     if count != 1:
         return text, f"Could not replace unique {label}"
     return new_text, None
+
+
+def has_attr(text: str, attr: str) -> bool:
+    return re.search(rf'\b{re.escape(attr)}\s*=\s*"[^"]*"\s*;', text) is not None
+
+
+def replace_attr_hash(text: str, attr: str, value: str) -> tuple[str, str | None]:
+    return replace_unique(text, rf'(\b{re.escape(attr)}\s*=\s*")([^"]+)("\s*;)', rf'\g<1>{value}\g<3>', attr)
+
+
+def replace_first_source_hash(text: str, value: str) -> tuple[str, str | None]:
+    return replace_unique(text, r'(\b(?:hash|sha256)\s*=\s*")sha256-[^"]+("\s*;)', rf'\g<1>{value}\g<2>', "source hash/sha256")
+
+
+
+
+def replace_version_for_item(text: str, item: ReportItem, new_version: str) -> tuple[str, str | None]:
+    pname_pat = rf'(pname\s*=\s*"{re.escape(item.package)}"\s*;)(.*?)(\bversion\s*=\s*")([^"]+)("\s*;)'
+    new_text, count = re.subn(pname_pat, rf'\g<1>\g<2>\g<3>{new_version}\g<5>', text, count=1, flags=re.S)
+    if count == 1:
+        return new_text, None
+    # Some inline sources are not derivations and have no version attr; skip rather than corrupting another package.
+    return text, None
+
+
+def replace_hash_after_anchor(text: str, anchor: str, value: str, label: str) -> tuple[str, str | None]:
+    idx = text.find(anchor)
+    if idx < 0:
+        return text, f"Could not find anchor for {label}"
+    end = text.find("};", idx)
+    if end < 0:
+        end = min(len(text), idx + 1200)
+    segment = text[idx:end]
+    new_segment, count = re.subn(r'(\b(?:hash|sha256)\s*=\s*")sha256-[^"]+("\s*;)', rf'\g<1>{value}\g<2>', segment, count=1, flags=re.S)
+    if count != 1:
+        return text, f"Could not replace hash for {label}"
+    return text[:idx] + new_segment + text[end:], None
+
+
+def replace_rev_after_anchor(text: str, anchor: str, old_rev: str | None, new_rev: str) -> tuple[str, str | None]:
+    idx = text.find(anchor)
+    if idx < 0:
+        return text, "Could not find anchor for rev"
+    end = text.find("};", idx)
+    if end < 0:
+        end = min(len(text), idx + 1200)
+    segment = text[idx:end]
+    if "${version}" in segment:
+        return text, None
+    if old_rev:
+        new_segment, count = re.subn(r'(\brev\s*=\s*")' + re.escape(old_rev) + r'("\s*;)', rf'\g<1>{new_rev}\g<2>', segment, count=1, flags=re.S)
+    else:
+        new_segment, count = re.subn(r'(\brev\s*=\s*")([^"]+)("\s*;)', rf'\g<1>{new_rev}\g<3>', segment, count=1, flags=re.S)
+    if count != 1:
+        return text, "Could not replace rev near anchor"
+    return text[:idx] + new_segment + text[end:], None
+
+
+def replace_url_exact(text: str, old_url: str, new_url: str) -> tuple[str, str | None]:
+    return replace_unique(text, r'(\burl\s*=\s*")' + re.escape(old_url) + r'("\s*;)', rf'\g<1>{new_url}\g<2>', "url")
+
+def infer_latest_url(item: ReportItem) -> str | None:
+    url = item.rev_or_url or ""
+    if not item.latest or not item.latest_normalised:
+        return None
+    latest = item.latest
+    latest_norm = item.latest_normalised
+    current = item.current or ""
+    current_norm = item.current_normalised or normalise_version(current) or ""
+
+    replacements: list[tuple[str, str]] = []
+    if current_norm:
+        replacements.append(("v" + current_norm, latest))
+        replacements.append((current_norm, latest_norm))
+    if current:
+        replacements.append((current, latest if current.startswith("v") else latest_norm))
+    # Raw branch files are often tracked by a package version; switch to a tag ref.
+    replacements.append(("/raw/refs/heads/main/", f"/raw/refs/tags/{latest}/"))
+    replacements.append(("/raw/main/", f"/raw/{latest}/"))
+    replacements.append(("/main/", f"/{latest}/"))
+
+    new_url = url
+    for old, new in replacements:
+        if old and old in new_url:
+            new_url = new_url.replace(old, new)
+    return new_url if new_url != url else None
+
+
+def build_command_for_item(root: Path, item: ReportItem) -> list[str] | None:
+    if item.path.startswith("pkgs/") and item.path.endswith("/package.nix"):
+        pkg_text = (root / item.path).read_text(errors="ignore")
+        extra_args = ""
+        if re.search(r"(?m)^\s*donut\s*,", pkg_text):
+            extra_args = "donut = pkgs.callPackage ./pkgs/donut/package.nix {};"
+        return [
+            "nix",
+            "build",
+            "--impure",
+            "--expr",
+            f"let pkgs = import <nixpkgs> {{}}; in pkgs.callPackage ./{item.path} {{ {extra_args} }}",
+            "--no-link",
+            "--print-out-paths",
+        ]
+    return None
+
+
+def parse_hash_mismatch(output: str, attr: str | None = None) -> str | None:
+    # Nix commonly prints either "got: sha256-..." or "specified: ... got: ...".
+    matches = re.findall(r"got:\s+(sha256-[A-Za-z0-9+/=]+)", output)
+    if matches:
+        return matches[-1]
+    matches = re.findall(r"\b(sha256-[A-Za-z0-9+/=]{20,})", output)
+    # Avoid returning the fake hash if it is the only one found.
+    fake = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    for m in reversed(matches):
+        if m != fake:
+            return m
+    return None
+
+
+def build_with_dependency_hash_retries(root: Path, path: Path, item: ReportItem, build_cmd: list[str], max_rounds: int = 4) -> tuple[bool, str, list[dict[str, str]]]:
+    dep_attrs = ["vendorHash", "cargoHash", "npmDepsHash", "pnpmDepsHash", "yarnHash"]
+    fake = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    adjustments: list[dict[str, str]] = []
+    output_accum: list[str] = []
+
+    for _round in range(max_rounds):
+        code, output = run_result(build_cmd, cwd=root, timeout=600)
+        output_accum.append(output)
+        if code == 0:
+            return True, output.strip(), adjustments
+
+        text = path.read_text()
+        changed = False
+        # Prefer replacing an existing dependency hash with the fake hash to force Nix to reveal the correct one.
+        for attr in dep_attrs:
+            m = re.search(rf'\b{re.escape(attr)}\s*=\s*"([^"]+)"\s*;', text)
+            if has_attr(text, attr) and m and fake not in m.group(1):
+                text2, err = replace_attr_hash(text, attr, fake)
+                if not err:
+                    path.write_text(text2)
+                    adjustments.append({"attr": attr, "action": "set_fake"})
+                    changed = True
+                    break
+        if changed:
+            continue
+
+        got = parse_hash_mismatch(output)
+        if got:
+            for attr in dep_attrs:
+                if has_attr(text, attr) and re.search(rf"\b{re.escape(attr)}\s*=\s*\"{re.escape(fake)}\"\s*;", text):
+                    text2, err = replace_attr_hash(text, attr, got)
+                    if not err:
+                        path.write_text(text2)
+                        adjustments.append({"attr": attr, "action": "set_actual", "hash": got})
+                        changed = True
+                        break
+        if not changed:
+            return False, "\n--- build attempt ---\n".join(output_accum)[-12000:], adjustments
+
+    code, output = run_result(build_cmd, cwd=root, timeout=600)
+    output_accum.append(output)
+    return code == 0, (output.strip() if code == 0 else "\n--- build attempt ---\n".join(output_accum)[-12000:]), adjustments
+
+
+def apply_source_update_text(original: str, item: ReportItem, new_hash: str) -> tuple[str | None, dict[str, Any] | None]:
+    updated = original
+    new_version = item.latest_normalised
+    if not new_version or not item.latest:
+        return None, {"error": "No comparable latest tag", "item": asdict(item)}
+    updated, err = replace_version_for_item(updated, item, new_version)
+    if err:
+        return None, {"error": err, "item": asdict(item)}
+    anchor = f'repo = "{item.repo}";'
+    updated, err = replace_rev_after_anchor(updated, anchor, item.rev_or_url, item.latest)
+    if err:
+        return None, {"error": err, "item": asdict(item)}
+    updated, err = replace_hash_after_anchor(updated, anchor, new_hash, "source hash")
+    if err:
+        return None, {"error": err, "item": asdict(item)}
+    return updated, None
+
+
+def apply_fetchurl_update_text(original: str, item: ReportItem, new_url: str, new_hash: str) -> tuple[str | None, dict[str, Any] | None]:
+    updated = original
+    new_version = item.latest if (item.current or "").startswith("v") else item.latest_normalised
+    if not new_version:
+        return None, {"error": "No comparable latest version", "item": asdict(item)}
+    updated, err = replace_version_for_item(updated, item, new_version)
+    if err:
+        return None, {"error": err, "item": asdict(item)}
+    if item.rev_or_url:
+        updated, err = replace_url_exact(updated, item.rev_or_url, new_url)
+    else:
+        updated, err = replace_unique(updated, r'(\burl\s*=\s*")([^"]+)("\s*;)', rf'\g<1>{new_url}\g<3>', "url")
+    if err:
+        return None, {"error": err, "item": asdict(item), "new_url": new_url}
+    updated, err = replace_hash_after_anchor(updated, new_url, new_hash, "fetchurl hash")
+    if err:
+        return None, {"error": err, "item": asdict(item)}
+    return updated, None
 
 
 def apply_auto_update(root: Path, reports: list[ReportItem], package: str, *, dry_run: bool, keep_failed: bool) -> dict[str, Any]:
@@ -486,92 +698,84 @@ def apply_auto_update(root: Path, reports: list[ReportItem], package: str, *, dr
     item = matches[0]
     if item.pinned:
         return {"ok": False, "error": "Refusing to update pinned item", "item": asdict(item)}
-    if item.kind != "fetchFromGitHub" or item.source_kind != "source":
-        return {"ok": False, "error": "Experimental auto-update only supports fetchFromGitHub source items", "item": asdict(item)}
     if not item.latest or not item.latest_normalised:
         return {"ok": False, "error": "No comparable latest tag", "item": asdict(item)}
-    if not item.path.startswith("pkgs/") or not item.path.endswith("/package.nix"):
-        return {"ok": False, "error": "Refusing by default: package is not pkgs/<name>/package.nix", "item": asdict(item)}
 
     path = root / item.path
     original = path.read_text()
-    new_hash, prefetch_output = prefetch_github(item.owner, item.repo, item.latest, root)
-    if not new_hash:
-        return {"ok": False, "error": "Prefetch failed", "item": asdict(item), "prefetch_output": prefetch_output[-4000:]}
+    new_hash = None
+    new_url = None
+    prefetch_output = ""
 
-    updated = original
-    # Use normalised version without v-prefix for version attr, matching existing notebooklm-py style.
-    new_version = item.latest_normalised
-    updated, err = replace_unique(updated, r'(\bversion\s*=\s*")([^"]+)("\s*;)', rf'\g<1>{new_version}\g<3>', "version")
-    if err:
-        return {"ok": False, "error": err, "item": asdict(item)}
-    # If rev is templated as v${version}, updating version is enough and safer.
-    if item.rev_or_url and "${version}" in item.rev_or_url:
-        pass
+    if item.kind == "fetchFromGitHub" and item.source_kind == "source":
+        new_hash, prefetch_output = prefetch_github(item.owner, item.repo, item.latest, root)
+        if not new_hash:
+            return {"ok": False, "error": "Source prefetch failed", "item": asdict(item), "prefetch_output": prefetch_output[-4000:]}
+        updated, err_result = apply_source_update_text(original, item, new_hash)
+    elif item.kind == "fetchurl-github" and item.source_kind in {"release-asset", "raw-file"}:
+        new_url = infer_latest_url(item)
+        if not new_url:
+            return {"ok": False, "error": "Could not infer latest URL", "item": asdict(item)}
+        new_hash, prefetch_output = prefetch_file(new_url, root)
+        if not new_hash:
+            return {"ok": False, "error": "File prefetch failed", "item": asdict(item), "new_url": new_url, "prefetch_output": prefetch_output[-4000:]}
+        updated, err_result = apply_fetchurl_update_text(original, item, new_url, new_hash)
     else:
-        old_rev = re.escape(item.rev_or_url or "")
-        if item.rev_or_url:
-            candidate, err = replace_unique(updated, rf'(\brev\s*=\s*"){old_rev}("\s*;)', rf'\g<1>{item.latest}\g<2>', "rev")
-            if err and "${version}" in updated:
-                err = None
-            else:
-                updated = candidate
-        else:
-            updated, err = replace_unique(updated, r'(\brev\s*=\s*")([^"]+)("\s*;)', rf'\g<1>{item.latest}\g<3>', "rev")
-        if err:
-            return {"ok": False, "error": err, "item": asdict(item)}
-    updated, err = replace_unique(updated, r'(\b(?:hash|sha256)\s*=\s*")sha256-[^"]+("\s*;)', rf'\g<1>{new_hash}\g<2>', "hash/sha256")
-    if err:
-        return {"ok": False, "error": err, "item": asdict(item)}
+        return {"ok": False, "error": "Unsupported auto-update kind/source_kind", "item": asdict(item)}
 
+    if err_result:
+        return {"ok": False, **err_result}
+    assert updated is not None
+
+    build_cmd = build_command_for_item(root, item)
+    result_base = {
+        "item": asdict(item),
+        "new_version": item.latest_normalised,
+        "new_rev": item.latest,
+        "new_hash": new_hash,
+        "new_url": new_url,
+        "would_change": original != updated,
+        "build_supported": build_cmd is not None,
+    }
     if dry_run:
-        return {
-            "ok": True,
-            "dry_run": True,
-            "item": asdict(item),
-            "new_version": new_version,
-            "new_rev": item.latest,
-            "new_hash": new_hash,
-            "would_change": original != updated,
-        }
+        return {"ok": True, "dry_run": True, **result_base}
 
     backup = path.with_suffix(path.suffix + ".auto-update.bak")
     backup.write_text(original)
     path.write_text(updated)
-    build_cmd = [
-        "nix",
-        "build",
-        "--impure",
-        "--expr",
-        f"let pkgs = import <nixpkgs> {{}}; in pkgs.callPackage ./{item.path} {{}}",
-        "--no-link",
-        "--print-out-paths",
-    ]
-    code, build_output = run_result(build_cmd, cwd=root, timeout=600)
-    if code != 0:
+
+    if build_cmd is None:
+        backup.unlink(missing_ok=True)
+        return {
+            "ok": True,
+            "dry_run": False,
+            **result_base,
+            "verification": "prefetch-only; no narrow package build available for non-pkgs path",
+        }
+
+    ok, build_output, dep_adjustments = build_with_dependency_hash_retries(root, path, item, build_cmd)
+    if not ok:
         if not keep_failed:
             path.write_text(original)
         backup.unlink(missing_ok=True)
         return {
             "ok": False,
             "error": "Build failed" + ("; file left edited" if keep_failed else "; file rolled back"),
-            "item": asdict(item),
+            **result_base,
             "build_command": " ".join(build_cmd),
-            "build_output": build_output[-8000:],
+            "dependency_hash_adjustments": dep_adjustments,
+            "build_output": build_output[-12000:],
             "rolled_back": not keep_failed,
         }
     backup.unlink(missing_ok=True)
     return {
         "ok": True,
         "dry_run": False,
-        "item": asdict(item),
-        "new_version": new_version,
-        "new_rev": item.latest,
-        "new_hash": new_hash,
+        **result_base,
         "build_command": " ".join(build_cmd),
+        "dependency_hash_adjustments": dep_adjustments,
         "build_output": build_output.strip(),
     }
-
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -582,7 +786,8 @@ def main() -> int:
     parser.add_argument("--include-ok", action="store_true")
     parser.add_argument("--hide-unknown", action="store_true")
     parser.add_argument("--updates-only", action="store_true", help="Only print when updates exist; exit 0 silently otherwise")
-    parser.add_argument("--auto-update", metavar="PACKAGE_OR_PATH", help="Experimental: update one simple fetchFromGitHub package and build it")
+    parser.add_argument("--auto-update", metavar="PACKAGE_OR_PATH", help="Experimental: update one GitHub package/source and verify when possible")
+    parser.add_argument("--auto-update-all", action="store_true", help="Experimental: try every currently detected update once; never commits or switches")
     parser.add_argument("--dry-run", action="store_true", help="With --auto-update, show intended edit without writing/building")
     parser.add_argument("--keep-failed", action="store_true", help="With --auto-update, keep edits if the build fails instead of rolling back")
     args = parser.parse_args()
@@ -599,6 +804,24 @@ def main() -> int:
         result = apply_auto_update(root, reports, args.auto_update, dry_run=args.dry_run, keep_failed=args.keep_failed)
         print(json.dumps(result, indent=2))
         return 0 if result.get("ok") else 1
+
+    if args.auto_update_all:
+        results = []
+        attempted = set()
+        for report in [r for r in reports if r.status == "update"]:
+            key = report.package
+            if key in attempted:
+                continue
+            attempted.add(key)
+            # Recompute before each package so successful earlier updates are not retried.
+            current_reports = build_report(load_or_scan_inventory(root, cache_path, True))
+            if not any(r.status == "update" and r.package == key for r in current_reports):
+                continue
+            result = apply_auto_update(root, current_reports, key, dry_run=args.dry_run, keep_failed=args.keep_failed)
+            results.append(result)
+        ok_count = sum(1 for r in results if r.get("ok"))
+        print(json.dumps({"ok": all(r.get("ok") for r in results), "attempted": len(results), "succeeded": ok_count, "failed": len(results) - ok_count, "results": results}, indent=2))
+        return 0 if results and all(r.get("ok") for r in results) else 1
 
     updates = [r for r in reports if r.status == "update"]
     if args.updates_only and not updates:
