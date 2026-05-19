@@ -42,7 +42,7 @@ in {
     discord.enable = false;
     firefox.enable = false;
     libreOffice.enable = false;
-    # obsidian.enable = false;
+    obsidian.enable = false;
     remmina.enable = false;
     spotify.enable = false;
     claude-desktop.enable = false;
