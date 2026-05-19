@@ -571,6 +571,11 @@ def infer_latest_url(item: ReportItem) -> str | None:
     for old, new in replacements:
         if old and old in new_url:
             new_url = new_url.replace(old, new)
+
+    # Known upstream rename: adPEAS-Light.ps1 was replaced by the obfuscated light script.
+    if item.owner == "61106960" and item.repo == "adPEAS" and item.package == "adPEAS-Light":
+        new_url = new_url.replace("/adPEAS-Light.ps1", "/adPEAS_obf.ps1")
+
     return new_url if new_url != url else None
 
 
