@@ -120,7 +120,7 @@ in {
 
     programs.claude-code = {
       enable = true;
-      package = pkgs-unstable.claude-code;
+      package = inputs.claude-code-nix.packages.x86_64-linux.default;
 
       # Skills (managed via skillsDir, see ./skills/)
       skillsDir = ./skills;
@@ -432,6 +432,9 @@ in {
 
       # NotebookLM automation CLI
       notebooklm-py
+
+      # Brave for the Claude browser extension
+      brave
 
       # AI coding token usage tracker
       codeburn
