@@ -135,10 +135,35 @@ in {
       default = false;
       description = "Enable the cli-printing-press Claude Code plugin (marketplace + generator skills) and the Go toolchain it needs.";
     };
+    codex.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = config.code.codex.enable;
+      description = ''
+        Enable the openai/codex-plugin-cc plugin for Claude Code (slash commands /codex:setup, /codex:review, /codex:status, /codex:result and the codex:codex-rescue subagent). The plugin shells out to the local Codex CLI; defaults to whatever `code.codex.enable` is set to so the binary is present.
+      '';
+    };
     rtk.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
       description = "Enable RTK (rtk-ai/rtk): CLI proxy + Claude Code PreToolUse hook that rewrites common dev commands (git/cat/grep/test runners) to compact RTK equivalents for 60-90% token savings on Bash tool calls. Measure with `rtk gain` after a few sessions.";
+    };
+    localLlm = {
+      enable = lib.mkEnableOption "Route Claude Code through a local LLM (e.g. Ollama) by setting ANTHROPIC_* env vars in the user session.";
+      authToken = lib.mkOption {
+        type = lib.types.str;
+        default = "ollama";
+        description = "Value for ANTHROPIC_AUTH_TOKEN when localLlm.enable is true.";
+      };
+      apiKey = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+        description = "Value for ANTHROPIC_API_KEY when localLlm.enable is true. Empty string explicitly clears any inherited key.";
+      };
+      baseUrl = lib.mkOption {
+        type = lib.types.str;
+        default = "http://localhost:11434";
+        description = "Value for ANTHROPIC_BASE_URL when localLlm.enable is true. Point this at your Ollama (or compatible) endpoint.";
+      };
     };
   };
 
@@ -371,6 +396,7 @@ in {
         showThinkingSummaries = true;
         cleanupPeriodDays = 14;
         includeCoAuthoredBy = false;
+        skipDangerousModePermissionPrompt = true;
 
         permissions = {
           allow = [
@@ -437,6 +463,9 @@ in {
           }
           // lib.optionalAttrs config.code.claude-code.printing-press.enable {
             "cli-printing-press@cli-printing-press" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.codex.enable {
+            "codex@openai-codex" = true;
           };
 
         extraKnownMarketplaces =
@@ -473,6 +502,14 @@ in {
               source = {
                 source = "github";
                 repo = "mvanhorn/cli-printing-press";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.codex.enable {
+            openai-codex = {
+              source = {
+                source = "github";
+                repo = "openai/codex-plugin-cc";
               };
             };
           };
@@ -529,5 +566,11 @@ in {
 
     # Pick up *-pp-cli binaries that `/printing-press` installs into ~/go/bin
     home.sessionPath = lib.mkIf config.code.claude-code.printing-press.enable ["$HOME/go/bin"];
+
+    home.sessionVariables = lib.mkIf config.code.claude-code.localLlm.enable {
+      ANTHROPIC_AUTH_TOKEN = config.code.claude-code.localLlm.authToken;
+      ANTHROPIC_API_KEY = config.code.claude-code.localLlm.apiKey;
+      ANTHROPIC_BASE_URL = config.code.claude-code.localLlm.baseUrl;
+    };
   };
 }

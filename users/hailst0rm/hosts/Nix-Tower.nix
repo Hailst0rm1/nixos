@@ -12,6 +12,7 @@
   };
 
   code.claude-code.enable = true;
+  code.codex.enable = true;
   importConfig.zsh-history-sync.enable = true;
 
   applications = {

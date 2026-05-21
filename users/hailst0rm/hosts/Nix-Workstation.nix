@@ -11,6 +11,7 @@
   };
 
   code.claude-code.enable = true;
+  code.codex.enable = true;
 
   applications = {
     youtube-music.enable = true;

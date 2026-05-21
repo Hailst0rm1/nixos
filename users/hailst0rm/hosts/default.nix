@@ -71,6 +71,12 @@
       enable = lib.mkDefault false;
       exa.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
+      localLlm = {
+        enable = lib.mkDefault false;
+        authToken = lib.mkDefault "ollama";
+        apiKey = lib.mkDefault "";
+        baseUrl = lib.mkDefault "http://localhost:11434";
+      };
     };
     codex.enable = lib.mkDefault false;
     helix = {

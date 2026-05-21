@@ -295,6 +295,12 @@ in {
           "$mainMod CTRL, h, resizeactive, -30 0"
           "$mainMod CTRL, k, resizeactive, 0 -10"
           "$mainMod CTRL, j, resizeactive, 0 10"
+
+          # Vim-style arrow keys (global, override all apps)
+          "CTRL, h, sendshortcut, , Left,"
+          "CTRL, j, sendshortcut, , Down,"
+          "CTRL, k, sendshortcut, , Up,"
+          "CTRL, l, sendshortcut, , Right,"
         ];
 
         bindm = [

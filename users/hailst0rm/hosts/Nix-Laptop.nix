@@ -15,6 +15,7 @@
   };
 
   code.claude-code.enable = true;
+  code.codex.enable = true;
   services.claudecodeui.enable = true;
 
   applications = {
