@@ -8,6 +8,7 @@
 }: let
   notebooklm-py = pkgs.callPackage ../../../../pkgs/notebooklm-py/package.nix {};
   codeburn = pkgs.callPackage ../../../../pkgs/codeburn/package.nix {};
+  rtk = pkgs.callPackage ../../../../pkgs/rtk/package.nix {};
 
   gsd-repo = pkgs.fetchFromGitHub {
     owner = "gsd-build";
@@ -63,6 +64,54 @@
     then config.sops.secrets."services/github/pat".path
     else "/run/secrets/services/github/pat";
 
+  # Thin delegator hook for RTK (rtk-ai/rtk). Vendored from
+  # hooks/claude/rtk-rewrite.sh in the upstream repo. All rewrite logic lives
+  # in `rtk rewrite`; the script just shuttles JSON in/out of Claude Code's
+  # PreToolUse hook protocol. Absolute paths (jq, rtk) make the runtime
+  # version check + PATH guards from upstream redundant — Nix pins them.
+  # rtk currently only ships in nixpkgs-unstable, hence pkgs-unstable here.
+  rtkRewriteHook = pkgs.writeShellScript "rtk-rewrite" ''
+    INPUT=$(${pkgs.coreutils}/bin/cat)
+    CMD=$(${pkgs.jq}/bin/jq -r '.tool_input.command // empty' <<<"$INPUT")
+
+    if [ -z "$CMD" ]; then
+      exit 0
+    fi
+
+    REWRITTEN=$(${rtk}/bin/rtk rewrite "$CMD" 2>/dev/null)
+    EXIT_CODE=$?
+
+    case $EXIT_CODE in
+      0)
+        # Rewrite found — auto-allow unless output is identical (already RTK).
+        [ "$CMD" = "$REWRITTEN" ] && exit 0
+        ;;
+      1) exit 0 ;;  # No RTK equivalent — pass through.
+      2) exit 0 ;;  # Deny rule — let Claude Code's native deny handle it.
+      3) ;;          # Ask rule — rewrite but prompt the user.
+      *) exit 0 ;;
+    esac
+
+    if [ "$EXIT_CODE" -eq 3 ]; then
+      ${pkgs.jq}/bin/jq -c --arg cmd "$REWRITTEN" \
+        '.tool_input.command = $cmd | {
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "updatedInput": .tool_input
+          }
+        }' <<<"$INPUT"
+    else
+      ${pkgs.jq}/bin/jq -c --arg cmd "$REWRITTEN" \
+        '.tool_input.command = $cmd | {
+          "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "allow",
+            "permissionDecisionReason": "RTK auto-rewrite",
+            "updatedInput": .tool_input
+          }
+        }' <<<"$INPUT"
+    fi
+  '';
 in {
   options.code.claude-code = {
     enable = lib.mkEnableOption "Enable Claude Code CLI";
@@ -85,6 +134,11 @@ in {
       type = lib.types.bool;
       default = false;
       description = "Enable the cli-printing-press Claude Code plugin (marketplace + generator skills) and the Go toolchain it needs.";
+    };
+    rtk.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable RTK (rtk-ai/rtk): CLI proxy + Claude Code PreToolUse hook that rewrites common dev commands (git/cat/grep/test runners) to compact RTK equivalents for 60-90% token savings on Bash tool calls. Measure with `rtk gain` after a few sessions.";
     };
   };
 
@@ -177,58 +231,86 @@ in {
         **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
       '';
 
-      # General Nix ecosystem knowledge → ~/.claude/rules/nix-ecosystem.md
-      rules.nix-ecosystem = ''
-        # Nix Ecosystem
+      # ~/.claude/rules/*.md — nix-ecosystem is always present; rtk only when
+      # code.claude-code.rtk.enable is on.
+      rules =
+        {
+          nix-ecosystem = ''
+            # Nix Ecosystem
 
-        General knowledge for working in any Nix-based environment.
+            General knowledge for working in any Nix-based environment.
 
-        ## Package Discovery & Experimentation
-        - Search for packages: `nix search nixpkgs <query>`
-        - Try a package without installing: `nix shell nixpkgs#<package>` or `nix run nixpkgs#<package>`
-        - Check package info: `nix eval nixpkgs#<package>.meta.description`
-        - Use the MCP nixos tool to search packages, options, and documentation
+            ## Package Discovery & Experimentation
+            - Search for packages: `nix search nixpkgs <query>`
+            - Try a package without installing: `nix shell nixpkgs#<package>` or `nix run nixpkgs#<package>`
+            - Check package info: `nix eval nixpkgs#<package>.meta.description`
+            - Use the MCP nixos tool to search packages, options, and documentation
 
-        ## Development Environments with direnv
-        Add a `shell.nix` or `default.nix` to the project directory:
-        ```nix
-        # save as shell.nix
-        { pkgs ? import <nixpkgs> {}}:
-        pkgs.mkShell {
-          packages = [ pkgs.hello ];
+            ## Development Environments with direnv
+            Add a `shell.nix` or `default.nix` to the project directory:
+            ```nix
+            # save as shell.nix
+            { pkgs ? import <nixpkgs> {}}:
+            pkgs.mkShell {
+              packages = [ pkgs.hello ];
+            }
+            ```
+            Then enable direnv:
+            ```shell
+            echo "use nix" >> .envrc
+            direnv allow
+            ```
+            For flake-based projects, use `use flake` instead of `use nix` in `.envrc`.
+
+            ## Flakes
+            - `nix flake show` — inspect flake outputs
+            - `nix flake check` — validate a flake
+            - `nix flake update` — update all inputs
+            - `nix flake lock --update-input <input>` — update a single input
+
+            ## Secrets Management
+            - Use sops-nix for managing secrets in NixOS configurations
+            - Never hardcode credentials or sensitive data
+            - Secret files are encrypted at rest and decrypted at activation time
+            - Access secrets via `config.sops.secrets.<name>.path`
+
+            ## Debugging
+            - `nix repl` — interactive Nix evaluator; load a flake with `:lf .`
+            - `nix eval` — evaluate an expression without building
+            - `nix build --print-build-logs` — see full build output
+            - `nixos-rebuild build` — verify a NixOS config builds without switching
+
+            ## Security
+            - Follow OPSEC principles in all code
+            - Think adversarially about code execution
+            - Consider defensive coding practices
+            - Document security implications of changes
+          '';
         }
-        ```
-        Then enable direnv:
-        ```shell
-        echo "use nix" >> .envrc
-        direnv allow
-        ```
-        For flake-based projects, use `use flake` instead of `use nix` in `.envrc`.
+        // lib.optionalAttrs config.code.claude-code.rtk.enable {
+          rtk = ''
+            # RTK (Token-Compact Command Proxy)
 
-        ## Flakes
-        - `nix flake show` — inspect flake outputs
-        - `nix flake check` — validate a flake
-        - `nix flake update` — update all inputs
-        - `nix flake lock --update-input <input>` — update a single input
+            A PreToolUse hook silently rewrites your Bash commands to `rtk`
+            equivalents (e.g. `git status` → `rtk git status`) for 60-90% token
+            savings. You don't need to call `rtk` explicitly — the rewrite is
+            transparent.
 
-        ## Secrets Management
-        - Use sops-nix for managing secrets in NixOS configurations
-        - Never hardcode credentials or sensitive data
-        - Secret files are encrypted at rest and decrypted at activation time
-        - Access secrets via `config.sops.secrets.<name>.path`
+            Only Bash tool calls go through the hook. The native `Read`, `Grep`,
+            and `Glob` tools bypass it, so use shell commands (`cat`, `rg`,
+            `find`) or explicit `rtk read`/`rtk grep`/`rtk find` when you want
+            RTK filtering on those workflows.
 
-        ## Debugging
-        - `nix repl` — interactive Nix evaluator; load a flake with `:lf .`
-        - `nix eval` — evaluate an expression without building
-        - `nix build --print-build-logs` — see full build output
-        - `nixos-rebuild build` — verify a NixOS config builds without switching
+            On test failures the full unfiltered output is saved to
+            `~/.local/share/rtk/tee/` — read that log instead of re-running the
+            test.
 
-        ## Security
-        - Follow OPSEC principles in all code
-        - Think adversarially about code execution
-        - Consider defensive coding practices
-        - Document security implications of changes
-      '';
+            Useful meta-commands:
+            - `rtk gain`      — token-savings summary
+            - `rtk discover`  — find commands you could have rewritten
+            - `rtk session`   — adoption across recent sessions
+          '';
+        };
 
       # Custom commands for common workflows
       # commands = {
@@ -323,6 +405,22 @@ in {
         env = {
           CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
           CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
+        };
+
+        # PreToolUse hook: RTK rewrites Bash commands to token-compact equivalents.
+        hooks = lib.mkIf config.code.claude-code.rtk.enable {
+          PreToolUse = [
+            {
+              matcher = "Bash";
+              hooks = [
+                {
+                  type = "command";
+                  command = "${rtkRewriteHook}";
+                }
+              ];
+            }
+          ];
         };
 
         # Plugins
@@ -424,6 +522,9 @@ in {
       ]
       ++ lib.optionals config.code.claude-code.printing-press.enable [
         go # /printing-press generator shells out to `go install`/`go build`
+      ]
+      ++ lib.optionals config.code.claude-code.rtk.enable [
+        rtk # Token-compact CLI proxy invoked by rtkRewriteHook + meta-commands (`rtk gain`, etc.). Built from pkgs/rtk/package.nix.
       ];
 
     # Pick up *-pp-cli binaries that `/printing-press` installs into ~/go/bin

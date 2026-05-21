@@ -47,7 +47,6 @@
           "vpn/offsec" = {
             path = "/home/${config.username}/.vpn/offsec.ovpn";
           };
-          "services/discord/token" = {};
           "services/openweather" = {};
           "services/perplexity/api-key" = {};
           "services/exa/api-key" = {};

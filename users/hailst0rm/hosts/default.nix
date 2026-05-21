@@ -67,7 +67,11 @@
 
   # IDE for coding
   code = {
-    claude-code.enable = lib.mkDefault false;
+    claude-code = {
+      enable = lib.mkDefault false;
+      exa.enable = lib.mkDefault true;
+      perplexity.enable = lib.mkDefault false;
+    };
     codex.enable = lib.mkDefault false;
     helix = {
       enable = lib.mkDefault true;
@@ -125,7 +129,6 @@
       enable = lib.mkDefault true;
       servers = {
         nixos.enable = lib.mkDefault true;
-        discord.enable = lib.mkDefault true;
         perplexity.enable = lib.mkDefault true;
         exa.enable = lib.mkDefault true;
       };

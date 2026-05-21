@@ -5,11 +5,6 @@
   pkgs-unstable,
   ...
 }: let
-  discordTokenPath =
-    if (config.sops.secrets ? "services/discord/token")
-    then config.sops.secrets."services/discord/token".path
-    else "/run/secrets/services/discord/token";
-
   perplexityKeyPath =
     if (config.sops.secrets ? "services/perplexity/api-key")
     then config.sops.secrets."services/perplexity/api-key".path
@@ -50,23 +45,6 @@
     export WEBHOOK_SECURITY_MODE="permissive"
     export MCP_MODE="stdio"
     exec ${pkgs.nodejs}/bin/npx -y n8n-mcp "$@"
-  '';
-
-  discordMcpWrapper = pkgs.writeShellScript "discord-mcp-wrapper" ''
-    TOKEN_FILE="${discordTokenPath}"
-    if [ -f "$TOKEN_FILE" ]; then
-      export DISCORD_TOKEN="$(cat "$TOKEN_FILE")"
-    fi
-
-    MCP_DIR="$HOME/.local/share/discord-self-mcp"
-    if [ ! -f "$MCP_DIR/.installed" ]; then
-      rm -rf "$MCP_DIR"
-      mkdir -p "$MCP_DIR"
-      cd "$MCP_DIR"
-      ${pkgs.nodejs}/bin/npm install discord-self-mcp debug --save --loglevel=error >&2
-      touch "$MCP_DIR/.installed"
-    fi
-    exec ${pkgs.nodejs}/bin/node "$MCP_DIR/node_modules/discord-self-mcp/dist/index.js" "$@"
   '';
 in {
   options.code.codex.enable = lib.mkEnableOption "Enable Codex CLI";
@@ -215,10 +193,6 @@ in {
           git = {
             command = "uvx";
             args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
-          };
-          discord = {
-            command = "${discordMcpWrapper}";
-            args = [];
           };
           perplexity = {
             command = "${perplexityMcpWrapper}";
