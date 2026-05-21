@@ -179,7 +179,7 @@ in {
       # Settings → ~/.codex/config.toml
       settings = {
         model = "o3";
-        approval_policy = "suggest";
+        approval_policy = "on-request";
 
         mcp_servers = {
           nixos = {

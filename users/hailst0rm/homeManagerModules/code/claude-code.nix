@@ -399,6 +399,7 @@ in {
         skipDangerousModePermissionPrompt = true;
 
         permissions = {
+          defaultMode = "bypassPermissions";
           allow = [
             "Read"
             "Glob"
