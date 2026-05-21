@@ -103,6 +103,11 @@ in {
       default = false;
       description = "Enable n8n MCP server and skills for Claude Code.";
     };
+    printing-press.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the cli-printing-press Claude Code plugin (marketplace + generator skills) and the Go toolchain it needs.";
+    };
   };
 
   config = lib.mkIf config.code.claude-code.enable {
@@ -362,10 +367,12 @@ in {
             "frontend-design@claude-plugins-official" = true;
             "obsidian@obsidian-skills" = true;
             "context-mode@context-mode" = true;
-            "cli-printing-press@cli-printing-press" = true;
           }
           // lib.optionalAttrs config.code.claude-code.n8n.enable {
             "n8n-skills@n8n-skills" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.printing-press.enable {
+            "cli-printing-press@cli-printing-press" = true;
           };
 
         extraKnownMarketplaces =
@@ -388,18 +395,20 @@ in {
                 repo = "mksglu/context-mode";
               };
             };
-            cli-printing-press = {
-              source = {
-                source = "github";
-                repo = "mvanhorn/cli-printing-press";
-              };
-            };
           }
           // lib.optionalAttrs config.code.claude-code.n8n.enable {
             n8n-skills = {
               source = {
                 source = "github";
                 repo = "czlonkowski/n8n-skills";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.printing-press.enable {
+            cli-printing-press = {
+              source = {
+                source = "github";
+                repo = "mvanhorn/cli-printing-press";
               };
             };
           };
@@ -432,23 +441,26 @@ in {
     };
 
     # Ensure required dependencies are available
-    home.packages = with pkgs; [
-      uv # For Python MCP servers
-      nodejs # For npm/npx MCP servers
-      git # For git MCP server
-      go # For /printing-press generator (shells out to `go install`/`go build`)
+    home.packages = with pkgs;
+      [
+        uv # For Python MCP servers
+        nodejs # For npm/npx MCP servers
+        git # For git MCP server
 
-      # NotebookLM automation CLI
-      notebooklm-py
+        # NotebookLM automation CLI
+        notebooklm-py
 
-      # Brave for the Claude browser extension
-      brave
+        # Brave for the Claude browser extension
+        brave
 
-      # AI coding token usage tracker
-      codeburn
-    ];
+        # AI coding token usage tracker
+        codeburn
+      ]
+      ++ lib.optionals config.code.claude-code.printing-press.enable [
+        go # /printing-press generator shells out to `go install`/`go build`
+      ];
 
     # Pick up *-pp-cli binaries that `/printing-press` installs into ~/go/bin
-    home.sessionPath = ["$HOME/go/bin"];
+    home.sessionPath = lib.mkIf config.code.claude-code.printing-press.enable ["$HOME/go/bin"];
   };
 }
