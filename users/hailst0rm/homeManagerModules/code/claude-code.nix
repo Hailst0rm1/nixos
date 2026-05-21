@@ -362,6 +362,7 @@ in {
             "frontend-design@claude-plugins-official" = true;
             "obsidian@obsidian-skills" = true;
             "context-mode@context-mode" = true;
+            "cli-printing-press@cli-printing-press" = true;
           }
           // lib.optionalAttrs config.code.claude-code.n8n.enable {
             "n8n-skills@n8n-skills" = true;
@@ -385,6 +386,12 @@ in {
               source = {
                 source = "github";
                 repo = "mksglu/context-mode";
+              };
+            };
+            cli-printing-press = {
+              source = {
+                source = "github";
+                repo = "mvanhorn/cli-printing-press";
               };
             };
           }
@@ -429,6 +436,7 @@ in {
       uv # For Python MCP servers
       nodejs # For npm/npx MCP servers
       git # For git MCP server
+      go # For /printing-press generator (shells out to `go install`/`go build`)
 
       # NotebookLM automation CLI
       notebooklm-py
@@ -439,5 +447,8 @@ in {
       # AI coding token usage tracker
       codeburn
     ];
+
+    # Pick up *-pp-cli binaries that `/printing-press` installs into ~/go/bin
+    home.sessionPath = ["$HOME/go/bin"];
   };
 }
