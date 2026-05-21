@@ -16,14 +16,6 @@
     hash = "sha256-ylfH91jnyAkORAlon0CMko48DzeLYvSN1jhyDDKwnWU=";
   };
 
-  # Wrapper that reads the Discord user token from sops and launches discord-self-mcp
-  # Installs to a persistent directory on first run; explicitly adds 'debug' to fix
-  # broken werift-rtp dependency (it uses debug but doesn't declare it)
-  discordTokenPath =
-    if config.importConfig.sops.enable
-    then config.sops.secrets."services/discord/token".path
-    else "/run/secrets/services/discord/token";
-
   perplexityKeyPath =
     if config.importConfig.sops.enable
     then config.sops.secrets."services/perplexity/api-key".path
@@ -71,30 +63,6 @@
     then config.sops.secrets."services/github/pat".path
     else "/run/secrets/services/github/pat";
 
-  githubMcpWrapper = pkgs.writeShellScript "github-mcp-wrapper" ''
-    KEY_FILE="${githubPatPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export GITHUB_PERSONAL_ACCESS_TOKEN="$(cat "$KEY_FILE")"
-    fi
-    exec ${pkgs.nodejs}/bin/npx -y @modelcontextprotocol/server-github "$@"
-  '';
-
-  discordMcpWrapper = pkgs.writeShellScript "discord-mcp-wrapper" ''
-    TOKEN_FILE="${discordTokenPath}"
-    if [ -f "$TOKEN_FILE" ]; then
-      export DISCORD_TOKEN="$(cat "$TOKEN_FILE")"
-    fi
-
-    MCP_DIR="$HOME/.local/share/discord-self-mcp"
-    if [ ! -f "$MCP_DIR/.installed" ]; then
-      rm -rf "$MCP_DIR"
-      mkdir -p "$MCP_DIR"
-      cd "$MCP_DIR"
-      ${pkgs.nodejs}/bin/npm install discord-self-mcp debug --save --loglevel=error >&2
-      touch "$MCP_DIR/.installed"
-    fi
-    exec ${pkgs.nodejs}/bin/node "$MCP_DIR/node_modules/discord-self-mcp/dist/index.js" "$@"
-  '';
 in {
   options.code.claude-code = {
     enable = lib.mkEnableOption "Enable Claude Code CLI";
@@ -102,6 +70,16 @@ in {
       type = lib.types.bool;
       default = false;
       description = "Enable n8n MCP server and skills for Claude Code.";
+    };
+    exa.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the Exa web/code search MCP server for Claude Code.";
+    };
+    perplexity.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the Perplexity web search MCP server for Claude Code.";
     };
     printing-press.enable = lib.mkOption {
       type = lib.types.bool;
@@ -286,28 +264,16 @@ in {
             command = "nix";
             args = ["run" "github:utensils/mcp-nixos" "--"];
           };
-          filesystem = {
-            command = "npx";
-            args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
-          };
-          git = {
-            command = "uvx";
-            args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
-          };
-          discord = {
-            command = "${discordMcpWrapper}";
-            args = [];
-          };
-          perplexity = {
-            command = "${perplexityMcpWrapper}";
-            args = [];
-          };
+        }
+        // lib.optionalAttrs config.code.claude-code.exa.enable {
           exa = {
             command = "${exaMcpWrapper}";
             args = [];
           };
-          github = {
-            command = "${githubMcpWrapper}";
+        }
+        // lib.optionalAttrs config.code.claude-code.perplexity.enable {
+          perplexity = {
+            command = "${perplexityMcpWrapper}";
             args = [];
           };
         }
