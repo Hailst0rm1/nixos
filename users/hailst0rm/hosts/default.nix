@@ -2,6 +2,7 @@
   lib,
   config,
   osConfig,
+  pkgs,
   ...
 }: {
   imports =
@@ -71,6 +72,16 @@
       enable = lib.mkDefault false;
       exa.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
+      sessionHandoffReminder = {
+        enable = lib.mkDefault true;
+        thresholdMinutes = lib.mkDefault 60;
+      };
+      sound = {
+        enable = lib.mkDefault true;
+        volume = lib.mkDefault 55;
+        stopSound = lib.mkDefault "${pkgs.sound-theme-freedesktop}/share/sounds/freedesktop/stereo/complete.oga";
+        notificationSound = lib.mkDefault "${pkgs.sound-theme-freedesktop}/share/sounds/freedesktop/stereo/bell.oga";
+      };
       localLlm = {
         enable = lib.mkDefault false;
         authToken = lib.mkDefault "ollama";

@@ -47,6 +47,22 @@
     esac
   '';
 
+  # Vim-arrow with per-app exception: pass Ctrl+<key> through to Obsidian,
+  # remap to arrow direction everywhere else.
+  vim-arrow = pkgs.writeShellScript "vim-arrow" ''
+    key="$1"
+    direction="$2"
+    class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
+    case "$class" in
+      obsidian)
+        hyprctl dispatch sendshortcut "CTRL, $key,"
+        ;;
+      *)
+        hyprctl dispatch sendshortcut ", $direction,"
+        ;;
+    esac
+  '';
+
   cfg = config.importConfig.hyprland;
 in {
   config = lib.mkIf cfg.enable {
@@ -296,10 +312,11 @@ in {
           "$mainMod CTRL, k, resizeactive, 0 -10"
           "$mainMod CTRL, j, resizeactive, 0 10"
 
-          # Vim-style arrow keys (global, override all apps)
+          # Vim-style arrow keys (global, override all apps).
+          # j/k are routed through a wrapper so Obsidian keeps its native Ctrl+J/K.
           "CTRL, h, sendshortcut, , Left,"
-          "CTRL, j, sendshortcut, , Down,"
-          "CTRL, k, sendshortcut, , Up,"
+          "CTRL, j, exec, ${vim-arrow} j Down"
+          "CTRL, k, exec, ${vim-arrow} k Up"
           "CTRL, l, sendshortcut, , Right,"
         ];
 

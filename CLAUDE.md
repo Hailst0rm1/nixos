@@ -57,6 +57,15 @@ Same pattern for Home Manager:
 1. `users/<user>/hosts/default.nix` sets `lib.mkDefault` values
 2. `users/<user>/hosts/<hostname>.nix` overrides per-host
 
+### Always mirror new options to `default.nix`
+
+Whenever you add a new option to a module (NixOS or Home Manager), also add it to the corresponding `default.nix` with a `lib.mkDefault` value — even if the value matches the module's built-in default.
+
+- New option in `nixosModules/**` → mirror in `hosts/default.nix`
+- New option in `users/<user>/homeManagerModules/**` → mirror in `users/<user>/hosts/default.nix`
+
+This keeps `default.nix` as the single browseable surface for "what can I toggle on this system?" — without it, options become invisible unless someone reads every module. Match the existing nesting style in `default.nix` (preserve attrset shape, group related sub-options together).
+
 ## Package Channels
 
 - `pkgs` — stable (nixos-25.11), use for system-critical packages

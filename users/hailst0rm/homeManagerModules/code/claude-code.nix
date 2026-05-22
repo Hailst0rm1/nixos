@@ -112,6 +112,57 @@
         }' <<<"$INPUT"
     fi
   '';
+
+  # Stop hook: nudge user to run /session-handoff once the session exceeds
+  # `sessionHandoffReminder.thresholdMinutes`. Auto-dismisses once the
+  # session-handoff skill has actually been invoked (detected via a Skill
+  # tool_use entry in the transcript). Every error path exits 0 so this can
+  # never disrupt Claude.
+  sessionHandoffReminderHook = pkgs.writeShellScript "session-handoff-reminder" ''
+    set -eu
+    INPUT=$(${pkgs.coreutils}/bin/cat)
+    TRANSCRIPT=$(${pkgs.jq}/bin/jq -r '.transcript_path // empty' <<<"$INPUT")
+    [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ] || exit 0
+
+    # Transcripts start with several metadata entries (last-prompt,
+    # permission-mode, file-history-snapshot) that have timestamp=null.
+    # Skip them and take the first real timestamp.
+    FIRST_TS=$(${pkgs.jq}/bin/jq -r 'select(.timestamp != null) | .timestamp' "$TRANSCRIPT" 2>/dev/null \
+      | ${pkgs.coreutils}/bin/head -n1)
+    [ -n "$FIRST_TS" ] || exit 0
+
+    START_EPOCH=$(${pkgs.coreutils}/bin/date -d "$FIRST_TS" +%s 2>/dev/null) || exit 0
+    NOW_EPOCH=$(${pkgs.coreutils}/bin/date +%s)
+    AGE_MIN=$(( (NOW_EPOCH - START_EPOCH) / 60 ))
+    THRESHOLD=${toString config.code.claude-code.sessionHandoffReminder.thresholdMinutes}
+    [ "$AGE_MIN" -ge "$THRESHOLD" ] || exit 0
+
+    # Dismiss the reminder once the session-handoff skill was actually invoked.
+    # Claude Code records skill invocations as a tool_use block with
+    # name="Skill" and input.skill="<skill-name>". This is precise — mere
+    # discussion of the skill in chat does not match.
+    if ${pkgs.jq}/bin/jq -e '.message?.content?[]? | select(.type? == "tool_use" and .name? == "Skill" and .input?.skill? == "session-handoff")' "$TRANSCRIPT" >/dev/null 2>&1; then
+      exit 0
+    fi
+
+    HOURS=$((AGE_MIN / 60))
+    MINS=$((AGE_MIN % 60))
+    # Claude Code's Stop hook discards raw stdout from the user view; the
+    # documented way to surface a message in the transcript is JSON with a
+    # `systemMessage` field.
+    MSG=$(${pkgs.coreutils}/bin/printf '─── Session age: %dh %dm ───\nRun /session-handoff, copy the output, /clear, then paste it into the fresh session.' "$HOURS" "$MINS")
+    ${pkgs.jq}/bin/jq -nc --arg msg "$MSG" '{"systemMessage": $msg}'
+  '';
+
+  # Sound hook: non-blocking paplay on Stop / Notification. Backgrounded so
+  # the hook returns immediately and never delays Claude's next turn.
+  # `volumePct` is 0-100; paplay's --volume range is 0-65536 (100% = 65536).
+  playSoundHook = name: soundPath: volumePct:
+    pkgs.writeShellScript "claude-code-sound-${name}" ''
+      ${pkgs.pulseaudio}/bin/paplay --volume=${toString (volumePct * 65536 / 100)} "${soundPath}" >/dev/null 2>&1 &
+      disown
+      exit 0
+    '';
 in {
   options.code.claude-code = {
     enable = lib.mkEnableOption "Enable Claude Code CLI";
@@ -146,6 +197,42 @@ in {
       type = lib.types.bool;
       default = true;
       description = "Enable RTK (rtk-ai/rtk): CLI proxy + Claude Code PreToolUse hook that rewrites common dev commands (git/cat/grep/test runners) to compact RTK equivalents for 60-90% token savings on Bash tool calls. Measure with `rtk gain` after a few sessions.";
+    };
+    sessionHandoffReminder = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Print a reminder after every Claude turn once the session exceeds thresholdMinutes, suggesting /session-handoff then /clear. Auto-dismisses once the session-handoff skill has produced its template this session.";
+      };
+      thresholdMinutes = lib.mkOption {
+        type = lib.types.int;
+        default = 60;
+        description = "Minutes of session age before the reminder starts firing.";
+      };
+    };
+    sound = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Play a short system sound when Claude finishes a turn (Stop) and when Claude is waiting on you (Notification — permission prompts, idle).";
+      };
+      stopSound = lib.mkOption {
+        type = lib.types.path;
+        default = "${pkgs.sound-theme-freedesktop}/share/sounds/freedesktop/stereo/complete.oga";
+        defaultText = lib.literalExpression ''"\''${pkgs.sound-theme-freedesktop}/share/sounds/freedesktop/stereo/complete.oga"'';
+        description = "Sound file played on the Stop event (Claude finished a turn).";
+      };
+      notificationSound = lib.mkOption {
+        type = lib.types.path;
+        default = "${pkgs.sound-theme-freedesktop}/share/sounds/freedesktop/stereo/bell.oga";
+        defaultText = lib.literalExpression ''"\''${pkgs.sound-theme-freedesktop}/share/sounds/freedesktop/stereo/bell.oga"'';
+        description = "Sound file played on the Notification event (permission prompts, idle).";
+      };
+      volume = lib.mkOption {
+        type = lib.types.ints.between 0 100;
+        default = 55;
+        description = "Playback volume as a percentage (0-100). Applied to both stopSound and notificationSound.";
+      };
     };
     localLlm = {
       enable = lib.mkEnableOption "Route Claude Code through a local LLM (e.g. Ollama) by setting ANTHROPIC_* env vars in the user session.";
@@ -435,20 +522,58 @@ in {
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
         };
 
-        # PreToolUse hook: RTK rewrites Bash commands to token-compact equivalents.
-        hooks = lib.mkIf config.code.claude-code.rtk.enable {
-          PreToolUse = [
-            {
-              matcher = "Bash";
-              hooks = [
-                {
-                  type = "command";
-                  command = "${rtkRewriteHook}";
-                }
-              ];
-            }
-          ];
-        };
+        # Hooks:
+        # - PreToolUse (RTK): rewrites Bash commands to token-compact equivalents.
+        # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
+        hooks = lib.mkMerge [
+          (lib.mkIf config.code.claude-code.rtk.enable {
+            PreToolUse = [
+              {
+                matcher = "Bash";
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${rtkRewriteHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.sessionHandoffReminder.enable {
+            Stop = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${sessionHandoffReminderHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.sound.enable {
+            Stop = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${playSoundHook "stop" config.code.claude-code.sound.stopSound config.code.claude-code.sound.volume}";
+                  }
+                ];
+              }
+            ];
+            Notification = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${playSoundHook "notification" config.code.claude-code.sound.notificationSound config.code.claude-code.sound.volume}";
+                  }
+                ];
+              }
+            ];
+          })
+        ];
 
         # Plugins
         enabledPlugins =
@@ -557,6 +682,9 @@ in {
 
         # AI coding token usage tracker
         codeburn
+      ]
+      ++ lib.optionals config.code.claude-code.sound.enable [
+        sound-theme-freedesktop # complete.oga / bell.oga for Claude Code Stop + Notification hooks
       ]
       ++ lib.optionals config.code.claude-code.printing-press.enable [
         go # /printing-press generator shells out to `go install`/`go build`
