@@ -72,6 +72,7 @@
       enable = lib.mkDefault false;
       exa.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
+      claude-mem.enable = lib.mkDefault true;
       sessionHandoffReminder = {
         enable = lib.mkDefault true;
         thresholdMinutes = lib.mkDefault 60;

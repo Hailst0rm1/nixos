@@ -193,6 +193,13 @@ in {
         Enable the openai/codex-plugin-cc plugin for Claude Code (slash commands /codex:setup, /codex:review, /codex:status, /codex:result and the codex:codex-rescue subagent). The plugin shells out to the local Codex CLI; defaults to whatever `code.codex.enable` is set to so the binary is present.
       '';
     };
+    claude-mem.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Enable the thedotmack/claude-mem plugin: persistent memory across Claude Code sessions. Captures tool-use observations, compresses them with an AI provider, and re-injects relevant context on session start. Hooks and worker live entirely under ~/.claude/plugins/marketplaces/thedotmack/ (mutable, not nix-managed), so it coexists with the nix-rendered settings.json. Requires `node` (already provided) and an AI provider configured at runtime — see https://docs.claude-mem.ai.
+      '';
+    };
     rtk.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -592,6 +599,9 @@ in {
           }
           // lib.optionalAttrs config.code.claude-code.codex.enable {
             "codex@openai-codex" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.claude-mem.enable {
+            "claude-mem@thedotmack" = true;
           };
 
         extraKnownMarketplaces =
@@ -636,6 +646,14 @@ in {
               source = {
                 source = "github";
                 repo = "openai/codex-plugin-cc";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.claude-mem.enable {
+            thedotmack = {
+              source = {
+                source = "github";
+                repo = "thedotmack/claude-mem";
               };
             };
           };
@@ -691,6 +709,9 @@ in {
       ]
       ++ lib.optionals config.code.claude-code.rtk.enable [
         rtk # Token-compact CLI proxy invoked by rtkRewriteHook + meta-commands (`rtk gain`, etc.). Built from pkgs/rtk/package.nix.
+      ]
+      ++ lib.optionals config.code.claude-code.claude-mem.enable [
+        bun # claude-mem's hooks shell out to `bun` via scripts/bun-runner.js
       ];
 
     # Pick up *-pp-cli binaries that `/printing-press` installs into ~/go/bin
