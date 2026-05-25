@@ -17,6 +17,20 @@
     hash = "sha256-ylfH91jnyAkORAlon0CMko48DzeLYvSN1jhyDDKwnWU=";
   };
 
+  mattpocock-skills-repo = pkgs.fetchFromGitHub {
+    owner = "mattpocock";
+    repo = "skills";
+    rev = "main";
+    hash = "sha256-Qwuu27f95xgAJ4hdv/4TNahHhprCMIxl1H9f9ymEsno=";
+  };
+
+  mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
+  mattpocockSkillFiles = lib.listToAttrs (map (skillPath: {
+      name = ".claude/skills/${baseNameOf skillPath}";
+      value.source = "${mattpocock-skills-repo}/${skillPath}";
+    })
+    mattpocockPlugin.skills);
+
   perplexityKeyPath =
     if config.importConfig.sops.enable
     then config.sops.secrets."services/perplexity/api-key".path
@@ -41,6 +55,23 @@
       export EXA_API_KEY="$(cat "$KEY_FILE")"
     fi
     exec ${pkgs.nodejs}/bin/npx -y exa-mcp-server "$@"
+  '';
+
+  context7KeyPath =
+    if config.importConfig.sops.enable
+    then config.sops.secrets."services/context7/api-key".path
+    else "/run/secrets/services/context7/api-key";
+
+  context7McpWrapper = pkgs.writeShellScript "context7-mcp-wrapper" ''
+    KEY_FILE="${context7KeyPath}"
+    if [ -f "$KEY_FILE" ]; then
+      export CONTEXT7_API_KEY="$(cat "$KEY_FILE")"
+    fi
+    exec ${pkgs.nodejs}/bin/npx -y @upstash/context7-mcp "$@"
+  '';
+
+  codegraphMcpWrapper = pkgs.writeShellScript "codegraph-mcp-wrapper" ''
+    exec ${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph serve --mcp "$@"
   '';
 
   n8nApiKeyPath =
@@ -163,6 +194,154 @@
       disown
       exit 0
     '';
+
+  # statusLine: single-line bar fed JSON on stdin by Claude Code.
+  # Renders: v<version>  <model>  <project> {<wt>:}<branch>{*}{⇡N}{⇣N}  <ctx%>  +<add>/-<rem>  $<cost>
+  # Project = main repo basename (via git-common-dir, stable across worktrees).
+  # Worktree label only when GIT_DIR != GIT_COMMON_DIR and not a submodule.
+  # ANSI colors only — no OSC, no Nerd Font PUA.
+  claudeStatuslineScript = pkgs.writeShellScript "claude-statusline" ''
+    set -uo pipefail
+
+    RESET=$'\033[0m'
+    DIM=$'\033[2m'
+    CYAN=$'\033[36m'
+    BLUE=$'\033[34m'
+    MAGENTA=$'\033[35m'
+    YELLOW=$'\033[33m'
+    GREEN=$'\033[32m'
+    RED=$'\033[31m'
+
+    INPUT=$(${pkgs.coreutils}/bin/cat)
+    JQ=${pkgs.jq}/bin/jq
+    GIT=${pkgs.git}/bin/git
+
+    VERSION=$(echo "$INPUT" | "$JQ" -r '.version // "?"')
+    MODEL=$(echo "$INPUT" | "$JQ" -r '.model.display_name // "?"')
+
+    PROJECT=""
+    GIT_SEG=""
+    WT_LABEL=""
+
+    if "$GIT" rev-parse --git-dir >/dev/null 2>&1; then
+      # Project: parent of shared .git/ — stable across worktrees.
+      COMMON=$("$GIT" rev-parse --git-common-dir 2>/dev/null)
+      COMMON_ABS=""
+      if [ -n "$COMMON" ]; then
+        COMMON_ABS=$(cd "$COMMON" 2>/dev/null && pwd -P || echo "")
+        if [ -n "$COMMON_ABS" ]; then
+          MAIN_ROOT=$(${pkgs.coreutils}/bin/dirname "$COMMON_ABS")
+          PROJECT=$(${pkgs.coreutils}/bin/basename "$MAIN_ROOT")
+        fi
+      fi
+
+      # Worktree detection: GIT_DIR != GIT_COMMON_DIR AND not a submodule.
+      GIT_DIR_PATH=$(cd "$("$GIT" rev-parse --git-dir)" 2>/dev/null && pwd -P || echo "")
+      SUPER=$("$GIT" rev-parse --show-superproject-working-tree 2>/dev/null)
+      if [ -n "$GIT_DIR_PATH" ] && [ -n "$COMMON_ABS" ] \
+           && [ "$GIT_DIR_PATH" != "$COMMON_ABS" ] && [ -z "$SUPER" ]; then
+        WT_ROOT=$("$GIT" rev-parse --show-toplevel 2>/dev/null)
+        if [ -n "$WT_ROOT" ]; then
+          WT_NAME=$(${pkgs.coreutils}/bin/basename "$WT_ROOT")
+          WT_LABEL="''${YELLOW}''${WT_NAME}''${RESET}:"
+        fi
+      fi
+
+      BR=$("$GIT" branch --show-current 2>/dev/null)
+      [ -z "$BR" ] && BR="(detached)"
+
+      DIRTY=""
+      if [ -n "$("$GIT" status --porcelain 2>/dev/null)" ]; then
+        DIRTY="''${YELLOW}*''${RESET}''${MAGENTA}"
+      fi
+
+      UP=""
+      if "$GIT" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+        AHEAD=$("$GIT" rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)
+        BEHIND=$("$GIT" rev-list --count 'HEAD..@{u}' 2>/dev/null || echo 0)
+        [ "$AHEAD"  -gt 0 ] && UP="''${UP}⇡''${AHEAD}"
+        [ "$BEHIND" -gt 0 ] && UP="''${UP}⇣''${BEHIND}"
+      fi
+      GIT_SEG=" ''${WT_LABEL}''${MAGENTA}''${BR}''${DIRTY}''${UP}''${RESET}"
+    fi
+
+    # Non-git fallback for project name.
+    if [ -z "$PROJECT" ]; then
+      PROJECT_PATH=$(echo "$INPUT" | "$JQ" -r '.workspace.project_dir // .cwd // ""')
+      [ -n "$PROJECT_PATH" ] && PROJECT=$(${pkgs.coreutils}/bin/basename "$PROJECT_PATH")
+    fi
+    [ -z "$PROJECT" ] && PROJECT="?"
+
+    CTX=$(echo "$INPUT" | "$JQ" -r '.context_window.used_percentage // 0' \
+            | ${pkgs.coreutils}/bin/cut -d. -f1)
+    if   [ "$CTX" -ge 80 ]; then CTX_COLOR="$RED"
+    elif [ "$CTX" -ge 50 ]; then CTX_COLOR="$YELLOW"
+    else                         CTX_COLOR="$GREEN"
+    fi
+
+    ADD=$(echo "$INPUT" | "$JQ" -r '.cost.total_lines_added   // 0')
+    REM=$(echo "$INPUT" | "$JQ" -r '.cost.total_lines_removed // 0')
+
+    COST=$(echo "$INPUT" | "$JQ" -r '.cost.total_cost_usd // 0')
+    COST_CENT=$(echo "$INPUT" | "$JQ" -r '(.cost.total_cost_usd // 0) * 100 | floor')
+    if   [ "$COST_CENT" -ge 200 ]; then COST_COLOR="$RED"
+    elif [ "$COST_CENT" -ge 50  ]; then COST_COLOR="$YELLOW"
+    else                                COST_COLOR="$GREEN"
+    fi
+    COST_FMT=$(${pkgs.coreutils}/bin/printf '%.2f' "$COST")
+
+    # Rate-limit segments — silent when rate_limits absent (older Claude Code, fixtures).
+    fmt_delta() {
+      local d=$1
+      if [ "$d" -le 0 ]; then echo "now"; return; fi
+      if [ "$d" -ge 86400 ]; then echo "$((d/86400))d$((d%86400/3600))h"; return; fi
+      if [ "$d" -ge 3600  ]; then echo "$((d/3600))h$((d%3600/60))m";    return; fi
+      echo "$((d/60))m"
+    }
+
+    NOW=$(${pkgs.coreutils}/bin/date +%s)
+    rate_seg() {
+      local path=$1 label=$2
+      local pct pct_int ts color delta countdown epoch
+      pct=$(echo "$INPUT" | "$JQ" -r "$path.used_percentage // empty")
+      [ -z "$pct" ] && return
+      ts=$(echo "$INPUT" | "$JQ" -r "$path.resets_at // empty")
+
+      pct_int=''${pct%%.*}
+      if   [ "$pct_int" -ge 80 ]; then color="$RED"
+      elif [ "$pct_int" -ge 50 ]; then color="$YELLOW"
+      else                             color="$GREEN"
+      fi
+
+      countdown=""
+      if [ -n "$ts" ]; then
+        # resets_at is Unix epoch seconds in live v2.1.150+ payload; ISO 8601 is
+        # forward-compat fallback for any future schema change.
+        if [[ "$ts" =~ ^[0-9]+$ ]]; then
+          epoch="$ts"
+        else
+          epoch=$(${pkgs.coreutils}/bin/date -d "$ts" +%s 2>/dev/null || echo "")
+        fi
+        if [ -n "$epoch" ]; then
+          delta=$((epoch - NOW))
+          countdown=" ($(fmt_delta "$delta"))"
+        fi
+      fi
+
+      printf '   %s%s:%s%%%s%s' "$color" "$label" "$pct_int" "$countdown" "$RESET"
+    }
+
+    RATE_5H=$(rate_seg '.rate_limits.five_hour' '5h')
+    RATE_7D=$(rate_seg '.rate_limits.seven_day' '7d')
+
+    ${pkgs.coreutils}/bin/printf '%sv%s%s   %s%s%s   %s%s%s%s   %s%s%%%s   %s+%s%s/%s-%s%s   %s$%s%s%s%s\n' \
+      "$DIM" "$VERSION" "$RESET" \
+      "$CYAN" "$MODEL" "$RESET" \
+      "$BLUE" "$PROJECT" "$RESET" "$GIT_SEG" \
+      "$CTX_COLOR" "$CTX" "$RESET" \
+      "$GREEN" "$ADD" "$RESET" "$RED" "$REM" "$RESET" \
+      "$COST_COLOR" "$COST_FMT" "$RESET" "$RATE_5H" "$RATE_7D"
+  '';
 in {
   options.code.claude-code = {
     enable = lib.mkEnableOption "Enable Claude Code CLI";
@@ -175,6 +354,18 @@ in {
       type = lib.types.bool;
       default = true;
       description = "Enable the Exa web/code search MCP server for Claude Code.";
+    };
+    context7.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the Context7 (upstash/context7) MCP server: on-demand up-to-date library documentation. Reads CONTEXT7_API_KEY from sops services/context7/api-key — falls through to anonymous (lower rate limits) if the secret file is missing.";
+    };
+    codegraph.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Enable the colbymchenry/codegraph MCP server: tree-sitter + SQLite/FTS5 code-intelligence with symbol search, callers/callees, and impact analysis. Runs as a global MCP server; only does useful work in projects that have been initialized with `codegraph init` (creates `.codegraph/`). 100% local, no API keys. Supports TS/JS, Python, Go, Rust, Java, C#, PHP, Ruby, C/C++, Swift, Kotlin, Dart, Lua, Luau, Svelte, Liquid, Pascal — NOT Nix.
+      '';
     };
     perplexity.enable = lib.mkOption {
       type = lib.types.bool;
@@ -429,6 +620,33 @@ in {
             - `rtk discover`  — find commands you could have rewritten
             - `rtk session`   — adoption across recent sessions
           '';
+        }
+        // lib.optionalAttrs config.code.claude-code.codegraph.enable {
+          codegraph = ''
+            # CodeGraph (Semantic Code Intelligence)
+
+            When a project contains a `.codegraph/` directory, prefer the
+            `mcp__codegraph__*` tools over `grep`/`rg`/`Read` for code
+            exploration:
+
+            - `codegraph_search` — find a symbol by name (function, class, method)
+            - `codegraph_context` — build a context bundle for a task (entry points + related code)
+            - `codegraph_callers` / `codegraph_callees` — call-graph traversal
+            - `codegraph_impact` — what breaks if I change this symbol?
+            - `codegraph_files` — file/dir structure with symbol counts
+            - `codegraph_status` — index health
+
+            One CodeGraph call typically replaces dozens of grep + Read
+            exploration steps.
+
+            If a project is NOT initialized, the tools return "CodeGraph not
+            initialized" — run `codegraph init` in that project's root
+            (optionally `codegraph init --index` to also build the initial
+            index). The file watcher keeps the index fresh.
+
+            CodeGraph does not parse Nix — fall back to grep/Read for `.nix`
+            files.
+          '';
         };
 
       # Custom commands for common workflows
@@ -472,6 +690,18 @@ in {
             args = [];
           };
         }
+        // lib.optionalAttrs config.code.claude-code.context7.enable {
+          context7 = {
+            command = "${context7McpWrapper}";
+            args = [];
+          };
+        }
+        // lib.optionalAttrs config.code.claude-code.codegraph.enable {
+          codegraph = {
+            command = "${codegraphMcpWrapper}";
+            args = [];
+          };
+        }
         // lib.optionalAttrs config.code.claude-code.perplexity.enable {
           perplexity = {
             command = "${perplexityMcpWrapper}";
@@ -492,27 +722,44 @@ in {
         includeCoAuthoredBy = false;
         skipDangerousModePermissionPrompt = true;
 
+        statusLine = {
+          type = "command";
+          command = "${claudeStatuslineScript}";
+          padding = 0;
+        };
+
         permissions = {
           defaultMode = "bypassPermissions";
-          allow = [
-            "Read"
-            "Glob"
-            "Grep"
-            "LS"
-            "Edit"
-            "MultiEdit"
-            "Write"
-            "Bash(git status)"
-            "Bash(git diff *)"
-            "Bash(git log *)"
-            "Bash(git add *)"
-            "Bash(git commit *)"
-            "Bash(git checkout *)"
-            "Bash(git branch *)"
-            "Bash(nix *)"
-            "Bash(nixfmt *)"
-            "Bash(nixos-rebuild build *)"
-          ];
+          allow =
+            [
+              "Read"
+              "Glob"
+              "Grep"
+              "LS"
+              "Edit"
+              "MultiEdit"
+              "Write"
+              "Bash(git status)"
+              "Bash(git diff *)"
+              "Bash(git log *)"
+              "Bash(git add *)"
+              "Bash(git commit *)"
+              "Bash(git checkout *)"
+              "Bash(git branch *)"
+              "Bash(nix *)"
+              "Bash(nixfmt *)"
+              "Bash(nixos-rebuild build *)"
+            ]
+            ++ lib.optionals config.code.claude-code.codegraph.enable [
+              "mcp__codegraph__codegraph_search"
+              "mcp__codegraph__codegraph_context"
+              "mcp__codegraph__codegraph_callers"
+              "mcp__codegraph__codegraph_callees"
+              "mcp__codegraph__codegraph_impact"
+              "mcp__codegraph__codegraph_node"
+              "mcp__codegraph__codegraph_status"
+              "mcp__codegraph__codegraph_files"
+            ];
           deny = [
             "Bash(sops:*)"
             "Bash(age:*)"
@@ -671,12 +918,17 @@ in {
       };
     };
 
-    # GSD (Get Shit Done) commands and agents
-    home.file.".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
-    home.file.".claude/agents" = {
-      source = "${gsd-repo}/agents";
-      recursive = true;
-    };
+    # GSD (Get Shit Done) commands and agents +
+    # Matt Pocock skills (flat-linked from upstream plugin.json — 14 skills)
+    home.file =
+      {
+        ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
+        ".claude/agents" = {
+          source = "${gsd-repo}/agents";
+          recursive = true;
+        };
+      }
+      // mattpocockSkillFiles;
 
     # VS Code settings for Claude Code extension (only when VS Code is enabled)
     programs.vscode.profiles.default.userSettings = lib.mkIf config.code.vscode.enable {

@@ -51,6 +51,7 @@
           "services/perplexity/api-key" = {};
           "services/exa/api-key" = {};
           "services/n8n/api-key" = {};
+          "services/context7/api-key" = {};
           "services/github/pat" = {};
           "services/kie/api-key" = {};
           "services/obsidian/e2ee-password" = {};

@@ -71,6 +71,7 @@
     claude-code = {
       enable = lib.mkDefault false;
       exa.enable = lib.mkDefault true;
+      codegraph.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
       claude-mem.enable = lib.mkDefault true;
       sessionHandoffReminder = {
