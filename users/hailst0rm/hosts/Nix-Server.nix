@@ -51,7 +51,7 @@ in {
   };
 
   services = {
-    claudecodeui.enable = true; # Claude Code UI Web Interface
+    claudecodeui.enable = false; # Claude Code UI Web Interface
     whisperStt.enable = false;
     obsidian-sync = {
       enable = true;

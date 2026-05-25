@@ -142,7 +142,7 @@
   };
 
   services = {
-    claudecodeui.enable = lib.mkDefault true; # Claude Code UI Web Interface
+    claudecodeui.enable = lib.mkDefault false; # Claude Code UI Web Interface
     claude-mcp = {
       enable = lib.mkDefault true;
       servers = {
