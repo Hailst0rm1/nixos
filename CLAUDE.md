@@ -109,9 +109,25 @@ The `nix_versions` MCP tool shows which nixpkgs commit shipped a specific packag
 
 ## Formatting & Validation
 
-- Format: `nixfmt`
-- Build-test: `nixos-rebuild build --flake .#<hostname>`
-- Switch: `nh os switch` or `sudo nixos-rebuild switch --flake .#<hostname>`
+- Format: `alejandra`
+
+### Build verification policy
+
+**Do NOT run `nixos-rebuild build` or `nixos-rebuild dry-build` to verify config changes.** Full-system builds take minutes and burn substantial CPU/IO per host — not worth it on routine edits. Trust the edit; the user runs `nh os switch` when ready and will surface real failures.
+
+Build proactively **only** when:
+
+- A custom package in `pkgs/` was added or modified. Build just that derivation so the package compiles in isolation — do not rebuild the whole system:
+  ```sh
+  nix build .#<pkg>          # if exposed in flake outputs
+  nix-build -E '(import <nixpkgs> {}).callPackage ./pkgs/<name>/package.nix {}'
+  ```
+- The user explicitly asks ("test the build", "verify it builds", "build and switch", etc.).
+
+Commands (for reference when explicitly invoked):
+
+- Whole-system build-test: `nixos-rebuild build --flake .#<hostname>`
+- Activation: `nh os switch` or `sudo nixos-rebuild switch --flake .#<hostname>`
 
 ## Commits
 

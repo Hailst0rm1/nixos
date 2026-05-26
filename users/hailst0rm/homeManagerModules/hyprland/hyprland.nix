@@ -157,8 +157,8 @@ in {
 
         gesture = [
           "3, horizontal, workspace"
-          "3, down, dispatcher, overview:open, all"
-          "3, up, dispatcher, overview:close, all"
+          # "3, down, dispatcher, overview:open all"
+          # "3, up, dispatcher, overview:close all"
         ];
 
         # Use "displays" (scripts/displays.sh) to configure displays dynamically

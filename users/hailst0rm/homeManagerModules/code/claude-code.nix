@@ -195,6 +195,21 @@
       exit 0
     '';
 
+  # Notification variant: suppresses the idle "Claude is waiting for your
+  # input" notification Claude Code fires ~60s after Stop. Permission
+  # prompts (and any other Notification message) still chime.
+  playNotificationSoundHook = soundPath: volumePct:
+    pkgs.writeShellScript "claude-code-sound-notification" ''
+      INPUT=$(${pkgs.coreutils}/bin/cat)
+      MSG=$(${pkgs.jq}/bin/jq -r '.message // empty' <<<"$INPUT")
+      case "$MSG" in
+        *"waiting for your input"*) exit 0 ;;
+      esac
+      ${pkgs.pulseaudio}/bin/paplay --volume=${toString (volumePct * 65536 / 100)} "${soundPath}" >/dev/null 2>&1 &
+      disown
+      exit 0
+    '';
+
   # statusLine: single-line bar fed JSON on stdin by Claude Code.
   # Renders: v<version>  <model>  <project> {<wt>:}<branch>{*}{⇡N}{⇣N}  <ctx%>  +<add>/-<rem>  $<cost>
   # Project = main repo basename (via git-common-dir, stable across worktrees).
@@ -412,7 +427,7 @@ in {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Play a short system sound when Claude finishes a turn (Stop) and when Claude is waiting on you (Notification — permission prompts, idle).";
+        description = "Play a short system sound when Claude finishes a turn (Stop) and when Claude needs a permission decision (Notification). Idle 'waiting for input' notifications are filtered out.";
       };
       stopSound = lib.mkOption {
         type = lib.types.path;
@@ -424,7 +439,7 @@ in {
         type = lib.types.path;
         default = "${pkgs.sound-theme-freedesktop}/share/sounds/freedesktop/stereo/bell.oga";
         defaultText = lib.literalExpression ''"\''${pkgs.sound-theme-freedesktop}/share/sounds/freedesktop/stereo/bell.oga"'';
-        description = "Sound file played on the Notification event (permission prompts, idle).";
+        description = "Sound file played on the Notification event (permission prompts). Idle 'waiting for input' notifications are suppressed.";
       };
       volume = lib.mkOption {
         type = lib.types.ints.between 0 100;
@@ -821,7 +836,7 @@ in {
                 hooks = [
                   {
                     type = "command";
-                    command = "${playSoundHook "notification" config.code.claude-code.sound.notificationSound config.code.claude-code.sound.volume}";
+                    command = "${playNotificationSoundHook config.code.claude-code.sound.notificationSound config.code.claude-code.sound.volume}";
                   }
                 ];
               }
@@ -834,7 +849,8 @@ in {
           {
             "skill-creator@claude-plugins-official" = true;
             "superpowers@claude-plugins-official" = true;
-            "frontend-design@claude-plugins-official" = true;
+            # "frontend-design@claude-plugins-official" = true;  # Replaced by impeccable (strict superset)
+            "impeccable@impeccable" = true;
             "obsidian@obsidian-skills" = true;
             "context-mode@context-mode" = true;
           }
@@ -869,6 +885,12 @@ in {
               source = {
                 source = "github";
                 repo = "mksglu/context-mode";
+              };
+            };
+            impeccable = {
+              source = {
+                source = "github";
+                repo = "pbakaus/impeccable";
               };
             };
           }
