@@ -71,6 +71,15 @@
       }"
       DEVICE="${device}"
       COMPUTE_TYPE="${computeType}"
+      VAD_FILTER="${
+        if cfg.vadFilter
+        then "true"
+        else "false"
+      }"
+      VAD_MIN_SILENCE_MS="${toString cfg.vadMinSilenceMs}"
+      VAD_THRESHOLD="${toString cfg.vadThreshold}"
+      OUTPUT_MODE="${cfg.outputMode}"
+      LOGFILE="/tmp/whisper-stt.log"
 
       # Start recording
       start_recording() {
@@ -118,6 +127,9 @@
               --output_dir "$OUTPUT_DIR"
               --output_format txt
               --verbose False
+              --beam_size 1
+              --temperature 0
+              --condition_on_previous_text False
             )
 
             # Add language if specified
@@ -125,13 +137,26 @@
               WHISPER_ARGS+=(--language "$LANGUAGE")
             fi
 
-            # Run faster-whisper transcription
-            whisper-ctranslate2 "''${WHISPER_ARGS[@]}" "$RECORDING_FILE" 2>/dev/null || true
+            # Enable Silero VAD: anchors sentence breaks at real pauses,
+            # reduces dropped/merged words.
+            if [[ "$VAD_FILTER" == "true" ]]; then
+              WHISPER_ARGS+=(
+                --vad_filter True
+                --vad_threshold "$VAD_THRESHOLD"
+                --vad_min_silence_duration_ms "$VAD_MIN_SILENCE_MS"
+              )
+            fi
+
+            # Run faster-whisper transcription; log stderr for debugging
+            # (device selection, CUDA fallback, etc.)
+            whisper-ctranslate2 "''${WHISPER_ARGS[@]}" "$RECORDING_FILE" 2>>"$LOGFILE" || true
 
             # Read the transcription result
             OUTPUT_FILE="$OUTPUT_DIR/$(basename "$RECORDING_FILE" .wav).txt"
             if [[ -f "$OUTPUT_FILE" ]]; then
-              RESULT=$(cat "$OUTPUT_FILE" | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+              # Join segment lines with a space (not "" — that glues "I\nreally" → "Ireally"),
+              # then squeeze runs of whitespace and trim ends.
+              RESULT=$(tr '\n' ' ' < "$OUTPUT_FILE" | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//')
             else
               RESULT=""
             fi
@@ -141,11 +166,16 @@
             rm -rf "$OUTPUT_DIR"
 
             if [[ -n "$RESULT" ]]; then
-              # Copy to clipboard
+              # Always copy to clipboard so manual paste works as a fallback.
               echo -n "$RESULT" | wl-copy
 
-              # Type the text into the active window
-              wtype "$RESULT"
+              if [[ "$OUTPUT_MODE" == "paste" ]]; then
+                # Single Ctrl+Shift+V keystroke — no per-character race.
+                wtype -M ctrl -M shift -k v -m shift -m ctrl
+              else
+                # Per-character typing with delay for non-terminal targets.
+                wtype -d 20 "$RESULT"
+              fi
 
               notify-send "Whisper STT" "Transcribed: ''${RESULT:0:50}..." --urgency=low || true
             else
@@ -196,12 +226,13 @@ in {
         "distil-medium.en"
         "distil-small.en"
       ];
-      default = "small";
+      default = "large-v3-turbo";
       description = ''
         Whisper model to use. Uses faster-whisper (CTranslate2) for 4x speedup.
         Models ending in .en are English-only but faster.
-        Distil models are smaller/faster with similar accuracy.
-        Recommended: small for multilingual, distil-large-v3 for speed+accuracy.
+        Distil models are English-only — do not pick them if multilingual
+        auto-detection is wanted.
+        Recommended: large-v3-turbo for multilingual with native punctuation.
       '';
     };
 
@@ -212,6 +243,53 @@ in {
       description = ''
         Language code for transcription (e.g., "en", "sv", "de").
         Leave null for auto-detection (works well with multilingual models).
+      '';
+    };
+
+    vadFilter = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Enable Silero VAD chunking. Splits audio on real speech boundaries,
+        giving Whisper natural segment breaks to anchor sentence endings
+        and reducing dropped/merged words.
+      '';
+    };
+
+    vadMinSilenceMs = lib.mkOption {
+      type = lib.types.int;
+      default = 700;
+      description = ''
+        Minimum silence (ms) that counts as a pause/segment break. Lower
+        values (~500-700) map natural dictation pauses to sentence endings,
+        helping Whisper insert periods. faster-whisper's default of 2000 ms
+        is too long for typical dictation cadence.
+      '';
+    };
+
+    vadThreshold = lib.mkOption {
+      type = lib.types.float;
+      default = 0.4;
+      description = ''
+        Silero VAD speech-probability threshold (0.0-1.0). Audio above this
+        is considered speech. Silero's default of 0.5 frequently classifies
+        brief quiet phonemes (the word "I", short "a") as silence, dropping
+        them while leaving an inter-word space. Lower to 0.3-0.4 to keep
+        them; raise toward 0.6 if background noise gets transcribed.
+      '';
+    };
+
+    outputMode = lib.mkOption {
+      type = lib.types.enum ["paste" "type"];
+      default = "paste";
+      description = ''
+        How the transcript reaches the active window.
+        - "paste": copy to clipboard and send Ctrl+Shift+V. Instant, avoids
+          the kitty-keyboard-protocol race that turns capitals into CSI
+          sequences (e.g. "C" -> "1;5u"). Works in foot, ghostty, kitty,
+          alacritty, and other terminals using Ctrl+Shift+V for paste.
+        - "type": emit characters one-by-one via wtype. Use for apps where
+          Ctrl+Shift+V is not the paste binding (browsers, Electron).
       '';
     };
 

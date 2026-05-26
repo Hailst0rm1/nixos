@@ -18,6 +18,11 @@
   code.codex.enable = true;
   services.claudecodeui.enable = false;
 
+  # PRIME-offload laptop: dGPU isn't woken by whisper's --device cuda path,
+  # so transcription effectively runs on the iGPU/CPU. Drop to small (multilingual)
+  # for usable latency until a persistent daemon / proper offload wrapper is wired.
+  services.whisperStt.model = "small";
+
   applications = {
     youtube-music.enable = true;
     openconnect.enable = true;

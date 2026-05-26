@@ -154,9 +154,13 @@
     };
     whisperStt = {
       enable = lib.mkDefault true;
-      model = lib.mkDefault "small"; # Multilingual model with auto-detection (supports English, Swedish, etc.)
+      model = lib.mkDefault "large-v3-turbo"; # Multilingual with native punctuation (English, Swedish, etc.)
       # language = null means auto-detect (default)
       keybind = lib.mkDefault "$mainMod CTRL, S"; # ALT+CTRL+S to toggle recording
+      vadFilter = lib.mkDefault true;
+      vadMinSilenceMs = lib.mkDefault 700; # short pauses → sentence breaks → better punctuation
+      vadThreshold = lib.mkDefault 0.4; # lower than Silero default 0.5 so "I" is not dropped
+      outputMode = lib.mkDefault "paste"; # paste via Ctrl+Shift+V; avoids per-key kbproto races
     };
   };
 
