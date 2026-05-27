@@ -12,15 +12,15 @@
   ffmpeg,
   openssh,
 }: let
-  version = "0.13.0";
+  version = "0.14.0";
   python = python3;
   pip = python3.pkgs.pip;
 
   src = fetchFromGitHub {
     owner = "NousResearch";
     repo = "hermes-agent";
-    rev = "v2026.5.7";
-    hash = "sha256-YQQUEDUim2CiYpL3uG7Wi1fWPsT2wtIqoBeJuAj9hUk=";
+    rev = "v2026.5.16";
+    hash = "sha256-d9qhrTy45Q5UsmjapqMHOVi9e+gR9zE8Nq9Z0wObLmc=";
   };
 
   # FOD: download all Python wheels/sdists via pip
@@ -34,7 +34,7 @@
       export HOME=$TMPDIR
       export SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
 
-      ${python}/bin/python3 -m pip download ".[all]" \
+      ${python}/bin/python3 -m pip download ".[all]" setuptools wheel \
         --dest $out
     '';
 
@@ -43,7 +43,7 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-tuz0SH0sGLh0ZoKhRRLrihB3DIbLpOsmQHx5+YJqW9M=";
+    outputHash = "sha256-PibCP/KnP69Byn2Pu+TH+8c1ILVSt7Goxd3eWUZY4uY=";
   };
 
   # FOD: pre-fetch node_modules for web dashboard
@@ -70,7 +70,7 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-xUAUcnU/zZG5ysxa2lJcMJ5GmfwccsT/9WiOE8Q7HAk=";
+    outputHash = "sha256-IjxEvBcu9o0SJ8Nq/6R4Tf68wW/5k9S1JUiyPKiF0uM=";
   };
 in
   stdenv.mkDerivation {
