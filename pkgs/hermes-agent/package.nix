@@ -34,7 +34,7 @@
       export HOME=$TMPDIR
       export SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
 
-      ${python}/bin/python3 -m pip download ".[all]" setuptools wheel \
+      ${python}/bin/python3 -m pip download ".[all,messaging]" setuptools wheel \
         --dest $out
     '';
 
@@ -43,7 +43,7 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-PibCP/KnP69Byn2Pu+TH+8c1ILVSt7Goxd3eWUZY4uY=";
+    outputHash = "sha256-XOsCQcdEEnlgeCRyJHjX03lQRK+qo1qIUNP1+2piHHM=";
   };
 
   # FOD: pre-fetch node_modules for web dashboard
@@ -86,7 +86,7 @@ in
 
       # Install Python package
       ${python}/bin/python3 -m venv $TMPDIR/.venv
-      $TMPDIR/.venv/bin/pip install ".[all]" \
+      $TMPDIR/.venv/bin/pip install ".[all,messaging]" \
         --no-index \
         --find-links ${hermes-wheels}
 
@@ -112,14 +112,25 @@ in
       # Copy built web dashboard into site-packages
       cp -r $TMPDIR/hermes_cli/web_dist $out/lib/python3.13/site-packages/hermes_cli/web_dist
 
+      # Bundle repo-level skill / plugin trees so hermes can find them.
+      # Upstream's own Nix packaging exposes these via HERMES_BUNDLED_SKILLS
+      # / HERMES_OPTIONAL_SKILLS / HERMES_BUNDLED_PLUGINS env vars.
+      mkdir -p $out/share/hermes-agent
+      cp -r $src/skills           $out/share/hermes-agent/skills
+      cp -r $src/optional-skills  $out/share/hermes-agent/optional-skills
+      cp -r $src/plugins          $out/share/hermes-agent/plugins
+
       # Fix shebangs to reference $out
       find $out/bin -type f -exec sed -i "s|$TMPDIR/.venv|$out|g" {} +
 
-      # Wrap with runtime deps
-      for cmd in hermes hermes-agent; do
+      # Wrap with runtime deps + bundled-content env vars
+      for cmd in hermes hermes-agent hermes-acp; do
         if [ -f "$out/bin/$cmd" ]; then
           wrapProgram $out/bin/$cmd \
-            --prefix PATH : ${lib.makeBinPath [ripgrep ffmpeg git nodejs openssh]}
+            --prefix PATH : ${lib.makeBinPath [ripgrep ffmpeg git nodejs openssh]} \
+            --set HERMES_BUNDLED_SKILLS  $out/share/hermes-agent/skills \
+            --set HERMES_OPTIONAL_SKILLS $out/share/hermes-agent/optional-skills \
+            --set HERMES_BUNDLED_PLUGINS $out/share/hermes-agent/plugins
         fi
       done
     '';
