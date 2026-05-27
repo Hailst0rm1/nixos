@@ -79,6 +79,8 @@ in
 
     nativeBuildInputs = [python uv makeWrapper pip nodejs];
 
+    patches = [./codex-transport-tools-none.patch];
+
     buildPhase = ''
       export HOME=$TMPDIR
 
@@ -87,6 +89,12 @@ in
       $TMPDIR/.venv/bin/pip install ".[all]" \
         --no-index \
         --find-links ${hermes-wheels}
+
+      # Guard against response.output being None in openai SDK
+      substituteInPlace $TMPDIR/.venv/lib/python3.13/site-packages/openai/lib/_parsing/_responses.py \
+        --replace-fail \
+          'for output in response.output:' \
+          'for output in (response.output or []):'
 
       # Build web dashboard frontend
       cp -r web $TMPDIR/web
