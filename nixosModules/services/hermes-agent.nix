@@ -35,18 +35,56 @@ in {
         description = "Host address to bind.";
       };
     };
+    browser = {
+      enable = lib.mkEnableOption "agent-browser CLI (Vercel Labs) for the Hermes agent";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages =
       [pkgs.hermes-agent]
-      ++ lib.optionals cfg.signal.enable [pkgs-unstable.signal-cli];
+      ++ lib.optionals cfg.signal.enable [pkgs-unstable.signal-cli]
+      ++ lib.optionals cfg.browser.enable [pkgs.agent-browser];
+
+    environment.etc."agent-browser/config.json" = lib.mkIf cfg.browser.enable {
+      text = builtins.toJSON {
+        headed = config.services.vncDisplay.enable;
+        profile = "/var/lib/agent-browser/profile";
+      };
+      mode = "0444";
+    };
+
+    systemd.tmpfiles.rules = lib.mkIf cfg.browser.enable [
+      "d /var/lib/agent-browser 0750 hailst0rm users -"
+      "d /var/lib/agent-browser/profile 0750 hailst0rm users -"
+    ];
+
+    systemd.services.agent-browser-install = lib.mkIf cfg.browser.enable {
+      description = "One-time install of Chrome-for-Testing for agent-browser";
+      after = ["network-online.target"];
+      wants = ["network-online.target"];
+      before = ["hermes-agent.service"];
+      wantedBy = ["hermes-agent.service"];
+      serviceConfig = {
+        Type = "oneshot";
+        User = "hailst0rm";
+        RemainAfterExit = true;
+        Environment = ["HOME=/home/hailst0rm"];
+      };
+      script = ''
+        if [ ! -d "$HOME/.agent-browser/chromes" ]; then
+          ${pkgs.agent-browser}/bin/agent-browser install
+        fi
+      '';
+    };
 
     systemd.services.hermes-agent = {
       description = "Hermes Agent Gateway";
       after =
         ["network.target"]
-        ++ lib.optionals cfg.signal.enable ["signal-cli-daemon.service"];
+        ++ lib.optionals cfg.signal.enable ["signal-cli-daemon.service"]
+        ++ lib.optionals (cfg.browser.enable && config.services.vncDisplay.enable) ["vnc-display.service" "novnc.service"];
+      wants = lib.optionals (cfg.browser.enable && config.services.vncDisplay.enable) ["vnc-display.service"];
       wantedBy = ["multi-user.target"];
       serviceConfig = {
         ExecStart = "${pkgs.hermes-agent}/bin/hermes gateway";
@@ -54,9 +92,10 @@ in {
         RestartSec = 10;
         DynamicUser = false;
         User = "hailst0rm";
-        Environment = [
-          "HERMES_PORT=${toString cfg.port}"
-        ];
+        Environment =
+          ["HERMES_PORT=${toString cfg.port}"]
+          ++ lib.optionals cfg.browser.enable ["AGENT_BROWSER_CONFIG=/etc/agent-browser/config.json"]
+          ++ lib.optionals (cfg.browser.enable && config.services.vncDisplay.enable) ["DISPLAY=:${toString config.services.vncDisplay.display}"];
         EnvironmentFile = config.sops.secrets."services/hermes-agent/env".path;
       };
     };

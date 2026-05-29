@@ -94,6 +94,18 @@
     mattermost.enable = lib.mkDefault false;
     ollama.enable = lib.mkDefault false;
     hermes-agent.enable = lib.mkDefault false;
+    hermes-agent.browser.enable = lib.mkDefault false;
+    vncDisplay = {
+      enable = lib.mkDefault false;
+      display = lib.mkDefault 99;
+      novncPort = lib.mkDefault 6080;
+      geometry = lib.mkDefault "1920x1080";
+      windowManager = lib.mkDefault "openbox";
+      auth = {
+        type = lib.mkDefault "none";
+        passwordFile = lib.mkDefault null;
+      };
+    };
     open-webui.enable = lib.mkDefault false; # UI for local AI
     code-server.enable = lib.mkDefault false; # Web-based VS Code
     tailscaleAutoconnect = {

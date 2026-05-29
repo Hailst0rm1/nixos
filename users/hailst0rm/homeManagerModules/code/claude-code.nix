@@ -74,6 +74,10 @@
     exec ${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph serve --mcp "$@"
   '';
 
+  codegraphCliWrapper = pkgs.writeShellScriptBin "codegraph" ''
+    exec ${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph "$@"
+  '';
+
   n8nApiKeyPath =
     if config.importConfig.sops.enable
     then config.sops.secrets."services/n8n/api-key".path
@@ -404,6 +408,13 @@ in {
       default = true;
       description = ''
         Enable the thedotmack/claude-mem plugin: persistent memory across Claude Code sessions. Captures tool-use observations, compresses them with an AI provider, and re-injects relevant context on session start. Hooks and worker live entirely under ~/.claude/plugins/marketplaces/thedotmack/ (mutable, not nix-managed), so it coexists with the nix-rendered settings.json. Requires `node` (already provided) and an AI provider configured at runtime — see https://docs.claude-mem.ai.
+      '';
+    };
+    tokenOptimizer.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Enable the alexgreensh/token-optimizer plugin: monthly-cadence context audits and health reports. Provides slash commands /token-optimizer, /coach, /memory-review, /attention-score, /drift, /triage, /doctor, /quality, /report, /savings, /jsonl-inspect. Layer A only — marketplace registration + plugin enablement. Deliberately does NOT run the upstream setup-hook/setup-smart-compact/setup-daemon/setup-quality-bar scripts, which would mutate ~/.claude/settings.json (a /nix/store symlink). One-shot dashboard via `python3 measure.py dashboard --serve` when needed. License: PolyForm Noncommercial — personal use only.
       '';
     };
     rtk.enable = lib.mkOption {
@@ -737,6 +748,10 @@ in {
         includeCoAuthoredBy = false;
         skipDangerousModePermissionPrompt = true;
 
+        worktree = {
+          bgIsolation = "none";
+        };
+
         statusLine = {
           type = "command";
           command = "${claudeStatuslineScript}";
@@ -865,6 +880,9 @@ in {
           }
           // lib.optionalAttrs config.code.claude-code.claude-mem.enable {
             "claude-mem@thedotmack" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.tokenOptimizer.enable {
+            "token-optimizer@alexgreensh-token-optimizer" = true;
           };
 
         extraKnownMarketplaces =
@@ -923,6 +941,14 @@ in {
               source = {
                 source = "github";
                 repo = "thedotmack/claude-mem";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.tokenOptimizer.enable {
+            alexgreensh-token-optimizer = {
+              source = {
+                source = "github";
+                repo = "alexgreensh/token-optimizer";
               };
             };
           };
@@ -986,6 +1012,9 @@ in {
       ]
       ++ lib.optionals config.code.claude-code.claude-mem.enable [
         bun # claude-mem's hooks shell out to `bun` via scripts/bun-runner.js
+      ]
+      ++ lib.optionals config.code.claude-code.codegraph.enable [
+        codegraphCliWrapper # `codegraph` CLI for `codegraph init`/`init --index` in project roots
       ];
 
     # Pick up *-pp-cli binaries that `/printing-press` installs into ~/go/bin

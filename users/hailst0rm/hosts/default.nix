@@ -74,6 +74,7 @@
       codegraph.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
       claude-mem.enable = lib.mkDefault true;
+      tokenOptimizer.enable = lib.mkDefault false;
       sessionHandoffReminder = {
         enable = lib.mkDefault true;
         thresholdMinutes = lib.mkDefault 60;

@@ -32,7 +32,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-SCANNER_VERSION = 2
+SCANNER_VERSION = 3
 DEFAULT_CACHE = ".hermes-cache/nix-github-fetches.json"
 
 # Generated policy, not a human-maintained watchlist.
@@ -218,6 +218,27 @@ def derivation_blocks(text: str, rel_path: str) -> Iterable[tuple[str, str]]:
         yield Path(rel_path).parent.name, text
 
 
+def derivation_ranges(text: str) -> list[tuple[int, int]]:
+    """Return ranges for derivation-like blocks in a Nix file.
+
+    Some packages, notably pkgs/hermes-agent/package.nix, define `src =
+    fetchFromGitHub { ... };` in a top-level `let` and then `inherit src` into
+    one or more derivations. The normal derivation-block scanner misses those
+    source fetches, so we separately scan fetches that are outside these ranges.
+    """
+    ranges: list[tuple[int, int]] = []
+    for match in DERIVATION_RE.finditer(text):
+        brace = text.find("{", match.start())
+        end = find_matching_brace(text, brace)
+        if end is not None:
+            ranges.append((match.start(), end + 1))
+    return ranges
+
+
+def in_any_range(pos: int, ranges: list[tuple[int, int]]) -> bool:
+    return any(start <= pos < end for start, end in ranges)
+
+
 def file_fingerprint(root: Path) -> str:
     h = hashlib.sha256()
     for path in sorted(root.rglob("*.nix")):
@@ -296,6 +317,42 @@ def scan_inventory(root: Path) -> list[FetchItem]:
                         pinned,
                     )
                 )
+
+        # Also catch top-level/shared source fetches such as:
+        #   let
+        #     version = "...";
+        #     src = fetchFromGitHub { ... };
+        #   in stdenv.mkDerivation { inherit version src; ... }
+        # These sit outside the derivation blocks above and previously caused
+        # pkgs/hermes-agent/package.nix to be invisible to the daily report.
+        ranges = derivation_ranges(text)
+        top_text_parts: list[str] = []
+        last = 0
+        for start, end in ranges:
+            top_text_parts.append(text[last:start])
+            last = end
+        top_text_parts.append(text[last:])
+        top_text = "\n".join(top_text_parts)
+        top_ctx = attrs_ctx(top_text)
+        top_package = top_ctx.get("pname") or top_ctx.get("name") or Path(rel).parent.name
+        for m in re.finditer(r"fetchFromGitHub\s*\{", text):
+            if in_any_range(m.start(), ranges):
+                continue
+            brace = text.find("{", m.start())
+            end = find_matching_brace(text, brace)
+            if end is None:
+                continue
+            fblock = text[brace : end + 1]
+            owner = get_attr(fblock, "owner", top_ctx)
+            repo = get_attr(fblock, "repo", top_ctx)
+            rev = get_attr(fblock, "rev", top_ctx)
+            if not owner or not repo:
+                continue
+            current = top_ctx.get("version")
+            if rev and "${version}" not in rev and parse_version(rev):
+                current = rev
+            pinned = (rel, owner, repo) in PINNED_FETCHES
+            items.append(FetchItem(top_package, rel, "fetchFromGitHub", "source", owner, repo, current, rev, pinned))
 
     deduped: list[FetchItem] = []
     seen = set()

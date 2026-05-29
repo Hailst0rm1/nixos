@@ -219,6 +219,13 @@
                 href = "http://192.168.0.1";
               };
             }
+            {
+              "Agent Browser" = {
+                description = "Live noVNC view of the Hermes agent's Chrome";
+                icon = "mdi-eye.svg";
+                href = "http://nix-server:6080/vnc.html?host=nix-server&port=6080&autoconnect=true&resize=remote";
+              };
+            }
           ];
         }
         {
@@ -366,7 +373,9 @@
       enable = true;
       signal.enable = false;
       dashboard.enable = true;
+      browser.enable = true;
     };
+    vncDisplay.enable = true;
     podman.enable = true;
     openssh.enable = true;
     cloudflare = {

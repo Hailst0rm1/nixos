@@ -10,6 +10,18 @@
     trusted-public-keys = ["devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="];
   };
 
+  # nix-ld: provides a stub dynamic linker so prebuilt glibc-linked binaries
+  # (e.g. npm packages that ship their own `node` like @colbymchenry/codegraph)
+  # can run on NixOS without manual patchelf'ing.
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      stdenv.cc.cc.lib # libstdc++
+      zlib
+      openssl
+    ];
+  };
+
   # Zsh
   programs.zsh.enable = true;
   users.defaultUserShell = pkgs.zsh;

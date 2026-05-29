@@ -361,6 +361,14 @@ in {
                 "after" = ["<Esc>" "l" "a"];
               }
               {
+                "before" = ["<C-k>"];
+                "after" = ["<Esc>" "k" "a"];
+              }
+              {
+                "before" = ["<C-j>"];
+                "after" = ["<Esc>" "j" "a"];
+              }
+              {
                 "before" = ["<C-a>"];
                 "after" = ["<Esc>" "$" "a"];
               }

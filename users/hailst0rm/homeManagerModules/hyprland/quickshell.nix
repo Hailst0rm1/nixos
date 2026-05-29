@@ -103,7 +103,6 @@ in {
         ", PRINT, exec, bash ~/.config/quickshell/screenshot.sh"
         # QuickShell widget toggles
         "$mainMod SHIFT, C, exec, bash ${qs} toggle calendar"
-        "$mainMod SHIFT, K, exec, bash ${qs} toggle notifications"
         "$mainMod SHIFT, N, exec, bash ${qs} toggle network"
         "$mainMod SHIFT, B, exec, bash ${qs} toggle battery"
         "$mainMod SHIFT, V, exec, bash ${qs} toggle volume"

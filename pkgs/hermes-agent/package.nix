@@ -12,15 +12,15 @@
   ffmpeg,
   openssh,
 }: let
-  version = "0.14.0";
+  version = "0.15.1";
   python = python3;
   pip = python3.pkgs.pip;
 
   src = fetchFromGitHub {
     owner = "NousResearch";
     repo = "hermes-agent";
-    rev = "v2026.5.16";
-    hash = "sha256-d9qhrTy45Q5UsmjapqMHOVi9e+gR9zE8Nq9Z0wObLmc=";
+    rev = "v2026.5.29";
+    hash = "sha256-4SwFC4IjwdQi27dHXTd8QYS1eJHiQY0ja2LxyeW6KjE=";
   };
 
   # FOD: download all Python wheels/sdists via pip
@@ -43,7 +43,7 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-XOsCQcdEEnlgeCRyJHjX03lQRK+qo1qIUNP1+2piHHM=";
+    outputHash = "sha256-036d1dkD6bMwM0OYJ/xUvZjuS6EQC+OIvvVhCgCKBuo=";
   };
 
   # FOD: pre-fetch node_modules for web dashboard
@@ -70,7 +70,7 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-IjxEvBcu9o0SJ8Nq/6R4Tf68wW/5k9S1JUiyPKiF0uM=";
+    outputHash = "sha256-/H/u2HA+04u0Olus3QByBr9faR07trIfFAKK/D49XFM=";
   };
 in
   stdenv.mkDerivation {
@@ -78,8 +78,6 @@ in
     inherit version src;
 
     nativeBuildInputs = [python uv makeWrapper pip nodejs];
-
-    patches = [./codex-transport-tools-none.patch];
 
     buildPhase = ''
       export HOME=$TMPDIR
@@ -111,6 +109,17 @@ in
 
       # Copy built web dashboard into site-packages
       cp -r $TMPDIR/hermes_cli/web_dist $out/lib/python3.13/site-packages/hermes_cli/web_dist
+
+      # Upstream's pyproject `setuptools.packages.find` lists `hermes_cli`
+      # without `hermes_cli.*`, so sub-packages (dashboard_auth, proxy) are
+      # excluded from the wheel and `hermes dashboard` fails with
+      # ModuleNotFoundError. Copy them in manually until upstream fixes
+      # the include pattern.
+      for sub in dashboard_auth proxy; do
+        if [ -d "$src/hermes_cli/$sub" ]; then
+          cp -r "$src/hermes_cli/$sub" "$out/lib/python3.13/site-packages/hermes_cli/$sub"
+        fi
+      done
 
       # Bundle repo-level skill / plugin trees so hermes can find them.
       # Upstream's own Nix packaging exposes these via HERMES_BUNDLED_SKILLS

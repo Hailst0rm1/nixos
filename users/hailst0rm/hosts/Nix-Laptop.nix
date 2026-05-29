@@ -15,6 +15,7 @@
   };
 
   code.claude-code.enable = true;
+  code.claude-code.tokenOptimizer.enable = false;
   code.codex.enable = true;
   services.claudecodeui.enable = false;
 

@@ -11,16 +11,16 @@
 in
   buildNpmPackage rec {
     pname = "codeburn";
-    version = "0.9.9";
+    version = "0.9.11";
 
     src = fetchFromGitHub {
       owner = "getagentseal";
       repo = "codeburn";
-      rev = "v0.9.9";
-      hash = "sha256-omBrDC5xMlfHjMIHLjUTmq6jFLjmc2BF/TPu+3typUs=";
+      rev = "v0.9.11";
+      hash = "sha256-LbaN2fID/ucYjLebKlknh081hdP+h0VpP5Ex8rV1DUs=";
     };
 
-    npmDepsHash = "sha256-2bkhUZuP3a0ySSmvI/EODegpPzkh7nvOHhyQlBY6m2o=";
+    npmDepsHash = "sha256-Q/z7Pc5Rb1tQ7Fscugb8/qEzxWI2/UCb2OA20N/2Y24=";
 
     # The build script fetches litellm pricing data from GitHub at build time.
     # Replace it with a version that reads from the pre-fetched local file.
