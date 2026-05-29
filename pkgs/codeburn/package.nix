@@ -4,8 +4,14 @@
   fetchFromGitHub,
   fetchurl,
 }: let
+  # Pinned to a litellm release tag instead of `main`. Pinning to `main`
+  # causes Nix to silently keep the cached file forever — new prices on
+  # upstream's main branch never reach this derivation until the hash
+  # changes. Bump `litellmRelease` to a newer https://github.com/BerriAI/litellm
+  # release tag and refresh the hash to pick up new model prices.
+  litellmRelease = "v1.86.2";
   litellmPricing = fetchurl {
-    url = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json";
+    url = "https://raw.githubusercontent.com/BerriAI/litellm/refs/tags/${litellmRelease}/model_prices_and_context_window.json";
     hash = "sha256-Q7Z0A0QijDSQRHq28RcqgU7k1CorvwbYMDHa1m/OmQA=";
   };
 in

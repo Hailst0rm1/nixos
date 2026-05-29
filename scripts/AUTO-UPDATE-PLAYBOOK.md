@@ -3,6 +3,87 @@
 Hermes should read this before each `scripts/nix-github-update-report.py
 --auto-update-all` run.
 
+## Sweep: replace branch-tip pins before they go stale
+
+Before running auto-update, scan for fetches that pin to a branch tip — not
+a release tag, not a commit SHA. These are silent landmines: Nix uses the
+fetch's `hash` as the FOD identity, so once the source has been built once,
+the cached store path is reused forever even though the branch keeps
+advancing. New upstream changes never reach the build until somebody
+manually changes the hash.
+
+**Detect.** Look for any of these patterns in `*.nix` files:
+
+```sh
+# Branch-tip revs on GitHub source fetches.
+grep -rnE 'rev = "(main|master|HEAD|develop|trunk)"' --include='*.nix'
+
+# Raw URLs that resolve through a branch instead of a tag or commit.
+grep -rnE 'raw\.githubusercontent\.com/[^/]+/[^/]+/(main|master|HEAD)/' --include='*.nix'
+grep -rnE 'github\.com/[^/]+/[^/]+/raw/(refs/heads/(main|master)|main|master)/' --include='*.nix'
+```
+
+**Decision tree per hit.**
+
+1. **Does upstream publish release tags?** `git ls-remote --tags --refs
+   <repo-url> | tail`. If yes → repin to the **latest release tag**. This
+   is the user's preferred default — it gives the auto-updater a clean
+   version to track and bump on subsequent runs.
+2. **No tags, but upstream has stable commits?** Repin to the **current
+   branch HEAD SHA**: `git ls-remote <repo-url> refs/heads/main`. Leave a
+   comment naming the tracked branch so future runs know which ref to
+   re-check for new SHAs.
+3. **Volatile branch with no stable cuts?** Pin to current SHA anyway and
+   add a comment marking it as manual-bump-only — auto-updater will not
+   resolve it.
+
+**Rewrite shape.** Use `${...}` interpolation so the version string appears
+exactly once, where the auto-updater's URL substitution can find it:
+
+```nix
+# Release-tag form (preferred when tags exist):
+let
+  litellmRelease = "v1.86.2";
+in
+fetchurl {
+  url = "https://raw.githubusercontent.com/BerriAI/litellm/refs/tags/${litellmRelease}/model_prices_and_context_window.json";
+  hash = "sha256-...";
+}
+
+# SHA-pin form (when no tags exist):
+fetchFromGitHub {
+  owner = "mattpocock";
+  repo = "skills";
+  # Tracks main; bump SHA + hash to pull new skills.
+  rev = "e3b90b5238f38cdea5996e16861dcae28ef52eda";
+  hash = "sha256-...";
+}
+```
+
+**Refresh hash.** For source fetches use
+`nix flake prefetch github:<owner>/<repo>/<rev> --json`. For raw-file
+fetches use
+`nix store prefetch-file --json --hash-type sha256 "<url>"`. Paste the
+`hash` field back into the derivation. **Do not** use the fake-hash trick
+for these — these are simple `fetchurl` / `fetchFromGitHub` calls without a
+narrow build step, so prefetch is both faster and quieter.
+
+**Why this matters.** `litellm` pricing was stuck on a months-old `main`
+snapshot of `model_prices_and_context_window.json` because the hash never
+changed. `mattpocock/skills` was pinned to `rev = "main"` and silently
+diverged from upstream the moment a new skill was added. Repinning to
+`refs/tags/v1.86.2/…` and a SHA respectively unblocked both — and gives the
+auto-updater something concrete to compare against on the next run.
+
+**Known auto-updater gap.** As of 2026-05-29, the script's
+`source_kind_from_url_tail` does **not** classify raw.githubusercontent.com
+URLs containing `refs/tags/<tag>/…` as `raw-file`, and the top-level scan
+loop only covers `fetchFromGitHub` (not `fetchurl`-based GitHub raws).
+Top-level raw-file fetches like `litellmPricing` therefore show up neither
+in the "likely updates" table nor in "unknown / needs custom strategy" —
+they are invisible. Bump these manually until the script learns to scan
+them; see the "Possible script improvements" section.
+
 ## Diagnose narrow build failures before rolling back
 
 When the narrow build fails after a fetch-hash refresh, the failure is almost

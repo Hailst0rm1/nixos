@@ -78,6 +78,56 @@ This keeps `default.nix` as the single browseable surface for "what can I toggle
 - Overlays: `overlays/<name>.nix` with format `final: prev: { name = prev.callPackage ../pkgs/<name>/package.nix {}; }`
 - Overlays auto-load from directory; just create the file
 
+## GitHub fetches: pin to tags or SHAs, never branches
+
+**Never** use `rev = "main"` / `"master"` / `"HEAD"` in `fetchFromGitHub`, and
+never embed `/main/` or `/master/` in a `raw.githubusercontent.com` URL. Nix
+uses the fetch's `hash` as the FOD identity, so the first build freezes the
+source forever — new upstream commits stay invisible until somebody manually
+changes the hash. The repo has hit this twice (`litellm` pricing snapshot,
+`mattpocock/skills`).
+
+Pick a ref by precedence:
+
+1. **Latest stable release tag** if upstream publishes them
+   (`git ls-remote --tags --refs <url> | tail`). Skip `-rc.*` / `-dev.*` /
+   `-beta` / `-alpha` suffixes.
+2. **Current branch HEAD SHA** if no tags exist. Get it with
+   `git ls-remote <url> refs/heads/<branch>` and leave a one-line comment
+   naming the tracked branch.
+
+Use `${...}` interpolation so the version string appears exactly once — that
+form is what `scripts/nix-github-update-report.py` substitutes when bumping:
+
+```nix
+# Release-tag form (preferred):
+let
+  fooRelease = "v1.2.3";
+in
+fetchurl {
+  url = "https://raw.githubusercontent.com/<owner>/<repo>/refs/tags/${fooRelease}/path/to/file";
+  hash = "sha256-...";
+}
+
+# SHA-pin form (when no tags exist):
+fetchFromGitHub {
+  owner = "<owner>";
+  repo = "<repo>";
+  # Tracks main; bump SHA + hash to pull new upstream changes.
+  rev = "<40-char-SHA>";
+  hash = "sha256-...";
+}
+```
+
+Refresh hash via `nix flake prefetch github:<owner>/<repo>/<rev> --json`
+(source trees) or
+`nix store prefetch-file --json --hash-type sha256 "<url>"` (raw files).
+
+When **adding a new GitHub fetch**, apply this rule from the start — don't
+write `rev = "main";` even as a placeholder. The auto-update sweep in
+`scripts/AUTO-UPDATE-PLAYBOOK.md` will flag it on the next pass; saving the
+trip is cheaper.
+
 ## Secrets (sops-nix)
 
 - Encrypted files: `secrets/<username>.yaml`
