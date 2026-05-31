@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  secretPath,
   ...
 }:
 with lib; let
@@ -9,10 +10,7 @@ with lib; let
 
   obsidian-headless = pkgs.obsidian-headless;
 
-  e2eePath =
-    if config.importConfig.sops.enable
-    then config.sops.secrets."services/obsidian/e2ee-password".path
-    else "/run/secrets/services/obsidian/e2ee-password";
+  e2eePath = secretPath "services/obsidian/e2ee-password";
 
   syncScript = pkgs.writeShellScript "obsidian-sync" ''
     set -euo pipefail

@@ -3,49 +3,31 @@
   lib,
   pkgs,
   pkgs-unstable,
+  mkSecretEnvWrapper,
   ...
 }: let
-  perplexityKeyPath =
-    if (config.sops.secrets ? "services/perplexity/api-key")
-    then config.sops.secrets."services/perplexity/api-key".path
-    else "/run/secrets/services/perplexity/api-key";
+  perplexityMcpWrapper = mkSecretEnvWrapper {
+    name = "perplexity-mcp-wrapper";
+    env.PERPLEXITY_API_KEY = "services/perplexity/api-key";
+    command = "${pkgs-unstable.perplexity-mcp}/bin/perplexity-mcp";
+  };
 
-  perplexityMcpWrapper = pkgs.writeShellScript "perplexity-mcp-wrapper" ''
-    KEY_FILE="${perplexityKeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export PERPLEXITY_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    exec ${pkgs-unstable.perplexity-mcp}/bin/perplexity-mcp "$@"
-  '';
+  exaMcpWrapper = mkSecretEnvWrapper {
+    name = "exa-mcp-wrapper";
+    env.EXA_API_KEY = "services/exa/api-key";
+    command = "${pkgs.nodejs}/bin/npx -y exa-mcp-server";
+  };
 
-  exaKeyPath =
-    if (config.sops.secrets ? "services/exa/api-key")
-    then config.sops.secrets."services/exa/api-key".path
-    else "/run/secrets/services/exa/api-key";
-
-  exaMcpWrapper = pkgs.writeShellScript "exa-mcp-wrapper" ''
-    KEY_FILE="${exaKeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export EXA_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    exec ${pkgs.nodejs}/bin/npx -y exa-mcp-server "$@"
-  '';
-
-  n8nApiKeyPath =
-    if (config.sops.secrets ? "services/n8n/api-key")
-    then config.sops.secrets."services/n8n/api-key".path
-    else "/run/secrets/services/n8n/api-key";
-
-  n8nMcpWrapper = pkgs.writeShellScript "n8n-mcp-wrapper" ''
-    KEY_FILE="${n8nApiKeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export N8N_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    export N8N_API_URL="http://nix-server:5678"
-    export WEBHOOK_SECURITY_MODE="permissive"
-    export MCP_MODE="stdio"
-    exec ${pkgs.nodejs}/bin/npx -y n8n-mcp "$@"
-  '';
+  n8nMcpWrapper = mkSecretEnvWrapper {
+    name = "n8n-mcp-wrapper";
+    env.N8N_API_KEY = "services/n8n/api-key";
+    staticEnv = {
+      N8N_API_URL = "http://nix-server:5678";
+      WEBHOOK_SECURITY_MODE = "permissive";
+      MCP_MODE = "stdio";
+    };
+    command = "${pkgs.nodejs}/bin/npx -y n8n-mcp";
+  };
 in {
   options.code.codex.enable = lib.mkEnableOption "Enable Codex CLI";
 
@@ -178,7 +160,6 @@ in {
 
       # Settings → ~/.codex/config.toml
       settings = {
-        model = "o3";
         approval_policy = "on-request";
 
         mcp_servers = {

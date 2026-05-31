@@ -164,6 +164,11 @@
       vadThreshold = lib.mkDefault 0.4; # lower than Silero default 0.5 so "I" is not dropped
       outputMode = lib.mkDefault "paste"; # paste via Ctrl+Shift+V; avoids per-key kbproto races
     };
+    readAloud = {
+      enable = lib.mkDefault true;
+      keybind = lib.mkDefault "$mainMod CTRL, R"; # SUPER+CTRL+R to read primary selection aloud
+      speed = lib.mkDefault 1.5; # 1.5x faster than normal; pitch preserved
+    };
   };
 
   cyber = {

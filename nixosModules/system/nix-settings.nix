@@ -7,7 +7,7 @@
 in {
   options.system.automatic = {
     upgrade = lib.mkEnableOption "Enable weekly system upgrades";
-    cleanup = lib.mkEnableOption "Enable automatic system cleanup every 30 days";
+    cleanup = lib.mkEnableOption "Enable weekly nix store garbage collection (keeps 30 days)";
   };
 
   config = {
@@ -18,12 +18,16 @@ in {
         "flakes"
       ];
       auto-optimise-store = true; # Store cleanup
+
+      # Binary caches (this module owns all nix.settings)
+      substituters = ["https://devenv.cachix.org"];
+      trusted-public-keys = ["devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="];
     };
 
-    # Automatic cleanup
-    nix.gc = lib.mkIf cfg.upgrade {
+    # Automatic store garbage collection (gated on its own option)
+    nix.gc = lib.mkIf cfg.cleanup {
       automatic = true;
-      dates = "daily";
+      dates = "weekly";
       options = "--delete-older-than 30d";
     };
 

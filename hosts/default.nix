@@ -95,6 +95,11 @@
     ollama.enable = lib.mkDefault false;
     hermes-agent.enable = lib.mkDefault false;
     hermes-agent.browser.enable = lib.mkDefault false;
+    hermes-agent.signal.enable = lib.mkDefault false;
+    hermes-agent.dashboard.enable = lib.mkDefault false;
+    ghost.enable = lib.mkDefault false;
+    rsshub.enable = lib.mkDefault false;
+    n8n.podman.enable = lib.mkDefault false;
     vncDisplay = {
       enable = lib.mkDefault false;
       display = lib.mkDefault 99;

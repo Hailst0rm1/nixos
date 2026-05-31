@@ -5,11 +5,6 @@
 }: {
   # Module served to install default utils and applications on the system
 
-  nix.settings = {
-    substituters = ["https://devenv.cachix.org"];
-    trusted-public-keys = ["devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="];
-  };
-
   # nix-ld: provides a stub dynamic linker so prebuilt glibc-linked binaries
   # (e.g. npm packages that ship their own `node` like @colbymchenry/codegraph)
   # can run on NixOS without manual patchelf'ing.

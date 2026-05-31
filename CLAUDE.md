@@ -183,5 +183,19 @@ Commands (for reference when explicitly invoked):
 
 Follow the existing convention: `<Hostname>: description (Generation N built on YYYY-MM-DD)`
 
+## Agent skills
+
+### Issue tracker
+
+Issues live as GitHub issues in `hailst0rm1/nixos` (via the `gh` CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` + `docs/adr/` at the repo root (created lazily by `/grill-with-docs`). See `docs/agents/domain.md`.
+
 # currentDate
 Today's date is 2026-05-10.

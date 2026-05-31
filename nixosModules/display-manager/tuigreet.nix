@@ -12,7 +12,7 @@ let
   tuigreet = "${pkgs.greetd.tuigreet}/bin/tuigreet";
   cfg = config.desktopEnvironment.displayManager;
 in {
-  config = lib.mkIf (cfg.enable && cfg.name == "tuigreep") {
+  config = lib.mkIf (cfg.enable && cfg.name == "tuigreet") {
     services.greetd = {
       enable = true;
       settings = {

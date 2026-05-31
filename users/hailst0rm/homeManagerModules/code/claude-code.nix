@@ -4,6 +4,8 @@
   pkgs,
   pkgs-unstable,
   inputs,
+  mkSecretEnvWrapper,
+  secretPath,
   ...
 }: let
   notebooklm-py = pkgs.callPackage ../../../../pkgs/notebooklm-py/package.nix {};
@@ -39,73 +41,47 @@
     })
     mattpocockPlugin.skills);
 
-  perplexityKeyPath =
-    if config.importConfig.sops.enable
-    then config.sops.secrets."services/perplexity/api-key".path
-    else "/run/secrets/services/perplexity/api-key";
+  perplexityMcpWrapper = mkSecretEnvWrapper {
+    name = "perplexity-mcp-wrapper";
+    env.PERPLEXITY_API_KEY = "services/perplexity/api-key";
+    command = "${pkgs-unstable.perplexity-mcp}/bin/perplexity-mcp";
+  };
 
-  perplexityMcpWrapper = pkgs.writeShellScript "perplexity-mcp-wrapper" ''
-    KEY_FILE="${perplexityKeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export PERPLEXITY_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    exec ${pkgs-unstable.perplexity-mcp}/bin/perplexity-mcp "$@"
-  '';
+  exaMcpWrapper = mkSecretEnvWrapper {
+    name = "exa-mcp-wrapper";
+    env.EXA_API_KEY = "services/exa/api-key";
+    command = "${pkgs.nodejs}/bin/npx -y exa-mcp-server";
+  };
 
-  exaKeyPath =
-    if config.importConfig.sops.enable
-    then config.sops.secrets."services/exa/api-key".path
-    else "/run/secrets/services/exa/api-key";
+  context7McpWrapper = mkSecretEnvWrapper {
+    name = "context7-mcp-wrapper";
+    env.CONTEXT7_API_KEY = "services/context7/api-key";
+    command = "${pkgs.nodejs}/bin/npx -y @upstash/context7-mcp";
+  };
 
-  exaMcpWrapper = pkgs.writeShellScript "exa-mcp-wrapper" ''
-    KEY_FILE="${exaKeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export EXA_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    exec ${pkgs.nodejs}/bin/npx -y exa-mcp-server "$@"
-  '';
+  codegraphMcpWrapper = mkSecretEnvWrapper {
+    name = "codegraph-mcp-wrapper";
+    command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph serve --mcp";
+  };
 
-  context7KeyPath =
-    if config.importConfig.sops.enable
-    then config.sops.secrets."services/context7/api-key".path
-    else "/run/secrets/services/context7/api-key";
+  codegraphCliWrapper = mkSecretEnvWrapper {
+    name = "codegraph";
+    bin = true;
+    command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph";
+  };
 
-  context7McpWrapper = pkgs.writeShellScript "context7-mcp-wrapper" ''
-    KEY_FILE="${context7KeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export CONTEXT7_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    exec ${pkgs.nodejs}/bin/npx -y @upstash/context7-mcp "$@"
-  '';
+  n8nMcpWrapper = mkSecretEnvWrapper {
+    name = "n8n-mcp-wrapper";
+    env.N8N_API_KEY = "services/n8n/api-key";
+    staticEnv = {
+      N8N_API_URL = "http://nix-server:5678";
+      WEBHOOK_SECURITY_MODE = "permissive";
+      MCP_MODE = "stdio";
+    };
+    command = "${pkgs.nodejs}/bin/npx -y n8n-mcp";
+  };
 
-  codegraphMcpWrapper = pkgs.writeShellScript "codegraph-mcp-wrapper" ''
-    exec ${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph serve --mcp "$@"
-  '';
-
-  codegraphCliWrapper = pkgs.writeShellScriptBin "codegraph" ''
-    exec ${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph "$@"
-  '';
-
-  n8nApiKeyPath =
-    if config.importConfig.sops.enable
-    then config.sops.secrets."services/n8n/api-key".path
-    else "/run/secrets/services/n8n/api-key";
-
-  n8nMcpWrapper = pkgs.writeShellScript "n8n-mcp-wrapper" ''
-    KEY_FILE="${n8nApiKeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export N8N_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    export N8N_API_URL="http://nix-server:5678"
-    export WEBHOOK_SECURITY_MODE="permissive"
-    export MCP_MODE="stdio"
-    exec ${pkgs.nodejs}/bin/npx -y n8n-mcp "$@"
-  '';
-
-  githubPatPath =
-    if config.importConfig.sops.enable
-    then config.sops.secrets."services/github/pat".path
-    else "/run/secrets/services/github/pat";
+  githubPatPath = secretPath "services/github/pat";
 
   # Thin delegator hook for RTK (rtk-ai/rtk). Vendored from
   # hooks/claude/rtk-rewrite.sh in the upstream repo. All rewrite logic lives

@@ -3,36 +3,23 @@
   lib,
   pkgs,
   pkgs-unstable,
+  mkSecretEnvWrapper,
   ...
 }:
 with lib; let
   cfg = config.services.claude-mcp;
 
-  perplexityKeyPath =
-    if (config.sops.secrets ? "services/perplexity/api-key")
-    then config.sops.secrets."services/perplexity/api-key".path
-    else "/run/secrets/services/perplexity/api-key";
+  perplexityMcpWrapper = mkSecretEnvWrapper {
+    name = "perplexity-mcp-wrapper";
+    env.PERPLEXITY_API_KEY = "services/perplexity/api-key";
+    command = "${pkgs-unstable.perplexity-mcp}/bin/perplexity-mcp";
+  };
 
-  perplexityMcpWrapper = pkgs.writeShellScript "perplexity-mcp-wrapper" ''
-    KEY_FILE="${perplexityKeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export PERPLEXITY_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    exec ${pkgs-unstable.perplexity-mcp}/bin/perplexity-mcp "$@"
-  '';
-
-  exaKeyPath =
-    if (config.sops.secrets ? "services/exa/api-key")
-    then config.sops.secrets."services/exa/api-key".path
-    else "/run/secrets/services/exa/api-key";
-
-  exaMcpWrapper = pkgs.writeShellScript "exa-mcp-wrapper" ''
-    KEY_FILE="${exaKeyPath}"
-    if [ -f "$KEY_FILE" ]; then
-      export EXA_API_KEY="$(cat "$KEY_FILE")"
-    fi
-    exec ${pkgs.nodejs}/bin/npx -y exa-mcp-server "$@"
-  '';
+  exaMcpWrapper = mkSecretEnvWrapper {
+    name = "exa-mcp-wrapper";
+    env.EXA_API_KEY = "services/exa/api-key";
+    command = "${pkgs.nodejs}/bin/npx -y exa-mcp-server";
+  };
 
   # Build the MCP servers attrset based on enabled options
   mcpServers =
