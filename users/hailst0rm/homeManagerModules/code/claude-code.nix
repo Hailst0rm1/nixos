@@ -21,9 +21,10 @@
   # With a branch ref, Nix caches the first fetched tree and silently
   # reuses it forever — new upstream commits never reach this build until
   # the hash changes. The repo has no release tags, so this tracks main by
-  # SHA. Bump `rev` to a newer commit from
-  # https://github.com/mattpocock/skills/commits/main and refresh the hash
-  # to pick up new skills.
+  # SHA. The `# track-branch:` sentinel tells
+  # scripts/nix-github-update-report.py to auto-bump `rev`+`hash` to the
+  # current branch HEAD on its next sweep.
+  # track-branch: main
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";

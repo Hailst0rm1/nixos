@@ -32,7 +32,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-SCANNER_VERSION = 3
+SCANNER_VERSION = 4
 DEFAULT_CACHE = ".hermes-cache/nix-github-fetches.json"
 
 # Generated policy, not a human-maintained watchlist.
@@ -68,6 +68,9 @@ class FetchItem:
     current: str | None
     rev_or_url: str | None
     pinned: bool = False
+    # Branch named in an adjacent `# track-branch: <branch>` comment. When set,
+    # the item is bumped to that branch's live HEAD SHA instead of a tag.
+    track_branch: str | None = None
 
 
 @dataclass
@@ -147,6 +150,17 @@ def attrs_ctx(block: str) -> dict[str, str]:
 def get_attr(block: str, name: str, ctx: dict[str, str]) -> str | None:
     m = ASSIGN_RE(name).search(strip_comments(block))
     return eval_simple(m.group(1), ctx) if m else None
+
+
+TRACK_BRANCH_RE = re.compile(r"#\s*track-branch:\s*([^\s#]+)")
+
+
+def find_track_branch(text: str, pos: int, window: int = 600) -> str | None:
+    """Return the branch named in a `# track-branch: <branch>` comment that
+    immediately precedes the fetch starting at `pos`, if any."""
+    start = max(0, pos - window)
+    matches = list(TRACK_BRANCH_RE.finditer(text, start, pos))
+    return matches[-1].group(1) if matches else None
 
 
 def normalise_version(value: str | None) -> str | None:
@@ -279,11 +293,15 @@ def scan_inventory(root: Path) -> list[FetchItem]:
                 rev = get_attr(fblock, "rev", ctx)
                 if not owner or not repo:
                     continue
+                track_branch = find_track_branch(block, m.start())
                 current = ctx.get("version")
                 if rev and "${version}" not in rev and parse_version(rev):
                     current = rev
+                elif rev and track_branch:
+                    # SHA-pinned, branch-tracked: compare old vs new SHA.
+                    current = rev
                 pinned = (rel, owner, repo) in PINNED_FETCHES
-                items.append(FetchItem(package, rel, "fetchFromGitHub", "source", owner, repo, current, rev, pinned))
+                items.append(FetchItem(package, rel, "fetchFromGitHub", "source", owner, repo, current, rev, pinned, track_branch))
 
             for m in re.finditer(rf"\b(?:pkgs\.)?{FETCH_FUNCS}\s*\{{", block):
                 brace = block.find("{", m.start())
@@ -348,21 +366,40 @@ def scan_inventory(root: Path) -> list[FetchItem]:
             rev = get_attr(fblock, "rev", top_ctx)
             if not owner or not repo:
                 continue
+            track_branch = find_track_branch(text, m.start())
+            # Prefer the let-binding identifier (e.g. `gsd-repo = fetchFromGitHub`)
+            # so multiple top-level fetches in one file get distinct package keys —
+            # otherwise they all collapse to the parent dir name and the
+            # exactly-one-match guard in apply_auto_update bails.
+            bind = re.search(r"([A-Za-z_][\w-]*)\s*=\s*(?:pkgs\.)?\s*$", text[max(0, m.start() - 80) : m.start()])
+            fetch_package = bind.group(1) if bind else top_package
             current = top_ctx.get("version")
             if rev and "${version}" not in rev and parse_version(rev):
                 current = rev
+            elif rev and track_branch:
+                # SHA-pinned, branch-tracked: compare old vs new SHA.
+                current = rev
             pinned = (rel, owner, repo) in PINNED_FETCHES
-            items.append(FetchItem(top_package, rel, "fetchFromGitHub", "source", owner, repo, current, rev, pinned))
+            items.append(FetchItem(fetch_package, rel, "fetchFromGitHub", "source", owner, repo, current, rev, pinned, track_branch))
 
-    deduped: list[FetchItem] = []
-    seen = set()
+    # Dedup by fetch content rather than package name. A file with no real
+    # derivation is scanned twice — once via the whole-file fallback block in
+    # derivation_blocks (which names the item after a `name = "..."` attr) and
+    # once via the top-level loop (which names it after the let-binding). Key on
+    # the source identity and keep the entry with a clean Nix-identifier name.
+    def is_clean_name(name: str | None) -> bool:
+        return bool(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*", name or ""))
+
+    chosen: dict[tuple, FetchItem] = {}
+    order: list[tuple] = []
     for item in items:
-        key = (item.kind, item.path, item.package, item.owner.lower(), item.repo.lower(), item.rev_or_url)
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append(item)
-    return deduped
+        key = (item.kind, item.path, item.source_kind, item.owner.lower(), item.repo.lower(), item.rev_or_url)
+        if key not in chosen:
+            chosen[key] = item
+            order.append(key)
+        elif is_clean_name(item.package) and not is_clean_name(chosen[key].package):
+            chosen[key] = item
+    return [chosen[k] for k in order]
 
 
 def load_or_scan_inventory(root: Path, cache_path: Path, no_cache: bool = False) -> list[FetchItem]:
@@ -422,6 +459,22 @@ def latest_tags(owner: str, repo: str) -> tuple[list[str], str | None]:
     return tags, None
 
 
+def latest_branch_head(owner: str, repo: str, branch: str) -> tuple[str | None, str | None]:
+    """Resolve the current HEAD SHA of a branch via `git ls-remote`."""
+    url = f"https://github.com/{owner}/{repo}.git"
+    try:
+        output = run(["git", "ls-remote", url, f"refs/heads/{branch}"], timeout=40)
+    except subprocess.CalledProcessError as exc:
+        return None, (exc.output.strip().splitlines()[-1] if exc.output else f"exit {exc.returncode}")
+    except Exception as exc:
+        return None, f"{type(exc).__name__}: {exc}"
+    line = output.strip().splitlines()[0] if output.strip() else ""
+    sha = line.split("\t", 1)[0].split()[0] if line else ""
+    if not re.fullmatch(r"[0-9a-f]{40}", sha):
+        return None, f"could not resolve refs/heads/{branch}"
+    return sha, None
+
+
 def build_report(items: list[FetchItem]) -> list[ReportItem]:
     reports: list[ReportItem] = []
     tag_cache: dict[tuple[str, str], tuple[list[str], str | None]] = {}
@@ -429,6 +482,23 @@ def build_report(items: list[FetchItem]) -> list[ReportItem]:
         report = ReportItem(**asdict(item))
         if item.pinned:
             report.status = "pinned"
+            reports.append(report)
+            continue
+        if item.track_branch:
+            sha, error = latest_branch_head(item.owner, item.repo, item.track_branch)
+            report.latest = sha
+            report.latest_error = error
+            report.latest_url = (
+                f"https://github.com/{item.owner}/{item.repo}/commit/{sha}" if sha else None
+            )
+            report.current_normalised = item.rev_or_url
+            report.latest_normalised = sha
+            if sha and item.rev_or_url and sha != item.rev_or_url:
+                report.status = "update"
+            elif sha and sha == item.rev_or_url:
+                report.status = "ok"
+            else:
+                report.status = "unknown"
             reports.append(report)
             continue
         key = (item.owner, item.repo)

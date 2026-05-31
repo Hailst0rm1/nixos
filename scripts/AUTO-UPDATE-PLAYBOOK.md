@@ -30,12 +30,14 @@ grep -rnE 'github\.com/[^/]+/[^/]+/raw/(refs/heads/(main|master)|main|master)/' 
    is the user's preferred default — it gives the auto-updater a clean
    version to track and bump on subsequent runs.
 2. **No tags, but upstream has stable commits?** Repin to the **current
-   branch HEAD SHA**: `git ls-remote <repo-url> refs/heads/main`. Leave a
-   comment naming the tracked branch so future runs know which ref to
-   re-check for new SHAs.
-3. **Volatile branch with no stable cuts?** Pin to current SHA anyway and
-   add a comment marking it as manual-bump-only — auto-updater will not
-   resolve it.
+   branch HEAD SHA**: `git ls-remote <repo-url> refs/heads/main`, and add a
+   `# track-branch: <branch>` comment immediately above the fetch. The script
+   now **auto-resolves these**: on each run it resolves the branch HEAD via
+   `git ls-remote` and bumps `rev`+`hash` when the pin falls behind. No manual
+   SHA bump needed.
+3. **Volatile branch with no stable cuts?** Pin to current SHA. Omit the
+   `# track-branch:` comment to keep it manual-bump-only — without the
+   sentinel the auto-updater leaves the SHA alone.
 
 **Rewrite shape.** Use `${...}` interpolation so the version string appears
 exactly once, where the auto-updater's URL substitution can find it:
@@ -51,10 +53,10 @@ fetchurl {
 }
 
 # SHA-pin form (when no tags exist):
+# track-branch: main
 fetchFromGitHub {
   owner = "mattpocock";
   repo = "skills";
-  # Tracks main; bump SHA + hash to pull new skills.
   rev = "e3b90b5238f38cdea5996e16861dcae28ef52eda";
   hash = "sha256-...";
 }
