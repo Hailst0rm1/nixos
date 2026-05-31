@@ -4,6 +4,7 @@
   pkgs,
   pkgs-unstable,
   mkSecretEnvWrapper,
+  inputs,
   ...
 }: let
   perplexityMcpWrapper = mkSecretEnvWrapper {
@@ -34,7 +35,7 @@ in {
   config = lib.mkIf config.code.codex.enable {
     programs.codex = {
       enable = true;
-      package = pkgs-unstable.codex;
+      package = inputs.codex-cli-nix.packages.x86_64-linux.default;
 
       # Global context → ~/.codex/AGENTS.md (equivalent to Claude's CLAUDE.md)
       custom-instructions = ''
@@ -162,6 +163,11 @@ in {
       settings = {
         approval_policy = "on-request";
 
+        # Built-in image_gen tool (gpt-image, backed by the ChatGPT subscription).
+        # Serialized to ~/.codex/config.toml [features]; reaches interactive Codex,
+        # the /imagegen command, and the Claude Code codex plugin's `codex exec`.
+        features.image_generation = true;
+
         mcp_servers = {
           nixos = {
             command = "nix";
@@ -197,5 +203,29 @@ in {
       nodejs # For npm/npx MCP servers
       git # For git MCP server
     ];
+
+    # /imagegen Claude Code slash command: generate images via Codex's built-in
+    # image_gen tool (ChatGPT subscription, no metered API key).
+    home.file.".claude/commands/imagegen.md".text = ''
+      ---
+      description: Generate an image with Codex's image_gen (ChatGPT subscription)
+      allowed-tools: Bash(codex exec:*)
+      ---
+      Generate an image using Codex's built-in `image_gen` tool, which is backed by the
+      ChatGPT subscription (no metered API key).
+
+      Run (substitute the user's request for the prompt; pick a sensible PNG output path
+      in the current directory if the user didn't give one):
+
+      ```bash
+      codex exec --skip-git-repo-check --sandbox workspace-write \
+        --enable image_generation \
+        "Use the image_gen tool to create an image of: $ARGUMENTS. \
+         Save the result as a PNG in the current working directory and \
+         print the exact saved filename on the last line."
+      ```
+
+      Then report the saved file path to the user.
+    '';
   };
 }
