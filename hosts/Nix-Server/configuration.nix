@@ -52,7 +52,7 @@
   laptop = true;
   myLocation = "Barkarby";
 
-  desktopEnvironment.name = "";
+  desktopEnvironment.name = "headless";
   desktopEnvironment.displayManager.enable = false;
 
   system = {
