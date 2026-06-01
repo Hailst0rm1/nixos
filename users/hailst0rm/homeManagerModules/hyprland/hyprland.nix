@@ -318,6 +318,10 @@ in {
           "CTRL, j, exec, ${vim-arrow} j Down"
           "CTRL, k, exec, ${vim-arrow} k Up"
           "CTRL, l, sendshortcut, , Right,"
+
+          # Word-step (Ctrl+Shift+h/l -> Ctrl+Left/Right)
+          "CTRL SHIFT, h, sendshortcut, CTRL, Left,"
+          "CTRL SHIFT, l, sendshortcut, CTRL, Right,"
         ];
 
         bindm = [

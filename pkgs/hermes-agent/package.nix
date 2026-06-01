@@ -19,8 +19,8 @@
   src = fetchFromGitHub {
     owner = "NousResearch";
     repo = "hermes-agent";
-    rev = "v2026.5.29";
-    hash = "sha256-4SwFC4IjwdQi27dHXTd8QYS1eJHiQY0ja2LxyeW6KjE=";
+    rev = "v2026.5.29.2";
+    hash = "sha256-0CmNH879jnsAAszo1nkkFm8RNE49xtwUditYdFIYBCM=";
   };
 
   # FOD: download all Python wheels/sdists via pip
