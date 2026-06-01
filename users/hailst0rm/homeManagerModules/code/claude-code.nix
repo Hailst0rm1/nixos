@@ -35,11 +35,15 @@
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
+  # Experimental skills not listed in plugin.json — opt them in explicitly.
+  mattpocockExtraSkills = [
+    "./skills/in-progress/review"
+  ];
   mattpocockSkillFiles = lib.listToAttrs (map (skillPath: {
       name = ".claude/skills/${baseNameOf skillPath}";
       value.source = "${mattpocock-skills-repo}/${skillPath}";
     })
-    mattpocockPlugin.skills);
+    (mattpocockPlugin.skills ++ mattpocockExtraSkills));
 
   perplexityMcpWrapper = mkSecretEnvWrapper {
     name = "perplexity-mcp-wrapper";
@@ -951,7 +955,7 @@ in {
     };
 
     # GSD (Get Shit Done) commands and agents +
-    # Matt Pocock skills (flat-linked from upstream plugin.json — 14 skills)
+    # Matt Pocock skills (flat-linked from upstream plugin.json — 14 stable + 1 in-progress (review))
     home.file =
       {
         ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
