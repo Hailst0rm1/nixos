@@ -37,13 +37,23 @@
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
   # Experimental skills not listed in plugin.json — opt them in explicitly.
   mattpocockExtraSkills = [
-    "./skills/in-progress/review"
   ];
   mattpocockSkillFiles = lib.listToAttrs (map (skillPath: {
       name = ".claude/skills/${baseNameOf skillPath}";
       value.source = "${mattpocock-skills-repo}/${skillPath}";
     })
     (mattpocockPlugin.skills ++ mattpocockExtraSkills));
+
+  # Experimental upstream "review" skill (skills/in-progress/review), renamed
+  # to "review-of-all-reviews" so it doesn't collide with the built-in /review
+  # (PR review) skill. Claude Code identifies a skill by its frontmatter
+  # `name:`, not its directory, so the rename rewrites that line. Copies from
+  # the pinned source — still tracks upstream via the track-branch sweep above.
+  reviewOfAllReviewsSkill = pkgs.runCommand "review-of-all-reviews-skill" {} ''
+    cp -r ${mattpocock-skills-repo}/skills/in-progress/review $out
+    chmod -R u+w $out
+    ${pkgs.gnused}/bin/sed -i 's/^name: review$/name: review-of-all-reviews/' $out/SKILL.md
+  '';
 
   perplexityMcpWrapper = mkSecretEnvWrapper {
     name = "perplexity-mcp-wrapper";
@@ -963,6 +973,7 @@ in {
           source = "${gsd-repo}/agents";
           recursive = true;
         };
+        ".claude/skills/review-of-all-reviews".source = reviewOfAllReviewsSkill;
       }
       // mattpocockSkillFiles;
 
