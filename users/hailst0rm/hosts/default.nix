@@ -94,6 +94,18 @@
       };
     };
     codex.enable = lib.mkDefault false;
+    sandcastle = {
+      # Default-on wherever claude-code is enabled.
+      enable = lib.mkDefault config.code.claude-code.enable;
+      container = lib.mkDefault "podman";
+      image = lib.mkDefault "sandcastle-agent:latest";
+      model = lib.mkDefault "claude-opus-4-7";
+      effort = lib.mkDefault "high";
+      baseBranch = lib.mkDefault "master";
+      maxIssues = lib.mkDefault 4;
+      concurrency = lib.mkDefault 2;
+      implementIterations = lib.mkDefault 40;
+    };
     helix = {
       enable = lib.mkDefault true;
       languages = {

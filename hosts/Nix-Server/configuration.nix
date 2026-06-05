@@ -371,7 +371,27 @@
     rsshub.enable = true;
     hermes-agent = {
       enable = true;
+      discord = {
+        # Default/system Hermes Agent bot: only under the regular Hermes channel.
+        # Dev Orchestrator is a separate user-profile gateway restricted in
+        # ~/.hermes/profiles/dev-orchestrator/.
+        homeChannel = "1504852662313681108";
+        allowedChannels = ["1504852662313681108"];
+        ignoredChannels = ["1512064018230149170"];
+      };
       signal.enable = false;
+      # Headless server runs the backend, not the GUI client — skip the heavy
+      # Electron closure (desktop is default-on via hosts/default.nix).
+      desktop.enable = false;
+      # Dashboard backend for the desktop client on Nix-Laptop. Binds to
+      # 0.0.0.0 (reachable from the laptop over Tailscale at :9119) and runs in
+      # --insecure token mode. Keep port 9119 off the public internet
+      # (Tailscale/LAN only — not proxied by Cloudflare); the tailnet is the
+      # trust boundary. Set a stable session token by adding this to the
+      # `services/hermes-agent/env` blob via `sops secrets/hailst0rm.yaml`:
+      #   HERMES_DASHBOARD_SESSION_TOKEN=<long-random-token>   # `openssl rand -base64 32`
+      # and put the SAME value in the raw `services/hermes-agent/desktop-token`
+      # secret so the laptop's HERMES_DESKTOP_REMOTE_TOKEN matches.
       dashboard.enable = true;
       browser.enable = true;
     };

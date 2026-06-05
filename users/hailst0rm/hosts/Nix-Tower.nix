@@ -13,6 +13,10 @@
 
   code.claude-code.enable = true;
   code.codex.enable = true;
+  code.sandcastle = {
+    maxIssues = 1;
+    concurrency = 1;
+  };
   importConfig.zsh-history-sync.enable = true;
 
   applications = {

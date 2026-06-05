@@ -34,6 +34,9 @@ in {
 
   services.openssh.enable = true;
 
+  # Podman is enabled automatically by nixosModules/services/sandcastle-runtime.nix
+  # because code.sandcastle is on for this host (follows code.claude-code.enable).
+
   services.nas.client = {
     enable = true;
     serverHost = "nix-server"; # Tailscale MagicDNS hostname (or use 100.x.x.x IP)

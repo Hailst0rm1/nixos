@@ -7,20 +7,25 @@
   cacert,
   git,
   nodejs,
+  buildNpmPackage,
+  fetchNpmDeps,
+  diffutils,
   makeWrapper,
   ripgrep,
   ffmpeg,
   openssh,
 }: let
-  version = "0.15.1";
+  version = "0.15.1-unstable-2026-06-04";
   python = python3;
   pip = python3.pkgs.pip;
 
   src = fetchFromGitHub {
     owner = "NousResearch";
     repo = "hermes-agent";
-    rev = "v2026.5.29.2";
-    hash = "sha256-0CmNH879jnsAAszo1nkkFm8RNE49xtwUditYdFIYBCM=";
+    # Tracks main; the desktop app + remote-backend dashboard auth aren't in
+    # a release tag yet. Bump SHA + hash to pull new upstream changes.
+    rev = "d3fab54933c3866d2c7cf5e51dc63e9e494c9f47";
+    hash = "sha256-U4+c3UGDvlpET/xe+3i/dJt/Ogis/YX9t9oQBpEIXWo=";
   };
 
   # FOD: download all Python wheels/sdists via pip
@@ -43,41 +48,76 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-036d1dkD6bMwM0OYJ/xUvZjuS6EQC+OIvvVhCgCKBuo=";
+    outputHash = "sha256-A8EWw3hEnoaEYjLInXRiyVHeAmOZX8lSX50v6MBvJOM=";
   };
 
-  # FOD: pre-fetch node_modules for web dashboard
-  hermes-web-modules = stdenv.mkDerivation {
-    pname = "hermes-agent-web-modules";
-    inherit version src;
+  # Single npm-deps fetch from the workspace root package-lock.json. Upstream
+  # moved web/ (and apps/desktop) into one npm workspace, so the dashboard
+  # frontend is now built via buildNpmPackage against the root lockfile rather
+  # than a per-folder `npm ci`. Matches pkgs/hermes-desktop/package.nix.
+  npmDepsHash = "sha256-9xW/kVb315Cdx5mbn3zBIaNuaJB6yKKh2F5I0QCZ1ow=";
 
-    nativeBuildInputs = [nodejs cacert];
+  npmDeps = fetchNpmDeps {
+    inherit src;
+    fetcherVersion = 2;
+    hash = npmDepsHash;
+  };
+
+  # Build the web dashboard frontend (Vite/React) → web/dist. Ported from
+  # upstream nix/web.nix; the newline-normalising patchPhase comes from
+  # nix/lib.nix so npmConfigHook's lockfile diff stays happy.
+  hermes-web = buildNpmPackage {
+    pname = "hermes-web";
+    inherit version src npmDeps nodejs;
+
+    npmRoot = ".";
+    npmDepsFetcherVersion = 2;
+    makeCacheWritable = true;
+    doCheck = false;
+    npmFlags = ["--ignore-scripts"];
+
+    patchPhase = ''
+      runHook prePatch
+      sed -i -z 's/\\n*$/\\n/' package-lock.json
+
+      mkdir -p "$TMPDIR/bin"
+      cat > "$TMPDIR/bin/diff" << DIFFWRAP
+      #!/bin/sh
+      f1=\\$(mktemp) && sed -z 's/\\n*$/\\n/' "\\$1" > "\\$f1"
+      f2=\\$(mktemp) && sed -z 's/\\n*$/\\n/' "\\$2" > "\\$f2"
+      ${diffutils}/bin/diff "\\$f1" "\\$f2" && rc=0 || rc=\\$?
+      rm -f "\\$f1" "\\$f2"
+      exit \\$rc
+      DIFFWRAP
+      chmod +x "$TMPDIR/bin/diff"
+      export PATH="$TMPDIR/bin:$PATH"
+      runHook postPatch
+    '';
 
     buildPhase = ''
+      runHook preBuild
+      # Build from web/ so vite.config.ts/tsconfig resolve; root node_modules
+      # is at ../node_modules. vite.config.ts's outDir points at
+      # ../hermes_cli/web_dist for the monorepo, so override to dist/.
       cd web
-      export HOME=$TMPDIR
-      npm ci --ignore-scripts
+      node ../node_modules/typescript/bin/tsc -b
+      node ../node_modules/vite/bin/vite.js build --outDir dist
+      cd ..
+      runHook postBuild
     '';
 
     installPhase = ''
-      mkdir -p $out
-      cp -r node_modules $out/
-      cp package.json $out/
-      cp package-lock.json $out/
+      runHook preInstall
+      cp -r web/dist $out
+      runHook postInstall
     '';
-
-    dontFixup = true;
-
-    outputHashMode = "recursive";
-    outputHashAlgo = "sha256";
-    outputHash = "sha256-/H/u2HA+04u0Olus3QByBr9faR07trIfFAKK/D49XFM=";
   };
 in
   stdenv.mkDerivation {
     pname = "hermes-agent";
     inherit version src;
 
-    nativeBuildInputs = [python uv makeWrapper pip nodejs];
+    nativeBuildInputs = [python uv makeWrapper pip];
 
     buildPhase = ''
       export HOME=$TMPDIR
@@ -93,22 +133,16 @@ in
         --replace-fail \
           'for output in response.output:' \
           'for output in (response.output or []):'
-
-      # Build web dashboard frontend
-      cp -r web $TMPDIR/web
-      mkdir -p $TMPDIR/hermes_cli
-      cp -r ${hermes-web-modules}/node_modules $TMPDIR/web/
-      chmod -R +w $TMPDIR/web/node_modules
-      patchShebangs $TMPDIR/web/node_modules
-      cd $TMPDIR/web && npm run build
     '';
 
     installPhase = ''
       mkdir -p $out
       cp -r $TMPDIR/.venv/* $out/
 
-      # Copy built web dashboard into site-packages
-      cp -r $TMPDIR/hermes_cli/web_dist $out/lib/python3.13/site-packages/hermes_cli/web_dist
+      # Copy the separately-built web dashboard into site-packages. The
+      # dashboard serves this (HERMES_WEB_DIST defaults to web_dist), and it's
+      # what the desktop client connects to.
+      cp -r ${hermes-web} $out/lib/python3.13/site-packages/hermes_cli/web_dist
 
       # Upstream's pyproject `setuptools.packages.find` lists `hermes_cli`
       # without `hermes_cli.*`, so sub-packages (dashboard_auth, proxy) are

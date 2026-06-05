@@ -97,6 +97,8 @@
     hermes-agent.browser.enable = lib.mkDefault false;
     hermes-agent.signal.enable = lib.mkDefault false;
     hermes-agent.dashboard.enable = lib.mkDefault false;
+    hermes-agent.desktop.enable = lib.mkDefault true;
+    hermes-agent.desktop.remoteUrl = lib.mkDefault "http://nix-server:9119";
     ghost.enable = lib.mkDefault false;
     rsshub.enable = lib.mkDefault false;
     n8n.podman.enable = lib.mkDefault false;

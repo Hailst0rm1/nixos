@@ -53,6 +53,14 @@
           "services/n8n/api-key" = {};
           "services/context7/api-key" = {};
           "services/github/pat" = {};
+          # Sandcastle autonomous agent pipeline (see code/sandcastle.nix):
+          #   - claude-oauth-token: output of `claude setup-token` (subscription
+          #     headless auth → CLAUDE_CODE_OAUTH_TOKEN).
+          #   - sandcastle-pat: a FINE-GRAINED GitHub PAT scoped to ONLY the
+          #     target repos (issues:rw, contents:rw, pull-requests:rw) — keeps
+          #     the blast radius off your account-wide pat.
+          "services/anthropic/claude-oauth-token" = {};
+          "services/github/sandcastle-pat" = {};
           "services/kie/api-key" = {};
           "services/obsidian/e2ee-password" = {};
         };

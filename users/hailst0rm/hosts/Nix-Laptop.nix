@@ -17,6 +17,10 @@
   code.claude-code.enable = true;
   code.claude-code.tokenOptimizer.enable = false;
   code.codex.enable = true;
+  code.sandcastle = {
+    maxIssues = 1;
+    concurrency = 1;
+  };
   services.claudecodeui.enable = false;
 
   # PRIME-offload laptop: dGPU isn't woken by whisper's --device cuda path,

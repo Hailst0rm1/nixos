@@ -42,6 +42,20 @@
         secrets."services/hermes-agent/env" = lib.mkIf config.services.hermes-agent.enable {
           owner = "hailst0rm";
           mode = "0400";
+          # Restart the consumers when the env blob changes (e.g. a new
+          # HERMES_DASHBOARD_SESSION_TOKEN) — the unit text is unchanged on a
+          # rebuild, so without this the dashboard keeps its old token and the
+          # desktop's WS auth fails.
+          restartUnits =
+            ["hermes-agent.service"]
+            ++ lib.optional config.services.hermes-agent.dashboard.enable "hermes-dashboard.service";
+        };
+        # Raw session token for the desktop client's HERMES_DESKTOP_REMOTE_TOKEN;
+        # must equal the server's HERMES_DASHBOARD_SESSION_TOKEN. Decrypted only
+        # on hosts that point the desktop at a remote backend.
+        secrets."services/hermes-agent/desktop-token" = lib.mkIf (config.services.hermes-agent.desktop.enable && config.services.hermes-agent.desktop.remoteUrl != "") {
+          owner = "hailst0rm";
+          mode = "0400";
         };
         secrets."services/signal-cli/account" = lib.mkIf config.services.hermes-agent.signal.enable {
           owner = "hailst0rm";

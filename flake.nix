@@ -124,7 +124,27 @@
 
       # ===================== VM:s + ISO ===================== #
 
-      packages.x86_64-linux = {
+      packages.x86_64-linux = let
+        pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+        hermes-agent = pkgs.callPackage ./pkgs/hermes-agent/package.nix {};
+      in {
+        # Hermes agent + native desktop client. Exposed for build verification
+        # (`nix build .#hermes-agent .#hermes-desktop`); the systems consume
+        # them through the auto-loaded overlays.
+        inherit hermes-agent;
+        hermes-desktop = pkgs.callPackage ./pkgs/hermes-desktop/package.nix {
+          inherit hermes-agent;
+        };
+
+        # Sandcastle agent sandbox image (rootless Podman). Build + load with:
+        #   nix build .#sandcastle-agent-image && podman load < result
+        sandcastle-agent-image =
+          inputs.nixpkgs.legacyPackages.x86_64-linux.callPackage
+          ./pkgs/sandcastle-agent-image/package.nix {
+            claude-code = inputs.claude-code-nix.packages.x86_64-linux.default;
+            codex = inputs.codex-cli-nix.packages.x86_64-linux.default;
+          };
+
         # Experimental VM for redteaming
         # h4kn1x = mkImage {
         #   inherit system nixos-dir username;
