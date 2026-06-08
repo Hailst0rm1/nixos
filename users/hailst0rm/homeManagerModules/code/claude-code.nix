@@ -216,7 +216,7 @@
     '';
 
   # statusLine: single-line bar fed JSON on stdin by Claude Code.
-  # Renders: v<version>  <model>  <project> {<wt>:}<branch>{*}{⇡N}{⇣N}  <ctx%>  +<add>/-<rem>  $<cost>
+  # Renders: v<version>  <model>  <hostname>  <project> {<wt>:}<branch>{*}{⇡N}{⇣N}  <ctx%>  +<add>/-<rem>  $<cost>
   # Project = main repo basename (via git-common-dir, stable across worktrees).
   # Worktree label only when GIT_DIR != GIT_COMMON_DIR and not a submodule.
   # ANSI colors only — no OSC, no Nerd Font PUA.
@@ -231,6 +231,7 @@
     YELLOW=$'\033[33m'
     GREEN=$'\033[32m'
     RED=$'\033[31m'
+    ORANGE=$'\033[38;5;208m'
 
     INPUT=$(${pkgs.coreutils}/bin/cat)
     JQ=${pkgs.jq}/bin/jq
@@ -238,6 +239,7 @@
 
     VERSION=$(echo "$INPUT" | "$JQ" -r '.version // "?"')
     MODEL=$(echo "$INPUT" | "$JQ" -r '.model.display_name // "?"')
+    HOST=$(${pkgs.coreutils}/bin/uname -n)
 
     PROJECT=""
     GIT_SEG=""
@@ -354,9 +356,10 @@
     RATE_5H=$(rate_seg '.rate_limits.five_hour' '5h')
     RATE_7D=$(rate_seg '.rate_limits.seven_day' '7d')
 
-    ${pkgs.coreutils}/bin/printf '%sv%s%s   %s%s%s   %s%s%s%s   %s%s%%%s   %s+%s%s/%s-%s%s   %s$%s%s%s%s\n' \
+    ${pkgs.coreutils}/bin/printf '%sv%s%s   %s%s%s   %s%s%s   %s%s%s%s   %s%s%%%s   %s+%s%s/%s-%s%s   %s$%s%s%s%s\n' \
       "$DIM" "$VERSION" "$RESET" \
       "$CYAN" "$MODEL" "$RESET" \
+      "$ORANGE" "$HOST" "$RESET" \
       "$BLUE" "$PROJECT" "$RESET" "$GIT_SEG" \
       "$CTX_COLOR" "$CTX" "$RESET" \
       "$GREEN" "$ADD" "$RESET" "$RED" "$REM" "$RESET" \

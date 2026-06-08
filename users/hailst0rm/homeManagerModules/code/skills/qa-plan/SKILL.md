@@ -1,6 +1,6 @@
 ---
 name: qa-plan
-description: Generate a step-by-step manual QA plan for freshly-built work by cross-referencing a GitHub issue against its diff, run a quick browser smoke first, and post the plan as a comment on the issue. Use this as the final runtime gate after the static review skills (/tdd, /review, /codex:review) and before marking an issue ready-for-human or opening a PR — whenever the user says "qa this", "qa plan", "how do I test this", "make a test plan", "verify the new feature", "what should I click", or has just finished implementing something and wants to check it by hand. This is the dynamic, human-in-the-browser layer: use it even when code review already passed, because review reads code and this exercises the running app.
+description: Generate a step-by-step manual QA plan for freshly-built work by cross-referencing a GitHub issue against its diff, run a quick browser smoke first, and post the plan as a comment on the issue. Use this as the final runtime gate after the static review skills (/tdd, /review, /codex:review) and before marking an issue ready-for-human or opening a PR — whenever the user says "qa this", "qa plan", "how do I test this", "make a test plan", "verify the new feature", "what should I click", or has just finished implementing something and wants to check it by hand. This is the dynamic, human-in-the-browser layer: use it even when code review already passed, because review reads code and this exercises the running app. For UI work it is also the visual gate — it sets a realistic viewport, captures a screenshot matrix across the app's breakpoints, and checks layout (overlap, overflow, banner/header stacking) rather than just that text is present — so reach for it whenever new UI needs a screenshot, a responsive check, or a "does it actually look right in the browser" pass, not only when someone says the words "QA".
 ---
 
 # QA Plan
@@ -58,6 +58,7 @@ Before writing a manual checklist, catch gross breakage automatically. Prefer a 
    <browser> --remote-debugging-port=9222 <app-url> &
    # <browser> = whatever is installed: brave / chromium / google-chrome
    ```
+   **Set a realistic viewport, and for any layout-bearing surface capture a small screenshot matrix — don't trust a single frame.** Whatever width the browser happened to open at hides the most common layout bugs: an element that collides at 800px looks fine at 1440px, and a banner that's correct on desktop clips on a phone. So before you screenshot, set a real desktop size (e.g. `1440×900`) *and* sample the widths where this app's own CSS actually changes — read the `@media` breakpoints in the touched components and shoot just above and just below each, plus one phone width (~360px). Defects cluster at those boundaries: the band just *above* a `max-width: 768px` collapse is a classic dead-zone where the nav overruns the logo, and it's invisible if you only ever look at 1440. Set the viewport with whatever your tool exposes — `agent-browser set viewport 1440 900`, a Playwright `setViewportSize`, or a raw CDP `Emulation.setDeviceMetricsOverride` — and save each frame; you'll attach them as evidence in step 5.
 3. **Headless fallback** — if no browser control is available, smoke the routes with curl and assert no 5xx:
    ```sh
    BASE=<app-url>            # e.g. http://localhost:3000
@@ -84,6 +85,7 @@ Turn the surfaces from step 2 into a checklist a human runs by hand. Organize in
 
 ### UI & visual flows
 - [ ] **<screen> renders** — Load <route>. Expect: <key elements present>; check empty / loading / error states.
+- [ ] **<screen> layout holds across widths** — View at desktop and at the narrow widths from the matrix. Expect: nothing overlaps (logo / nav / header buttons), no horizontal scrollbar, banners and notices stack *above* the content they precede rather than under it, and text doesn't clip. *(catches: breakpoint dead-zones, negative-margin / z-index stacking bugs)*
 
 ### Logic & edge cases
 - [ ] **<behavior> rejects bad input** — Do <invalid action>. Expect: <validation / graceful failure>, no crash.
@@ -96,11 +98,14 @@ Guidance for good items:
 - **Lead with wiring.** The integration section is the highest-value one — it is the class of bug static review and unit tests both miss. For each new screen, ask "what did the issue say should reach this, and does it?"
 - **Test behaviors, not code.** "Submitting an expired magic link shows an error" — never "verifyToken() throws".
 - **Cover the states a real user hits**: the empty form, the slow network, the wrong input, the expired session — not just the happy path TDD already proved.
+- **For visual items, assert the layout — not just the text.** "The banner says 'scheduled for deletion'" passes even when that banner is rendered *underneath* the hero, because a text check is blind to position. Write the expectation in terms a screenshot can actually prove — *no overlap, no horizontal overflow, correct stacking order, aligned to the grid* — and pair each visual item with the matrix frame that demonstrates it. This is the gap that lets "the text is there, ship it" wave a broken layout through.
 - **Tie back to acceptance criteria.** Every acceptance criterion on the issue should map to at least one check.
 
 ### 5. Post the plan and hand it to the human
 
 Post the checklist as a **comment on issue #N** (`gh issue comment <N> --body-file <file>`), so QA lives with the feature in one thread. Keep the AI-disclaimer first line (mirrors the `/triage` convention).
+
+**For UI changes, attach the screenshot matrix — and verify the images actually render on GitHub.** A list of filenames is not evidence; a reviewer has to *see* the frames to catch a layout bug. Upload each captured frame somewhere GitHub embeds (drag-drop in the web UI, the GitHub user-assets endpoint, or any host that returns a direct image URL) and inline it with `![label](url)` next to the check it proves. Then confirm the links resolve — open the posted comment, or `curl -sI` each URL for a `200` and an `image/*` content-type — because a broken image link is the same as no evidence, and a frame nobody looks at is how a visible defect ships anyway.
 
 Then **move the issue to `ready-for-human`** — generating the QA plan is exactly the moment the work crosses from agent-driven to human-verified, so flip its triage state to match:
 
@@ -117,3 +122,5 @@ If the user asked for a dry run, or you are running inside a test, write the pla
 ## Output contract
 
 Always: a four-section, checkbox-based, issue-referenced plan whose items are runnable by hand, preceded by a one-line smoke result, posted as a comment on the originating issue and the issue relabeled `ready-for-human` (or, on dry-run, written to a file with no posting and no relabel). No code-quality findings, no new issues filed.
+
+For UI-bearing changes, the plan additionally carries **layout-integrity checks** and an **embedded, GitHub-verified screenshot matrix** (a real desktop width plus the app's own breakpoint widths). A visual item asserts position / stacking / overflow — never just that text is present — and is paired with the frame that proves it.

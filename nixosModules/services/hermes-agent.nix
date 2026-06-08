@@ -147,7 +147,15 @@ in {
         wants = lib.optionals (cfg.browser.enable && config.services.vncDisplay.enable) ["vnc-display.service"];
         wantedBy = ["multi-user.target"];
         serviceConfig = {
-          ExecStart = "${pkgs.hermes-agent}/bin/hermes gateway";
+          # Pin the default profile explicitly. Without `--profile`, the CLI
+          # falls back to the sticky `~/.hermes/active_profile` file — which the
+          # user sets to `dev-orchestrator` for interactive sessions. That made
+          # the system gateway adopt the dev-orchestrator profile, collide with
+          # the running dev-orchestrator user-service gateway, and abort with
+          # "Gateway already running" (flap loop → rebuild activation fails).
+          # `--profile default` resolves to ~/.hermes (the default bot's home),
+          # immune to active_profile.
+          ExecStart = "${pkgs.hermes-agent}/bin/hermes --profile default gateway";
           Restart = "on-failure";
           RestartSec = 10;
           DynamicUser = false;
@@ -201,7 +209,10 @@ in {
           # never a dashboard option; passing it to the `dashboard` subcommand
           # now fails argparse with "unrecognized arguments: --tui".)
           # --skip-build reuses the prebuilt web assets for faster startup.
-          ExecStart = "${pkgs.hermes-agent}/bin/hermes dashboard --host ${cfg.dashboard.host} --port ${toString cfg.dashboard.port} --insecure --no-open --skip-build";
+          # `--profile default` for the same reason as the gateway above: pin
+          # the default bot's home so the dashboard backs the system bot, not
+          # whatever `active_profile` (dev-orchestrator) happens to be sticky.
+          ExecStart = "${pkgs.hermes-agent}/bin/hermes --profile default dashboard --host ${cfg.dashboard.host} --port ${toString cfg.dashboard.port} --insecure --no-open --skip-build";
           Restart = "on-failure";
           RestartSec = 10;
           DynamicUser = false;

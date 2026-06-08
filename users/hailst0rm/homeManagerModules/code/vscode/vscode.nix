@@ -30,6 +30,9 @@ in {
         enable = true;
         enableZshIntegration = true;
         nix-direnv.enable = true;
+        # Hide direnv's noisy "export +AR +AS …" env-var dump on every cd.
+        # Per-project shellHooks (e.g. p1predictions) still print their banners.
+        config.global.hide_env_diff = true;
       };
       zsh.initContent = ''
         eval "$(direnv hook zsh)"
