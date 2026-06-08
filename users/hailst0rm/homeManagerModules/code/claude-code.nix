@@ -801,11 +801,35 @@ in {
           ];
         };
 
-        env = {
-          CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
-          CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
-          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
-        };
+        env =
+          {
+            CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
+            CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+          }
+          // (
+            if config.code.claude-code.localLlm.enable
+            then {
+              # Local LLM (Ollama): no use for Anthropic cloud features, so
+              # suppress ALL nonessential traffic. The blanket flag also kills
+              # the GrowthBook feature-flag fetch — fine here, we don't want
+              # cloud features anyway.
+              CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1";
+            }
+            else {
+              # Cloud (default): we want /ultraplan + other GrowthBook-gated
+              # cloud features. Claude Code couples its telemetry opt-out to the
+              # GrowthBook feature-flag fetch via ONE shared kill switch (fW()),
+              # so DISABLE_TELEMETRY — and the NONESSENTIAL blanket — silently
+              # block those features. Telemetry is OFF BY DEFAULT anyway (only
+              # sent with CLAUDE_CODE_ENABLE_TELEMETRY + an OTEL exporter), so
+              # omitting DISABLE_TELEMETRY costs no real privacy while restoring
+              # the flag fetch. See anthropics/claude-code#45918 and #34178
+              # (closed wontfix). The flags below are independent of that switch:
+              DISABLE_ERROR_REPORTING = "1"; # no Sentry crash reports
+              DISABLE_FEEDBACK_COMMAND = "1"; # no /bug submission
+              DISABLE_AUTOUPDATER = "1"; # moot on a Nix-managed install anyway
+            }
+          );
 
         # Hooks:
         # - PreToolUse (RTK): rewrites Bash commands to token-compact equivalents.
