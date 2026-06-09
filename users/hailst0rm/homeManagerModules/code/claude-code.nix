@@ -30,16 +30,16 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "aaf2453fbdfe7a15c07f11d861224f34ab4b53cb";
-    hash = "sha256-+Px3qIMHGKvi0PK2l5H4j/4YRQ448G9kuWX28cgqPCI=";
+    rev = "2bf70051928429983de3b5718d277150926f8c89";
+    hash = "sha256-v8gOB1tvmytemH05C0j+WjwdfzaDgXg+MnKk5mDSblY=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
-  # Experimental skills not listed in plugin.json — opt them in explicitly.
-  # (The in-progress "review" skill is handled separately below because its
-  # name collides with the built-in /review.)
+  # Experimental skills not listed in plugin.json — opt them in explicitly here.
+  # Currently empty (teach graduated into plugin.json upstream). The in-progress
+  # "review" skill is handled separately below because its name collides with
+  # the built-in /review.
   mattpocockExtraSkills = [
-    "skills/in-progress/teach"
   ];
   mattpocockSkillFiles = lib.listToAttrs (map (skillPath: {
       name = ".claude/skills/${baseNameOf skillPath}";
@@ -995,7 +995,7 @@ in {
     };
 
     # GSD (Get Shit Done) commands and agents +
-    # Matt Pocock skills (flat-linked from upstream plugin.json — 14 stable + 2 in-progress (teach, review))
+    # Matt Pocock skills (flat-linked from upstream plugin.json — 15 stable + 1 in-progress (review))
     home.file =
       {
         ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
