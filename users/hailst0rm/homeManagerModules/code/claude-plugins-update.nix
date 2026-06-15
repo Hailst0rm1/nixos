@@ -30,14 +30,30 @@
     CLAUDE="${claudePkg}/bin/.claude-wrapped"
     [ -x "$CLAUDE" ] || CLAUDE="${claudePkg}/bin/claude"
 
+    rc=0
+
+    # The marketplace refresh is the step that fails when the network isn't
+    # truly ready (e.g. the timer fires seconds after boot, before GitHub SSH
+    # is reachable — it dies with ERR_STREAM_PREMATURE_CLOSE and falls back to
+    # stale cached versions). A non-zero exit here propagates out so the unit's
+    # Restart=on-failure retries every 10 min until connectivity returns; a
+    # clean run exits 0 and the retry loop stops until the next daily trigger.
     echo "==> Refreshing marketplace clones"
-    "$CLAUDE" plugin marketplace update || true
+    if ! "$CLAUDE" plugin marketplace update; then
+      echo "!! marketplace refresh failed — will retry" >&2
+      rc=1
+    fi
 
     echo "==> Updating enabled plugins"
     for plugin in ${lib.escapeShellArgs enabledPlugins}; do
       echo "--> $plugin"
-      "$CLAUDE" plugin update "$plugin" || true
+      # Per-plugin failures are logged but do NOT gate the retry: once the
+      # marketplace refresh succeeds, one flaky plugin shouldn't pin the unit
+      # in a 10-minute retry loop forever.
+      "$CLAUDE" plugin update "$plugin" || echo "!! update failed: $plugin" >&2
     done
+
+    exit $rc
   '';
 in {
   options.code.claude-code.pluginAutoUpdate.enable =
@@ -53,9 +69,16 @@ in {
       };
 
       Service = {
-        Type = "oneshot";
+        # Type=exec (not oneshot) so Restart= is honoured — systemd forbids
+        # Restart with Type=oneshot. The job still runs to completion and
+        # exits; on a non-zero exit (marketplace refresh failed) systemd
+        # retries every 10 min until it exits 0, then stops until the next
+        # daily trigger. The 10-min spacing stays well under systemd's default
+        # start-rate limit, so the retries never get throttled.
+        Type = "exec";
         ExecStart = "${updateScript}/bin/claude-plugins-update";
-        RemainAfterExit = false;
+        Restart = "on-failure";
+        RestartSec = 600;
       };
     };
 
