@@ -17,16 +17,18 @@
 in
   buildNpmPackage rec {
     pname = "codeburn";
-    version = "0.9.12";
+    version = "0.9.13";
 
     src = fetchFromGitHub {
       owner = "getagentseal";
       repo = "codeburn";
-      rev = "v0.9.12";
-      hash = "sha256-YjvG9mkhszP+tUIgXFCCMKazjEt2qQ11x2Tr78X+7eQ=";
+      # Upstream publishes parallel `v0.9.X` and `mac-v0.9.X` tag series that
+      # point at identical commits; 0.9.13 only has the `mac-` tag so far.
+      rev = "mac-v0.9.13";
+      hash = "sha256-z/67n+HWuPH/jrydyG3yM9b0v8puiOZQjKndBJXFf1o=";
     };
 
-    npmDepsHash = "sha256-XXQDxv8fHnpK1pUxBCg38NnHadtbwOjPJW7Q2bdu8vA=";
+    npmDepsHash = "sha256-DlGIFGpYybDQWppj+L9Xb7fhIs4SLuX95a684Grd/oY=";
 
     # The build script fetches litellm pricing data from GitHub at build time.
     # Replace it with a version that reads from the pre-fetched local file.
