@@ -400,6 +400,16 @@ in {
       default = false;
       description = "Enable the cli-printing-press Claude Code plugin (marketplace + generator skills) and the Go toolchain it needs.";
     };
+    playground.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the Anthropic-verified playground plugin (playground@claude-plugins-official): /playground generates self-contained interactive HTML playgrounds (design, data explorer, concept map, document critique, diff review, code map) with live preview and copyable prompt output.";
+    };
+    visual-explainer.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the nicobailon/visual-explainer plugin: slash commands (/generate-web-diagram, /generate-slides, /diff-review, /plan-review, etc.) that produce standalone HTML pages for diagrams, diff/plan reviews, slides, and data tables.";
+    };
     codex.enable = lib.mkOption {
       type = lib.types.bool;
       default = config.code.codex.enable;
@@ -897,6 +907,12 @@ in {
             "obsidian@obsidian-skills" = true;
             "context-mode@context-mode" = true;
           }
+          // lib.optionalAttrs config.code.claude-code.playground.enable {
+            "playground@claude-plugins-official" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.visual-explainer.enable {
+            "visual-explainer@visual-explainer-marketplace" = true;
+          }
           // lib.optionalAttrs config.code.claude-code.n8n.enable {
             "n8n-skills@n8n-skills" = true;
           }
@@ -937,6 +953,14 @@ in {
               source = {
                 source = "github";
                 repo = "pbakaus/impeccable";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.visual-explainer.enable {
+            visual-explainer-marketplace = {
+              source = {
+                source = "github";
+                repo = "nicobailon/visual-explainer";
               };
             };
           }

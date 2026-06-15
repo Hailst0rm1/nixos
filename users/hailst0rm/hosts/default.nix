@@ -75,6 +75,8 @@
       perplexity.enable = lib.mkDefault false;
       claude-mem.enable = lib.mkDefault true;
       tokenOptimizer.enable = lib.mkDefault false;
+      playground.enable = lib.mkDefault true;
+      visual-explainer.enable = lib.mkDefault true;
       pluginAutoUpdate.enable = lib.mkDefault true;
       sessionHandoffReminder = {
         enable = lib.mkDefault true;

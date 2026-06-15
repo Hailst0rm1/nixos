@@ -15,17 +15,17 @@
   ffmpeg,
   openssh,
 }: let
-  version = "0.15.1-unstable-2026-06-04";
+  version = "2026.6.5";
   python = python3;
   pip = python3.pkgs.pip;
 
   src = fetchFromGitHub {
     owner = "NousResearch";
     repo = "hermes-agent";
-    # Tracks main; the desktop app + remote-backend dashboard auth aren't in
-    # a release tag yet. Bump SHA + hash to pull new upstream changes.
-    rev = "d3fab54933c3866d2c7cf5e51dc63e9e494c9f47";
-    hash = "sha256-U4+c3UGDvlpET/xe+3i/dJt/Ogis/YX9t9oQBpEIXWo=";
+    # Upstream now publishes CalVer release tags; pin to the latest stable tag.
+    # Bump rev + hash to pull new upstream releases.
+    rev = "v${version}";
+    hash = "sha256-ngpkopVczNrT0bfCXHm38QjgrZT96Bm/rO89NA/ls3Y=";
   };
 
   # FOD: download all Python wheels/sdists via pip
@@ -48,14 +48,14 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-1zwCoko1HCXXTi7c4Db+9PJo8neEY+Eklpq/Pvid6zM=";
+    outputHash = "sha256-J7DmgeoBzLIawyCFtbAfwEJ/oLY7u8ATyq3oJqrve50=";
   };
 
   # Single npm-deps fetch from the workspace root package-lock.json. Upstream
   # moved web/ (and apps/desktop) into one npm workspace, so the dashboard
   # frontend is now built via buildNpmPackage against the root lockfile rather
   # than a per-folder `npm ci`. Matches pkgs/hermes-desktop/package.nix.
-  npmDepsHash = "sha256-9xW/kVb315Cdx5mbn3zBIaNuaJB6yKKh2F5I0QCZ1ow=";
+  npmDepsHash = "sha256-hgnqcpKRPztHhDEpwC7HJrALuJp9wsrV4+GJ6t6HI2c=";
 
   npmDeps = fetchNpmDeps {
     inherit src;
