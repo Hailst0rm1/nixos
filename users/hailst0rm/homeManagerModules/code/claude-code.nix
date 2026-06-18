@@ -22,41 +22,31 @@
   # Pinned to a specific commit on `main` instead of `rev = "main"`.
   # With a branch ref, Nix caches the first fetched tree and silently
   # reuses it forever — new upstream commits never reach this build until
-  # the hash changes. The repo has no release tags, so this tracks main by
-  # SHA. The `# track-branch:` sentinel tells
-  # scripts/nix-github-update-report.py to auto-bump `rev`+`hash` to the
-  # current branch HEAD on its next sweep.
+  # the hash changes. We deliberately track `main` by SHA rather than pin a
+  # release tag, to pick up new skills as they land. The `# track-branch:`
+  # sentinel tells scripts/nix-github-update-report.py to auto-bump
+  # `rev`+`hash` to the current branch HEAD on its next sweep.
   # track-branch: main
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "694fa30311e02c2639942308513555e61ee84a6f";
-    hash = "sha256-NGRKdnHSBKoR48zGotmJ3zGXnQ58ogudv8T4Va/2DSY=";
+    rev = "bddb833cbaa322ff89d07e490530860aa73a4293";
+    hash = "sha256-Op7XmOTQw3kKvVZwvUCng0LCl5bErubC+DebAY3HhZc=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
   # Experimental skills not listed in plugin.json — opt them in explicitly here.
-  # Currently empty (teach graduated into plugin.json upstream). The in-progress
-  # "review" skill is handled separately below because its name collides with
-  # the built-in /review.
+  # The in-progress "review" skill installs under its upstream name (/review),
+  # deliberately shadowing the built-in /review.
   mattpocockExtraSkills = [
+    "skills/in-progress/review"
+    "skills/in-progress/decision-mapping"
   ];
   mattpocockSkillFiles = lib.listToAttrs (map (skillPath: {
       name = ".claude/skills/${baseNameOf skillPath}";
       value.source = "${mattpocock-skills-repo}/${skillPath}";
     })
     (mattpocockPlugin.skills ++ mattpocockExtraSkills));
-
-  # Experimental upstream "review" skill (skills/in-progress/review), renamed
-  # to "review-of-all-reviews" so it doesn't collide with the built-in /review
-  # (PR review) skill. Claude Code identifies a skill by its frontmatter
-  # `name:`, not its directory, so the rename rewrites that line. Copies from
-  # the pinned source — still tracks upstream via the track-branch sweep above.
-  reviewOfAllReviewsSkill = pkgs.runCommand "review-of-all-reviews-skill" {} ''
-    cp -r ${mattpocock-skills-repo}/skills/in-progress/review $out
-    chmod -R u+w $out
-    ${pkgs.gnused}/bin/sed -i 's/^name: review$/name: review-of-all-reviews/' $out/SKILL.md
-  '';
 
   perplexityMcpWrapper = mkSecretEnvWrapper {
     name = "perplexity-mcp-wrapper";
@@ -1019,7 +1009,7 @@ in {
     };
 
     # GSD (Get Shit Done) commands and agents +
-    # Matt Pocock skills (flat-linked from upstream plugin.json — 15 stable + 1 in-progress (review))
+    # Matt Pocock skills (flat-linked from upstream plugin.json — 15 stable + 2 in-progress (review, decision-mapping))
     home.file =
       {
         ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
@@ -1027,7 +1017,6 @@ in {
           source = "${gsd-repo}/agents";
           recursive = true;
         };
-        ".claude/skills/review-of-all-reviews".source = reviewOfAllReviewsSkill;
       }
       // mattpocockSkillFiles;
 
