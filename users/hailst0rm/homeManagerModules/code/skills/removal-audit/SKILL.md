@@ -1,6 +1,6 @@
 ---
 name: removal-audit
-description: Audit a codebase, branch, PR, package, or module for leftover artefacts, dead code, unused exports/files/dependencies, orphaned routes, stale config/env/feature flags, unused tests/fixtures/mocks, dead docs/i18n/assets, generated-artefact drift, committed build output, and stale public API entries. Use whenever the user says "is X really gone?", "find dead code", "what's unused/orphaned?", "any loose dependencies?", "audit this branch for leftovers", "clean up the codebase", or wants an independent, adversarial second opinion that a removal is complete. Two modes: targeted (prove a named feature/route/package has zero residual artefacts) and general hygiene (rank dead-code/dependency findings, no target). Default is read-only and evidence-based: findings carry confidence levels, and dynamic frameworks, public APIs, and generated files are respected, not called dead. If it becomes an active named removal, switch to feature-removal. Works for JS/TS, Python, monorepos, and API/frontend/library projects.
+description: Audit a codebase, branch, PR, package, or module for leftover artefacts, dead code, unused exports/files/dependencies, orphaned routes, and stale config/flags/tests/docs/assets. Use when the user says "is X really gone?", "find dead code", "what's unused/orphaned?", "any loose dependencies?", "audit this branch for leftovers", "clean up the codebase", or wants an independent, adversarial second opinion that a removal is complete. Two modes: targeted (prove a named feature/route/package has zero residual artefacts) and general hygiene (rank dead-code/dependency findings, no target). If it becomes an active named removal, switch to feature-removal. Works for JS/TS, Python, monorepos, and API/frontend/library projects.
 ---
 
 # Removal Audit
@@ -81,7 +81,7 @@ audit:
 
 ### Phase 3 — Run the tooling matrix
 
-**Adapt to the repo's real stack and package manager** — never blindly run `npm`/`pip`; detect the lockfile and scripts first. No single tool is authoritative; cross-check static search, dead-code analysis, and dependency graph. If a tool isn't present, run it via the package runner only when safe, or record it as unavailable. Full matrix in `references/tooling.md`; essentials:
+**Adapt to the repo's real stack and package manager** (detect lockfile/scripts first — `references/tooling.md` owns the detection rules and full matrix). No single tool is authoritative; cross-check static search, dead-code analysis, and dependency graph. Essentials:
 
 ```bash
 # Universal
@@ -214,13 +214,9 @@ Record per finding:
 
 ## Common pitfalls
 
-- Treating every unused export as safe to delete (ignores public package API).
-- Ignoring dynamic / framework registration (routes, CLI, migrations, handlers).
-- Deleting generated files by hand instead of fixing the generator/source.
 - Deleting tests that encode intended behaviour instead of pivoting them.
 - Ignoring dependency lockfiles.
 - Not searching committed build output.
-- Failing to separate report mode from cleanup mode (mutating when asked to audit).
 - Overloading one agent/session with both finding and proving — the deleter is biased.
 
 ## Verification checklist

@@ -421,6 +421,11 @@ in {
         Enable the alexgreensh/token-optimizer plugin: monthly-cadence context audits and health reports. Provides slash commands /token-optimizer, /coach, /memory-review, /attention-score, /drift, /triage, /doctor, /quality, /report, /savings, /jsonl-inspect. Layer A only — marketplace registration + plugin enablement. Deliberately does NOT run the upstream setup-hook/setup-smart-compact/setup-daemon/setup-quality-bar scripts, which would mutate ~/.claude/settings.json (a /nix/store symlink). One-shot dashboard via `python3 measure.py dashboard --serve` when needed. License: PolyForm Noncommercial — personal use only.
       '';
     };
+    superpowers.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the superpowers@claude-plugins-official plugin: a meta-skill framework (brainstorming, TDD, systematic-debugging, writing-skills, etc.) that injects skill-discovery instructions at session start.";
+    };
     rtk.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -891,11 +896,13 @@ in {
         enabledPlugins =
           {
             "skill-creator@claude-plugins-official" = true;
-            "superpowers@claude-plugins-official" = true;
             # "frontend-design@claude-plugins-official" = true;  # Replaced by impeccable (strict superset)
             "impeccable@impeccable" = true;
             "obsidian@obsidian-skills" = true;
             "context-mode@context-mode" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.superpowers.enable {
+            "superpowers@claude-plugins-official" = true;
           }
           // lib.optionalAttrs config.code.claude-code.playground.enable {
             "playground@claude-plugins-official" = true;

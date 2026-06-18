@@ -1,6 +1,6 @@
 ---
 name: feature-removal
-description: Surgically remove, deprecate, disable, roll back, excise, or simplify away a named feature, route, flag, endpoint, or product surface from a codebase, branch, or open PR — and prove nothing is left behind. Use whenever the user says "remove X", "delete the X feature", "rip out X", "deprecate/disable/roll back X", "drop support for X", "take X out of this PR", "we're not shipping X anymore", or wants a feature gone cleanly. Removal is an absence-proof problem, not a make-tests-pass one: green tests don't prove a feature is gone. Builds a removal manifest, discovers every surface (UI, routes, API, jobs, flags, analytics, schema, deps, docs, generated artefacts, build output), removes only what's listed while preserving adjacent behaviour, and gathers independent evidence of absence. For audit-only requests, or a second adversarial opinion that a feature is truly gone, use removal-audit. Works for JS/TS, Python, monorepos, API services, frontends, and package libraries.
+description: Surgically remove a named feature, route, flag, endpoint, or product surface from a codebase, branch, or open PR — and prove nothing is left behind. Use when the user says "remove/delete/rip out X", "deprecate/disable/sunset X", "roll back X", "drop support for X", "take X out of this PR", or "we're not shipping X anymore". Builds a removal manifest, discovers every surface (UI, routes, API, jobs, flags, analytics, schema, deps, docs, generated artefacts, build output), removes only what's listed while preserving adjacent behaviour, and gathers independent evidence of absence. For audit-only requests, or a second adversarial opinion that a feature is truly gone, use removal-audit. Works for JS/TS, Python, monorepos, API services, frontends, and package libraries.
 ---
 
 # Feature Removal
@@ -111,7 +111,7 @@ open_questions: []
 
 ### Phase 3 — Inventory / scout pass (non-mutating)
 
-Before deleting, discover every surface. **Adapt commands to the repo's actual stack and package manager** — do not run `npm` if the repo uses `pnpm`/`yarn`/`bun`, or `pip` if it uses `uv`/`poetry`. Detect the package manager (lockfile), the test runner (scripts), and the language before running anything. See `references/tooling.md` for the full command matrix; the essentials:
+Before deleting, discover every surface. **Adapt commands to the repo's actual stack and package manager** (detect from the lockfile and scripts — `references/tooling.md` owns the detection rules and full command matrix). The essentials:
 
 ```bash
 # Universal term sweep (use every spelling from the manifest)
@@ -145,37 +145,7 @@ Match rigour to risk. The point is to keep an **independent** check on absence f
 - **Medium:** split read-only inventory/scout from the mutating implementer.
 - **High-risk** (auth, payments, customer data, schema, cross-repo, large blast radius): split into distinct roles — inventory scout (read-only), implementer (mutating), absence auditor (read-only/adversarial — use `removal-audit`), runtime/UX QA, plus security and UI reviewers when those facets apply.
 
-Prompt snippet for spawning a high-risk removal team:
-
-```text
-Invoke an agent team for this removal.
-
-Agent 1 — inventory scout (read-only):
-Expand removal-manifest.yaml using rg, repo docs, route/API/schema scans,
-dependency-graph evidence, and framework entrypoint scans. Do not edit files.
-
-Agent 2 — implementer (mutating):
-Remove only manifest-listed surfaces, preserve listed behaviours, pivot/add
-tests, update schema/deps/generated files where required, and commit. If new
-surfaces appear, update the manifest BEFORE deleting them.
-
-Agent 3 — absence auditor (read-only, adversarial):
-Ignore the implementer's confidence. Using the manifest, diff, and repo state,
-try to find any remaining feature functions, exports, routes, assets, docs,
-tests, dependencies, generated artefacts, or build output. (This is removal-audit.)
-
-Agent 4 — runtime QA (if UI/API/runtime-bearing):
-Run the QA plan. Verify removed routes/endpoints fail safely and adjacent flows
-still work. Capture evidence.
-
-Agent 5 — security reviewer (only if auth/privacy/payment/customer-data apply):
-Inspect orphaned permissions, stale webhooks, bypasses, data exposure, broken
-invariants, compatibility risks.
-
-Agent 6 — UI reviewer (only if UI-bearing):
-Inspect removed nav/screens/copy; ensure the remaining layout has no holes,
-broken empty states, overflow, or visual regressions.
-```
+For high-risk removals, spawn a dedicated agent team — inventory scout (read-only) · implementer (mutating) · adversarial absence auditor (`removal-audit`) · runtime QA · security reviewer · UI reviewer. See `references/high-risk-team.md` for the role-by-role spawn prompt.
 
 ### Phase 5 — Implementation rules
 
@@ -248,16 +218,11 @@ Produce a PR/comment using this template. The point is that a reviewer can see t
 ## Common pitfalls
 
 - Deleting only the visible UI; leaving API/routes/jobs/flags/events behind.
-- Deleting tests instead of pivoting them to assert post-removal behaviour.
 - Leaving fixtures, mocks, Storybook stories, i18n strings, docs, or assets.
-- Leaving dependency and lockfile entries the feature pulled in.
 - Trusting green tests as proof of absence — they prove presence of what remains, not absence of what you removed.
-- Implementer self-review only on a non-trivial removal (no independent absence check).
-- Over-deleting adjacent accepted behaviour because it shared a file.
 - Ignoring generated clients/specs and committed build output.
 - Treating an existing-PR revision as a fresh branch (losing reviewed adjacent work).
 - Stacking a follow-up migration to remove schema an unmerged migration introduced.
-- Failing to specify 404 vs 410 vs redirect vs compatibility shim.
 
 ## Verification checklist
 
