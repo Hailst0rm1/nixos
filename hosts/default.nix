@@ -125,6 +125,11 @@
       exitNodeAllowLanAccess = lib.mkDefault true;
     };
     nas.enable = lib.mkDefault false;
+    claudeTeach = {
+      enable = lib.mkDefault false;
+      root = lib.mkDefault "/mnt/nas/claude-teach";
+      port = lib.mkDefault 8088;
+    };
     proton-bridge.enable = lib.mkDefault false;
 
     syncthing-sync = {

@@ -435,6 +435,7 @@
       workgroup = "WORKGROUP";
       readOnly = false;
     };
+    claudeTeach.enable = true;
   };
 
   services.syncthing-sync = {
