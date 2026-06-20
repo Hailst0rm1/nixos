@@ -7,14 +7,14 @@
 }:
 python3.pkgs.buildPythonApplication {
   pname = "notebooklm-py";
-  version = "0.7.1";
+  version = "0.7.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "teng-lin";
     repo = "notebooklm-py";
-    rev = "v0.7.1";
-    hash = "sha256-WMTZmZ5a0+X0Bl4TXPsBVMGCoaHkiXPJUIshH2ZXlwM=";
+    rev = "v0.7.2";
+    hash = "sha256-5j4mgtURDBor+7z/aaLx3NrSIAJkUELosQG4SryAKT8=";
   };
 
   nativeBuildInputs = [makeWrapper];
