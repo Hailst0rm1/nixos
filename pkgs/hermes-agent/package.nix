@@ -163,6 +163,24 @@ in
       cp -r $src/optional-skills  $out/share/hermes-agent/optional-skills
       cp -r $src/plugins          $out/share/hermes-agent/plugins
 
+      # Upstream 2026.6.19 cron-provider refactor ships two `cron` packages per
+      # plugins tree: the real top-level `cron/` (has scheduler_provider) and a
+      # discovery stub `plugins/cron/` (only __init__.py). The discord/raft
+      # adapters `sys.path.insert(0, …/plugins)`, which makes the stub shadow the
+      # real package, so `from cron.scheduler_provider import …` crashes the
+      # gateway. The runtime loads the share/ copy via HERMES_BUNDLED_PLUGINS, but
+      # patch both trees. Append instead of prepend so real top-level packages win.
+      for tree in \
+        $out/lib/python3.13/site-packages/plugins \
+        $out/share/hermes-agent/plugins; do
+        for p in discord raft; do
+          substituteInPlace "$tree/platforms/$p/adapter.py" \
+            --replace-fail \
+              'sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))' \
+              'sys.path.append(str(_Path(__file__).resolve().parents[2]))'
+        done
+      done
+
       # Fix shebangs to reference $out
       find $out/bin -type f -exec sed -i "s|$TMPDIR/.venv|$out|g" {} +
 
