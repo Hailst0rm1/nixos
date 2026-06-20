@@ -371,14 +371,11 @@
     rsshub.enable = true;
     hermes-agent = {
       enable = true;
-      discord = {
-        # Default/system Hermes Agent bot: only under the regular Hermes channel.
-        # Dev Orchestrator is a separate user-profile gateway restricted in
-        # ~/.hermes/profiles/dev-orchestrator/.
-        homeChannel = "1504852662313681108";
-        allowedChannels = ["1504852662313681108"];
-        ignoredChannels = ["1512064018230149170"];
-      };
+      # Discord/Signal platform credentials and channel scoping live in hermes'
+      # own ~/.hermes/.env (default profile = system bot; dev-orchestrator is a
+      # separate user-profile gateway under ~/.hermes/profiles/dev-orchestrator/).
+      # The gateway loads .env with override=True, so configuring them here would
+      # just be clobbered — hermes owns its platform config.
       signal.enable = false;
       # Headless server runs the backend, not the GUI client — skip the heavy
       # Electron closure (desktop is default-on via hosts/default.nix).

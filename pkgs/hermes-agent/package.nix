@@ -48,7 +48,7 @@
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "sha256-GF4JLWS5mShIlEzmOps0sGIztC1VReLsM1iAB2ehecE=";
+    outputHash = "sha256-prLMm2yI2Mla0mNGWw000qUlg7/6NH/RAFA4yDW5IcA=";
   };
 
   # Single npm-deps fetch from the workspace root package-lock.json. Upstream

@@ -39,16 +39,16 @@
         secrets."keys/yubikey/${config.hostname}" = {};
         secrets."services/cloudflared/creds" = lib.mkIf config.services.cloudflared.enable {};
         secrets."services/tailscale/auth.key" = lib.mkIf config.services.tailscaleAutoconnect.enable {};
-        secrets."services/hermes-agent/env" = lib.mkIf config.services.hermes-agent.enable {
+        # Only the dashboard consumes this blob now (HERMES_DASHBOARD_SESSION_TOKEN
+        # for --insecure mode). The gateway reads its platform/LLM creds from
+        # hermes' own ~/.hermes/.env + config.yaml, so it no longer mounts this.
+        secrets."services/hermes-agent/env" = lib.mkIf config.services.hermes-agent.dashboard.enable {
           owner = "hailst0rm";
           mode = "0400";
-          # Restart the consumers when the env blob changes (e.g. a new
-          # HERMES_DASHBOARD_SESSION_TOKEN) — the unit text is unchanged on a
-          # rebuild, so without this the dashboard keeps its old token and the
-          # desktop's WS auth fails.
-          restartUnits =
-            ["hermes-agent.service"]
-            ++ lib.optional config.services.hermes-agent.dashboard.enable "hermes-dashboard.service";
+          # Restart the dashboard when the token changes — the unit text is
+          # unchanged on a rebuild, so without this the dashboard keeps its old
+          # token and the desktop's WS auth fails.
+          restartUnits = ["hermes-dashboard.service"];
         };
         # Raw session token for the desktop client's HERMES_DESKTOP_REMOTE_TOKEN;
         # must equal the server's HERMES_DASHBOARD_SESSION_TOKEN. Decrypted only

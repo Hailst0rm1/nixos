@@ -58,23 +58,6 @@ in {
     browser = {
       enable = lib.mkEnableOption "agent-browser CLI (Vercel Labs) for the Hermes agent";
     };
-    discord = {
-      homeChannel = lib.mkOption {
-        type = lib.types.str;
-        default = "";
-        description = "Discord channel ID used as the default Hermes home channel.";
-      };
-      allowedChannels = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [];
-        description = "Discord channel IDs where Hermes is allowed to respond. Thread parent channels are matched by Hermes.";
-      };
-      ignoredChannels = lib.mkOption {
-        type = lib.types.listOf lib.types.str;
-        default = [];
-        description = "Discord channel IDs where Hermes never responds, even when mentioned.";
-      };
-    };
     desktop = {
       enable = lib.mkEnableOption "Hermes desktop (Electron) app — a native client that can drive a local or remote Hermes backend";
       remoteUrl = lib.mkOption {
@@ -160,14 +143,19 @@ in {
           RestartSec = 10;
           DynamicUser = false;
           User = "hailst0rm";
+          # Discord channel scoping (home/allowed/ignored) lives in hermes' own
+          # ~/.hermes/.env, which the gateway loads with override=True — setting
+          # it here would just be clobbered. Let hermes own its platform config.
           Environment =
             ["HERMES_PORT=${toString cfg.port}"]
-            ++ lib.optional (cfg.discord.homeChannel != "") "DISCORD_HOME_CHANNEL=${cfg.discord.homeChannel}"
-            ++ lib.optional (cfg.discord.allowedChannels != []) "DISCORD_ALLOWED_CHANNELS=${lib.concatStringsSep "," cfg.discord.allowedChannels}"
-            ++ lib.optional (cfg.discord.ignoredChannels != []) "DISCORD_IGNORED_CHANNELS=${lib.concatStringsSep "," cfg.discord.ignoredChannels}"
             ++ lib.optionals cfg.browser.enable ["AGENT_BROWSER_CONFIG=/etc/agent-browser/config.json"]
             ++ lib.optionals (cfg.browser.enable && config.services.vncDisplay.enable) ["DISPLAY=:${toString config.services.vncDisplay.display}"];
-          EnvironmentFile = config.sops.secrets."services/hermes-agent/env".path;
+          # No EnvironmentFile: the gateway reads its platform credentials
+          # (DISCORD_*/SIGNAL_*) and LLM keys from hermes' own ~/.hermes/.env +
+          # config.yaml, which it loads with override=True — so any sops value
+          # here would be clobbered anyway. The only sops-only value
+          # (HERMES_DASHBOARD_SESSION_TOKEN) is consumed by the dashboard, not
+          # the gateway. Let hermes own its env.
         };
       };
 
