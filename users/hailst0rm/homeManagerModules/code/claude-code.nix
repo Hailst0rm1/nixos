@@ -631,6 +631,21 @@ in {
             - Consider defensive coding practices
             - Document security implications of changes
           '';
+
+          interview-style = ''
+            # Interview / Grilling Style
+
+            During grilling, grill-me, grill-with-docs, or any
+            interview-style session where you question me about a plan or
+            design, ask questions as plain free-text prose — one at a
+            time, each with your recommended answer stated. Do NOT use the
+            AskUserQuestion multiple-choice tool for these; I want to
+            answer in my own words so I can be nuanced.
+
+            This applies only to interview/grilling sessions — keep using
+            multiple-choice freely for quick config or routing decisions
+            elsewhere.
+          '';
         }
         // lib.optionalAttrs config.code.claude-code.rtk.enable {
           rtk = ''
