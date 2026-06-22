@@ -2,10 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  python3,
-  uv,
-  cacert,
-  git,
+  callPackage,
   nodejs,
   buildNpmPackage,
   fetchNpmDeps,
@@ -13,11 +10,15 @@
   makeWrapper,
   ripgrep,
   ffmpeg,
+  git,
   openssh,
+  # Flake inputs threaded in via the overlay (overlays/hermes-agent.nix) or
+  # explicitly from flake.nix's packages output. Drive the uv2nix venv build.
+  uv2nix,
+  pyproject-nix,
+  pyproject-build-systems,
 }: let
   version = "2026.6.19";
-  python = python3;
-  pip = python3.pkgs.pip;
 
   src = fetchFromGitHub {
     owner = "NousResearch";
@@ -28,27 +29,10 @@
     hash = "sha256-Oyl6Cpg2bTiX9MyBxFT5q4yVdYf3lCIptzFdiVULmjo=";
   };
 
-  # FOD: download all Python wheels/sdists via pip
-  hermes-wheels = stdenv.mkDerivation {
-    pname = "hermes-agent-wheels";
-    inherit version src;
-
-    nativeBuildInputs = [python pip cacert git];
-
-    buildPhase = ''
-      export HOME=$TMPDIR
-      export SSL_CERT_FILE=${cacert}/etc/ssl/certs/ca-bundle.crt
-
-      ${python}/bin/python3 -m pip download ".[all,messaging]" setuptools wheel \
-        --dest $out
-    '';
-
-    dontInstall = true;
-    dontFixup = true;
-
-    outputHashMode = "recursive";
-    outputHashAlgo = "sha256";
-    outputHash = "sha256-prLMm2yI2Mla0mNGWw000qUlg7/6NH/RAFA4yDW5IcA=";
+  # Python environment built from upstream's uv.lock via uv2nix — deterministic,
+  # no live PyPI resolution, no drifting hash. See ./python.nix.
+  hermesVenv = callPackage ./python.nix {
+    inherit uv2nix pyproject-nix pyproject-build-systems src;
   };
 
   # Single npm-deps fetch from the workspace root package-lock.json. Upstream
@@ -117,84 +101,58 @@ in
     pname = "hermes-agent";
     inherit version src;
 
-    nativeBuildInputs = [python uv makeWrapper pip];
+    # The venv is prebuilt by uv2nix; we only assemble the wrapper + bundled
+    # content, so there's nothing to unpack or compile here.
+    dontUnpack = true;
+    dontBuild = true;
 
-    buildPhase = ''
-      export HOME=$TMPDIR
-
-      # Install Python package
-      ${python}/bin/python3 -m venv $TMPDIR/.venv
-      $TMPDIR/.venv/bin/pip install ".[all,messaging]" \
-        --no-index \
-        --find-links ${hermes-wheels}
-
-      # Guard against response.output being None in openai SDK
-      substituteInPlace $TMPDIR/.venv/lib/python3.13/site-packages/openai/lib/_parsing/_responses.py \
-        --replace-fail \
-          'for output in response.output:' \
-          'for output in (response.output or []):'
-    '';
+    nativeBuildInputs = [makeWrapper];
 
     installPhase = ''
-      mkdir -p $out
-      cp -r $TMPDIR/.venv/* $out/
+      runHook preInstall
+      mkdir -p $out/share/hermes-agent $out/bin
 
-      # Copy the separately-built web dashboard into site-packages. The
-      # dashboard serves this (HERMES_WEB_DIST defaults to web_dist), and it's
-      # what the desktop client connects to.
-      cp -r ${hermes-web} $out/lib/python3.13/site-packages/hermes_cli/web_dist
+      # Bundle the separately-built dashboard and the repo-level skill / plugin
+      # trees. Upstream's packaging points the runtime at these via env vars
+      # (HERMES_WEB_DIST / HERMES_BUNDLED_SKILLS / HERMES_OPTIONAL_SKILLS /
+      # HERMES_BUNDLED_PLUGINS) rather than writing into the sealed venv.
+      cp -r ${hermes-web}        $out/share/hermes-agent/web_dist
+      cp -r $src/skills          $out/share/hermes-agent/skills
+      cp -r $src/optional-skills $out/share/hermes-agent/optional-skills
+      cp -r $src/plugins         $out/share/hermes-agent/plugins
 
-      # Upstream's pyproject `setuptools.packages.find` lists `hermes_cli`
-      # without `hermes_cli.*`, so sub-packages (dashboard_auth, proxy) are
-      # excluded from the wheel and `hermes dashboard` fails with
-      # ModuleNotFoundError. Copy them in manually until upstream fixes
-      # the include pattern.
-      for sub in dashboard_auth proxy; do
-        if [ -d "$src/hermes_cli/$sub" ]; then
-          cp -r "$src/hermes_cli/$sub" "$out/lib/python3.13/site-packages/hermes_cli/$sub"
-        fi
-      done
-
-      # Bundle repo-level skill / plugin trees so hermes can find them.
-      # Upstream's own Nix packaging exposes these via HERMES_BUNDLED_SKILLS
-      # / HERMES_OPTIONAL_SKILLS / HERMES_BUNDLED_PLUGINS env vars.
-      mkdir -p $out/share/hermes-agent
-      cp -r $src/skills           $out/share/hermes-agent/skills
-      cp -r $src/optional-skills  $out/share/hermes-agent/optional-skills
-      cp -r $src/plugins          $out/share/hermes-agent/plugins
-
-      # Upstream 2026.6.19 cron-provider refactor ships two `cron` packages per
-      # plugins tree: the real top-level `cron/` (has scheduler_provider) and a
-      # discovery stub `plugins/cron/` (only __init__.py). The discord/raft
+      # Upstream's cron-provider refactor ships two `cron` packages: the real
+      # top-level `cron/` and a discovery stub `plugins/cron/`. The discord/raft
       # adapters `sys.path.insert(0, …/plugins)`, which makes the stub shadow the
-      # real package, so `from cron.scheduler_provider import …` crashes the
-      # gateway. The runtime loads the share/ copy via HERMES_BUNDLED_PLUGINS, but
-      # patch both trees. Append instead of prepend so real top-level packages win.
-      for tree in \
-        $out/lib/python3.13/site-packages/plugins \
-        $out/share/hermes-agent/plugins; do
-        for p in discord raft; do
-          substituteInPlace "$tree/platforms/$p/adapter.py" \
-            --replace-fail \
-              'sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))' \
-              'sys.path.append(str(_Path(__file__).resolve().parents[2]))'
-        done
+      # real package and crashes the gateway. The runtime loads platforms from
+      # HERMES_BUNDLED_PLUGINS (this source bundle), so patch it here: append
+      # instead of prepend so the real top-level package still wins.
+      for p in discord raft; do
+        substituteInPlace "$out/share/hermes-agent/plugins/platforms/$p/adapter.py" \
+          --replace-fail \
+            'sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))' \
+            'sys.path.append(str(_Path(__file__).resolve().parents[2]))'
       done
 
-      # Fix shebangs to reference $out
-      find $out/bin -type f -exec sed -i "s|$TMPDIR/.venv|$out|g" {} +
-
-      # Wrap with runtime deps + bundled-content env vars
+      # Wrap the uv2nix venv entrypoints with runtime deps + bundled-content env
+      # vars. Wrapping (vs copying the venv) keeps the dependency closure sealed.
       for cmd in hermes hermes-agent hermes-acp; do
-        if [ -f "$out/bin/$cmd" ]; then
-          wrapProgram $out/bin/$cmd \
+        if [ -e "${hermesVenv}/bin/$cmd" ]; then
+          makeWrapper ${hermesVenv}/bin/$cmd $out/bin/$cmd \
             --prefix PATH : ${lib.makeBinPath [ripgrep ffmpeg git nodejs openssh]} \
+            --set HERMES_WEB_DIST        $out/share/hermes-agent/web_dist \
             --set HERMES_BUNDLED_SKILLS  $out/share/hermes-agent/skills \
             --set HERMES_OPTIONAL_SKILLS $out/share/hermes-agent/optional-skills \
             --set HERMES_BUNDLED_PLUGINS $out/share/hermes-agent/plugins
         fi
       done
+
+      runHook postInstall
     '';
+
+    # `src` is already exposed as a derivation attr (hermes-desktop reuses
+    # `hermes-agent.src`); expose the build intermediates for debugging.
+    passthru = {inherit hermesVenv hermes-web;};
 
     meta = with lib; {
       description = "Self-improving AI agent by Nous Research";

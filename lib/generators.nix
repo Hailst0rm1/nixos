@@ -9,6 +9,9 @@ in {
     overlays =
       [
         inputs.nix-vscode-extensions.overlays.default
+        # Expose flake inputs to dir-overlays that need non-nixpkgs inputs
+        # (e.g. overlays/hermes-agent.nix pulls the uv2nix stack from here).
+        (_final: _prev: {flake-inputs = inputs;})
       ]
       ++ (
         lib.mapAttrsToList

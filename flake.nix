@@ -98,6 +98,24 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # uv2nix stack — builds hermes-agent's Python env from upstream's uv.lock
+    # (deterministic, replaces the old drifting `pip download` FOD).
+    pyproject-nix = {
+      url = "github:pyproject-nix/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    uv2nix = {
+      url = "github:pyproject-nix/uv2nix";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.uv2nix.follows = "uv2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs @ {self, ...}: let
@@ -126,7 +144,9 @@
 
       packages.x86_64-linux = let
         pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
-        hermes-agent = pkgs.callPackage ./pkgs/hermes-agent/package.nix {};
+        hermes-agent = pkgs.callPackage ./pkgs/hermes-agent/package.nix {
+          inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;
+        };
       in {
         # Hermes agent + native desktop client. Exposed for build verification
         # (`nix build .#hermes-agent .#hermes-desktop`); the systems consume
