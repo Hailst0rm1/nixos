@@ -41,6 +41,8 @@
   mattpocockExtraSkills = [
     "skills/in-progress/review"
     "skills/in-progress/decision-mapping"
+    # Present in the repo but not registered in upstream plugin.json, so opt in here.
+    "skills/engineering/resolving-merge-conflicts"
   ];
   mattpocockSkillFiles = lib.listToAttrs (map (skillPath: {
       name = ".claude/skills/${baseNameOf skillPath}";
