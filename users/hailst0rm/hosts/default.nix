@@ -78,6 +78,10 @@
       superpowers.enable = lib.mkDefault false;
       playground.enable = lib.mkDefault true;
       visual-explainer.enable = lib.mkDefault true;
+      ponytail = {
+        enable = lib.mkDefault true;
+        defaultMode = lib.mkDefault "full";
+      };
       pluginAutoUpdate.enable = lib.mkDefault true;
       sessionHandoffReminder = {
         enable = lib.mkDefault true;

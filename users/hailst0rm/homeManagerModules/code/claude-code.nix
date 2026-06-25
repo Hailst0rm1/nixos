@@ -41,6 +41,7 @@
   mattpocockExtraSkills = [
     "skills/in-progress/review"
     "skills/in-progress/decision-mapping"
+    "skills/in-progress/loop-me"
     # Present in the repo but not registered in upstream plugin.json, so opt in here.
     "skills/engineering/resolving-merge-conflicts"
   ];
@@ -141,12 +142,12 @@
     fi
   '';
 
-  # Stop hook: nudge user to run /session-handoff once the session exceeds
+  # Stop hook: nudge user to run /handoff once the session exceeds
   # `sessionHandoffReminder.thresholdMinutes`. Auto-dismisses once the
-  # session-handoff skill has actually been invoked (detected via a Skill
+  # handoff skill has actually been invoked (detected via a Skill
   # tool_use entry in the transcript). Every error path exits 0 so this can
   # never disrupt Claude.
-  sessionHandoffReminderHook = pkgs.writeShellScript "session-handoff-reminder" ''
+  sessionHandoffReminderHook = pkgs.writeShellScript "handoff-reminder" ''
     set -eu
     INPUT=$(${pkgs.coreutils}/bin/cat)
     TRANSCRIPT=$(${pkgs.jq}/bin/jq -r '.transcript_path // empty' <<<"$INPUT")
@@ -165,11 +166,11 @@
     THRESHOLD=${toString config.code.claude-code.sessionHandoffReminder.thresholdMinutes}
     [ "$AGE_MIN" -ge "$THRESHOLD" ] || exit 0
 
-    # Dismiss the reminder once the session-handoff skill was actually invoked.
+    # Dismiss the reminder once the handoff skill was actually invoked.
     # Claude Code records skill invocations as a tool_use block with
     # name="Skill" and input.skill="<skill-name>". This is precise — mere
     # discussion of the skill in chat does not match.
-    if ${pkgs.jq}/bin/jq -e '.message?.content?[]? | select(.type? == "tool_use" and .name? == "Skill" and .input?.skill? == "session-handoff")' "$TRANSCRIPT" >/dev/null 2>&1; then
+    if ${pkgs.jq}/bin/jq -e '.message?.content?[]? | select(.type? == "tool_use" and .name? == "Skill" and .input?.skill? == "handoff")' "$TRANSCRIPT" >/dev/null 2>&1; then
       exit 0
     fi
 
@@ -178,7 +179,7 @@
     # Claude Code's Stop hook discards raw stdout from the user view; the
     # documented way to surface a message in the transcript is JSON with a
     # `systemMessage` field.
-    MSG=$(${pkgs.coreutils}/bin/printf '─── Session age: %dh %dm ───\nRun /session-handoff, copy the output, /clear, then paste it into the fresh session.' "$HOURS" "$MINS")
+    MSG=$(${pkgs.coreutils}/bin/printf '─── Session age: %dh %dm ───\nRun /handoff -> /clear -> Paste context' "$HOURS" "$MINS")
     ${pkgs.jq}/bin/jq -nc --arg msg "$MSG" '{"systemMessage": $msg}'
   '';
 
@@ -402,6 +403,22 @@ in {
       default = true;
       description = "Enable the nicobailon/visual-explainer plugin: slash commands (/generate-web-diagram, /generate-slides, /diff-review, /plan-review, etc.) that produce standalone HTML pages for diagrams, diff/plan reviews, slides, and data tables.";
     };
+    ponytail = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Enable the DietrichGebert/ponytail plugin: an always-on "laziest senior dev" ruleset that steers code generation toward the minimum the task needs (YAGNI, reuse, native/stdlib features, one-liners) without cutting validation, security, or accessibility. Adds /ponytail (set intensity), /ponytail-review (diff over-engineering delete-list), /ponytail-audit (repo-wide bloat), /ponytail-debt (deferred-shortcut ledger), /ponytail-gain, /ponytail-help. Two tiny Node lifecycle hooks drive the always-on activation — `node` is already on PATH via home.packages. Intensity is set per-session by `defaultMode` below (PONYTAIL_DEFAULT_MODE).
+        '';
+      };
+      defaultMode = lib.mkOption {
+        type = lib.types.enum ["lite" "full" "ultra" "off"];
+        default = "full";
+        description = ''
+          Ponytail intensity for every new session, exported as PONYTAIL_DEFAULT_MODE. Matches upstream's default ("full") — applies the laziness ladder on every coding turn. "lite" trims the every-turn context cost of the injected ruleset, "ultra" is the maximal-pushback mode, "off" disables the always-on injection (the /ponytail commands still work). Override per-session at runtime with `/ponytail lite|full|ultra|off`.
+        '';
+      };
+    };
     codex.enable = lib.mkOption {
       type = lib.types.bool;
       default = config.code.codex.enable;
@@ -437,7 +454,7 @@ in {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Print a reminder after every Claude turn once the session exceeds thresholdMinutes, suggesting /session-handoff then /clear. Auto-dismisses once the session-handoff skill has produced its template this session.";
+        description = "Print a reminder after every Claude turn once the session exceeds thresholdMinutes, suggesting /handoff then /clear. Auto-dismisses once the session-handoff skill has produced its template this session.";
       };
       thresholdMinutes = lib.mkOption {
         type = lib.types.int;
@@ -831,6 +848,10 @@ in {
             CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
             CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
           }
+          // lib.optionalAttrs config.code.claude-code.ponytail.enable {
+            # Ponytail intensity for every new session (lite/full/ultra/off).
+            PONYTAIL_DEFAULT_MODE = config.code.claude-code.ponytail.defaultMode;
+          }
           // (
             if config.code.claude-code.localLlm.enable
             then {
@@ -927,6 +948,9 @@ in {
           // lib.optionalAttrs config.code.claude-code.visual-explainer.enable {
             "visual-explainer@visual-explainer-marketplace" = true;
           }
+          // lib.optionalAttrs config.code.claude-code.ponytail.enable {
+            "ponytail@ponytail" = true;
+          }
           // lib.optionalAttrs config.code.claude-code.n8n.enable {
             "n8n-skills@n8n-skills" = true;
           }
@@ -975,6 +999,14 @@ in {
               source = {
                 source = "github";
                 repo = "nicobailon/visual-explainer";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.ponytail.enable {
+            ponytail = {
+              source = {
+                source = "github";
+                repo = "DietrichGebert/ponytail";
               };
             };
           }
