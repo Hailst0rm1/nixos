@@ -36,10 +36,22 @@
   '';
 
   clip-paste = pkgs.writeShellScript "clip-paste" ''
-    class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
+    win=$(hyprctl activewindow -j)
+    class=$(echo "$win" | ${pkgs.jq}/bin/jq -r '.class')
     case "$class" in
       com.mitchellh.ghostty|org.wezfurlong.wezterm|kitty|Alacritty|foot)
-        hyprctl dispatch sendshortcut "CTRL SHIFT, V,"
+        # Terminals paste with Ctrl+Shift+V, but Claude Code's TUI only pastes
+        # images on plain Ctrl+V. Claude sets the window title with a leading
+        # status glyph (multibyte UTF-8, first byte >= 128) while a plain shell
+        # uses an ASCII title (< 128) — so this distinguishes them per window
+        # even though every ghostty window shares one PID.
+        title=$(echo "$win" | ${pkgs.jq}/bin/jq -r '.title')
+        first=$(printf '%d' "'$title" 2>/dev/null) || first=0
+        if [ "''${first:-0}" -ge 128 ]; then
+          hyprctl dispatch sendshortcut "CTRL, V,"
+        else
+          hyprctl dispatch sendshortcut "CTRL SHIFT, V,"
+        fi
         ;;
       *)
         hyprctl dispatch sendshortcut "CTRL, V,"
