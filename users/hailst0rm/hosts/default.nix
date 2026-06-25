@@ -45,7 +45,12 @@
     yazi.enable = lib.mkDefault true;
     stylix.enable = lib.mkDefault true;
     sops.enable = lib.mkDefault osConfig.security.sops.enable;
-    zsh-history-sync.enable = lib.mkDefault true;
+    zsh-history-sync = {
+      enable = lib.mkDefault true;
+      repoUrl = lib.mkDefault "git@github.com:Hailst0rm1/zsh-history.git";
+      branch = lib.mkDefault "main";
+      deployKeyPath = lib.mkDefault null; # use the normal SSH key via ~/.ssh/config
+    };
     hyprland = {
       enable = lib.mkDefault true;
       customScreenPicker = lib.mkDefault true;

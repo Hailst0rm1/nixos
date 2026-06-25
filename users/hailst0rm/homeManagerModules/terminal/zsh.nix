@@ -134,7 +134,11 @@ in {
       dotDir = "${config.home.homeDirectory}/.config/zsh";
 
       history = {
-        size = 10000;
+        # Large HISTSIZE/SAVEHIST so the local history file is never truncated.
+        # Cross-machine sharing is handled by importConfig.zsh-history-sync, not
+        # by SHARE_HISTORY (which that module turns off).
+        size = 1000000;
+        save = 1000000;
         extended = true;
         path = "${config.xdg.dataHome}/zsh/history";
       };

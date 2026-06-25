@@ -2,329 +2,146 @@
   pkgs,
   lib,
   config,
+  osConfig,
   ...
 }: let
-  # Shared deduplication AWK script used by both startup and push
-  # Deduplicates by command text, keeps the entry with the latest timestamp,
-  # and sorts output by timestamp so file order matches chronological order.
-  deduplicateAwk = ''
-    BEGIN {
-        current_cmd = ""
-        current_block = ""
-        current_ts = 0
-        in_multiline = 0
-    }
+  cfg = config.importConfig.zsh-history-sync;
 
-    /^: *[0-9]+:[0-9]+;/ {
-        if (current_cmd != "") {
-            # Store pending multiline command
-            if (!(cmd_key in timestamps) || current_ts > timestamps[cmd_key]) {
-                commands[cmd_key] = current_block
-                timestamps[cmd_key] = current_ts
-            }
-        }
+  # Per-machine paths. The live HISTFILE is local-only (git never touches it);
+  # the synced clone and the throwaway merged view live elsewhere.
+  histFile = "${config.xdg.dataHome}/zsh/history";
+  repoDir = "${config.home.homeDirectory}/.config/zsh-history-repo";
+  stateDir = "${config.xdg.stateHome}/zsh-history-sync";
+  mergedFile = "${stateDir}/merged.zhist";
+  hostName = osConfig.networking.hostName;
 
-        # Extract timestamp and command part
-        match($0, /^: *([0-9]+):[0-9]+;(.*)$/, arr)
-        current_ts = arr[1] + 0
-        cmd_only = arr[2]
-
-        current_cmd = cmd_only
-        current_block = $0
-
-        if ($0 ~ /\\$/) {
-            in_multiline = 1
-        } else {
-            in_multiline = 0
-            cmd_key = current_cmd
-            if (!(cmd_key in timestamps) || current_ts > timestamps[cmd_key]) {
-                commands[cmd_key] = current_block
-                timestamps[cmd_key] = current_ts
-            }
-            current_cmd = ""
-            current_block = ""
-        }
-        next
-    }
-
-    in_multiline {
-        current_cmd = current_cmd "\n" $0
-        current_block = current_block "\n" $0
-
-        if ($0 !~ /\\$/) {
-            in_multiline = 0
-            cmd_key = current_cmd
-            if (!(cmd_key in timestamps) || current_ts > timestamps[cmd_key]) {
-                commands[cmd_key] = current_block
-                timestamps[cmd_key] = current_ts
-            }
-            current_cmd = ""
-            current_block = ""
-        }
-        next
-    }
-
-    END {
-        # Sort by timestamp so file order is chronological
-        n = asorti(timestamps, sorted_keys, "@val_num_asc")
-        for (i = 1; i <= n; i++) {
-            print commands[sorted_keys[i]]
-        }
-    }
+  # The sync engine — validated standalone (see zsh-history-sync.sh). readFile
+  # avoids escaping every bash ${...} through the Nix string parser; PATH is
+  # baked so the script works identically under a systemd user service.
+  zhs = pkgs.writeShellScriptBin "zsh-history-sync" ''
+    export PATH=${lib.makeBinPath [pkgs.git pkgs.openssh pkgs.gawk pkgs.coreutils pkgs.util-linux]}:"$PATH"
+    ${builtins.readFile ./zsh-history-sync.sh}
   '';
 
-  # Define the zsh history sync script for startup (pull from remote and merge)
-  zsh-history-sync-startup = pkgs.writeShellScriptBin "zsh-history-sync-startup" ''
-    #!/usr/bin/env bash
-
-    set -e
-
-    HISTORY_FILE="$HOME/.local/share/zsh/history"
-    REPO_DIR="$HOME/.config/zsh-history-repo"
-    REPO_URL="git@github.com:Hailst0rm1/zsh-history.git"
-    REMOTE_HISTORY="$REPO_DIR/history"
-    BACKUP_FILE="$HOME/.local/share/zsh/history.bak"
-
-    # Colors for output
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    NC='\033[0m' # No Color
-
-    log_info() {
-        echo -e "''${GREEN}[INFO]''${NC} $1"
-    }
-
-    log_warn() {
-        echo -e "''${YELLOW}[WARN]''${NC} $1"
-    }
-
-    log_error() {
-        echo -e "''${RED}[ERROR]''${NC} $1"
-    }
-
-    # Clone or pull the repository
-    if [[ ! -d "$REPO_DIR" ]]; then
-        log_info "Cloning repository from $REPO_URL"
-        git clone "$REPO_URL" "$REPO_DIR"
-    else
-        log_info "Repository exists, pulling latest changes"
-        cd "$REPO_DIR"
-        git pull origin main || git pull origin master || log_warn "Could not pull from remote"
-        cd - > /dev/null
-    fi
-
-    # Backup current local history if it exists
-    if [[ -f "$HISTORY_FILE" ]]; then
-        log_info "Creating backup of local history: $BACKUP_FILE"
-        cp "$HISTORY_FILE" "$BACKUP_FILE"
-    fi
-
-    mkdir -p "$(dirname "$HISTORY_FILE")"
-
-    # Merge local and remote history instead of overwriting
-    if [[ -f "$HISTORY_FILE" ]] && [[ -f "$REMOTE_HISTORY" ]]; then
-        log_info "Merging local and remote history"
-        TEMP_MERGED=$(mktemp)
-        cat "$HISTORY_FILE" "$REMOTE_HISTORY" > "$TEMP_MERGED"
-
-        # Deduplicate the merged result (keeps the latest occurrence of each command)
-        TEMP_DEDUPED=$(mktemp)
-        awk '${deduplicateAwk}' "$TEMP_MERGED" > "$TEMP_DEDUPED"
-        mv "$TEMP_DEDUPED" "$HISTORY_FILE"
-        rm -f "$TEMP_MERGED"
-
-        local_count=$(wc -l < "$HISTORY_FILE")
-        log_info "Merged history: $local_count entries"
-    elif [[ -f "$REMOTE_HISTORY" ]]; then
-        log_info "No local history found, using remote"
-        cp "$REMOTE_HISTORY" "$HISTORY_FILE"
-        local_count=$(wc -l < "$HISTORY_FILE")
-        log_info "Local history set from remote: $local_count entries"
-    else
-        log_warn "No remote history found, keeping local"
-    fi
-
-    log_info "Done!"
-  '';
-
-  # Define the zsh history sync script for periodic/shutdown (push to remote)
-  zsh-history-sync-push = pkgs.writeShellScriptBin "zsh-history-sync-push" ''
-    #!/usr/bin/env bash
-    set -e
-    HISTORY_FILE="$HOME/.local/share/zsh/history"
-    REPO_DIR="$HOME/.config/zsh-history-repo"
-    REPO_URL="git@github.com:Hailst0rm1/zsh-history.git"
-    REMOTE_HISTORY="$REPO_DIR/history"
-
-    # Colors for output
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    NC='\033[0m' # No Color
-
-    log_info() {
-        echo -e "''${GREEN}[INFO]''${NC} $1"
-    }
-
-    log_warn() {
-        echo -e "''${YELLOW}[WARN]''${NC} $1"
-    }
-
-    log_error() {
-        echo -e "''${RED}[ERROR]''${NC} $1"
-    }
-
-
-    # Deduplication function
-    deduplicate_history() {
-        local input_file="$1"
-        local output_file="$2"
-
-        awk '${deduplicateAwk}' "$input_file" > "$output_file"
-    }
-
-    # Check if local history file exists
-    if [[ ! -f "$HISTORY_FILE" ]]; then
-        log_error "Local history file not found: $HISTORY_FILE"
-        exit 1
-    fi
-
-    # Check if repository exists
-    if [[ ! -d "$REPO_DIR" ]]; then
-        log_error "Repository not found: $REPO_DIR. Run startup sync first."
-        exit 1
-    fi
-
-    # Deduplicate local history before comparing/pushing
-    log_info "Deduplicating local history"
-    TEMP_DEDUPED=$(mktemp)
-    deduplicate_history "$HISTORY_FILE" "$TEMP_DEDUPED"
-
-    # Count changes
-    original_count=$(wc -l < "$HISTORY_FILE")
-    deduped_count=$(wc -l < "$TEMP_DEDUPED")
-    removed=$((original_count - deduped_count))
-
-    if [[ $removed -gt 0 ]]; then
-        log_info "Removed $removed duplicate entries"
-    fi
-
-    # Update local history with deduplicated version
-    mv "$TEMP_DEDUPED" "$HISTORY_FILE"
-
-    # Check if there are differences with remote
-    if [[ ! -f "$REMOTE_HISTORY" ]] || ! cmp -s "$HISTORY_FILE" "$REMOTE_HISTORY"; then
-        log_info "Differences detected, updating remote history"
-        cp "$HISTORY_FILE" "$REMOTE_HISTORY"
-
-        cd "$REPO_DIR"
-        git add history
-        git commit -m "Update history: $deduped_count entries ($(date '+%Y-%m-%d %H:%M:%S'))"
-
-        log_info "Pushing to remote"
-        git push origin main || git push origin master
-
-        log_info "History synced successfully!"
-    else
-        log_info "No changes detected, skipping sync"
-    fi
-
-    log_info "Done!"
-  '';
+  # Environment shared by every unit. GIT_SSH_COMMAND is quoted so systemd keeps
+  # the spaced value as a single assignment.
+  syncEnv =
+    [
+      "ZHS_HISTFILE=${histFile}"
+      "ZHS_REPO_DIR=${repoDir}"
+      "ZHS_REPO_URL=${cfg.repoUrl}"
+      "ZHS_HOST=${hostName}"
+      "ZHS_STATE_DIR=${stateDir}"
+      "ZHS_BRANCH=${cfg.branch}"
+      "HOME=${config.home.homeDirectory}"
+    ]
+    # By default git uses your normal SSH key (resolved via ~/.ssh/config), which
+    # already authenticates non-interactively in a systemd user service — no agent
+    # needed. Only force a dedicated key when deployKeyPath is set; IdentitiesOnly
+    # then makes ssh use ONLY that key, so leave it null to keep the existing key.
+    ++ lib.optional (cfg.deployKeyPath != null)
+    ''GIT_SSH_COMMAND="ssh -i ${cfg.deployKeyPath} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"'';
 in {
-  options.importConfig.zsh-history-sync.enable = lib.mkEnableOption "Enable zsh history synchronization across devices using a git repository";
+  options.importConfig.zsh-history-sync = {
+    enable = lib.mkEnableOption "per-host append-only zsh history sync across devices via a GitHub repo";
 
-  config = lib.mkIf config.importConfig.zsh-history-sync.enable {
-    home.packages = with pkgs; [
-      zsh-history-sync-startup
-      zsh-history-sync-push
-      git
-    ];
+    repoUrl = lib.mkOption {
+      type = lib.types.str;
+      default = "git@github.com:Hailst0rm1/zsh-history.git";
+      description = "SSH URL of the history sync repository.";
+    };
 
-    # Systemd user service to sync history on login (pull from remote)
+    branch = lib.mkOption {
+      type = lib.types.str;
+      default = "main";
+      description = "Branch in the sync repository to push/pull.";
+    };
+
+    deployKeyPath = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Optional. Path to a dedicated passphrase-less SSH private key for the sync
+        repo. Leave null (the default) to use your normal SSH key via ~/.ssh/config,
+        which already authenticates fine inside the systemd user services. Only set
+        this if you want an isolated deploy key — note IdentitiesOnly=yes then makes
+        ssh use ONLY this key.
+      '';
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    home.packages = [zhs pkgs.git];
+
+    # zsh integration: this host's own history stays in $HISTFILE (auto-loaded);
+    # cross-machine history is loaded read-only from the merged view. SHARE_HISTORY
+    # off + INC_APPEND_HISTORY keeps $HISTFILE a clean single-writer record so the
+    # merged entries never get written back into it. Runs last (mkOrder 1500).
+    programs.zsh.initContent = lib.mkOrder 1500 ''
+      unsetopt SHARE_HISTORY
+      setopt INC_APPEND_HISTORY HIST_FIND_NO_DUPS EXTENDED_HISTORY
+      [[ -r "${mergedFile}" ]] && fc -R "${mergedFile}"
+    '';
+
+    # Login: pull remote host files and rebuild the merged view.
     systemd.user.services.zsh-history-sync = {
       Unit = {
-        Description = "Sync zsh history from remote repository on startup";
-        After = ["network-online.target" "graphical-session.target"];
+        Description = "Pull zsh history from GitHub and rebuild merged view";
+        After = ["network-online.target"];
         Wants = ["network-online.target"];
       };
-
       Service = {
         Type = "oneshot";
-        ExecStartPre = "${pkgs.coreutils}/bin/sleep 10";
-        ExecStart = "${zsh-history-sync-startup}/bin/zsh-history-sync-startup";
+        ExecStartPre = "${pkgs.coreutils}/bin/sleep 5";
+        ExecStart = "${zhs}/bin/zsh-history-sync pull";
+        Environment = syncEnv;
         StandardOutput = "journal";
         StandardError = "journal";
-        Environment = [
-          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/run/current-system/sw/bin"
-        ];
+        TimeoutStartSec = "120s";
       };
+      Install.WantedBy = ["default.target"];
+    };
 
-      Install = {
-        WantedBy = ["default.target"];
+    # Push this host's new history. Invoked by the periodic timer and at logout.
+    systemd.user.services.zsh-history-sync-push = {
+      Unit.Description = "Push this host's zsh history to GitHub";
+      Service = {
+        Type = "oneshot";
+        ExecStart = "${zhs}/bin/zsh-history-sync push";
+        Environment = syncEnv;
+        StandardOutput = "journal";
+        StandardError = "journal";
+        TimeoutStartSec = "120s";
       };
     };
 
-    # Systemd user service to sync history before session exit (covers shutdown/reboot/logout)
-    systemd.user.services.zsh-history-sync-shutdown = {
-      Unit = {
-        Description = "Sync zsh history to remote before session exit";
-        DefaultDependencies = false;
-        Before = ["exit.target"];
-      };
-
-      Service = {
-        Type = "oneshot";
-        # Use -c with || true so a network failure doesn't block shutdown
-        ExecStart = "${pkgs.bash}/bin/bash -c '${zsh-history-sync-push}/bin/zsh-history-sync-push || true'";
-        StandardOutput = "journal";
-        StandardError = "journal";
-        TimeoutStartSec = "30s";
-        Environment = [
-          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/run/current-system/sw/bin"
-          "HOME=%h"
-        ];
-      };
-
-      Install = {
-        WantedBy = ["exit.target"];
-      };
-    };
-
-    # Timer to periodically sync history (every 30 minutes) - push to remote
     systemd.user.timers.zsh-history-sync-periodic = {
-      Unit = {
-        Description = "Run zsh history sync every 30 minutes";
-        After = ["network-online.target"];
-      };
-
+      Unit.Description = "Periodic zsh history push (every 30 min)";
       Timer = {
         OnBootSec = "5min";
         OnUnitActiveSec = "30min";
         Persistent = true;
+        Unit = "zsh-history-sync-push.service";
       };
-
-      Install = {
-        WantedBy = ["timers.target"];
-      };
+      Install.WantedBy = ["timers.target"];
     };
 
-    # Service triggered by the timer (push to remote)
-    systemd.user.services.zsh-history-sync-periodic = {
+    # Logout/shutdown: best-effort final push (|| true so it never blocks exit).
+    systemd.user.services.zsh-history-sync-shutdown = {
       Unit = {
-        Description = "Periodically sync zsh history to remote";
+        Description = "Push zsh history to GitHub before session exit";
+        DefaultDependencies = false;
+        Before = ["exit.target"];
       };
-
       Service = {
         Type = "oneshot";
-        ExecStart = "${zsh-history-sync-push}/bin/zsh-history-sync-push";
+        ExecStart = "${pkgs.bash}/bin/bash -c '${zhs}/bin/zsh-history-sync push || true'";
+        Environment = syncEnv;
         StandardOutput = "journal";
         StandardError = "journal";
-        Environment = [
-          "PATH=${pkgs.git}/bin:${pkgs.openssh}/bin:${pkgs.coreutils}/bin:${pkgs.gawk}/bin:/run/current-system/sw/bin"
-        ];
+        TimeoutStartSec = "30s";
       };
+      Install.WantedBy = ["exit.target"];
     };
   };
 }
