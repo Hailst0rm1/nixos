@@ -788,6 +788,7 @@ in {
       settings = {
         showThinkingSummaries = true;
         cleanupPeriodDays = 14;
+        tui = false; # opt out of fullscreen renderer + its startup prompt
         includeCoAuthoredBy = false;
         skipDangerousModePermissionPrompt = true;
 
