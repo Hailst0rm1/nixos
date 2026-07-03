@@ -166,8 +166,8 @@
     pname = "mssqland";
     version = "2.0";
     src = pkgs.fetchurl {
-      url = "https://github.com/n3rada/MSSQLand/releases/download/v2.0/MSSQLand.exe";
-      sha256 = "sha256-ABP8DksUn/nbAj+YoV2Kr8ptqxd7Xjat77cMpNNSDJ8=";
+      url = "https://github.com/n3rada/MSSQLand/releases/download/v1.4/MSSQLand.exe";
+      sha256 = "sha256-DaXNajcIbkn/3mDHXdKc/vq8z1OpP5AVifdSV1XC+OI=";
     };
     phases = ["installPhase"];
     installPhase = ''

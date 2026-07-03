@@ -29,9 +29,13 @@ final: prev: {
         substituteInPlace nxc/protocols/mssql.py \
           --replace-fail "self.conn.connect(self.args.mssql_timeout)" \
                          "self.conn.connect()"
-        substituteInPlace nxc/protocols/smb/kerberos.py \
-          --replace-fail "if my_tgt is None:" \
-                         "if tgt is None:"
+        # Fix 4a: the ccache branch checks `my_tgt` (always None here) instead of
+        # `tgt`. Scope the fix to the CCache.parseFile→raise block only. The later
+        # `if my_tgt is None:` fallback (hash / AS-REQ path) is correct — `tgt` is
+        # unbound there, so a blanket replace makes --delegate with a raw hash
+        # crash with UnboundLocalError. Leave that occurrence alone.
+        sed -i '/CCache.parseFile/,/raise/ s/if my_tgt is None:/if tgt is None:/' \
+          nxc/protocols/smb/kerberos.py
         # Fix bare `raise` with no active exception context
         sed -i 's/^            raise$/            raise RuntimeError("No TGT found in ccache for S4U delegation")/' \
           nxc/protocols/smb/kerberos.py
