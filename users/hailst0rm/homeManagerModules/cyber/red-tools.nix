@@ -190,6 +190,7 @@ in {
         notsliver # Web-based Sliver C2 operator GUI
         # ligolo-ng # Tunneling/pivoting tool that uses a TUN interface
         ligolo-mp # Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
+        updog # Alternative for python web server
 
         # === Exfiltration ===
         httpuploadexfil # Like Python server, but upload
