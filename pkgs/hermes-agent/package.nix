@@ -18,7 +18,7 @@
   pyproject-nix,
   pyproject-build-systems,
 }: let
-  version = "2026.6.19";
+  version = "2026.7.1";
 
   src = fetchFromGitHub {
     owner = "NousResearch";
@@ -26,7 +26,7 @@
     # Upstream now publishes CalVer release tags; pin to the latest stable tag.
     # Bump rev + hash to pull new upstream releases.
     rev = "v${version}";
-    hash = "sha256-Oyl6Cpg2bTiX9MyBxFT5q4yVdYf3lCIptzFdiVULmjo=";
+    hash = "sha256-Wt72AQtA6Eizi7Ubj23JBhwZ7GKYcjY4mcV6upqHOaU=";
   };
 
   # Python environment built from upstream's uv.lock via uv2nix — deterministic,
@@ -39,7 +39,7 @@
   # moved web/ (and apps/desktop) into one npm workspace, so the dashboard
   # frontend is now built via buildNpmPackage against the root lockfile rather
   # than a per-folder `npm ci`. Matches pkgs/hermes-desktop/package.nix.
-  npmDepsHash = "sha256-sKI7LhkmyIPw8cFS2efjQVOZ/dEu4ERRpeqKhAq3jzs=";
+  npmDepsHash = "sha256-qDXGL/INHPW0pTF4SRVL1dS5XVh2X85dEE4JhrAQeqU=";
 
   npmDeps = fetchNpmDeps {
     inherit src;
@@ -120,19 +120,6 @@ in
       cp -r $src/skills          $out/share/hermes-agent/skills
       cp -r $src/optional-skills $out/share/hermes-agent/optional-skills
       cp -r $src/plugins         $out/share/hermes-agent/plugins
-
-      # Upstream's cron-provider refactor ships two `cron` packages: the real
-      # top-level `cron/` and a discovery stub `plugins/cron/`. The discord/raft
-      # adapters `sys.path.insert(0, …/plugins)`, which makes the stub shadow the
-      # real package and crashes the gateway. The runtime loads platforms from
-      # HERMES_BUNDLED_PLUGINS (this source bundle), so patch it here: append
-      # instead of prepend so the real top-level package still wins.
-      for p in discord raft; do
-        substituteInPlace "$out/share/hermes-agent/plugins/platforms/$p/adapter.py" \
-          --replace-fail \
-            'sys.path.insert(0, str(_Path(__file__).resolve().parents[2]))' \
-            'sys.path.append(str(_Path(__file__).resolve().parents[2]))'
-      done
 
       # Wrap the uv2nix venv entrypoints with runtime deps + bundled-content env
       # vars. Wrapping (vs copying the venv) keeps the dependency closure sealed.

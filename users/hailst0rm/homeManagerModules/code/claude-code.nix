@@ -30,18 +30,19 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "5d78bd0903420f97c791f834201e550c765699f8";
-    hash = "sha256-efsb/AXAmEvcjoknbExBeEHFB28o2c2Nk8muWwNNQFQ=";
+    rev = "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214";
+    hash = "sha256-tJLI3UrxFOhZpkzkv+WTkwM9vHFGmBZRtFgXws3fPpA=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
   # Experimental skills not listed in plugin.json — opt them in explicitly here.
-  # The in-progress "review" skill installs under its upstream name (/review),
-  # deliberately shadowing the built-in /review.
+  # (The /implement skill lives at skills/engineering/implement and is now
+  # registered in upstream plugin.json, so it installs automatically — no
+  # explicit entry needed here.)
   mattpocockExtraSkills = [
-    "skills/in-progress/review"
-    "skills/in-progress/decision-mapping"
     "skills/in-progress/loop-me"
+    "skills/in-progress/wizard"
+    "skills/in-progress/claude-handoff"
     # Present in the repo but not registered in upstream plugin.json, so opt in here.
     "skills/engineering/resolving-merge-conflicts"
   ];
@@ -1066,7 +1067,8 @@ in {
     };
 
     # GSD (Get Shit Done) commands and agents +
-    # Matt Pocock skills (flat-linked from upstream plugin.json — 15 stable + 2 in-progress (review, decision-mapping))
+    # Matt Pocock skills (flat-linked from upstream plugin.json, plus the
+    # mattpocockExtraSkills opt-ins above)
     home.file =
       {
         ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
