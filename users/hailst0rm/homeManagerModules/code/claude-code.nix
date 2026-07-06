@@ -43,6 +43,7 @@
     "skills/in-progress/loop-me"
     "skills/in-progress/wizard"
     "skills/in-progress/claude-handoff"
+    "skills/in-progress/wayfinder"
     # Present in the repo but not registered in upstream plugin.json, so opt in here.
     "skills/engineering/resolving-merge-conflicts"
   ];

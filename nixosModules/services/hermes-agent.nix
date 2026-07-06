@@ -121,6 +121,36 @@ in {
         '';
       };
 
+      # Register agent-browser's bundled SKILL.md as a Hermes skill so the
+      # driving model knows the snapshot→ref workflow and token-trimming flags
+      # instead of rediscovering the CLI each run. Hermes auto-discovers any
+      # SKILL.md under <profile-home>/skills (active unless a profile's
+      # config.yaml skills.disabled drops it), so symlinking into every profile
+      # covers both `default` (~/.hermes) and named profiles
+      # (~/.hermes/profiles/<name>, e.g. dev-orchestrator). Only the self-
+      # contained stub is linked; it points the model at `agent-browser skills
+      # get core`, and the binary is already on PATH via browser.enable.
+      systemd.services.agent-browser-skill = lib.mkIf cfg.browser.enable {
+        description = "Register agent-browser SKILL.md in every Hermes profile";
+        before = ["hermes-agent.service"];
+        wantedBy = ["hermes-agent.service"];
+        serviceConfig = {
+          Type = "oneshot";
+          User = "hailst0rm";
+          RemainAfterExit = true;
+          Environment = ["HOME=/home/hailst0rm"];
+        };
+        script = ''
+          src="${pkgs.agent-browser}/skills/agent-browser/SKILL.md"
+          for base in "$HOME/.hermes" "$HOME"/.hermes/profiles/*; do
+            [ -d "$base" ] || continue
+            dir="$base/skills/agent-browser"
+            mkdir -p "$dir"
+            ln -sfn "$src" "$dir/SKILL.md"
+          done
+        '';
+      };
+
       systemd.services.hermes-agent = {
         description = "Hermes Agent Gateway";
         after =
