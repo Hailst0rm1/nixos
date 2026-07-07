@@ -211,26 +211,28 @@ in {
         after = ["network.target" "hermes-agent.service"];
         wantedBy = ["multi-user.target"];
         serviceConfig = {
-          # --insecure runs the dashboard in legacy session-token mode
-          # (auth_required=false): the WS authenticates via ?token=<token>,
-          # which is what the desktop client uses over env vars. Set a stable
-          # token by adding HERMES_DASHBOARD_SESSION_TOKEN=<token> to the
-          # services/hermes-agent/env sops blob (otherwise a random one is
-          # generated each boot). This is safe ONLY because port 9119 is
-          # reachable on the Tailscale tailnet (and loopback) — never expose it
-          # publicly; the tailnet is the trust boundary.
+          # As of hermes-agent 2026.7 the dashboard's auth gate engages on any
+          # NON-loopback bind (RFC1918/CGNAT/tailnet are all treated as public),
+          # and there is no unauthenticated public-bind option. `--insecure` is
+          # now a deprecated NO-OP — the old legacy session-token (?token=<token>)
+          # path is loopback-only and can no longer gate a tailnet bind. Since we
+          # bind 0.0.0.0 for tailnet access, an auth provider is REQUIRED: set
+          # HERMES_DASHBOARD_BASIC_AUTH_USERNAME + HERMES_DASHBOARD_BASIC_AUTH_PASSWORD_HASH
+          # (and optionally _SECRET so sessions survive restarts) in the
+          # services/hermes-agent/env sops blob. Generate the hash with:
+          #   PYTHONPATH=<pkg>/share/hermes-agent \
+          #     python -c "from plugins.dashboard_auth.basic import hash_password; print(hash_password('pw'))"
+          # The tailnet remains the network trust boundary — never expose 9119
+          # publicly.
           #
           # The embedded chat WebSocket channels (/api/ws, /api/events, /api/pty,
-          # /api/pub) the desktop client needs are now served unconditionally by
-          # the dashboard web server — there is no per-channel flag to toggle.
-          # (The old global `--tui` flag selected the chat REPL frontend and was
-          # never a dashboard option; passing it to the `dashboard` subcommand
-          # now fails argparse with "unrecognized arguments: --tui".)
+          # /api/pub) the desktop client needs are served unconditionally by the
+          # dashboard web server — there is no per-channel flag to toggle.
           # --skip-build reuses the prebuilt web assets for faster startup.
           # `--profile default` for the same reason as the gateway above: pin
           # the default bot's home so the dashboard backs the system bot, not
           # whatever `active_profile` (dev-orchestrator) happens to be sticky.
-          ExecStart = "${pkgs.hermes-agent}/bin/hermes --profile default dashboard --host ${cfg.dashboard.host} --port ${toString cfg.dashboard.port} --insecure --no-open --skip-build";
+          ExecStart = "${pkgs.hermes-agent}/bin/hermes --profile default dashboard --host ${cfg.dashboard.host} --port ${toString cfg.dashboard.port} --no-open --skip-build";
           Restart = "on-failure";
           RestartSec = 10;
           DynamicUser = false;

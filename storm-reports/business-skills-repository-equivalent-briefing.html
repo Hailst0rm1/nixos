@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Storm Research: Is there a mattpocock/skills for business?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --blue: #2563eb; --blue-dark: #1e3a8a; --ink: #16203a; --muted: #5b6677; --line: #e4e9f2;
+    --bg-soft: #f6f8fc; --green: #15803d; --green-bg: #e9f6ee; --amber: #b45309; --amber-bg: #fdf3e7;
+    --slate: #475569; --slate-bg: #eef1f6; --red: #b91c1c; --red-bg: #fdecec;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Roboto', system-ui, sans-serif; color: var(--ink); background: #eef1f6; line-height: 1.62; font-weight: 400; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 900px; margin: 0 auto; background: #fff; padding: 64px 72px 80px; box-shadow: 0 1px 40px rgba(22,32,58,0.08); }
+  .eyebrow { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--blue); margin-bottom: 14px; }
+  h1 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 40px; line-height: 1.12; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 18px; }
+  .lede { font-size: 17px; color: var(--muted); max-width: 640px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 26px; padding-top: 22px; border-top: 2px solid var(--line); font-family: 'Roboto Mono', monospace; font-size: 12px; color: var(--muted); }
+  .meta-row b { color: var(--ink); font-weight: 600; }
+  .verify-banner { margin-top: 22px; background: var(--green-bg); border: 1px solid #bfe3cc; border-radius: 8px; padding: 13px 18px; font-size: 13px; color: #14532d; display: flex; gap: 10px; align-items: baseline; }
+  .verify-banner b { font-weight: 700; }
+  .verify-banner .tag { font-family: 'Roboto Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; background: var(--green); color: #fff; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; }
+  .howto { margin-top: 18px; border: 1px solid var(--line); border-radius: 8px; padding: 18px 22px; background: var(--bg-soft); }
+  .howto h4 { font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .howto ul { list-style: none; }
+  .howto li { font-size: 13.5px; color: #2b3950; margin-bottom: 7px; padding-left: 16px; position: relative; }
+  .howto li::before { content: "\203a"; position: absolute; left: 0; color: var(--blue); font-weight: 700; }
+  .section { margin-top: 56px; }
+  .section-num { font-family: 'Roboto Mono', monospace; font-size: 13px; font-weight: 600; color: var(--blue); letter-spacing: 0.05em; }
+  h2 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 25px; letter-spacing: -0.01em; color: var(--ink); margin: 6px 0 18px; line-height: 1.2; }
+  h2 .bar { display: inline-block; width: 38px; height: 4px; background: var(--blue); border-radius: 2px; vertical-align: middle; margin-right: 14px; }
+  p { margin-bottom: 14px; }
+  p.body-lg { font-size: 16.5px; }
+  .ceo { background: var(--bg-soft); border-left: 5px solid var(--blue); padding: 26px 30px; border-radius: 4px; font-size: 16.5px; }
+  .ceo strong { font-weight: 700; color: var(--blue-dark); }
+  .finding { border: 1px solid var(--line); border-radius: 10px; padding: 24px 26px; margin-bottom: 18px; position: relative; }
+  .finding-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 12px; }
+  .finding-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 18px; line-height: 1.3; color: var(--ink); flex: 1; }
+  .finding-rank { font-family: 'Roboto Mono', monospace; font-weight: 600; font-size: 13px; color: #fff; background: var(--ink); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .finding p { font-size: 15px; color: #283449; margin-bottom: 14px; }
+  .rel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .rel { display: inline-flex; align-items: center; gap: 9px; font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 12px; border-radius: 20px; }
+  .rel.high { background: #e7f0fe; color: var(--blue); }
+  .rel.medhigh { background: var(--green-bg); color: var(--green); }
+  .rel.medium { background: var(--amber-bg); color: var(--amber); }
+  .rel.low { background: var(--red-bg); color: var(--red); }
+  .score { font-family: 'Roboto Mono', monospace; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .score b { font-size: 17px; }
+  .score span { color: var(--muted); font-weight: 400; }
+  .chips { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .chip-row { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; font-size: 13.5px; }
+  .chip-label { font-family: 'Roboto Mono', monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; white-space: nowrap; }
+  .chip-label.sup { background: var(--green-bg); color: var(--green); }
+  .chip-label.chal { background: var(--red-bg); color: var(--red); }
+  .chip-label.fix { background: var(--amber-bg); color: var(--amber); }
+  .chip-row span.who { color: #2b3950; }
+  .chip-row span.who b { font-weight: 600; }
+  .contested { border: 1px dashed var(--amber); background: #fffaf2; border-radius: 10px; padding: 22px 26px; margin-bottom: 18px; }
+  .contested .tag { font-family: 'Roboto Mono', monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); }
+  .contested h4 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 16px; color: var(--ink); margin: 6px 0 10px; }
+  .contested p { font-size: 14px; color: #4a3a22; margin-bottom: 0; }
+  .connection { background: linear-gradient(135deg, #16203a 0%, #1e3a8a 100%); color: #eaf0fb; border-radius: 12px; padding: 34px 38px; }
+  .connection h2 { color: #fff; }
+  .connection h2 .bar { background: #6ea8ff; }
+  .connection .section-num { color: #9ec1ff; }
+  .connection p { color: #d3def3; font-size: 16px; }
+  .connection .punch { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 18px; color: #fff; line-height: 1.4; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.18); }
+  .assume { border: 1px solid var(--line); border-left: 5px solid var(--amber); border-radius: 6px; padding: 24px 28px; background: #fffdf9; }
+  .assume h3 { font-family: 'Montserrat', sans-serif; font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+  .assume p { font-size: 15px; color: #3a3320; }
+  .assume p:last-child { margin-bottom: 0; }
+  .action-item { display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .action-item:last-child { border-bottom: none; }
+  .action-mark { font-family: 'Roboto Mono', monospace; font-weight: 600; font-size: 13px; color: var(--blue); flex-shrink: 0; width: 34px; }
+  .action-item .do { font-weight: 600; color: var(--ink); }
+  .action-item p { font-size: 14.5px; margin-bottom: 0; color: #2b3950; }
+  .frontier { border: 2px dashed var(--blue); border-radius: 12px; padding: 30px 34px; background: var(--bg-soft); }
+  .frontier .q { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 22px; line-height: 1.32; color: var(--blue-dark); margin-bottom: 16px; }
+  .frontier p { font-size: 15px; color: #2b3950; }
+  .oncam { margin-top: 18px; }
+  .oncam-col { border-radius: 10px; padding: 20px 24px; margin-bottom: 14px; }
+  .oncam-col.safe { background: var(--green-bg); border: 1px solid #bfe3cc; }
+  .oncam-col.caveat { background: var(--amber-bg); border: 1px solid #f0d9b5; }
+  .oncam-col.avoid { background: var(--red-bg); border: 1px solid #f3c9c9; }
+  .oncam-col h4 { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .oncam-col.safe h4 { color: var(--green); }
+  .oncam-col.caveat h4 { color: var(--amber); }
+  .oncam-col.avoid h4 { color: var(--red); }
+  .oncam-col ul { list-style: none; }
+  .oncam-col li { font-size: 14px; color: #233; margin-bottom: 8px; padding-left: 16px; position: relative; line-height: 1.5; }
+  .oncam-col li::before { content: "\2022"; position: absolute; left: 0; font-weight: 700; }
+  .oncam-col.safe li::before { color: var(--green); }
+  .oncam-col.caveat li::before { color: var(--amber); }
+  .oncam-col.avoid li::before { color: var(--red); }
+  .refs { margin-top: 56px; padding-top: 26px; border-top: 2px solid var(--line); }
+  .refs h3 { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .refs ul { list-style: none; }
+  .refs li { font-size: 12.5px; color: var(--muted); margin-bottom: 11px; padding-left: 16px; position: relative; line-height: 1.5; }
+  .refs li::before { content: "\203a"; position: absolute; left: 0; color: var(--blue); font-weight: 700; }
+  .refs a { color: #34507e; text-decoration: none; }
+  .refs a:hover { text-decoration: underline; }
+  .refs .vstat { font-family: 'Roboto Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; margin-right: 6px; }
+  .vstat.ok { background: var(--green-bg); color: var(--green); }
+  .vstat.part { background: var(--amber-bg); color: var(--amber); }
+  .vstat.weak { background: var(--red-bg); color: var(--red); }
+  .footer { margin-top: 40px; font-family: 'Roboto Mono', monospace; font-size: 11px; color: #9aa6b8; text-align: center; }
+  @media (max-width: 640px) { .page { padding: 40px 24px 56px; } h1 { font-size: 30px; } }
+  @media print { body { background: #fff; } .page { box-shadow: none; max-width: 100%; padding: 0; } .connection, .oncam-col { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow">Storm Research &middot; v2 (verified)</div>
+    <h1>Is there a <span style="color:var(--blue)">mattpocock/skills</span> for business?</h1>
+    <p class="lede">Whether a passionate, expert open-source "skills" repository for business functions &mdash; marketing, sales prospecting, GTM &mdash; exists for AI agents the way mattpocock/skills does for engineering. A five-lens synthesis: practitioner, academic, skeptic, economist, and historian. Every claim independently checked against its primary source before publication.</p>
+    <div class="meta-row">
+      <span><b>Date</b> &nbsp;2026-07-06</span>
+      <span><b>Method</b> &nbsp;5 author-built expert lenses + contradiction map</span>
+      <span><b>Audience</b> &nbsp;A founder / solo operator building a product who already uses AI agents</span>
+    </div>
+    <div class="verify-banner">
+      <span class="tag">Verified</span>
+      <span>All 22 citations independently checked against primary sources on 2026-07-06. <b>Result: 2 fabricated figures removed, 8 corrected, 4 demoted.</b> Confidence scores reflect post-verification evidence quality.</span>
+    </div>
+    <div class="howto">
+      <h4>How to read this</h4>
+      <ul>
+        <li><b>The panel was author-constructed.</b> All five lenses share one framing, so where they agree, treat it as a strong hypothesis, not independent proof.</li>
+        <li><b>Confidence is scored 1-10</b> on evidence quality: verifiable primary artifact (a live GitHub repo, an official doc) &gt; reported financial fact &gt; single-vendor projection &gt; analogy &gt; preprint.</li>
+        <li><b>"It exists" and "it's any good" are scored separately.</b> A repo can be verifiably real (high score) while its quality stays unfalsifiable (low score). That gap is the whole story here.</li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- ============ 01 CEO SUMMARY ============ -->
+  <section class="section">
+    <div class="section-num">01</div>
+    <h2><span class="bar"></span>The 60-Second Summary</h2>
+    <div class="ceo">
+      <p style="margin-bottom:0;">Yes &mdash; the thing you asked for now exists. As of 2026, real, passionately-authored business-skills repos ship for Claude Code: <strong>coreyhaines31/marketingskills</strong> (~36.8K GitHub stars, by a genuine marketing operator) covers CRO, copy, SEO and analytics; <strong>gtmagents/gtm-agents</strong> and <strong>sales-skills/sales</strong> cover prospecting, pipeline and enrichment; and Anthropic's own <strong>Claude for Small Business</strong> (May 13 2026) bundles marketing, lead-triage and margin workflows. <strong>But the mattpocock analogy quietly smuggles in a compiler.</strong> Matt Pocock's skills are trusted because the TypeScript type-checker adjudicates them &mdash; code either compiles or goes red. Marketing and sales output has no such oracle, so a business skill is one operator's taste frozen at write-time, decaying with the next fad. All five lenses converge on this: the <em>form</em> (a beloved expert's repo) is here; the <em>substrate</em> that makes it trustworthy is not. And the single highest-value ask &mdash; "find companies that would buy my product" &mdash; can't live in a markdown file at all: it needs live enrichment data that Clay ($3.1B) and Apollo ($150M ARR) sell behind a paywall.</p>
+    </div>
+  </section>
+
+  <!-- ============ 02 KEY FINDINGS ============ -->
+  <section class="section">
+    <div class="section-num">02</div>
+    <h2><span class="bar"></span>Five Key Findings, Ranked by Reliability</h2>
+
+    <div class="finding">
+      <div class="finding-head">
+        <div class="finding-title">The repos you're asking for are real and verifiable &mdash; several launched in the last year</div>
+        <div class="finding-rank">1</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel high">Reliability: High</div>
+        <div class="score"><b>9</b><span>/10</span></div>
+      </div>
+      <p>Confirmed live on GitHub: <b>coreyhaines31/marketingskills</b> (~36,824 stars, created Jan 15 2026, by Corey Haines of Swipe Files / Conversion Factory), <b>gtmagents/gtm-agents</b> (244 SKILL.md files spanning sales/marketing/CS/revops), and <b>sales-skills/sales</b> (installable via <code>npx skills add sales-skills/sales</code>). Anthropic's <b>Claude for Small Business</b> (May 13 2026) ships 15 agentic workflows + 15 skills including lead triage and a margin analyzer. <b>Corrected during verification:</b> the "282,000 installs" figure some blogs cite has no primary source (likely conflated from star count); the repo was created Jan 2026, not "Oct 2025"; gtm-agents holds 244 skills, not "8 plugins."</p>
+      <div class="chips">
+        <div class="chip-row"><span class="chip-label sup">Supported by</span><span class="who"><b>Practitioner</b> (named the repos), <b>Academic</b> (confirmed they target the agentskills.io spec)</span></div>
+        <div class="chip-row"><span class="chip-label chal">Challenged by</span><span class="who"><b>Skeptic</b> &mdash; grants existence but denies they carry verifiable expertise</span></div>
+        <div class="chip-row"><span class="chip-label fix">Corrected</span><span class="who">Install count removed as unsourced; creation date and skill counts fixed against the live repos</span></div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="finding-head">
+        <div class="finding-title">The gating variable is verifiability, not demand &mdash; and every lens agrees</div>
+        <div class="finding-rank">2</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel high">Reliability: High</div>
+        <div class="score"><b>9</b><span>/10</span></div>
+      </div>
+      <p>Coding skills proliferated first and earn compounding trust because software has a decidable reward signal &mdash; the compiler and test suite adjudicate quality. Business output has no oracle: a positioning or cold-email skill emits confident, plausible copy that only your market can falsify. This is the one point <b>all five lenses independently reached</b>, including the Practitioner ("business skills have no test suite"). Anthropic's own framing supports it &mdash; Agent Skills encode "procedural knowledge and organizational context," like an onboarding guide, not validated expertise. <b>Verified caveat:</b> the two supporting academic papers are preprints (see Contested signal), so this is strong convergence + official framing, not peer-reviewed proof.</p>
+      <div class="chips">
+        <div class="chip-row"><span class="chip-label sup">Supported by</span><span class="who"><b>All five lenses</b> &middot; Anthropic Agent Skills blog (Oct 16 2025); CRMArena-Pro (arXiv 2505.18878)</span></div>
+        <div class="chip-row"><span class="chip-label chal">Challenged by</span><span class="who">No one &mdash; this is the universal finding</span></div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="finding-head">
+        <div class="finding-title">The "passion + expertise" density is real at the author level &mdash; but it's taste, not an adjudicated standard</div>
+        <div class="finding-rank">3</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel medhigh">Reliability: Med-High</div>
+        <div class="score"><b>8</b><span>/10</span></div>
+      </div>
+      <p>Corey Haines is a verified, well-known marketing operator (blog corey.co, tied to Swipe Files and Conversion Factory), so the single-author-passion analog to Pocock genuinely exists. Practitioners report the single-operator repos beat the 200+-skill mega-dumps &mdash; density of one opinionated brain matters more than breadth. But because nothing adjudicates a marketing skill's correctness, its "quality" is the author's judgment frozen at write-time; the persona-prompting literature finds expert-role framing <em>redistributes</em> output quality (more depth, less clarity) rather than uniformly improving it. Practitioners advise assuming you fork and rewrite ~40% of any marketing skill to your ICP.</p>
+      <div class="chips">
+        <div class="chip-row"><span class="chip-label sup">Supported by</span><span class="who"><b>Practitioner</b>, <b>Academic</b> (persona paper, arXiv 2605.29420)</span></div>
+        <div class="chip-row"><span class="chip-label chal">Challenged by</span><span class="who"><b>Skeptic</b> &mdash; taste "timestamped and decaying" isn't a knowledge artifact that compounds</span></div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="finding-head">
+        <div class="finding-title">The highest-value function &mdash; "find companies that would buy" &mdash; is a paid data product, not a skill</div>
+        <div class="finding-rank">4</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel medhigh">Reliability: Med-High</div>
+        <div class="score"><b>7</b><span>/10</span></div>
+      </div>
+      <p>Prospecting needs live enrichment data, CRM state and deliverability tooling &mdash; a static markdown file can't hold a lead list. That value is captured by a venture-scale SaaS oligopoly: <b>Clay</b> raised $100M at a <b>$3.1B</b> valuation (Aug 2025, ~$100M revenue tripling YoY); <b>Apollo.io</b> is at <b>$150M ARR</b>. The economic logic: open-sourcing the skill without the data is a car with no fuel; open-sourcing skill <em>plus</em> data is corporate suicide. So for prospecting specifically, the real "equivalent" is a tool wired via MCP, not a repo. <b>Corrected:</b> Apollo's $1.6B is its Aug-2023 Series D mark (~10x forward multiple, per Sacra), not a fresh 2025 valuation.</p>
+      <div class="chips">
+        <div class="chip-row"><span class="chip-label sup">Supported by</span><span class="who"><b>Economist</b> (Clay/Apollo figures), <b>Skeptic</b> (prospecting resists SKILL.md by definition)</span></div>
+        <div class="chip-row"><span class="chip-label chal">Challenged by</span><span class="who"><b>Practitioner</b> &mdash; gtm-agents/sales-skills <em>do</em> ship prospecting skills (as orchestration over the data tools)</span></div>
+        <div class="chip-row"><span class="chip-label fix">Corrected</span><span class="who">Apollo valuation re-dated to 2023; multiple fixed from "16x" to ~10x</span></div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <div class="finding-head">
+        <div class="finding-title">History says business knowledge drifts to paid/gated form &mdash; the durable winner is a vendor bundle, not a pure repo</div>
+        <div class="finding-rank">5</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel medium">Reliability: Medium</div>
+        <div class="score"><b>6</b><span>/10</span></div>
+      </div>
+      <p>Every prior wave of business know-how consolidated into a gated product, not open canon: HubSpot turned "inbound marketing" (founded 2006) into a content/academy moat + SaaS; growth-hacking's playbook (Sean Ellis, 2010) arrived as a 2017 book; prompt knowledge became SKUs on PromptBase. The prediction: founders won't find one authoritative <em>open</em> business-skills repo the way devs have; they'll assemble from fragments until a vendor bundles maintained, verified skills into a paid GTM-agent product &mdash; which is exactly the shape of Anthropic's Claude for Small Business. This finding rests on historical analogy, so treat it as a pattern, not a proof.</p>
+      <div class="chips">
+        <div class="chip-row"><span class="chip-label sup">Supported by</span><span class="who"><b>Historian</b>, <b>Economist</b></span></div>
+        <div class="chip-row"><span class="chip-label chal">Challenged by</span><span class="who"><b>Practitioner</b> &mdash; the free repos already exist and have real traction today</span></div>
+      </div>
+    </div>
+
+    <div class="contested">
+      <div class="tag">Contested signal &middot; monitor, do not assert &middot; confidence 5/10</div>
+      <h4>The two academic papers underpinning the "no oracle" thesis are preprints</h4>
+      <p>"When Does Persona Prompting Actually Help?" (arXiv 2605.29420, Xiao et al.) and "CRMArena-Pro" (arXiv 2505.18878, Salesforce) both resolve and their reported numbers match &mdash; but neither is peer-reviewed. No study directly tests SKILL.md-format business skills vs. generic prompting; that specific evidence is absent. Use them as directional support for the verifiability argument, not as settled science.</p>
+    </div>
+    <div class="contested">
+      <div class="tag">Contested signal &middot; fabricated, removed &middot; confidence 0/10</div>
+      <h4>There is no Anthropic "Skills Marketplace" of ~600 skills launched May 1 2026</h4>
+      <p>Verification found no such Anthropic news page (multiple plausible URLs 404); the "600 skills / 90 first-party / 15% revenue share / May 1 2026" figures appear only in third-party blogs and AI summaries. The real distribution channel is the anthropics/skills GitHub repo via the Claude Code plugin marketplace (<code>/plugin marketplace add anthropics/skills</code>). Do not cite the 600-skill marketplace.</p>
+    </div>
+  </section>
+
+  <!-- ============ 03 HIDDEN CONNECTION ============ -->
+  <section class="section">
+    <div class="connection">
+      <div class="section-num">03</div>
+      <h2><span class="bar"></span>The Hidden Connection</h2>
+      <p>The Practitioner says "yes, it exists now"; the other four lenses say "it structurally can't exist." On the surface that's a flat contradiction &mdash; and it's the sharpest disagreement in the panel. But they're describing two different objects.</p>
+      <p>What exists is the <b>form</b>: a folder of SKILL.md files written by a passionate, credible operator. What can't yet exist is the <b>substrate</b>: a test oracle that makes each skill's quality checkable and lets trust compound across contributors. mattpocock/skills is trusted because the TypeScript compiler adjudicates every skill in it. coreyhaines31/marketingskills is popular because Corey is trusted &mdash; but nothing adjudicates the skills themselves. Both domains got the form. Only code got the oracle.</p>
+      <p class="punch">You already have the business-skills repo you asked for. What you don't have &mdash; and can't buy &mdash; is the compiler that tells you which skills in it are any good. For business output, <em>you</em> are the compiler.</p>
+    </div>
+  </section>
+
+  <!-- ============ 03b KEY ASSUMPTION / MISSING 6TH LENS ============ -->
+  <section class="section">
+    <div class="assume">
+      <h3>The assumption this briefing rests on (and the missing 6th lens)</h3>
+      <p>All five lenses froze the same variable: <b>outcome</b>. None measured whether a skill-generated campaign, cold email, or positioning statement actually performs better than the founder's own work or a plain prompt. The whole "no oracle" thesis assumes you can't build one &mdash; but that's untested, not proven.</p>
+      <p>The missing 6th lens is <b>the Empiricist / end-user</b> who A/B-tests skill output against a control on real conversion data. If skills measurably lift outcomes, you can bootstrap an oracle from those results (CRMArena-style), and the "business skills can never be verified" objection weakens sharply. If they don't, the repos are well-crafted scaffolding theater. This single omission could invert Findings 2, 3 and 5 &mdash; build with a way to measure, not just generate.</p>
+    </div>
+  </section>
+
+  <!-- ============ 04 ACTIONABLE INSIGHT ============ -->
+  <section class="section">
+    <div class="section-num">04</div>
+    <h2><span class="bar"></span>What To Actually Do Differently</h2>
+    <p class="body-lg" style="color:var(--muted);">For a founder/operator using AI agents who wants business-side skills today &mdash; concrete moves, not principles.</p>
+    <div class="action-item">
+      <div class="action-mark">01</div>
+      <div><span class="do">Install the repos that already exist &mdash; they're your scaffolds.</span><p>Start with <code>coreyhaines31/marketingskills</code> for marketing/CRO/copy, and <code>gtmagents/gtm-agents</code> or <code>sales-skills/sales</code> for GTM/prospecting. Add via the Claude Code plugin marketplace or <code>npx skills add</code>. This directly answers "does an equivalent exist" &mdash; it does (Finding 1).</p></div>
+    </div>
+    <div class="action-item">
+      <div class="action-mark">02</div>
+      <div><span class="do">For "find companies that would buy," wire a data tool &mdash; don't expect a skill to do it.</span><p>Connect Clay or Apollo via MCP and let the skill <em>orchestrate</em> the enrichment; the paid data source supplies the actual leads. A markdown file can't hold a lead list (Finding 4).</p></div>
+    </div>
+    <div class="action-item">
+      <div class="action-mark">03</div>
+      <div><span class="do">Be the taste layer &mdash; budget to rewrite ~40% of any marketing skill.</span><p>Treat every business skill as a strong first draft tuned to a generic ICP, never turnkey. Fork it to your brand voice and market. This is the human oracle the skill can't be (Finding 3).</p></div>
+    </div>
+    <div class="action-item">
+      <div class="action-mark">04</div>
+      <div><span class="do">Build your own mini-oracle from your best past work.</span><p>Keep a small eval set &mdash; your highest-converting past emails, your sharpest positioning &mdash; and grade skill output against it before shipping. That's the closest thing to a "compiler" for business output, and it's the 6th-lens move most people skip.</p></div>
+    </div>
+    <div class="action-item">
+      <div class="action-mark">05</div>
+      <div><span class="do">Prefer one opinionated brain over the mega-dumps.</span><p>A single credible operator's repo (Haines) beats a 200+-skill catalog of unmaintained slop. Density of judgment &gt; breadth of coverage when nothing adjudicates quality (Finding 3).</p></div>
+    </div>
+    <div class="action-item">
+      <div class="action-mark">06</div>
+      <div><span class="do">Watch the vendor bundles as the maintained option.</span><p>Anthropic's Claude for Small Business (May 2026) is the early form of the "vendor bundles verified skills into a paid product" pattern history predicts (Finding 5). If you want maintenance over passion, that's where it'll land.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 04b CLAIM SAFETY GUIDE ============ -->
+  <section class="section">
+    <div class="section-num">04b</div>
+    <h2><span class="bar"></span>What's Safe to Assert</h2>
+    <div class="oncam">
+      <div class="oncam-col safe">
+        <h4>&#10003; Safe &mdash; verified against primary source</h4>
+        <ul>
+          <li>Real, opinionated business-skills repos exist for AI agents: <code>coreyhaines31/marketingskills</code> (~36.8K stars), <code>gtmagents/gtm-agents</code>, <code>sales-skills/sales</code>.</li>
+          <li>Corey Haines is a genuine, well-known marketing operator (Swipe Files / Conversion Factory).</li>
+          <li>Agent Skills is a real open standard (agentskills.io, Dec 18 2025); Anthropic's Agent Skills blog is Oct 16 2025.</li>
+          <li>Claude for Small Business (May 13 2026) ships 15 workflows + 15 skills incl. lead triage and margin analysis.</li>
+          <li>Clay raised $100M at a $3.1B valuation (Aug 2025); Apollo.io is at ~$150M ARR.</li>
+          <li>The verifiability asymmetry: code has a test/compiler oracle, business output does not.</li>
+        </ul>
+      </div>
+      <div class="oncam-col caveat">
+        <h4>&#9888; Say with a caveat</h4>
+        <ul>
+          <li>Star count &ne; quality &mdash; there's no oracle adjudicating these skills; popularity tracks author trust, not correctness.</li>
+          <li>The persona-prompting and CRMArena-Pro findings are arXiv <b>preprints</b>, not peer-reviewed.</li>
+          <li>Market-size numbers ($58B&rarr;$240.6B; AI-SDR ~$4.1B) are single-vendor projections &mdash; directional only.</li>
+          <li>Apollo's $1.6B is a 2023 valuation mark, not a current one.</li>
+          <li>GTM-AI funding "$2.7B in 2026" should be attributed to Crunchbase, not the content-mill blog that repackaged it.</li>
+        </ul>
+      </div>
+      <div class="oncam-col avoid">
+        <h4>&#10005; Don't assert</h4>
+        <ul>
+          <li>"282,000 installs" (or any specific install count) for the Haines repo &mdash; no primary source.</li>
+          <li>An Anthropic "Skills Marketplace" of ~600 skills launched May 1 2026 &mdash; <b>fabricated</b>; no such page exists.</li>
+          <li>That these business skills measurably improve GTM outcomes &mdash; untested; no study exists.</li>
+          <li>"The mattpocock of marketing" as fact &mdash; it's blog framing, not a verified claim.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 FRONTIER QUESTION ============ -->
+  <section class="section">
+    <div class="section-num">05</div>
+    <h2><span class="bar"></span>The Frontier Question</h2>
+    <div class="frontier">
+      <div class="q">Will someone build a "CRMArena for GTM outcomes" &mdash; an oracle that scores a marketing or sales skill by real conversion lift &mdash; and if so, does the trusted repo become the one with the best eval scores rather than the most famous author?</div>
+      <p>This is the hinge. The entire panel agrees business skills can't compound trust because they can't be falsified. But that's a claim about <em>today's</em> tooling, not a law of nature. The moment an outcome-grounded benchmark exists for GTM output, business skills gain the same self-improving, merit-accruing dynamic that made coding skills explode &mdash; and authority shifts from reputation to measured performance. No lens addressed whether this oracle is buildable, because building it requires the one thing none of them had: your real conversion data. Whoever closes that loop first owns the category.</p>
+    </div>
+  </section>
+
+  <!-- ============ REFERENCES ============ -->
+  <div class="refs">
+    <h3>Evidence base &middot; verification status</h3>
+    <ul>
+      <li><span class="vstat part">Corrected</span> coreyhaines31/marketingskills &mdash; real SKILL.md marketing repo by Corey Haines, ~36,824 stars, created Jan 15 2026. "282K installs" and "Oct 2025 launch" unsupported/removed. <a href="https://github.com/coreyhaines31/marketingskills">github.com</a></li>
+      <li><span class="vstat part">Corrected</span> gtmagents/gtm-agents &mdash; real, 244 SKILL.md files (sales/marketing/CS/revops), created Nov 18 2025. "8 plugins" understated. <a href="https://github.com/gtmagents/gtm-agents">github.com</a></li>
+      <li><span class="vstat ok">Confirmed</span> sales-skills/sales &mdash; real repo, installs via <code>npx skills add sales-skills/sales</code>, covers CRM/outbound/enrichment. <a href="https://github.com/sales-skills/sales">github.com</a></li>
+      <li><span class="vstat ok">Confirmed</span> Corey Haines &mdash; real marketing operator (corey.co, Swipe Files, Conversion Factory). <a href="https://github.com/coreyhaines31">github.com</a></li>
+      <li><span class="vstat weak">Low authority</span> hyperfx.ai &mdash; "Best Marketing Skills GitHub Repos 2026" comparison; a vendor page, likely origin of the unsourced install numbers. <a href="https://hyperfx.ai/blog/best-marketing-skills-github-repos-2026">hyperfx.ai</a></li>
+      <li><span class="vstat ok">Confirmed</span> Anthropic, "Equipping agents for the real world with Agent Skills," Oct 16 2025 &mdash; skills as folders of instructions/scripts; progressive disclosure. <a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">anthropic.com</a></li>
+      <li><span class="vstat part">Corrected</span> anthropics/skills repo &mdash; real (Creative/Technical/Enterprise/Document skills); partner list is Notion (not Atlassian/Canva/Ramp; those are Small Business connectors). <a href="https://github.com/anthropics/skills">github.com</a></li>
+      <li><span class="vstat part">Corrected</span> Anthropic, "Claude for Small Business" &mdash; dated May 13 2026 (not May 1); 15 workflows + 15 skills incl. margin analyzer, lead triage. <a href="https://www.anthropic.com/news/claude-for-small-business">anthropic.com</a></li>
+      <li><span class="vstat weak">Fabricated</span> "Anthropic Skills Marketplace, ~600 skills / 90 first-party, May 1 2026" &mdash; no primary source; no such page (404s). Removed. <a href="https://www.anthropic.com/news/skills">anthropic.com</a></li>
+      <li><span class="vstat ok">Confirmed</span> agentskills.io &mdash; Agent Skills published as an open standard, Dec 18 2025. <a href="https://agentskills.io">agentskills.io</a></li>
+      <li><span class="vstat weak">Preprint</span> Xiao et al., "When Does Persona Prompting Actually Help?" arXiv 2605.29420 &mdash; 1,140 Qs / 38 roles; expert framing raises depth (d=0.54), lowers clarity; "redistributes rather than improves." Not peer-reviewed. <a href="https://arxiv.org/abs/2605.29420">arxiv.org</a></li>
+      <li><span class="vstat weak">Preprint</span> Huang et al. (Salesforce), "CRMArena-Pro," arXiv 2505.18878 &mdash; 19 expert-validated sales/service/CPQ tasks; agents modest, drop in multi-turn, near-zero confidentiality awareness. Not peer-reviewed. <a href="https://arxiv.org/abs/2505.18878">arxiv.org</a></li>
+      <li><span class="vstat ok">Confirmed</span> Clay &mdash; $100M Series C at $3.1B valuation, Aug 5 2025 (CapitalG); ~$100M revenue, tripling YoY. <a href="https://techcrunch.com/2025/08/05/clay-confirms-it-closed-100m-round-at-3-1b-valuation/">techcrunch.com</a></li>
+      <li><span class="vstat part">Corrected</span> Apollo.io &mdash; $150M ARR (~May 2025) confirmed; $1.6B is the Aug-2023 Series D mark; multiple ~10x, not 16x. <a href="https://sacra.com/research/apollo-io-at-134m-arr/">sacra.com</a></li>
+      <li><span class="vstat weak">Projection</span> AI for sales &amp; marketing: $58.00B (2025) &rarr; $240.58B (2030), 32.9% CAGR &mdash; single-vendor forecast. <a href="https://www.marketsandmarkets.com/PressReleases/ai-for-sales-and-marketing.asp">marketsandmarkets.com</a></li>
+      <li><span class="vstat weak">Projection</span> AI SDR segment ~$4.1B (2025) &mdash; vendor estimates range $4.1&ndash;4.4B; wide disagreement. <a href="https://www.marketsandmarkets.com/Market-Reports/ai-sdr-market-83561460.html">marketsandmarkets.com</a></li>
+      <li><span class="vstat part">Corrected</span> GTM-AI funding ~$2.7B (2026 YTD) &mdash; source is Crunchbase's sector snapshot, not the content-mill blog that repackaged it. <a href="https://news.crunchbase.com/sales-marketing/gtm-ai-startup-funding-netomi-hightouch/">crunchbase.com</a></li>
+      <li><span class="vstat ok">Confirmed</span> Anthropic OSS grant &mdash; 6 months free Claude Max 20x (~$1,200 value) for maintainers of 5,000+ star / 1M+ npm repos; ~80% of Anthropic engineers used Claude Code daily by launch. <a href="https://claude.com/contact-sales/claude-for-oss">claude.com</a></li>
+      <li><span class="vstat part">Corrected</span> First "awesome" list &mdash; awesome-php (Gist, ~Jan 25 2012) predates sindresorhus/awesome (Jul 11 2014), which standardized the format. <a href="https://github.com/sindresorhus/awesome">github.com</a></li>
+      <li><span class="vstat ok">Confirmed</span> HubSpot &mdash; founded 2006 (Halligan &amp; Shah), coined/popularized "inbound marketing" as a content/academy + SaaS moat. <a href="https://en.wikipedia.org/wiki/HubSpot">wikipedia.org</a></li>
+      <li><span class="vstat ok">Confirmed</span> Growth hacking &mdash; Sean Ellis coined "growth hacker" (2010); "Hacking Growth" (Ellis &amp; Brown) published Apr 2017. <a href="https://en.wikipedia.org/wiki/Growth_hacking">wikipedia.org</a></li>
+      <li><span class="vstat part">Corrected</span> PromptBase founded 2021, publicly launched ~Jun 2022; AI prompt-marketplace ~$1.4B (2024, Grand View Research estimate). <a href="https://www.grandviewresearch.com/industry-analysis/artificial-intelligence-ai-prompt-marketplace-market-report">grandviewresearch.com</a></li>
+    </ul>
+  </div>
+
+  <div class="footer">Storm Research v2 &middot; 22/22 citations independently verified against primary sources, 2026-07-06 &middot; 2 fabricated figures removed, 8 corrected, 4 demoted &middot; Reliability = evidence quality, not author confidence</div>
+
+</div>
+</body>
+</html>
