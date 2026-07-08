@@ -30,20 +30,20 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "8515a080a74dbcf5019a1a78efc24b5fcafb36b8";
-    hash = "sha256-tkk7HpugAyyh43Mdf1Du08fTuoaHca05GgT3j2zJF9I=";
+    rev = "d574778f94cf620fcc8ce741584093bc650a61d3";
+    hash = "sha256-XqF709Y9GMKINzZITlbCTyatG9AxRZh0qn2vcv1Z8yo=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
   # Experimental skills not listed in plugin.json — opt them in explicitly here.
-  # (The /implement skill lives at skills/engineering/implement and is now
-  # registered in upstream plugin.json, so it installs automatically — no
-  # explicit entry needed here.)
+  # (As upstream promotes in-progress skills into engineering/ + plugin.json they
+  # install automatically and must be dropped from this list — e.g. /implement,
+  # and as of v1.1.0 /code-review (was in-progress/review) and /wayfinder (was
+  # in-progress/wayfinder, whose old path no longer exists).)
   mattpocockExtraSkills = [
     "skills/in-progress/loop-me"
     "skills/in-progress/wizard"
     "skills/in-progress/claude-handoff"
-    "skills/in-progress/wayfinder"
     # Present in the repo but not registered in upstream plugin.json, so opt in here.
     "skills/engineering/resolving-merge-conflicts"
   ];
@@ -794,6 +794,21 @@ in {
         includeCoAuthoredBy = false;
         skipDangerousModePermissionPrompt = true;
 
+        # System-prompt bloat trimming (see aihero.dev "How To Kill The Bloat
+        # In Claude Code's System Prompt"). Each flag drops a whole feature —
+        # its tools + instructions — from the per-turn payload:
+        # - Workflows: unused; well-defined agent teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) cover it.
+        # - RemoteControl: work is driven via Discord/Hermes, not CC's remote-control feature.
+        # - ClaudeAiConnectors: Gmail/Calendar/Drive handled via CLIs instead.
+        # - Artifact: our HTML skills (visual-explainer/storm/playground/impeccable) Write local files, not claude.ai Artifacts.
+        # Individual-tool trims live in permissions.deny below (bare names strip the schema).
+        # Deliberately NOT set: disableBundledSkills (would hide /code-review + /security-review
+        # from the review-gate team; use skillOverrides per-skill if ever needed).
+        disableWorkflows = true;
+        disableRemoteControl = true;
+        disableClaudeAiConnectors = true;
+        disableArtifact = true;
+
         worktree = {
           bgIsolation = "none";
         };
@@ -843,6 +858,29 @@ in {
             "Read(/run/secrets.d/**)"
             "Read(/home/hailst0rm/.config/sops/**)"
             "Read(/home/hailst0rm/.config/sops-nix/**)"
+
+            # Payload trimming: bare tool names strip the tool's schema from the
+            # per-turn request (a scoped rule would only block calls, not shrink
+            # the payload). Cut features we don't use on this setup:
+            # - EnterPlanMode/ExitPlanMode: wayfinder/grilling plan as a method, not CC plan mode.
+            # - AskUserQuestion: removing it keeps clarifying questions but forces
+            #   free-text prose (matches interview-style), same question frequency.
+            # - NotebookEdit: no Jupyter here. DesignSync: unused.
+            # - Push/RemoteTrigger: driven via Discord/Hermes. Cron*: scheduled via Hermes cron.
+            # - ScheduleWakeup: only used by /loop dynamic mode, unused.
+            # Kept ON PURPOSE: SendMessage (agent-team channel), ReportFindings
+            # (/code-review + /security-review emit through it in the review gate).
+            "EnterPlanMode"
+            "ExitPlanMode"
+            "DesignSync"
+            "NotebookEdit"
+            "PushNotification"
+            "RemoteTrigger"
+            "ScheduleWakeup"
+            "AskUserQuestion"
+            "CronCreate"
+            "CronDelete"
+            "CronList"
           ];
         };
 

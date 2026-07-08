@@ -107,7 +107,10 @@ in {
         after = ["network-online.target"];
         wants = ["network-online.target"];
         before = ["hermes-agent.service"];
-        wantedBy = ["hermes-agent.service"];
+        # See agent-browser-skill below: want multi-user.target too, else a
+        # newly-added oneshot never fires on `switch` (hermes-agent, already
+        # running and unchanged, doesn't restart to re-pull its wants).
+        wantedBy = ["hermes-agent.service" "multi-user.target"];
         serviceConfig = {
           Type = "oneshot";
           User = "hailst0rm";
@@ -133,7 +136,10 @@ in {
       systemd.services.agent-browser-skill = lib.mkIf cfg.browser.enable {
         description = "Register agent-browser SKILL.md in every Hermes profile";
         before = ["hermes-agent.service"];
-        wantedBy = ["hermes-agent.service"];
+        # multi-user.target (not just hermes-agent.service): a unit wantedBy only
+        # an already-running service is never pulled in on `switch` unless that
+        # service also restarts, so a newly-added oneshot silently never fires.
+        wantedBy = ["hermes-agent.service" "multi-user.target"];
         serviceConfig = {
           Type = "oneshot";
           User = "hailst0rm";
