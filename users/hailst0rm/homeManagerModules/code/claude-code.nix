@@ -30,8 +30,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214";
-    hash = "sha256-tJLI3UrxFOhZpkzkv+WTkwM9vHFGmBZRtFgXws3fPpA=";
+    rev = "8515a080a74dbcf5019a1a78efc24b5fcafb36b8";
+    hash = "sha256-tkk7HpugAyyh43Mdf1Du08fTuoaHca05GgT3j2zJF9I=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
