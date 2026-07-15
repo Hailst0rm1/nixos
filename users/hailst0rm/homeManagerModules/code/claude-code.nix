@@ -30,8 +30,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "391a2701dd948f94f56a39f7533f8eea9a859c87";
-    hash = "sha256-gFPkjrujFAoNXYa0ariPKTj/xBoiCTLUo3X20qrTzRE=";
+    rev = "e9fcdf95b402d360f90f1db8d776d5dd450f9234";
+    hash = "sha256-uPkA26EPyB5uHsZ9uL/xFFNcuMWkPdq6srmIrazxlNA=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
@@ -39,13 +39,12 @@
   # (As upstream promotes in-progress skills into engineering/ + plugin.json they
   # install automatically and must be dropped from this list — e.g. /implement,
   # and as of v1.1.0 /code-review (was in-progress/review) and /wayfinder (was
-  # in-progress/wayfinder, whose old path no longer exists).)
+  # in-progress/wayfinder, whose old path no longer exists), and /resolving-merge-conflicts
+  # which upstream registered in plugin.json as of 66898f6.)
   mattpocockExtraSkills = [
     "skills/in-progress/loop-me"
     "skills/in-progress/wizard"
     "skills/in-progress/claude-handoff"
-    # Present in the repo but not registered in upstream plugin.json, so opt in here.
-    "skills/engineering/resolving-merge-conflicts"
   ];
   mattpocockSkillFiles = lib.listToAttrs (map (skillPath: {
       name = ".claude/skills/${baseNameOf skillPath}";
