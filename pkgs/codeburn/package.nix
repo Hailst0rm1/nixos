@@ -18,16 +18,16 @@
 in
   buildNpmPackage rec {
     pname = "codeburn";
-    version = "0.9.16";
+    version = "0.9.19";
 
     src = fetchFromGitHub {
       owner = "getagentseal";
       repo = "codeburn";
       rev = "v${version}";
-      hash = "sha256-dAoaFqR3mL2btwuA4eAbabs7OUtXwHB7LBykiY/VQU8=";
+      hash = "sha256-upA986jO+oeBviitqMhEHf2DgAnZAancmqdqVsY/dEI=";
     };
 
-    npmDepsHash = "sha256-pReRn6nxvxa/ppovCtdtBfQTG80acTQm5IZcyhCQFmE=";
+    npmDepsHash = "sha256-/YTr1x2ka1hUvZPLAlG6Ek5Dw86VosYx3mtFyr5Ardk=";
 
     # `dash/` is a separate Vite app with its own lockfile, built into
     # dist/dash and served by `codeburn web`. Vendor it so the sandbox never
