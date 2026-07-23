@@ -8,18 +8,18 @@
   which,
   nix-update-script,
 }: let
-  version = "0.32.3";
+  version = "0.32.4";
 
   binary = fetchurl {
     url = "https://github.com/vercel-labs/agent-browser/releases/download/v${version}/agent-browser-linux-x64";
-    hash = "sha256-JD9uAcS33qU60H2XVN+ZAzxhRYLVxoXFKaHLgcr8OrE=";
+    hash = "sha256-YrohiTRV6eZdYE8YO1mjUgJZkAP5erw+B619rRVFhFs=";
   };
 
   src = fetchFromGitHub {
     owner = "vercel-labs";
     repo = "agent-browser";
     tag = "v${version}";
-    hash = "sha256-AhihapiVW2ZbJFw6qis9S+WonjI3fK/DVClbYbeagco=";
+    hash = "sha256-PJVTjPXpyJNhQh+0BrY9o9gPAZTnz8JZmbF9fOlQHxE=";
   };
 in
   stdenv.mkDerivation {
