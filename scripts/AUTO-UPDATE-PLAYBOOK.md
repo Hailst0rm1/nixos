@@ -86,6 +86,24 @@ in the "likely updates" table nor in "unknown / needs custom strategy" —
 they are invisible. Bump these manually until the script learns to scan
 them; see the "Possible script improvements" section.
 
+## Non-GitHub pins: run their own updaters each sweep
+
+The script only sees GitHub fetches. Sources hosted elsewhere are invisible to
+it and stay frozen at whatever hash was pinned on the day they landed. Each
+such package carries its own `update.sh`; run them as part of the sweep:
+
+```sh
+./pkgs/21st-cli/update.sh   # npm tarball + 3 skill markdowns served from 21st.dev
+```
+
+`pkgs/21st-cli` is the pattern: the CLI ships only as an npm tarball (upstream
+`package.json` has `repository: null`), and its three Claude skills are plain
+markdown at **unversioned** `https://21st.dev/skills/<name>.md` URLs that
+upstream edits in place. A fixed-output hash freezes both forever, so the
+script re-prefetches them and rewrites the hashes. It is idempotent — no diff
+when nothing changed. If a skill hash moves, `git diff` shows which one, and
+the new SKILL.md is worth a skim before committing.
+
 ## Diagnose narrow build failures before rolling back
 
 When the narrow build fails after a fetch-hash refresh, the failure is almost

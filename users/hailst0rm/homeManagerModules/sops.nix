@@ -52,6 +52,7 @@
           "services/exa/api-key" = {};
           "services/n8n/api-key" = {};
           "services/context7/api-key" = {};
+          "services/21st/api-key" = {};
           "services/github/pat" = {};
           # Sandcastle autonomous agent pipeline (see code/sandcastle.nix):
           #   - claude-oauth-token: output of `claude setup-token` (subscription

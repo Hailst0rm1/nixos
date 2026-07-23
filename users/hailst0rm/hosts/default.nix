@@ -77,6 +77,10 @@
       enable = lib.mkDefault false;
       exa.enable = lib.mkDefault true;
       codegraph.enable = lib.mkDefault true;
+      shadcn.enable = lib.mkDefault true;
+      twentyfirst.enable = lib.mkDefault true;
+      higgsfield.enable = lib.mkDefault false;
+      marketing-skills.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
       claude-mem.enable = lib.mkDefault true;
       tokenOptimizer.enable = lib.mkDefault false;

@@ -11,6 +11,24 @@
   notebooklm-py = pkgs.callPackage ../../../../pkgs/notebooklm-py/package.nix {};
   codeburn = pkgs.callPackage ../../../../pkgs/codeburn/package.nix {};
   rtk = pkgs.callPackage ../../../../pkgs/rtk/package.nix {};
+  twentyfirst-cli = pkgs.callPackage ../../../../pkgs/21st-cli/package.nix {};
+  # `shadcn-index` gives shadcn the global search it lacks; it shells out to the
+  # same (unstable) shadcn the option below puts on PATH, so pin them together.
+  shadcn-index = pkgs.callPackage ../../../../pkgs/shadcn-index/package.nix {inherit (pkgs-unstable) shadcn;};
+  higgsfield-cli = pkgs.callPackage ../../../../pkgs/higgsfield-cli/package.nix {};
+
+  # The `21st` CLI is a superset of 21st.dev's MCP server (same endpoint, same
+  # login), so we take the CLI + its skills instead of the MCP server: an MCP
+  # server's tool schemas sit in the system prompt on every turn, a skill's
+  # body only loads when the skill fires. Skill names come from the package, so
+  # adding one upstream needs no change here. Refresh with pkgs/21st-cli/update.sh.
+  twentyfirstSkillFiles = lib.optionalAttrs config.code.claude-code.twentyfirst.enable (
+    lib.listToAttrs (map (name: {
+        name = ".claude/skills/${name}";
+        value.source = "${twentyfirst-cli}/share/claude-skills/${name}";
+      })
+      twentyfirst-cli.skillNames)
+  );
 
   gsd-repo = pkgs.fetchFromGitHub {
     owner = "gsd-build";
@@ -80,6 +98,16 @@
     name = "codegraph";
     bin = true;
     command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph";
+  };
+
+  # Authenticates the 21st CLI from sops instead of `21st login`, whose browser
+  # flow writes a token to ~/.config on one machine only. This wrapper — not
+  # twentyfirst-cli itself — goes on PATH; both provide bin/21st.
+  twentyfirstCliWrapper = mkSecretEnvWrapper {
+    name = "21st";
+    bin = true;
+    env.API_KEY_21ST = "services/21st/api-key";
+    command = "${twentyfirst-cli}/bin/21st";
   };
 
   n8nMcpWrapper = mkSecretEnvWrapper {
@@ -389,6 +417,26 @@ in {
       type = lib.types.bool;
       default = false;
       description = "Enable the Perplexity web search MCP server for Claude Code.";
+    };
+    shadcn.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the `shadcn` CLI (from pkgs-unstable) plus the custom `shadcn-index` wrapper. shadcn's built-in registry directory covers ~237 third-party registries (@magicui, @aceternity, @cult-ui, @react-bits, …), and `shadcn view @ns/item` prints an item's full source with no API key, no project and no quota — the cheapest way for an agent to read a component's real API before writing against it. shadcn has no global search (`search` takes a namespace), so `shadcn-index <query>` searches a curated trust-list of high-craft registries at once (`--all` widens to the whole directory, `--json` for agents).";
+    };
+    twentyfirst.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the 21st.dev CLI (`21st`) plus its three upstream skills (21st-cli-use, 21st-registry, 21st-design-sync): search/install React + shadcn components, themes and templates, and publish your own. Chosen over 21st's MCP server, which would cost tool-schema tokens on every turn. Reads API_KEY_21ST from sops services/21st/api-key, so no per-machine `21st login`.";
+    };
+    higgsfield.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the Higgsfield AI CLI (`higgsfield`/`higgs`/`hf`): generate images and videos from the terminal. Packages the prebuilt `hf` binary from the GitHub release (the npm package is only a downloader). Auth is interactive — run `higgsfield auth login` once per machine.";
+    };
+    marketing-skills.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Enable the coreyhaines31/marketingskills plugin (marketing-skills@marketingskills): 47 marketing skills for founders and technical marketers — CRO, copywriting, cold email, SEO/AI-SEO, paid ads, ad creative, pricing, referrals, revops, customer research, AARRR marketing plans, and more.";
     };
     printing-press.enable = lib.mkOption {
       type = lib.types.bool;
@@ -980,6 +1028,9 @@ in {
             "obsidian@obsidian-skills" = true;
             "context-mode@context-mode" = true;
           }
+          // lib.optionalAttrs config.code.claude-code.marketing-skills.enable {
+            "marketing-skills@marketingskills" = true;
+          }
           // lib.optionalAttrs config.code.claude-code.superpowers.enable {
             "superpowers@claude-plugins-official" = true;
           }
@@ -1032,6 +1083,14 @@ in {
               source = {
                 source = "github";
                 repo = "pbakaus/impeccable";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.marketing-skills.enable {
+            marketingskills = {
+              source = {
+                source = "github";
+                repo = "coreyhaines31/marketingskills";
               };
             };
           }
@@ -1116,7 +1175,8 @@ in {
           recursive = true;
         };
       }
-      // mattpocockSkillFiles;
+      // mattpocockSkillFiles
+      // twentyfirstSkillFiles;
 
     # VS Code settings for Claude Code extension (only when VS Code is enabled)
     programs.vscode.profiles.default.userSettings = lib.mkIf config.code.vscode.enable {
@@ -1155,6 +1215,16 @@ in {
       ]
       ++ lib.optionals config.code.claude-code.codegraph.enable [
         codegraphCliWrapper # `codegraph` CLI for `codegraph init`/`init --index` in project roots
+      ]
+      ++ lib.optionals config.code.claude-code.twentyfirst.enable [
+        twentyfirstCliWrapper # `21st` CLI driven by the 21st-* skills, with API_KEY_21ST from sops. Built from pkgs/21st-cli/package.nix.
+      ]
+      ++ lib.optionals config.code.claude-code.shadcn.enable [
+        pkgs-unstable.shadcn # `shadcn search @ns -q`/`view @ns/item`/`add` over the built-in registry directory.
+        shadcn-index # `shadcn-index <query>` — global keyword search shadcn itself refuses; built from pkgs/shadcn-index/package.nix.
+      ]
+      ++ lib.optionals config.code.claude-code.higgsfield.enable [
+        higgsfield-cli # `higgsfield`/`higgs`/`hf` — Higgsfield AI image/video CLI. Built from pkgs/higgsfield-cli/package.nix.
       ];
 
     # Pick up *-pp-cli binaries that `/printing-press` installs into ~/go/bin
