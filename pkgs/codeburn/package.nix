@@ -2,6 +2,7 @@
   lib,
   buildNpmPackage,
   fetchFromGitHub,
+  fetchNpmDeps,
   fetchurl,
 }: let
   # Pinned to a litellm release tag instead of `main`. Pinning to `main`
@@ -17,22 +18,33 @@
 in
   buildNpmPackage rec {
     pname = "codeburn";
-    version = "0.9.13";
+    version = "0.9.19";
 
     src = fetchFromGitHub {
       owner = "getagentseal";
       repo = "codeburn";
-      # Upstream publishes parallel `v0.9.X` and `mac-v0.9.X` tag series that
-      # point at identical commits; 0.9.13 only has the `mac-` tag so far.
-      rev = "mac-v0.9.13";
-      hash = "sha256-z/67n+HWuPH/jrydyG3yM9b0v8puiOZQjKndBJXFf1o=";
+      rev = "v${version}";
+      hash = "sha256-upA986jO+oeBviitqMhEHf2DgAnZAancmqdqVsY/dEI=";
     };
 
-    npmDepsHash = "sha256-DlGIFGpYybDQWppj+L9Xb7fhIs4SLuX95a684Grd/oY=";
+    npmDepsHash = "sha256-/YTr1x2ka1hUvZPLAlG6Ek5Dw86VosYx3mtFyr5Ardk=";
+
+    # `dash/` is a separate Vite app with its own lockfile, built into
+    # dist/dash and served by `codeburn web`. Vendor it so the sandbox never
+    # needs the networked `npm install` that upstream's build:dash runs.
+    dashNpmDeps = fetchNpmDeps {
+      name = "codeburn-dash-npm-deps";
+      src = "${src}/dash";
+      hash = "sha256-f/vuxG8XSUl1tcYSJGwgdznzVAMk+i/ftdzWr37PF+Y=";
+    };
 
     # The build script fetches litellm pricing data from GitHub at build time.
     # Replace it with a version that reads from the pre-fetched local file.
     preBuild = ''
+      npmDeps=$dashNpmDeps npmRoot=dash npmConfigHook
+      substituteInPlace package.json \
+        --replace-fail "cd dash && npm install --no-audit --no-fund --silent && npm run build" "cd dash && npm run build"
+
       cp ${litellmPricing} litellm-raw.json
       cat > scripts/bundle-litellm.mjs << 'SCRIPT'
       import { readFileSync, writeFileSync, mkdirSync } from "fs";
