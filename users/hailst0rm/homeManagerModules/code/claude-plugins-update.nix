@@ -38,6 +38,8 @@
     # stale cached versions). A non-zero exit here propagates out so the unit's
     # Restart=on-failure retries every 10 min until connectivity returns; a
     # clean run exits 0 and the retry loop stops until the next daily trigger.
+    # Note: this command reports success even when every individual refresh
+    # failed, so it cannot be relied on alone — see the unit's PATH below.
     echo "==> Refreshing marketplace clones"
     if ! "$CLAUDE" plugin marketplace update; then
       echo "!! marketplace refresh failed — will retry" >&2
@@ -77,6 +79,14 @@ in {
         # start-rate limit, so the retries never get throttled.
         Type = "exec";
         ExecStart = "${updateScript}/bin/claude-plugins-update";
+        # A systemd user unit inherits only systemd's own bin dir in PATH.
+        # Claude Code shells out to `git ... clone` (over SSH) to refresh each
+        # marketplace clone; without git+ssh on PATH the spawn fails as
+        # ERR_STREAM_PREMATURE_CLOSE, `plugin marketplace update` still exits 0,
+        # and every plugin silently reports "already at the latest version"
+        # against a frozen clone. Non-git marketplaces (claude-plugins-official)
+        # refresh over HTTPS and hid the breakage.
+        Environment = ["PATH=${lib.makeBinPath [pkgs.git pkgs.openssh]}"];
         Restart = "on-failure";
         RestartSec = 600;
       };

@@ -499,6 +499,11 @@ in {
       default = true;
       description = "Enable RTK (rtk-ai/rtk): CLI proxy + Claude Code PreToolUse hook that rewrites common dev commands (git/cat/grep/test runners) to compact RTK equivalents for 60-90% token savings on Bash tool calls. Measure with `rtk gain` after a few sessions.";
     };
+    codeburn.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Install codeburn (getagentseal/codeburn): AI coding token usage tracker with a `codeburn web` dashboard.";
+    };
     sessionHandoffReminder = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -1196,9 +1201,9 @@ in {
 
         # Brave for the Claude browser extension
         brave
-
-        # AI coding token usage tracker
-        codeburn
+      ]
+      ++ lib.optionals config.code.claude-code.codeburn.enable [
+        codeburn # AI coding token usage tracker
       ]
       ++ lib.optionals config.code.claude-code.sound.enable [
         sound-theme-freedesktop # complete.oga / bell.oga for Claude Code Stop + Notification hooks

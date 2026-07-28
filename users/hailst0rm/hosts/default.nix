@@ -83,6 +83,7 @@
       marketing-skills.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
       claude-mem.enable = lib.mkDefault true;
+      codeburn.enable = lib.mkDefault false;
       tokenOptimizer.enable = lib.mkDefault false;
       superpowers.enable = lib.mkDefault false;
       playground.enable = lib.mkDefault true;
