@@ -38,8 +38,6 @@
     # stale cached versions). A non-zero exit here propagates out so the unit's
     # Restart=on-failure retries every 10 min until connectivity returns; a
     # clean run exits 0 and the retry loop stops until the next daily trigger.
-    # Note: this command reports success even when every individual refresh
-    # failed, so it cannot be relied on alone — see the unit's PATH below.
     echo "==> Refreshing marketplace clones"
     if ! "$CLAUDE" plugin marketplace update; then
       echo "!! marketplace refresh failed — will retry" >&2
@@ -52,7 +50,20 @@
       # Per-plugin failures are logged but do NOT gate the retry: once the
       # marketplace refresh succeeds, one flaky plugin shouldn't pin the unit
       # in a 10-minute retry loop forever.
-      "$CLAUDE" plugin update "$plugin" || echo "!! update failed: $plugin" >&2
+      out="$("$CLAUDE" plugin update "$plugin" 2>&1)" || echo "!! update failed: $plugin" >&2
+      printf '%s\n' "$out"
+      # The step above cheerfully prints "Successfully updated N marketplace(s)"
+      # and exits 0 even when every clone failed, so its exit code cannot gate
+      # the retry. This warning on the per-plugin output is the only honest
+      # signal that the clone is stale — without it a boot-race failure exits 0,
+      # Restart=on-failure never fires, and plugins stay frozen until the next
+      # reboot races the network again (impeccable sat on 3.6.0 for six weeks).
+      case $out in
+        *"marketplace not refreshed"*)
+          echo "!! stale marketplace for $plugin — will retry" >&2
+          rc=1
+          ;;
+      esac
     done
 
     exit $rc

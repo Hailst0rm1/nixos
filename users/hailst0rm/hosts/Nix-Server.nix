@@ -35,6 +35,12 @@ in {
   code.claude-code.enable = true;
   code.codex.enable = true;
 
+  # RAM-constrained host: both MCP servers cost ~200MB per concurrent session
+  # and had zero tool calls across 361 transcripts (2026-07-14..28). Re-enable
+  # if this host starts doing library-docs or web-search heavy work.
+  code.claude-code.exa.enable = false;
+  code.claude-code.context7.enable = false;
+
   home.packages = [pkgs.gws];
 
   applications = {

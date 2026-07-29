@@ -37,7 +37,7 @@
         echo -e "  ''${GREEN}--legacy''${RESET}              Use nixos-rebuild instead of nh"
         echo -e "  ''${GREEN}--debug''${RESET}               Show timing info for each step"
         echo -e "  ''${GREEN}--no-auth''${RESET}             Skip GitHub auth; fetch-only with local file protection"
-        echo -e "  ''${GREEN}--no-diff''${RESET}             Skip git diff display (used on auto-retry)"
+        echo -e "  ''${GREEN}--no-diff''${RESET}             Skip git diff display"
         echo -e "  ''${GREEN}--nh-flags ''${YELLOW}\"<args>\"''${RESET}   Pass extra arguments to nh"
         echo -e "  ''${GREEN}-h, --help''${RESET}            Show this help message"
         echo ""
@@ -320,7 +320,14 @@
       }
       fi
 
-      # Rebuild and capture output for hash mismatch detection
+      # Rebuild, auto-resolving fixed-output hash mismatches in a loop.
+      #
+      # nh drives nix via nom (--log-format internal-json), which bakes ANSI
+      # color codes into the error text, so we match the bare SRI hash rather
+      # than $NF. On a mismatch we patch the hash in $BUILD_FROM — the tree nix
+      # actually builds from (buildDir on the server, NIXOS_DIR on desktop) — and
+      # loop, so a cascade of stale FODs resolves in one run. On the server the
+      # post-build rsync propagates the fix from buildDir back to the NAS for git.
       echo ""
       echo -e "''${GREEN}''${BOLD}🔨 ${buildingMsg}...''${RESET}"
       notify-send -e "${notifyName}" "${buildingMsg} for ${config.hostname}..." --icon=system-software-update 2>/dev/null
@@ -329,44 +336,85 @@
       export NH_FLAKE="$BUILD_FROM"
 
       REBUILD_LOG=$(mktemp)
-      rebuild_failed=false
-      set -o pipefail
-      if [ "$use_legacy" = true ]; then
-        echo -e "''${YELLOW}📦 Using legacy nixos-rebuild...''${RESET}"
-        sudo nixos-rebuild ${action} --flake "$BUILD_FROM#${config.hostname}" 2>&1 | tee "$REBUILD_LOG" || rebuild_failed=true
-      else
-        nh os ${action} --diff always $nh_flags 2>&1 | tee "$REBUILD_LOG" || rebuild_failed=true
-      fi
-      set +o pipefail
+      build_ok=0
+      hash_retries=0
+      max_hash_retries=8
+      while :; do
+        rebuild_failed=false
+        set -o pipefail
+        if [ "$use_legacy" = true ]; then
+          echo -e "''${YELLOW}📦 Using legacy nixos-rebuild...''${RESET}"
+          sudo nixos-rebuild ${action} --flake "$BUILD_FROM#${config.hostname}" 2>&1 | tee "$REBUILD_LOG" || rebuild_failed=true
+        else
+          nh os ${action} --diff always $nh_flags 2>&1 | tee "$REBUILD_LOG" || rebuild_failed=true
+        fi
+        set +o pipefail
 
-      if [ "$rebuild_failed" = true ]; then
-        # Check for hash mismatch and auto-fix (only retry once)
-        if [ "''${NIX_REBUILD_RETRY:-}" != "1" ] && grep -q "hash mismatch in fixed-output derivation" "$REBUILD_LOG"; then
-          OLD_HASH=$(grep "specified:" "$REBUILD_LOG" | head -1 | awk '{print $NF}')
-          NEW_HASH=$(grep "got:" "$REBUILD_LOG" | head -1 | awk '{print $NF}')
+        if [ "$rebuild_failed" != true ]; then
+          build_ok=1
+          break
+        fi
+
+        # Auto-resolve a fixed-output hash mismatch, then loop to rebuild.
+        if [ "$hash_retries" -lt "$max_hash_retries" ] && grep -q "hash mismatch in fixed-output derivation" "$REBUILD_LOG"; then
+          # Bare SRI hashes (ANSI-safe): what the file claims vs what nix got.
+          OLD_HASH=$(grep "specified:" "$REBUILD_LOG" | head -1 | grep -oE 'sha(1|256|512)-[A-Za-z0-9+/]+=*' | head -1)
+          NEW_HASH=$(grep "got:" "$REBUILD_LOG" | head -1 | grep -oE 'sha(1|256|512)-[A-Za-z0-9+/]+=*' | head -1)
+          # Name of the failing FOD, e.g. "21st-registry.md" or "cli-1.6.0.tgz".
+          DRV_NAME=$(grep "hash mismatch in fixed-output derivation" "$REBUILD_LOG" | head -1 \
+            | grep -oE '/nix/store/[a-z0-9]{32}-[A-Za-z0-9._+-]+\.drv' | head -1 \
+            | sed -e 's|.*/[a-z0-9]\{32\}-||' -e 's|\.drv$||')
+
           if [ -n "$OLD_HASH" ] && [ -n "$NEW_HASH" ]; then
-            HASH_FILE=$(grep -rl "$OLD_HASH" "$NIXOS_DIR" --include="*.nix" | head -1)
+            HASH_FILE=$(grep -rlF "$OLD_HASH" "$BUILD_FROM" --include="*.nix" | head -1)
             if [ -n "$HASH_FILE" ]; then
               echo ""
               echo -e "''${YELLOW}''${BOLD}🔧 Hash mismatch detected! Auto-fixing...''${RESET}"
               echo -e "  ''${CYAN}File:''${RESET} $HASH_FILE"
+              echo -e "  ''${CYAN}FOD:''${RESET}  $DRV_NAME"
               echo -e "  ''${RED}Old:''${RESET}  $OLD_HASH"
               echo -e "  ''${GREEN}New:''${RESET}  $NEW_HASH"
-              sed -i "s|$OLD_HASH|$NEW_HASH|g" "$HASH_FILE"
-              echo -e "''${GREEN}✅ Hash updated. Retrying build...''${RESET}"
-              rm -f "$REBUILD_LOG"
-              export NIX_REBUILD_RETRY=1
-              # Reconstruct flags for retry
-              RETRY_ARGS="--no-diff"
-              [ "$use_legacy" = true ] && RETRY_ARGS="$RETRY_ARGS --legacy"
-              [ "$use_debug" = true ] && RETRY_ARGS="$RETRY_ARGS --debug"
-              [ "$use_no_auth" = true ] && RETRY_ARGS="$RETRY_ARGS --no-auth"
-              [ -n "$nh_flags" ] && RETRY_ARGS="$RETRY_ARGS --nh-flags \"$nh_flags\""
-              exec "$0" $RETRY_ARGS
+
+              if [ "$(grep -cF "$OLD_HASH" "$HASH_FILE")" -le 1 ]; then
+                # Unique in the file — plain replace ('|' delim keeps the hash's '/' safe).
+                sed -i "s|$OLD_HASH|$NEW_HASH|" "$HASH_FILE"
+              else
+                # Several sources share this hash (e.g. a duplicated placeholder).
+                # Replace only the fetch whose URL basename matches the failing FOD
+                # name (Nix interpolations treated as wildcards) so a sibling isn't clobbered.
+                fixed=$(mktemp)
+                awk -v name="$DRV_NAME" -v newh="$NEW_HASH" '
+                  {
+                    if (match($0, /url = "[^"]*"/)) {
+                      u = substr($0, RSTART, RLENGTH); sub(/^url = "/, "", u); sub(/"$/, "", u)
+                      sub(/.*\//, "", u); gsub(/\$\{[^}]*\}/, ".*", u)
+                      armed = (name ~ ("^" u "$"))
+                    }
+                    if (armed && $0 ~ /hash = "sha[0-9]+-/) { sub(/sha[0-9]+-[A-Za-z0-9+\/]+=*/, newh); armed = 0 }
+                    print
+                  }
+                ' "$HASH_FILE" > "$fixed"
+                if cmp -s "$fixed" "$HASH_FILE"; then
+                  rm -f "$fixed"
+                  echo -e "''${RED}''${BOLD}❌ '$DRV_NAME' shares its hash with another source and couldn't be matched by URL — fix manually.''${RESET}"
+                  break
+                fi
+                mv "$fixed" "$HASH_FILE"
+              fi
+
+              echo -e "''${GREEN}✅ Hash updated. Rebuilding...''${RESET}"
+              hash_retries=$((hash_retries + 1))
+              : > "$REBUILD_LOG"
+              continue
             fi
           fi
         fi
-        # Normal failure path
+
+        # Not auto-fixable (or retries exhausted) — real failure.
+        break
+      done
+
+      if [ "$build_ok" != 1 ]; then
         echo ""
         echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
         notify-send -e "${notifyName} Failed!" "Build failed for ${config.hostname}" --icon=dialog-error --urgency=critical 2>/dev/null

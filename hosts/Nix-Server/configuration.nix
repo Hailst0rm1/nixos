@@ -48,6 +48,10 @@
     };
   };
 
+  # 7.6G RAM, no disk swap — compressed RAM swap keeps agent workloads
+  # from tripping the OOM killer (5 claude + 1 hermes kills in week of 2026-07-21).
+  zramSwap.enable = true;
+
   # Override only what's different from default
   laptop = true;
   myLocation = "Barkarby";
