@@ -66,7 +66,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       };
       "21st-registry" = fetchurl {
         url = "https://21st.dev/skills/21st-registry.md";
-        hash = "sha256-YulA0Njz/6i2Es5r5Z+S4sfIi6o6Hi2CgortBxD4eEg=";
+        hash = "sha256-QjE2il0E4ANOsHC85Ud2gEYPqLIP5zke8VY47OFbq1U=";
       };
       "21st-design-sync" = fetchurl {
         url = "https://21st.dev/skills/21st-design-sync.md";
