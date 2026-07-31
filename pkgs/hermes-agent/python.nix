@@ -63,6 +63,15 @@
     });
   };
 
+  # Upstream's setup.py permits wheel/sdist creation only from the sealed
+  # Hermes derivation, gated on this env var (verbatim from upstream
+  # nix/python.nix). Deliberately a derivation variable, not a devShell one.
+  nixBuildGuard = _final: prev: {
+    hermes-agent = prev.hermes-agent.overrideAttrs (_old: {
+      HERMES_NIX_BUILD = "1";
+    });
+  };
+
   pythonSet =
     (callPackage pyproject-nix.build.packages {
       python = python312;
@@ -72,6 +81,7 @@
       overlay
       buildSystemOverrides
       pythonPackageOverrides
+      nixBuildGuard
     ]);
 in
   pythonSet.mkVirtualEnv "hermes-agent-env" {
