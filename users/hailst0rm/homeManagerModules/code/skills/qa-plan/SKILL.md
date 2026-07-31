@@ -50,16 +50,18 @@ Read the issue ⨯ the diff together and list every **user-facing surface** the 
 
 ### 3. Browser smoke first (fail fast)
 
-Before writing a manual checklist, catch gross breakage automatically. Prefer a **real browser** so you see what the user sees.
+Before writing a manual checklist, catch gross breakage automatically.
 
 1. Start the app the way this repo documents it. Check the README, `CLAUDE.md`, and the `scripts` / `Makefile` / `justfile` / compose file for the run command (e.g. `npm run dev`, `make serve`, `docker compose up`). Note the URL and port it serves on, plus any first-run setup it calls out — migrations, seed data, required env vars, and how it delivers emails or other side effects you'll need to observe.
-2. **Drive it in a real browser if browser-control tools are connected.** Open each new route, confirm it renders, and watch the devtools console for errors. Attach to an already-open browser instance if there is one; otherwise launch a Chromium-based browser with remote debugging:
+2. **Smoke every changed route with `agent-browser`**, using the drive loop in the browser rule (`~/.claude/rules/browser.md`). Open each route, confirm it renders, and read `agent-browser console` for errors.
+
+   **Set a realistic viewport, and for any layout-bearing surface capture a small screenshot matrix — don't trust a single frame.** Whatever width the browser happened to open at hides the most common layout bugs: an element that collides at 800px looks fine at 1440px, and a banner that's correct on desktop clips on a phone. So before you screenshot, set a real desktop size (e.g. `1440×900`) *and* sample the widths where this app's own CSS actually changes — read the `@media` breakpoints in the touched components and shoot just above and just below each (defects cluster at those boundaries), plus one phone width (~360px):
    ```sh
-   <browser> --remote-debugging-port=9222 <app-url> &
-   # <browser> = whatever is installed: brave / chromium / google-chrome
+   agent-browser set viewport 1440 900 && agent-browser screenshot qa-1440.png
+   agent-browser set viewport 360 800  && agent-browser screenshot qa-360.png
    ```
-   **Set a realistic viewport, and for any layout-bearing surface capture a small screenshot matrix — don't trust a single frame.** Whatever width the browser happened to open at hides the most common layout bugs: an element that collides at 800px looks fine at 1440px, and a banner that's correct on desktop clips on a phone. So before you screenshot, set a real desktop size (e.g. `1440×900`) *and* sample the widths where this app's own CSS actually changes — read the `@media` breakpoints in the touched components and shoot just above and just below each (defects cluster at those boundaries), plus one phone width (~360px). Set the viewport with whatever your tool exposes — `agent-browser set viewport 1440 900`, a Playwright `setViewportSize`, or a raw CDP `Emulation.setDeviceMetricsOverride` — and save each frame; you'll attach them as evidence in step 5.
-3. **Headless fallback** — if no browser control is available, smoke the routes with curl and assert no 5xx:
+   Save each frame; you'll attach them as evidence in step 5.
+3. **If the browser won't start at all** — smoke the routes with curl and assert no 5xx:
    ```sh
    BASE=<app-url>            # e.g. http://localhost:3000
    for r in <routes the change touches>; do   # e.g. / /signin /auth/verify

@@ -212,6 +212,92 @@
     ${pkgs.jq}/bin/jq -nc --arg msg "$MSG" '{"systemMessage": $msg}'
   '';
 
+  # SessionStart hook: inject the delegation/model-routing policy into Opus
+  # sessions only. Fable ships equivalent orchestration guidance natively, and
+  # cheaper models are spawn targets, not orchestrators — so the policy is
+  # model-gated via this hook instead of a rules file (rules reach every
+  # subagent's context; verified empirically, no scoping mechanism exists).
+  # Model detection is layered: the documented `model` input field is
+  # empirically absent from SessionStart input (docs: "not guaranteed"), so
+  # fall back to the parent claude process's --model flag, then the saved
+  # /model default (undocumented ~/.claude.json cache slot — best-effort; on
+  # a miss the policy is simply not injected, which is harmless).
+  delegationPolicy = pkgs.writeText "delegation-policy.md" ''
+    # Delegation & Model Routing
+
+    Scope: top-level Opus sessions. A subagent (your first message is a task
+    brief from another agent) skips this file: complete the brief directly
+    and spawn nothing further.
+
+    You are the orchestrator. Your context window is the scarce resource;
+    subagent context is disposable. Plan and synthesize yourself; delegate
+    retrieval and bounded execution.
+
+    ## When to spawn
+    - The answer is small (paths, a conclusion, yes/no) but reaching it
+      means sweeping several files or verbose output → delegate; keep the
+      conclusion, not the file dumps.
+    - Independent workstreams → spawn all of them in ONE message, in the
+      background, and keep working. Continue a live agent via SendMessage
+      instead of respawning.
+    - Handle it yourself when you know the exact file, when you will Edit
+      the file (Edit needs the bytes in your context), when the judgment IS
+      the deliverable, or when writing the brief costs more than the task.
+
+    ## Model per spawn — pass `model:` explicitly
+    Errors at the top compound; errors at the bottom stay local. Route down
+    whatever you can verify cheaply from its answer.
+    - haiku: locate / enumerate / fetch — "where is X", "list callers",
+      doc lookups
+    - sonnet: bounded implementation from a precise spec, summarizing bulk
+      material, structured research
+    - yourself: planning, review verdicts, synthesis across agent reports,
+      anything user-facing
+
+    ## The brief — a subagent starts with zero context
+    State the goal, the scope boundary, the exact return format ("file:line
+    + one-line finding"), and what to skip. For Explore, set breadth
+    ("medium" or "very thorough"). After spawning: relay findings to the
+    user (agent reports are invisible to them) and let delegated work stay
+    delegated — verify from the answer, not by redoing the search.
+  '';
+  delegationPolicyHook = pkgs.writeShellScript "delegation-policy-hook" ''
+    INPUT=$(${pkgs.coreutils}/bin/cat)
+    # Top-level sessions only: subagents get a task brief, not this policy.
+    ${pkgs.jq}/bin/jq -e '.agent_id // empty' >/dev/null <<<"$INPUT" && exit 0
+
+    MODEL=$(${pkgs.jq}/bin/jq -r '.model // empty' <<<"$INPUT")
+
+    # --model flag on the parent claude process (--model X and --model=X).
+    if [ -z "$MODEL" ]; then
+      MODEL=$(${pkgs.coreutils}/bin/tr '\0' '\n' < /proc/$PPID/cmdline 2>/dev/null | ${pkgs.gawk}/bin/awk '
+        /^--model=/ { sub("^--model=",""); print; exit }
+        f           { print; exit }
+        /^--model$/ { f=1 }')
+    fi
+
+    # Saved /model default.
+    if [ -z "$MODEL" ]; then
+      MODEL=$(${pkgs.jq}/bin/jq -r '[(.clientDataCacheSlots // {}) | .[] | .model? // empty] | first // empty' "$HOME/.claude.json" 2>/dev/null)
+    fi
+
+    case "''${MODEL,,}" in
+      *opus*) ${pkgs.coreutils}/bin/cat ${delegationPolicy} ;;
+    esac
+    exit 0
+  '';
+
+  # SessionStart hook: load the local `readable` skill's ruleset from message
+  # one, so the output shape applies without typing /readable. The skill is
+  # user-invoked (disable-model-invocation), so it costs no context until this
+  # hook injects it. READABLE_MODE=off in the environment skips the injection —
+  # that is the escape hatch for spawned Hermes workers, whose review ledgers
+  # and QA evidence should keep their own format.
+  readableHook = pkgs.writeShellScript "readable-session-start" ''
+    [ "''${READABLE_MODE:-on}" = "off" ] && exit 0
+    ${pkgs.coreutils}/bin/cat ${./skills/readable/SKILL.md}
+  '';
+
   # Sound hook: non-blocking paplay on Stop / Notification. Backgrounded so
   # the hook returns immediately and never delays Claude's next turn.
   # `volumePct` is 0-100; paplay's --volume range is 0-65536 (100% = 65536).
@@ -468,6 +554,13 @@ in {
         '';
       };
     };
+    readable.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Load the local `readable` skill (skills/readable/) from message one via a SessionStart hook: bottom line first, eight line-leading role markers (recommendation, question, done, failed, risk, blocked, assumption, tangent), tangents deferred to the end at full length, and every claim paired with its check. A fork of ayghri/i-have-adhd with the omission-prone rules removed — no list cap, no step trimming, no time estimates — and scoped to conversational output so reports, PR comments, commit messages and machine-readable markers keep their own formats. Turn off for one session with "stop readable", or per-process with READABLE_MODE=off (used for spawned Hermes workers that produce review ledgers and QA evidence).
+      '';
+    };
     codex.enable = lib.mkOption {
       type = lib.types.bool;
       default = config.code.codex.enable;
@@ -515,6 +608,11 @@ in {
         default = 60;
         description = "Minutes of session age before the reminder starts firing.";
       };
+    };
+    delegationPolicy.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Inject a subagent delegation + model-routing policy at session start, gated to Opus sessions only (SessionStart hook detects the model via hook input, the parent process's --model flag, or the saved /model default). Teaches Opus to orchestrate like Fable: fan out retrieval to haiku, bounded work to sonnet, keep judgment at the top. Fable sessions, cheaper models, and subagents never see it.";
     };
     sound = {
       enable = lib.mkOption {
@@ -644,6 +742,21 @@ in {
 
         Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+        ## 5. Evaluate My Ideas on Merit
+
+        **My suggestions are hypotheses, not instructions. Agreement has to be earned.**
+
+        When I propose an idea, diagnosis, or approach:
+        - Judge it against the code and the facts — not against how confident I sounded.
+        - If it's wrong, lead with the flaw. No "great idea, but". State the problem, then the alternative.
+        - If it's right, one line saying so. No praise, no replaying my reasoning back at me.
+        - If it's right but something else is better, give both and recommend one.
+        - Verify before agreeing. "That's a good point" without checking the code is a guess wearing a compliment.
+
+        Don't manufacture disagreement either. Contrarianism is the same failure as flattery: a posture substituted for an evaluation.
+
+        If I push back on your objection: update if I gave you a new fact or constraint. If I only restated my position, say you still disagree and why — then do it my way if I insist, without pretending I convinced you.
+
         ---
 
         **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
@@ -703,6 +816,30 @@ in {
             - Think adversarially about code execution
             - Consider defensive coding practices
             - Document security implications of changes
+          '';
+
+          browser = ''
+            # Browser Control
+
+            Drive browsers with the `agent-browser` CLI, in preference to the
+            Claude Chrome extension — it launches its own browser, so nothing
+            waits on me to open a window first.
+
+            ```sh
+            [ -n "$WAYLAND_DISPLAY$DISPLAY" ] && HEADED=--headed
+            agent-browser open <url> $HEADED
+            agent-browser snapshot -i   # interactive elements as @e1, @e2 refs
+            agent-browser click @e1     # re-snapshot after the page changes
+            agent-browser console       # devtools console errors
+            ```
+
+            Pass `--headed` whenever a display exists so I can watch the run;
+            omit it on headless hosts.
+
+            `agent-browser install` is the one command to skip: the
+            Chrome-for-Testing build it downloads cannot start on NixOS. The
+            package already defaults `AGENT_BROWSER_EXECUTABLE_PATH` to nixpkgs
+            chromium, so `open` needs no setup.
           '';
 
           interview-style = ''
@@ -973,6 +1110,8 @@ in {
         # Hooks:
         # - PreToolUse (RTK): rewrites Bash commands to token-compact equivalents.
         # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
+        # - SessionStart (delegation policy): Opus-only orchestration/model-routing context.
+        # - SessionStart (readable): loads the output-shape ruleset from message one.
         hooks = lib.mkMerge [
           (lib.mkIf config.code.claude-code.rtk.enable {
             PreToolUse = [
@@ -994,6 +1133,30 @@ in {
                   {
                     type = "command";
                     command = "${sessionHandoffReminderHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.delegationPolicy.enable {
+            SessionStart = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${delegationPolicyHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.readable.enable {
+            SessionStart = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${readableHook}";
                   }
                 ];
               }
@@ -1201,6 +1364,10 @@ in {
 
         # Brave for the Claude browser extension
         brave
+
+        # Browser automation CLI for agents — `/qa-plan` drives it over CDP.
+        # Built from pkgs/agent-browser/package.nix.
+        agent-browser
       ]
       ++ lib.optionals config.code.claude-code.codeburn.enable [
         codeburn # AI coding token usage tracker

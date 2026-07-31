@@ -102,27 +102,10 @@ in {
         "d /var/lib/agent-browser/profile 0750 hailst0rm users -"
       ];
 
-      systemd.services.agent-browser-install = lib.mkIf cfg.browser.enable {
-        description = "One-time install of Chrome-for-Testing for agent-browser";
-        after = ["network-online.target"];
-        wants = ["network-online.target"];
-        before = ["hermes-agent.service"];
-        # See agent-browser-skill below: want multi-user.target too, else a
-        # newly-added oneshot never fires on `switch` (hermes-agent, already
-        # running and unchanged, doesn't restart to re-pull its wants).
-        wantedBy = ["hermes-agent.service" "multi-user.target"];
-        serviceConfig = {
-          Type = "oneshot";
-          User = "hailst0rm";
-          RemainAfterExit = true;
-          Environment = ["HOME=/home/hailst0rm"];
-        };
-        script = ''
-          if [ ! -d "$HOME/.agent-browser/chromes" ]; then
-            ${pkgs.agent-browser}/bin/agent-browser install
-          fi
-        '';
-      };
+      # No Chrome-for-Testing install unit: `agent-browser install` downloads a
+      # build that cannot start on NixOS (libglib-2.0.so.0 missing). The package
+      # defaults AGENT_BROWSER_EXECUTABLE_PATH to nixpkgs chromium instead, so
+      # the CLI launches a browser with no setup.
 
       # Register agent-browser's bundled SKILL.md as a Hermes skill so the
       # driving model knows the snapshot→ref workflow and token-trimming flags

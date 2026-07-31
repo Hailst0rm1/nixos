@@ -41,6 +41,7 @@
   graphicDriver.intel.enable = lib.mkDefault false;
   graphicDriver.nvidia = {
     enable = lib.mkDefault false;
+    prime.offload.powerSaving = lib.mkDefault false;
   };
 
   security = {

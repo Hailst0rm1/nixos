@@ -6,6 +6,7 @@
   autoPatchelfHook,
   makeWrapper,
   which,
+  chromium,
   nix-update-script,
 }: let
   version = "0.33.1";
@@ -42,8 +43,13 @@ in
       cp -r ${src}/skills $out/skills
       cp -r ${src}/skill-data $out/skill-data
 
+      # `agent-browser install` downloads Chrome-for-Testing, which cannot run on
+      # NixOS (`libglib-2.0.so.0: cannot open shared object file`). Default to
+      # nixpkgs chromium instead so auto-launch works out of the box; --set-default
+      # keeps an explicit AGENT_BROWSER_EXECUTABLE_PATH override working.
       wrapProgram $out/bin/agent-browser \
-        --prefix PATH : ${lib.makeBinPath [which]}
+        --prefix PATH : ${lib.makeBinPath [which]} \
+        --set-default AGENT_BROWSER_EXECUTABLE_PATH ${lib.getExe chromium}
 
       runHook postInstall
     '';

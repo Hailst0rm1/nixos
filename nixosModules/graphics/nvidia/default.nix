@@ -5,12 +5,19 @@
   ...
 }: let
   cfg = config.graphicDriver.nvidia;
+  # dGPU runtime-suspend only works in offload mode.
+  dgpuPowerSaving = cfg.prime.offload.enable && cfg.prime.offload.powerSaving;
 in {
   options.graphicDriver.nvidia = {
     enable = lib.mkEnableOption "Enable nvidia gpu drivers.";
     containerToolkit = lib.mkEnableOption "Enable nvidia-container-toolkit for Docker/Podman GPU access.";
     prime = {
       offload.enable = lib.mkEnableOption "Enable NVIDIA PRIME offload mode (render on dGPU, display via iGPU).";
+      offload.powerSaving = lib.mkEnableOption ''
+        runtime-suspend the dGPU whenever no offloaded app is using it. Drops the
+        session-wide NVIDIA render variables so the compositor stays on the iGPU —
+        use the `nvidia-offload` wrapper per-application instead. Saves ~6W idle;
+        needs Turing or newer'';
       intelBusId = lib.mkOption {
         default = "";
         type = lib.types.str;
@@ -60,7 +67,7 @@ in {
 
       # Fine-grained power management. Turns off GPU when not in use.
       # Experimental and only works on modern Nvidia GPUs (Turing or newer).
-      powerManagement.finegrained = false;
+      powerManagement.finegrained = dgpuPowerSaving;
 
       # Use the NVidia open source kernel module (not to be confused with the
       # independent third-party "nouveau" open source driver).
@@ -90,11 +97,14 @@ in {
     hardware.nvidia-container-toolkit.enable = cfg.containerToolkit;
 
     environment.sessionVariables =
-      {
+      # With powerSaving these are left to the `nvidia-offload` wrapper, which
+      # exports them per-application. Setting them session-wide drags the
+      # compositor and every GUI app onto the dGPU, so it never suspends.
+      lib.optionalAttrs (!dgpuPowerSaving) {
         GBM_BACKEND = "nvidia-drm";
         __GLX_VENDOR_LIBRARY_NAME = "nvidia";
       }
-      // lib.optionalAttrs cfg.prime.offload.enable {
+      // lib.optionalAttrs (cfg.prime.offload.enable && !dgpuPowerSaving) {
         __NV_PRIME_RENDER_OFFLOAD = "1";
         __NV_PRIME_RENDER_OFFLOAD_PROVIDER = "NVIDIA-G0";
         __VK_LAYER_NV_optimus = "NVIDIA_only";
