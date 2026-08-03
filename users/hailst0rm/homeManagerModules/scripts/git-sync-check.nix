@@ -14,13 +14,27 @@
 
     cd ${nixosDir}
 
-    # Test GitHub connectivity via SSH
+    # Test GitHub connectivity: SSH first, HTTPS as failover. Some hosts have no
+    # deploy key and/or block outbound 22 — the repo is public, so the HTTPS read
+    # below needs no credentials. GIT_TERMINAL_PROMPT=0 makes git fail fast rather
+    # than block this unattended service on a credential prompt.
+    export GIT_TERMINAL_PROMPT=0
+
+    SSH_URL="git@github.com:hailst0rm1/nixos.git"
+    HTTPS_URL="https://github.com/hailst0rm1/nixos.git"
+    REMOTE_URL=""
+
     MAX_RETRIES=12  # Check for up to 1 hour (12 * 5 minutes)
     RETRY_COUNT=0
     CONNECTION_OK=false
 
     while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-      if timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
+      if timeout 5 git ls-remote "$SSH_URL" HEAD &>/dev/null; then
+        REMOTE_URL="$SSH_URL"
+        CONNECTION_OK=true
+        break
+      elif timeout 10 git ls-remote "$HTTPS_URL" HEAD &>/dev/null; then
+        REMOTE_URL="$HTTPS_URL"
         CONNECTION_OK=true
         break
       else
@@ -31,14 +45,14 @@
         if command -v zenity &> /dev/null; then
           zenity --warning \
             --title="GitHub Connection Failed" \
-            --text="Cannot reach GitHub via SSH.\n\nWill keep checking in the background every 5 minutes.\nYou'll be notified when updates are available." \
+            --text="Cannot reach GitHub over SSH or HTTPS.\n\nWill keep checking in the background every 5 minutes.\nYou'll be notified when updates are available." \
             --width=400 \
             --timeout=10 &
         fi
         notify-send "NixOS Config Sync" "Cannot reach GitHub. Will keep checking..." --icon=dialog-warning &
       ''
       else ''
-        echo "Cannot reach GitHub via SSH. Will keep checking in the background every 5 minutes."
+        echo "Cannot reach GitHub over SSH or HTTPS. Will keep checking in the background every 5 minutes."
       ''
     }
         fi
@@ -51,8 +65,9 @@
       exit 0
     fi
 
-    # Fetch remote changes without merging
-    git fetch origin master --quiet
+    # Fetch remote changes without merging. Explicit refspec so origin/master is
+    # updated even when REMOTE_URL failed over to HTTPS and isn't origin's URL.
+    git fetch "$REMOTE_URL" master:refs/remotes/origin/master --quiet
 
     # Check if local is behind remote
     LOCAL=$(git rev-parse HEAD)
@@ -100,7 +115,7 @@
             --height=400
 
           if [ $? -eq 0 ]; then
-            git pull origin master
+            git pull "$REMOTE_URL" master
             notify-send "NixOS Config" "Successfully pulled $BEHIND commit(s) from remote" --icon=dialog-information
           else
             notify-send "NixOS Config" "Skipped pulling remote changes" --icon=dialog-warning
@@ -283,12 +298,16 @@ in {
         };
 
         Service = {
-          Type = "oneshot";
+          # Type=simple so the start job completes at fork. As a oneshot, the
+          # `systemctl start` issued by hm activation's reloadSystemd (sd-switch)
+          # blocks on the retry loop below, which `sleep 300`s whenever GitHub
+          # SSH is unreachable — eating into home-manager-<user>.service's
+          # TimeoutStartSec=5m and failing the whole activation.
+          Type = "simple";
           ExecStart = "${pkgs.writeShellScript "nix-sync-check" ''
             sleep 15
             ${checkScript}/bin/nix-check-remote
           ''}";
-          RemainAfterExit = false;
         };
 
         Install = {
@@ -303,12 +322,12 @@ in {
         };
 
         Service = {
-          Type = "oneshot";
+          # Type=simple — see nix-config-sync-check above.
+          Type = "simple";
           ExecStart = "${pkgs.writeShellScript "nix-build-check" ''
             sleep 20
             ${buildCheckScript}/bin/nix-check-build
           ''}";
-          RemainAfterExit = false;
         };
 
         Install = {
