@@ -88,20 +88,34 @@
     command = "${pkgs.nodejs}/bin/npx -y @upstash/context7-mcp";
   };
 
+  # Telemetry is opt-OUT and defaults to on: the interactive `codegraph install`
+  # is what asks for consent, and we wire the MCP server declaratively instead,
+  # so it would never be asked. Scoped to these wrappers rather than a global
+  # DO_NOT_TRACK, which would silently retune every other tool on the system.
+  codegraphStaticEnv.CODEGRAPH_TELEMETRY = "0";
+
   codegraphMcpWrapper = mkSecretEnvWrapper {
     name = "codegraph-mcp-wrapper";
+    staticEnv = codegraphStaticEnv;
     command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph serve --mcp";
   };
 
   codegraphCliWrapper = mkSecretEnvWrapper {
     name = "codegraph";
     bin = true;
+    staticEnv = codegraphStaticEnv;
     command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph";
   };
 
-  # Seeds a new git worktree (or clone) with the local-only files git cannot
-  # carry across: personal Claude notes, and the codegraph index when that MCP
-  # server is enabled.
+  # Builds a codegraph index for a freshly created worktree (or clone). The
+  # index is data *about a specific checkout*, so it cannot be shared or copied
+  # the way a file can — it has to be generated at the moment the checkout
+  # appears, which is the one thing only a post-checkout hook can do.
+  #
+  # With codegraph disabled the body degenerates to "chain and exit". That is
+  # deliberate: core.hooksPath below is set unconditionally, so git consults
+  # ONLY this directory — dropping the hook entirely would silently kill every
+  # repo-local post-checkout hook on the machine.
   #
   # Deliberately NOT delivered via init.templateDir: git recreates template
   # symlinks rather than copying them, so every repo would end up pointing at a
@@ -137,10 +151,6 @@
     # switch always passes a real SHA, so this fires exactly once per worktree.
     [ "$1" = "$null_sha" ] && [ "$3" = "1" ] || chain "$@"
 
-    # Personal Claude notes are tracked in-repo as CLAUDE.k.md: they arrive with
-    # a fresh worktree already, stay versioned, and the rest of the team can
-    # read them. Claude only loads CLAUDE.local.md, so alias it across.
-    [ -f CLAUDE.k.md ] && ln -sfn CLAUDE.k.md CLAUDE.local.md
     ${lib.optionalString config.code.claude-code.codegraph.enable ''
 
       # The semantic index describes the code actually checked out here, so each
@@ -357,6 +367,24 @@
   readableHook = pkgs.writeShellScript "readable-session-start" ''
     [ "''${READABLE_MODE:-on}" = "off" ] && exit 0
     ${pkgs.coreutils}/bin/cat ${./skills/readable/SKILL.md}
+  '';
+
+  # SessionStart hook: load personal per-project Claude notes, kept as a tracked
+  # CLAUDE.k.md instead of the CLAUDE.local.md Claude reads natively.
+  #
+  # CLAUDE.local.md is gitignored (see programs.git.ignores below), which means
+  # it is untracked, unversioned, unreviewable — and, decisively, absent from
+  # every new worktree and clone, since git only materialises tracked files.
+  # A tracked CLAUDE.k.md rides along everywhere for free; this hook is the
+  # naming bridge, and doing it at session start rather than at checkout time
+  # is what makes it reach repos cloned before any of this existed.
+  #
+  # Resolved from the git toplevel, matching Claude's own upward search for
+  # memory files, and correct per-worktree (each has its own toplevel).
+  projectNotesHook = pkgs.writeShellScript "claude-project-notes" ''
+    root=$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null) || exit 0
+    [ -f "$root/CLAUDE.k.md" ] && ${pkgs.coreutils}/bin/cat "$root/CLAUDE.k.md"
+    exit 0
   '';
 
   # Sound hook: non-blocking paplay on Stop / Notification. Backgrounded so
@@ -621,6 +649,11 @@ in {
       description = ''
         Load the local `readable` skill (skills/readable/) from message one via a SessionStart hook: bottom line first, eight line-leading role markers (recommendation, question, done, failed, risk, blocked, assumption, tangent), tangents deferred to the end at full length, and every claim paired with its check. A fork of ayghri/i-have-adhd with the omission-prone rules removed — no list cap, no step trimming, no time estimates — and scoped to conversational output so reports, PR comments, commit messages and machine-readable markers keep their own formats. Turn off for one session with "stop readable", or per-process with READABLE_MODE=off (used for spawned Hermes workers that produce review ledgers and QA evidence).
       '';
+    };
+    projectNotes.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Read a project's CLAUDE.k.md into context at session start. Personal per-project Claude notes kept under version control: unlike the CLAUDE.local.md Claude loads natively, a tracked file is reviewable, survives a reclone, and arrives in every new worktree without any bootstrap step. Resolved from the git toplevel, so it works from any subdirectory and picks up each worktree's own copy.";
     };
     codex.enable = lib.mkOption {
       type = lib.types.bool;
@@ -946,24 +979,30 @@ in {
           codegraph = ''
             # CodeGraph (Semantic Code Intelligence)
 
-            When a project contains a `.codegraph/` directory, prefer the
-            `mcp__codegraph__*` tools over `grep`/`rg`/`Read` for code
-            exploration:
+            When a project contains a `.codegraph/` directory, prefer CodeGraph
+            over a `grep`/`rg` + `Read` loop: one call returns the relevant
+            symbols' verbatim line-numbered source grouped by file, the call
+            paths between them, and a blast-radius summary — including
+            dynamic-dispatch hops (callbacks, interface→impl) grep cannot follow.
 
-            - `codegraph_search` — find a symbol by name (function, class, method)
-            - `codegraph_context` — build a context bundle for a task (entry points + related code)
-            - `codegraph_callers` / `codegraph_callees` — call-graph traversal
-            - `codegraph_impact` — what breaks if I change this symbol?
-            - `codegraph_files` — file/dir structure with symbol counts
-            - `codegraph_status` — index health
+            The MCP surface is a single tool, `mcp__codegraph__codegraph_explore`.
+            It answers "how does X work", a flow ("how does X reach Y"), or a
+            survey of an area; naming a file or symbol in the query reads its
+            current source. Query another indexed project — a sibling repo, or a
+            service inside a monorepo — by passing `projectPath`.
 
-            One CodeGraph call typically replaces dozens of grep + Read
-            exploration steps.
+            Subagents and non-MCP harnesses have no MCP tools, so they use the
+            identical CLI instead: `codegraph explore <query>`. Also on the CLI
+            only: `codegraph node|query|callers|callees|impact|files|status`
+            (the same operations exist as MCP tools but are unlisted by default;
+            `CODEGRAPH_MCP_TOOLS=explore,node,search,...` re-lists them).
 
-            If a project is NOT initialized, the tools return "CodeGraph not
-            initialized" — run `codegraph init` in that project's root
-            (optionally `codegraph init --index` to also build the initial
-            index). The file watcher keeps the index fresh.
+            An unindexed project returns guidance to use the built-in tools
+            rather than failing — indexing stays a deliberate choice. To make
+            one: `codegraph init` in its root, which builds the graph in the
+            same step. From then on the MCP server watches the tree and syncs
+            on every change, and reconciles against disk when it reconnects, so
+            the index is never stale and there is nothing to re-run.
 
             CodeGraph does not parse Nix — fall back to grep/Read for `.nix`
             files.
@@ -1091,15 +1130,12 @@ in {
               "Bash(nixfmt *)"
               "Bash(nixos-rebuild build *)"
             ]
+            # Wildcard, not a name list: as of 1.5.0 the server lists exactly one
+            # tool (codegraph_explore) and keeps the older narrow ones callable
+            # but unlisted, so any hand-written list goes stale the moment that
+            # surface moves — which it already had.
             ++ lib.optionals config.code.claude-code.codegraph.enable [
-              "mcp__codegraph__codegraph_search"
-              "mcp__codegraph__codegraph_context"
-              "mcp__codegraph__codegraph_callers"
-              "mcp__codegraph__codegraph_callees"
-              "mcp__codegraph__codegraph_impact"
-              "mcp__codegraph__codegraph_node"
-              "mcp__codegraph__codegraph_status"
-              "mcp__codegraph__codegraph_files"
+              "mcp__codegraph__*"
             ];
           deny = [
             "Bash(sops:*)"
@@ -1173,6 +1209,7 @@ in {
         # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
         # - SessionStart (delegation policy): Opus-only orchestration/model-routing context.
         # - SessionStart (readable): loads the output-shape ruleset from message one.
+        # - SessionStart (project notes): reads the repo's tracked CLAUDE.k.md.
         hooks = lib.mkMerge [
           (lib.mkIf config.code.claude-code.rtk.enable {
             PreToolUse = [
@@ -1218,6 +1255,18 @@ in {
                   {
                     type = "command";
                     command = "${readableHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.projectNotes.enable {
+            SessionStart = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${projectNotesHook}";
                   }
                 ];
               }
@@ -1418,7 +1467,10 @@ in {
     programs.git = lib.mkIf config.importConfig.git.enable {
       settings.core.hooksPath = "${config.home.homeDirectory}/.config/git/hooks";
       ignores =
-        ["CLAUDE.local.md"]
+        [
+          "CLAUDE.local.md"
+          "**/.claude/settings.local.json"
+        ]
         ++ lib.optional config.code.claude-code.codegraph.enable ".codegraph/";
     };
 

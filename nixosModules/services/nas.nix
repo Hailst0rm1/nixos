@@ -122,6 +122,12 @@
             security = "user";
             "server smb encrypt" = "required";
             "server min protocol" = "SMB3_00";
+            # SMB3.1.1 POSIX extensions: makes the server report real Unix
+            # modes instead of letting the client fake a uniform file_mode.
+            # Without this, every file on the share reads back as 0755, which
+            # makes git see a phantom `100644 => 100755` on every tracked file.
+            # Supported since Samba 4.22; becomes the default in 4.23.
+            "smb3 unix extensions" = "yes";
             "hosts allow" = "${lib.concatStringsSep " " config.services.nas.allowedSubnets} 127.0.0.1";
             "hosts deny" = "0.0.0.0/0";
           };
@@ -131,7 +137,11 @@
             browseable = "yes";
             "read only" = lib.boolToString config.services.nas.readOnly;
             "guest ok" = "no";
-            "create mask" = "0644";
+            # 0755, not 0644: masking the exec bit off at creation time would
+            # defeat the POSIX extensions above — git checks out a script with
+            # the exec bit set, the mask strips it, and the phantom mode change
+            # comes straight back. The share is single-user (`valid users`).
+            "create mask" = "0755";
             "directory mask" = "0755";
             "valid users" = config.username;
           };
@@ -171,7 +181,13 @@
           "uid=1000"
           "gid=100"
           "iocharset=utf8"
-          "vers=3.0"
+          # 3.1.1 + posix negotiates the SMB3 POSIX extensions, so the client
+          # gets real modes from the server rather than falling back to a
+          # uniform file_mode=0755. Needs `smb3 unix extensions = yes` on the
+          # server; if that is missing the mount still succeeds, it just does
+          # not negotiate. Rebuild nix-server before the clients.
+          "vers=3.1.1"
+          "posix"
           "_netdev"
           "nofail"
           "x-systemd.automount"

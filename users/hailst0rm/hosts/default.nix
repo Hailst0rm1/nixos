@@ -93,6 +93,7 @@
         defaultMode = lib.mkDefault "full";
       };
       readable.enable = lib.mkDefault true;
+      projectNotes.enable = lib.mkDefault true;
       pluginAutoUpdate.enable = lib.mkDefault true;
       delegationPolicy.enable = lib.mkDefault true;
       sessionHandoffReminder = {
