@@ -99,6 +99,67 @@
     command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph";
   };
 
+  # Seeds a new git worktree (or clone) with the local-only files git cannot
+  # carry across: personal Claude notes, and the codegraph index when that MCP
+  # server is enabled.
+  #
+  # Deliberately NOT delivered via init.templateDir: git recreates template
+  # symlinks rather than copying them, so every repo would end up pointing at a
+  # /nix/store path that a garbage collection later breaks. core.hooksPath is
+  # read fresh on every invocation, so there is nothing to go stale, and it
+  # covers already-cloned repos instead of only future ones.
+  worktreeBootstrapHook = ''
+    #!/bin/sh
+    # core.hooksPath makes this run for EVERY repository, so it stays
+    # conservative and does nothing unless the checkout is certainly new.
+
+    null_sha=0000000000000000000000000000000000000000
+
+    # core.hooksPath replaces .git/hooks wholesale, so always hand control back
+    # to a repo-local hook on the way out, or husky-style setups break silently.
+    #
+    # Resolved via --git-common-dir, NOT `--git-path hooks/post-checkout`: that
+    # form honours core.hooksPath and so returns *this* script, which exec'd
+    # itself in an infinite loop. The realpath comparison is a second belt for
+    # the same hazard, in case a repo points hooksPath back here explicitly.
+    chain() {
+      common_dir=$(git rev-parse --git-common-dir 2>/dev/null) || exit 0
+      hook="$common_dir/hooks/post-checkout"
+      if [ -x "$hook" ] \
+        && [ "$(readlink -f "$hook")" != "$(readlink -f "$0")" ]
+      then
+        exec "$hook" "$@"
+      fi
+      exit 0
+    }
+
+    # $1 is the previous HEAD, and only a brand-new checkout has none. A branch
+    # switch always passes a real SHA, so this fires exactly once per worktree.
+    [ "$1" = "$null_sha" ] && [ "$3" = "1" ] || chain "$@"
+
+    # Personal Claude notes are tracked in-repo as CLAUDE.k.md: they arrive with
+    # a fresh worktree already, stay versioned, and the rest of the team can
+    # read them. Claude only loads CLAUDE.local.md, so alias it across.
+    [ -f CLAUDE.k.md ] && ln -sfn CLAUDE.k.md CLAUDE.local.md
+    ${lib.optionalString config.code.claude-code.codegraph.enable ''
+
+      # The semantic index describes the code actually checked out here, so each
+      # worktree builds its own rather than sharing one. Only for projects already
+      # using codegraph — a global hook must not index every repo you clone.
+      common=$(git rev-parse --git-common-dir 2>/dev/null) || chain "$@"
+      common=$(cd "$common" && pwd)
+      main_worktree=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+
+      if [ ! -d .codegraph ] \
+        && [ -d "$main_worktree/.codegraph" ] \
+        && command -v codegraph >/dev/null 2>&1
+      then
+        codegraph init >"$common/codegraph-init-$(basename "$PWD").log" 2>&1 &
+      fi
+    ''}
+    chain "$@"
+  '';
+
   # Authenticates the 21st CLI from sops instead of `21st login`, whose browser
   # flow writes a token to ~/.config on one machine only. This wrapper — not
   # twentyfirst-cli itself — goes on PATH; both provide bin/21st.
@@ -1343,7 +1404,23 @@ in {
         };
       }
       // mattpocockSkillFiles
-      // twentyfirstSkillFiles;
+      // twentyfirstSkillFiles
+      // lib.optionalAttrs config.importConfig.git.enable {
+        ".config/git/hooks/post-checkout" = {
+          executable = true;
+          text = worktreeBootstrapHook;
+        };
+      };
+
+    # Machine-local tooling output that no repo should ever track. Global
+    # rather than per-repo .gitignore: these are our tools, not the projects',
+    # so they must not land in a shared repo's ignore file.
+    programs.git = lib.mkIf config.importConfig.git.enable {
+      settings.core.hooksPath = "${config.home.homeDirectory}/.config/git/hooks";
+      ignores =
+        ["CLAUDE.local.md"]
+        ++ lib.optional config.code.claude-code.codegraph.enable ".codegraph/";
+    };
 
     # VS Code settings for Claude Code extension (only when VS Code is enabled)
     programs.vscode.profiles.default.userSettings = lib.mkIf config.code.vscode.enable {
