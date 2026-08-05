@@ -48,8 +48,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "2ab958093e83e0ec752e6c1c5932da465bf23e0c";
-    hash = "sha256-dQtG6usJWlg/FqTajrjcs8GSdymH92WsgLiUaCfvKPA=";
+    rev = "8b36d4fb2635b3c21998dcd8144439c9e5ba7302";
+    hash = "sha256-RwFJdrPnyieN65QrwSfABRuBzMdyUIf/qoJ1M8zLLps=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
@@ -57,11 +57,11 @@
   # (As upstream promotes in-progress skills into engineering/ + plugin.json they
   # install automatically and must be dropped from this list — e.g. /implement,
   # and as of v1.1.0 /code-review (was in-progress/review) and /wayfinder (was
-  # in-progress/wayfinder, whose old path no longer exists), and /resolving-merge-conflicts
-  # which upstream registered in plugin.json as of 66898f6.)
+  # in-progress/wayfinder, whose old path no longer exists), /resolving-merge-conflicts
+  # which upstream registered in plugin.json as of 66898f6, and as of v1.2.2
+  # /wizard (was in-progress/wizard, whose old path no longer exists).)
   mattpocockExtraSkills = [
     "skills/in-progress/loop-me"
-    "skills/in-progress/wizard"
     "skills/in-progress/claude-handoff"
   ];
   mattpocockSkillFiles = lib.listToAttrs (map (skillPath: {
@@ -918,6 +918,15 @@ in {
             Drive browsers with the `agent-browser` CLI, in preference to the
             Claude Chrome extension — it launches its own browser, so nothing
             waits on me to open a window first.
+
+            When a task needs a browser, work down this ladder:
+
+            1. `agent-browser` — the default.
+            2. The Claude Chrome extension (`mcp__claude-in-chrome__*`) — only
+               when `agent-browser` is absent or refuses to launch.
+            3. Neither drives a page → say so plainly and stop. Report only
+               what you actually observed in a browser; curl proves a status
+               code, never a rendered page.
 
             ```sh
             [ -n "$WAYLAND_DISPLAY$DISPLAY" ] && HEADED=--headed

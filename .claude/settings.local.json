@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(chmod:*)",
-      "Bash(bash -n:*)",
-      "Bash(git add:*)"
-    ]
-  }
-}
