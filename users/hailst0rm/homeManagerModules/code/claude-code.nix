@@ -562,6 +562,25 @@
       "$GREEN" "$ADD" "$RESET" "$RED" "$REM" "$RESET" \
       "$COST_COLOR" "$COST_FMT" "$RESET" "$RATE_5H" "$RATE_7D"
   '';
+
+  # home-manager renders ~/.claude/settings.json as a /nix/store symlink, so
+  # every runtime write Claude makes to it (/effort, /model, theme, …) dies
+  # with EROFS. Install a real writable file instead — same content, but a
+  # copy. Nix stays authoritative: each activation overwrites it, so the
+  # declared values are the defaults and runtime tweaks last until the next
+  # `nh os switch`.
+  claudeSettingsFile =
+    (pkgs.formats.json {}).generate "claude-code-settings.json"
+    (config.programs.claude-code.settings
+      // {
+        "$schema" = "https://json.schemastore.org/claude-code-settings.json";
+      });
+  claudeSettingsInstall = pkgs.writeShellScript "claude-settings-install" ''
+    dst="$HOME/.claude/settings.json"
+    ${pkgs.coreutils}/bin/mkdir -p "$HOME/.claude"
+    ${pkgs.coreutils}/bin/rm -f "$dst"
+    ${pkgs.coreutils}/bin/install -m 0644 ${claudeSettingsFile} "$dst"
+  '';
 in {
   options.code.claude-code = {
     enable = lib.mkEnableOption "Enable Claude Code CLI";
@@ -1089,6 +1108,7 @@ in {
         showThinkingSummaries = true;
         cleanupPeriodDays = 14;
         tui = "default"; # opt out of fullscreen renderer + its startup prompt
+        effortLevel = "high"; # default reasoning effort; /effort overrides per-session
         includeCoAuthoredBy = false;
         skipDangerousModePermissionPrompt = true;
 
@@ -1455,6 +1475,10 @@ in {
     # mattpocockExtraSkills opt-ins above)
     home.file =
       {
+        # Rendered as a mutable copy by claudeSettingsInstall instead, so
+        # Claude can write /effort, /model & co. back into it at runtime.
+        ".claude/settings.json".enable = false;
+
         ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
         ".claude/agents" = {
           source = "${gsd-repo}/agents";
@@ -1469,6 +1493,12 @@ in {
           text = worktreeBootstrapHook;
         };
       };
+
+    # Runs after linkGeneration so the previous generation's settings.json
+    # symlink is already gone when we drop the real file in its place.
+    home.activation.claudeSettings = lib.hm.dag.entryAfter ["linkGeneration"] ''
+      run ${claudeSettingsInstall}
+    '';
 
     # Machine-local tooling output that no repo should ever track. Global
     # rather than per-repo .gitignore: these are our tools, not the projects',
