@@ -36,6 +36,7 @@
   system.keyboard.colemak-se = false;
   system.automatic.cleanup = false;
   virtualisation.host.virtualbox = false;
+  virtualisation.host.docker = false;
 
   # Installation tools
   environment.systemPackages = with pkgs; [

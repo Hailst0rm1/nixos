@@ -36,4 +36,5 @@ in {
   system.theme.enable = false;
   system.keyboard.colemak-se = false;
   virtualisation.host.virtualbox = false;
+  virtualisation.host.docker = false;
 }

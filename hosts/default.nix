@@ -75,6 +75,7 @@
       vmware = lib.mkDefault false; # Broken?
       virtualbox = lib.mkDefault true;
       qemu = lib.mkDefault false;
+      docker = lib.mkDefault true;
     };
     guest = {
       vmware = lib.mkDefault false;

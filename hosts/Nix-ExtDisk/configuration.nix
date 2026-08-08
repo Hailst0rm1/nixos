@@ -41,6 +41,7 @@ in {
   virtualisation.host = {
     virtualbox = false;
     vmware = true;
+    docker = false;
   };
 
   system.automatic.cleanup = false;
