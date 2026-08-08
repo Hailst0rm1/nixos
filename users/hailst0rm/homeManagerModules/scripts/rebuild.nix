@@ -18,8 +18,6 @@
     successMsg,
   }:
     pkgs.writeShellScriptBin name ''
-      #!/usr/bin/env sh
-
       # Colors
       RED='\033[0;31m'
       GREEN='\033[0;32m'
@@ -133,33 +131,22 @@
         fi
       fi
 
-      # GitHub connectivity / remote sync
-      if [ "$use_no_auth" = true ]; then
-        # Test HTTPS connectivity (no SSH key needed)
-        echo -e "''${CYAN}🌐 Testing GitHub connectivity (HTTPS)...''${RESET}"
-        notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless 2>/dev/null
-
-        if ! timeout 5 git ls-remote https://github.com/hailst0rm1/nixos.git HEAD &>/dev/null; then
-          echo -e "''${RED}''${BOLD}❌ Cannot reach GitHub. Check your internet connection.''${RESET}"
-          notify-send -e "${notifyName} Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical 2>/dev/null
-          popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
-
-          exit 1
+      # GitHub connectivity — SSH preferred; fall back to HTTPS (fetch-only,
+      # no commit/push), then to fully offline. Never blocks the rebuild.
+      echo -e "''${CYAN}🌐 Testing GitHub connectivity...''${RESET}"
+      notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless 2>/dev/null
+      if [ "$use_no_auth" != true ] && timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
+        echo -e "''${GREEN}✅ GitHub connectivity OK (SSH)''${RESET}"
+      elif timeout 5 git ls-remote https://github.com/hailst0rm1/nixos.git HEAD &>/dev/null; then
+        if [ "$use_no_auth" = true ]; then
+          echo -e "''${GREEN}✅ GitHub connectivity OK (HTTPS)''${RESET}"
+        else
+          echo -e "''${YELLOW}⚠️  SSH auth unavailable — falling back to no-auth mode (fetch-only, no commit/push).''${RESET}"
+          use_no_auth=true
         fi
-        echo -e "''${GREEN}✅ GitHub connectivity OK''${RESET}"
       else
-        # Test GitHub connectivity
-        echo -e "''${CYAN}🌐 Testing GitHub connectivity...''${RESET}"
-        notify-send -e "${notifyName}" "Testing GitHub connectivity..." --icon=network-wireless 2>/dev/null
-
-        if ! timeout 5 git ls-remote git@github.com:hailst0rm1/nixos.git HEAD &>/dev/null; then
-          echo -e "''${RED}''${BOLD}❌ Cannot reach GitHub. Check your internet connection.''${RESET}"
-          notify-send -e "${notifyName} Failed!" "Cannot reach GitHub. Check your internet connection." --icon=dialog-error --urgency=critical 2>/dev/null
-          popd >/dev/null || { echo -e "''${RED}''${BOLD}❌ Failed to return to original directory!''${RESET}" && exit 1; }
-
-          exit 1
-        fi
-        echo -e "''${GREEN}✅ GitHub connectivity OK''${RESET}"
+        echo -e "''${YELLOW}⚠️  GitHub unreachable — continuing offline with local state (no commit/push).''${RESET}"
+        use_no_auth=true
       fi
 
       # --no-auth: fetch remote via HTTPS and rebase local branch on top
@@ -231,7 +218,7 @@
           echo -e "''${BLUE}📡 Fetching remote changes...''${RESET}"
           STEP_START=$SECONDS
           if ! git fetch origin master --quiet 2>/dev/null; then
-            echo -e "''${YELLOW}⚠️  Fetch failed (''${SECONDS-STEP_START}s), pruning stale refs and retrying...''${RESET}"
+            echo -e "''${YELLOW}⚠️  Fetch failed ($((SECONDS-STEP_START))s), pruning stale refs and retrying...''${RESET}"
             git remote prune origin
             git fetch origin master --quiet || {
               echo -e "''${RED}❌ Failed to fetch remote changes. Continuing with local state.''${RESET}"
@@ -282,6 +269,13 @@
         BUILD_FROM="$NIXOS_DIR"
       ''}
 
+      # Register new files with git BEFORE diffing/building — flakes ignore
+      # untracked files when copying the tree to the store, and git diff HEAD
+      # can't see them either. -N records intent without staging content.
+      STEP_START=$SECONDS
+      git add -N .
+      debug_timer "git add -N"
+
       # Show changes (skip with --no-diff for auto-retry)
       if [ "$use_no_diff" != true ]; then
       ${
@@ -298,9 +292,6 @@
           STEP_START=$SECONDS
           git diff HEAD -U0
           debug_timer "git diff -U0"
-          STEP_START=$SECONDS
-          git add -N .
-          debug_timer "git add -N"
         ''
         else ''
           # Show the changes if any (compare against local HEAD, not remote)
@@ -311,7 +302,6 @@
             STEP_START=$SECONDS
             git diff HEAD -U0
             debug_timer "git diff -U0"
-            git add -N .
           else
             debug_timer "git diff --quiet"
             echo -e "''${BLUE}ℹ️  No changes detected, testing current configuration...''${RESET}"
@@ -414,6 +404,17 @@
         break
       done
 
+      ${lib.optionalString (!hasDesktop) ''
+        # Server: sync build-dir changes (formatting, hash auto-fixes) back to
+        # the NAS even for nix-test or a failed build — otherwise the next
+        # NAS→buildDir rsync --delete wipes them.
+        ${pkgs.rsync}/bin/rsync -a --delete \
+          --exclude='result' \
+          --exclude='.direnv' \
+          "${buildDir}/" "$NIXOS_DIR/"
+        cd "$NIXOS_DIR"
+      ''}
+
       if [ "$build_ok" != 1 ]; then
         echo ""
         echo -e "''${RED}''${BOLD}❌ NixOS rebuild failed!''${RESET}"
@@ -425,8 +426,9 @@
       rm -f "$REBUILD_LOG"
 
       ${lib.optionalString promptCommit ''
-        # Get current generation metadata
-        current=$(nixos-rebuild list-generations | awk '$NF == "True" {print "Generation " $1 " built on " $2}')
+        # Newly built generation: the system profile points at it after both
+        # switch and boot (list-generations' "current" flag misses boot builds)
+        current="Generation $(readlink /nix/var/nix/profiles/system | grep -oE '[0-9]+') built on $(date +%Y-%m-%d)"
       ''}
 
       echo ""
@@ -434,37 +436,29 @@
 
       ${lib.optionalString promptCommit ''
         if [ "$use_no_auth" = true ]; then
-          echo -e "''${YELLOW}🔓 --no-auth mode: skipping commit/push''${RESET}"
+          echo -e "''${YELLOW}🔓 No SSH auth — skipping commit/push''${RESET}"
         else
-          ${lib.optionalString (!hasDesktop) ''
-          # Server: sync changes (formatting etc.) back to NAS for git commit
-          ${pkgs.rsync}/bin/rsync -a --delete \
-            --exclude='result' \
-            --exclude='.direnv' \
-            "${buildDir}/" "$NIXOS_DIR/"
-          cd "$NIXOS_DIR"
-        ''}
-
-          # Prompt user for an optional commit message
-          echo -e "''${BOLD}''${CYAN}📄 Modified files:''${RESET}"
-          if git diff --name-status | sed -e 's/^M/Modified: /' -e 's/^A/Added: /' -e 's/^D/Deleted: /'; then
-            :
+          # Skip the commit prompt entirely when there is nothing to commit
+          if [ -z "$(git status --porcelain)" ]; then
+            echo -e "''${BLUE}ℹ️  Working tree clean — nothing to commit.''${RESET}"
           else
-            echo -e "''${YELLOW}⚠️  No modified files detected.''${RESET}"
-          fi
-          echo ""
-          echo -e "''${CYAN}💾 Enter a commit message to save changes (leave empty to skip):''${RESET}"
-          read -rp "➜ " user_msg
+            # Prompt user for an optional commit message
+            echo -e "''${BOLD}''${CYAN}📄 Modified files:''${RESET}"
+            git status --porcelain | sed -e 's/^ *M */Modified: /' -e 's/^A */Added: /' -e 's/^?? */Added: /' -e 's/^ *D */Deleted: /'
+            echo ""
+            echo -e "''${CYAN}💾 Enter a commit message to save changes (leave empty to skip):''${RESET}"
+            read -rp "➜ " user_msg
 
-          # Only commit and push if message is not empty
-          if [ -n "$user_msg" ]; then
-            echo -e "''${BLUE}📤 Committing and pushing changes...''${RESET}"
-            notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing 2>/dev/null
-            git add .
-            git commit -am "${config.hostname}: $user_msg ($current)"
-            git push && echo -e "''${GREEN}''${BOLD}✅ Pushed to GitHub!''${RESET}" || echo -e "''${RED}''${BOLD}❌ Push failed!''${RESET}"
-          else
-            echo -e "''${YELLOW}⏭️  Skipping commit (no message provided)''${RESET}"
+            # Only commit and push if message is not empty
+            if [ -n "$user_msg" ]; then
+              echo -e "''${BLUE}📤 Committing and pushing changes...''${RESET}"
+              notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing 2>/dev/null
+              git add .
+              git commit -m "${config.hostname}: $user_msg ($current)"
+              git push && echo -e "''${GREEN}''${BOLD}✅ Pushed to GitHub!''${RESET}" || echo -e "''${RED}''${BOLD}❌ Push failed!''${RESET}"
+            else
+              echo -e "''${YELLOW}⏭️  Skipping commit (no message provided)''${RESET}"
+            fi
           fi
         fi
       ''}

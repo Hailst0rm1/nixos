@@ -1484,6 +1484,13 @@ in {
           source = "${gsd-repo}/agents";
           recursive = true;
         };
+
+        # Upstream ships a discovery stub (`hidden: true`) that pulls the real
+        # workflow content from the CLI at use time — `agent-browser skills get
+        # core`, backed by $out/skill-data. Both land via pkgs/agent-browser.
+        # The always-on browser rule stays as-is; it carries the NixOS specifics
+        # (no `agent-browser install`, chromium default, --headed) the stub can't know.
+        ".claude/skills/agent-browser".source = "${pkgs.agent-browser}/skills/agent-browser";
       }
       // mattpocockSkillFiles
       // twentyfirstSkillFiles
