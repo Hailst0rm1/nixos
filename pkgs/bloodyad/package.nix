@@ -47,24 +47,24 @@
   unidns = python.pkgs.unidns.override {inherit asysocks;};
 
   badldap = (python.pkgs.badldap.override {inherit asysocks badauth kerbad unidns;}).overridePythonAttrs (old: rec {
-    version = "0.7.5";
+    version = "0.7.6";
     src = fetchPypi {
       pname = "badldap";
       inherit version;
-      hash = "sha256-8cWO1rQJhBgN0DmOfNxzXaCvfX5W2n55QsUFYXoz1wQ=";
+      hash = "sha256-Ndsl/WHrcPM8+ZyaS1o7j8oXKc7q1QB09XlEz5lJio8=";
     };
   });
 in
   python.pkgs.buildPythonApplication {
     pname = "bloodyAD";
-    version = "2.5.4";
+    version = "2.5.5";
     pyproject = true;
 
     src = fetchFromGitHub {
       owner = "CravateRouge";
       repo = "bloodyAD";
-      rev = "v2.5.4";
-      hash = "sha256-6ZSJTupjVhvyU9G/eePJiXk16w9HwpsOFwdwTSLb7tU=";
+      rev = "v2.5.5";
+      hash = "sha256-J4vQX8z6mqSkwnonNOVYJZGyA63p5QdIkRAiiSld6yg=";
     };
 
     build-system = [python.pkgs.hatchling];
