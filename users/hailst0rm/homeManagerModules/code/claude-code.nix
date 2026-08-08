@@ -57,9 +57,9 @@
   # (As upstream promotes in-progress skills into engineering/ + plugin.json they
   # install automatically and must be dropped from this list — e.g. /implement,
   # and as of v1.1.0 /code-review (was in-progress/review) and /wayfinder (was
-  # in-progress/wayfinder, whose old path no longer exists), and /resolving-merge-conflicts
-  # which upstream registered in plugin.json as of 66898f6, and /wizard which moved to
-  # engineering/wizard in plugin.json as of 84fdeff.)
+  # in-progress/wayfinder, whose old path no longer exists), /resolving-merge-conflicts
+  # which upstream registered in plugin.json as of 66898f6, and as of v1.2.2
+  # /wizard (was in-progress/wizard, whose old path no longer exists).)
   mattpocockExtraSkills = [
     "skills/in-progress/loop-me"
     "skills/in-progress/claude-handoff"
@@ -88,16 +88,87 @@
     command = "${pkgs.nodejs}/bin/npx -y @upstash/context7-mcp";
   };
 
+  # Telemetry is opt-OUT and defaults to on: the interactive `codegraph install`
+  # is what asks for consent, and we wire the MCP server declaratively instead,
+  # so it would never be asked. Scoped to these wrappers rather than a global
+  # DO_NOT_TRACK, which would silently retune every other tool on the system.
+  codegraphStaticEnv.CODEGRAPH_TELEMETRY = "0";
+
   codegraphMcpWrapper = mkSecretEnvWrapper {
     name = "codegraph-mcp-wrapper";
+    staticEnv = codegraphStaticEnv;
     command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph serve --mcp";
   };
 
   codegraphCliWrapper = mkSecretEnvWrapper {
     name = "codegraph";
     bin = true;
+    staticEnv = codegraphStaticEnv;
     command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph";
   };
+
+  # Builds a codegraph index for a freshly created worktree (or clone). The
+  # index is data *about a specific checkout*, so it cannot be shared or copied
+  # the way a file can — it has to be generated at the moment the checkout
+  # appears, which is the one thing only a post-checkout hook can do.
+  #
+  # With codegraph disabled the body degenerates to "chain and exit". That is
+  # deliberate: core.hooksPath below is set unconditionally, so git consults
+  # ONLY this directory — dropping the hook entirely would silently kill every
+  # repo-local post-checkout hook on the machine.
+  #
+  # Deliberately NOT delivered via init.templateDir: git recreates template
+  # symlinks rather than copying them, so every repo would end up pointing at a
+  # /nix/store path that a garbage collection later breaks. core.hooksPath is
+  # read fresh on every invocation, so there is nothing to go stale, and it
+  # covers already-cloned repos instead of only future ones.
+  worktreeBootstrapHook = ''
+    #!/bin/sh
+    # core.hooksPath makes this run for EVERY repository, so it stays
+    # conservative and does nothing unless the checkout is certainly new.
+
+    null_sha=0000000000000000000000000000000000000000
+
+    # core.hooksPath replaces .git/hooks wholesale, so always hand control back
+    # to a repo-local hook on the way out, or husky-style setups break silently.
+    #
+    # Resolved via --git-common-dir, NOT `--git-path hooks/post-checkout`: that
+    # form honours core.hooksPath and so returns *this* script, which exec'd
+    # itself in an infinite loop. The realpath comparison is a second belt for
+    # the same hazard, in case a repo points hooksPath back here explicitly.
+    chain() {
+      common_dir=$(git rev-parse --git-common-dir 2>/dev/null) || exit 0
+      hook="$common_dir/hooks/post-checkout"
+      if [ -x "$hook" ] \
+        && [ "$(readlink -f "$hook")" != "$(readlink -f "$0")" ]
+      then
+        exec "$hook" "$@"
+      fi
+      exit 0
+    }
+
+    # $1 is the previous HEAD, and only a brand-new checkout has none. A branch
+    # switch always passes a real SHA, so this fires exactly once per worktree.
+    [ "$1" = "$null_sha" ] && [ "$3" = "1" ] || chain "$@"
+
+    ${lib.optionalString config.code.claude-code.codegraph.enable ''
+
+      # The semantic index describes the code actually checked out here, so each
+      # worktree builds its own rather than sharing one. Only for projects already
+      # using codegraph — a global hook must not index every repo you clone.
+      common=$(git rev-parse --git-common-dir 2>/dev/null) || chain "$@"
+      common=$(cd "$common" && pwd)
+      main_worktree=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+
+      if [ ! -d .codegraph ] \
+        && [ -d "$main_worktree/.codegraph" ] \
+        && command -v codegraph >/dev/null 2>&1
+      then
+        codegraph init >"$common/codegraph-init-$(basename "$PWD").log" 2>&1 &
+      fi
+    ''}
+    chain "$@"
+  '';
 
   # Authenticates the 21st CLI from sops instead of `21st login`, whose browser
   # flow writes a token to ~/.config on one machine only. This wrapper — not
@@ -210,6 +281,110 @@
     # `systemMessage` field.
     MSG=$(${pkgs.coreutils}/bin/printf '─── Session age: %dh %dm ───\nRun /handoff -> /clear -> Paste context' "$HOURS" "$MINS")
     ${pkgs.jq}/bin/jq -nc --arg msg "$MSG" '{"systemMessage": $msg}'
+  '';
+
+  # SessionStart hook: inject the delegation/model-routing policy into Opus
+  # sessions only. Fable ships equivalent orchestration guidance natively, and
+  # cheaper models are spawn targets, not orchestrators — so the policy is
+  # model-gated via this hook instead of a rules file (rules reach every
+  # subagent's context; verified empirically, no scoping mechanism exists).
+  # Model detection is layered: the documented `model` input field is
+  # empirically absent from SessionStart input (docs: "not guaranteed"), so
+  # fall back to the parent claude process's --model flag, then the saved
+  # /model default (undocumented ~/.claude.json cache slot — best-effort; on
+  # a miss the policy is simply not injected, which is harmless).
+  delegationPolicy = pkgs.writeText "delegation-policy.md" ''
+    # Delegation & Model Routing
+
+    Scope: top-level Opus sessions. A subagent (your first message is a task
+    brief from another agent) skips this file: complete the brief directly
+    and spawn nothing further.
+
+    You are the orchestrator. Your context window is the scarce resource;
+    subagent context is disposable. Plan and synthesize yourself; delegate
+    retrieval and bounded execution.
+
+    ## When to spawn
+    - The answer is small (paths, a conclusion, yes/no) but reaching it
+      means sweeping several files or verbose output → delegate; keep the
+      conclusion, not the file dumps.
+    - Independent workstreams → spawn all of them in ONE message, in the
+      background, and keep working. Continue a live agent via SendMessage
+      instead of respawning.
+    - Handle it yourself when you know the exact file, when you will Edit
+      the file (Edit needs the bytes in your context), when the judgment IS
+      the deliverable, or when writing the brief costs more than the task.
+
+    ## Model per spawn — pass `model:` explicitly
+    Errors at the top compound; errors at the bottom stay local. Route down
+    whatever you can verify cheaply from its answer.
+    - haiku: locate / enumerate / fetch — "where is X", "list callers",
+      doc lookups
+    - sonnet: bounded implementation from a precise spec, summarizing bulk
+      material, structured research
+    - yourself: planning, review verdicts, synthesis across agent reports,
+      anything user-facing
+
+    ## The brief — a subagent starts with zero context
+    State the goal, the scope boundary, the exact return format ("file:line
+    + one-line finding"), and what to skip. For Explore, set breadth
+    ("medium" or "very thorough"). After spawning: relay findings to the
+    user (agent reports are invisible to them) and let delegated work stay
+    delegated — verify from the answer, not by redoing the search.
+  '';
+  delegationPolicyHook = pkgs.writeShellScript "delegation-policy-hook" ''
+    INPUT=$(${pkgs.coreutils}/bin/cat)
+    # Top-level sessions only: subagents get a task brief, not this policy.
+    ${pkgs.jq}/bin/jq -e '.agent_id // empty' >/dev/null <<<"$INPUT" && exit 0
+
+    MODEL=$(${pkgs.jq}/bin/jq -r '.model // empty' <<<"$INPUT")
+
+    # --model flag on the parent claude process (--model X and --model=X).
+    if [ -z "$MODEL" ]; then
+      MODEL=$(${pkgs.coreutils}/bin/tr '\0' '\n' < /proc/$PPID/cmdline 2>/dev/null | ${pkgs.gawk}/bin/awk '
+        /^--model=/ { sub("^--model=",""); print; exit }
+        f           { print; exit }
+        /^--model$/ { f=1 }')
+    fi
+
+    # Saved /model default.
+    if [ -z "$MODEL" ]; then
+      MODEL=$(${pkgs.jq}/bin/jq -r '[(.clientDataCacheSlots // {}) | .[] | .model? // empty] | first // empty' "$HOME/.claude.json" 2>/dev/null)
+    fi
+
+    case "''${MODEL,,}" in
+      *opus*) ${pkgs.coreutils}/bin/cat ${delegationPolicy} ;;
+    esac
+    exit 0
+  '';
+
+  # SessionStart hook: load the local `readable` skill's ruleset from message
+  # one, so the output shape applies without typing /readable. The skill is
+  # user-invoked (disable-model-invocation), so it costs no context until this
+  # hook injects it. READABLE_MODE=off in the environment skips the injection —
+  # that is the escape hatch for spawned Hermes workers, whose review ledgers
+  # and QA evidence should keep their own format.
+  readableHook = pkgs.writeShellScript "readable-session-start" ''
+    [ "''${READABLE_MODE:-on}" = "off" ] && exit 0
+    ${pkgs.coreutils}/bin/cat ${./skills/readable/SKILL.md}
+  '';
+
+  # SessionStart hook: load personal per-project Claude notes, kept as a tracked
+  # CLAUDE.k.md instead of the CLAUDE.local.md Claude reads natively.
+  #
+  # CLAUDE.local.md is gitignored (see programs.git.ignores below), which means
+  # it is untracked, unversioned, unreviewable — and, decisively, absent from
+  # every new worktree and clone, since git only materialises tracked files.
+  # A tracked CLAUDE.k.md rides along everywhere for free; this hook is the
+  # naming bridge, and doing it at session start rather than at checkout time
+  # is what makes it reach repos cloned before any of this existed.
+  #
+  # Resolved from the git toplevel, matching Claude's own upward search for
+  # memory files, and correct per-worktree (each has its own toplevel).
+  projectNotesHook = pkgs.writeShellScript "claude-project-notes" ''
+    root=$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null) || exit 0
+    [ -f "$root/CLAUDE.k.md" ] && ${pkgs.coreutils}/bin/cat "$root/CLAUDE.k.md"
+    exit 0
   '';
 
   # Sound hook: non-blocking paplay on Stop / Notification. Backgrounded so
@@ -387,6 +562,25 @@
       "$GREEN" "$ADD" "$RESET" "$RED" "$REM" "$RESET" \
       "$COST_COLOR" "$COST_FMT" "$RESET" "$RATE_5H" "$RATE_7D"
   '';
+
+  # home-manager renders ~/.claude/settings.json as a /nix/store symlink, so
+  # every runtime write Claude makes to it (/effort, /model, theme, …) dies
+  # with EROFS. Install a real writable file instead — same content, but a
+  # copy. Nix stays authoritative: each activation overwrites it, so the
+  # declared values are the defaults and runtime tweaks last until the next
+  # `nh os switch`.
+  claudeSettingsFile =
+    (pkgs.formats.json {}).generate "claude-code-settings.json"
+    (config.programs.claude-code.settings
+      // {
+        "$schema" = "https://json.schemastore.org/claude-code-settings.json";
+      });
+  claudeSettingsInstall = pkgs.writeShellScript "claude-settings-install" ''
+    dst="$HOME/.claude/settings.json"
+    ${pkgs.coreutils}/bin/mkdir -p "$HOME/.claude"
+    ${pkgs.coreutils}/bin/rm -f "$dst"
+    ${pkgs.coreutils}/bin/install -m 0644 ${claudeSettingsFile} "$dst"
+  '';
 in {
   options.code.claude-code = {
     enable = lib.mkEnableOption "Enable Claude Code CLI";
@@ -468,6 +662,18 @@ in {
         '';
       };
     };
+    readable.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Load the local `readable` skill (skills/readable/) from message one via a SessionStart hook: bottom line first, eight line-leading role markers (recommendation, question, done, failed, risk, blocked, assumption, tangent), tangents deferred to the end at full length, and every claim paired with its check. A fork of ayghri/i-have-adhd with the omission-prone rules removed — no list cap, no step trimming, no time estimates — and scoped to conversational output so reports, PR comments, commit messages and machine-readable markers keep their own formats. Turn off for one session with "stop readable", or per-process with READABLE_MODE=off (used for spawned Hermes workers that produce review ledgers and QA evidence).
+      '';
+    };
+    projectNotes.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Read a project's CLAUDE.k.md into context at session start. Personal per-project Claude notes kept under version control: unlike the CLAUDE.local.md Claude loads natively, a tracked file is reviewable, survives a reclone, and arrives in every new worktree without any bootstrap step. Resolved from the git toplevel, so it works from any subdirectory and picks up each worktree's own copy.";
+    };
     codex.enable = lib.mkOption {
       type = lib.types.bool;
       default = config.code.codex.enable;
@@ -515,6 +721,11 @@ in {
         default = 60;
         description = "Minutes of session age before the reminder starts firing.";
       };
+    };
+    delegationPolicy.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Inject a subagent delegation + model-routing policy at session start, gated to Opus sessions only (SessionStart hook detects the model via hook input, the parent process's --model flag, or the saved /model default). Teaches Opus to orchestrate like Fable: fan out retrieval to haiku, bounded work to sonnet, keep judgment at the top. Fable sessions, cheaper models, and subagents never see it.";
     };
     sound = {
       enable = lib.mkOption {
@@ -644,6 +855,21 @@ in {
 
         Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+        ## 5. Evaluate My Ideas on Merit
+
+        **My suggestions are hypotheses, not instructions. Agreement has to be earned.**
+
+        When I propose an idea, diagnosis, or approach:
+        - Judge it against the code and the facts — not against how confident I sounded.
+        - If it's wrong, lead with the flaw. No "great idea, but". State the problem, then the alternative.
+        - If it's right, one line saying so. No praise, no replaying my reasoning back at me.
+        - If it's right but something else is better, give both and recommend one.
+        - Verify before agreeing. "That's a good point" without checking the code is a guess wearing a compliment.
+
+        Don't manufacture disagreement either. Contrarianism is the same failure as flattery: a posture substituted for an evaluation.
+
+        If I push back on your objection: update if I gave you a new fact or constraint. If I only restated my position, say you still disagree and why — then do it my way if I insist, without pretending I convinced you.
+
         ---
 
         **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
@@ -705,6 +931,39 @@ in {
             - Document security implications of changes
           '';
 
+          browser = ''
+            # Browser Control
+
+            Drive browsers with the `agent-browser` CLI, in preference to the
+            Claude Chrome extension — it launches its own browser, so nothing
+            waits on me to open a window first.
+
+            When a task needs a browser, work down this ladder:
+
+            1. `agent-browser` — the default.
+            2. The Claude Chrome extension (`mcp__claude-in-chrome__*`) — only
+               when `agent-browser` is absent or refuses to launch.
+            3. Neither drives a page → say so plainly and stop. Report only
+               what you actually observed in a browser; curl proves a status
+               code, never a rendered page.
+
+            ```sh
+            [ -n "$WAYLAND_DISPLAY$DISPLAY" ] && HEADED=--headed
+            agent-browser open <url> $HEADED
+            agent-browser snapshot -i   # interactive elements as @e1, @e2 refs
+            agent-browser click @e1     # re-snapshot after the page changes
+            agent-browser console       # devtools console errors
+            ```
+
+            Pass `--headed` whenever a display exists so I can watch the run;
+            omit it on headless hosts.
+
+            `agent-browser install` is the one command to skip: the
+            Chrome-for-Testing build it downloads cannot start on NixOS. The
+            package already defaults `AGENT_BROWSER_EXECUTABLE_PATH` to nixpkgs
+            chromium, so `open` needs no setup.
+          '';
+
           interview-style = ''
             # Interview / Grilling Style
 
@@ -748,24 +1007,30 @@ in {
           codegraph = ''
             # CodeGraph (Semantic Code Intelligence)
 
-            When a project contains a `.codegraph/` directory, prefer the
-            `mcp__codegraph__*` tools over `grep`/`rg`/`Read` for code
-            exploration:
+            When a project contains a `.codegraph/` directory, prefer CodeGraph
+            over a `grep`/`rg` + `Read` loop: one call returns the relevant
+            symbols' verbatim line-numbered source grouped by file, the call
+            paths between them, and a blast-radius summary — including
+            dynamic-dispatch hops (callbacks, interface→impl) grep cannot follow.
 
-            - `codegraph_search` — find a symbol by name (function, class, method)
-            - `codegraph_context` — build a context bundle for a task (entry points + related code)
-            - `codegraph_callers` / `codegraph_callees` — call-graph traversal
-            - `codegraph_impact` — what breaks if I change this symbol?
-            - `codegraph_files` — file/dir structure with symbol counts
-            - `codegraph_status` — index health
+            The MCP surface is a single tool, `mcp__codegraph__codegraph_explore`.
+            It answers "how does X work", a flow ("how does X reach Y"), or a
+            survey of an area; naming a file or symbol in the query reads its
+            current source. Query another indexed project — a sibling repo, or a
+            service inside a monorepo — by passing `projectPath`.
 
-            One CodeGraph call typically replaces dozens of grep + Read
-            exploration steps.
+            Subagents and non-MCP harnesses have no MCP tools, so they use the
+            identical CLI instead: `codegraph explore <query>`. Also on the CLI
+            only: `codegraph node|query|callers|callees|impact|files|status`
+            (the same operations exist as MCP tools but are unlisted by default;
+            `CODEGRAPH_MCP_TOOLS=explore,node,search,...` re-lists them).
 
-            If a project is NOT initialized, the tools return "CodeGraph not
-            initialized" — run `codegraph init` in that project's root
-            (optionally `codegraph init --index` to also build the initial
-            index). The file watcher keeps the index fresh.
+            An unindexed project returns guidance to use the built-in tools
+            rather than failing — indexing stays a deliberate choice. To make
+            one: `codegraph init` in its root, which builds the graph in the
+            same step. From then on the MCP server watches the tree and syncs
+            on every change, and reconciles against disk when it reconnects, so
+            the index is never stale and there is nothing to re-run.
 
             CodeGraph does not parse Nix — fall back to grep/Read for `.nix`
             files.
@@ -843,6 +1108,7 @@ in {
         showThinkingSummaries = true;
         cleanupPeriodDays = 14;
         tui = "default"; # opt out of fullscreen renderer + its startup prompt
+        effortLevel = "high"; # default reasoning effort; /effort overrides per-session
         includeCoAuthoredBy = false;
         skipDangerousModePermissionPrompt = true;
 
@@ -893,15 +1159,12 @@ in {
               "Bash(nixfmt *)"
               "Bash(nixos-rebuild build *)"
             ]
+            # Wildcard, not a name list: as of 1.5.0 the server lists exactly one
+            # tool (codegraph_explore) and keeps the older narrow ones callable
+            # but unlisted, so any hand-written list goes stale the moment that
+            # surface moves — which it already had.
             ++ lib.optionals config.code.claude-code.codegraph.enable [
-              "mcp__codegraph__codegraph_search"
-              "mcp__codegraph__codegraph_context"
-              "mcp__codegraph__codegraph_callers"
-              "mcp__codegraph__codegraph_callees"
-              "mcp__codegraph__codegraph_impact"
-              "mcp__codegraph__codegraph_node"
-              "mcp__codegraph__codegraph_status"
-              "mcp__codegraph__codegraph_files"
+              "mcp__codegraph__*"
             ];
           deny = [
             "Bash(sops:*)"
@@ -973,6 +1236,9 @@ in {
         # Hooks:
         # - PreToolUse (RTK): rewrites Bash commands to token-compact equivalents.
         # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
+        # - SessionStart (delegation policy): Opus-only orchestration/model-routing context.
+        # - SessionStart (readable): loads the output-shape ruleset from message one.
+        # - SessionStart (project notes): reads the repo's tracked CLAUDE.k.md.
         hooks = lib.mkMerge [
           (lib.mkIf config.code.claude-code.rtk.enable {
             PreToolUse = [
@@ -994,6 +1260,42 @@ in {
                   {
                     type = "command";
                     command = "${sessionHandoffReminderHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.delegationPolicy.enable {
+            SessionStart = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${delegationPolicyHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.readable.enable {
+            SessionStart = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${readableHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.projectNotes.enable {
+            SessionStart = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${projectNotesHook}";
                   }
                 ];
               }
@@ -1173,6 +1475,10 @@ in {
     # mattpocockExtraSkills opt-ins above)
     home.file =
       {
+        # Rendered as a mutable copy by claudeSettingsInstall instead, so
+        # Claude can write /effort, /model & co. back into it at runtime.
+        ".claude/settings.json".enable = false;
+
         ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
         ".claude/agents" = {
           source = "${gsd-repo}/agents";
@@ -1180,7 +1486,32 @@ in {
         };
       }
       // mattpocockSkillFiles
-      // twentyfirstSkillFiles;
+      // twentyfirstSkillFiles
+      // lib.optionalAttrs config.importConfig.git.enable {
+        ".config/git/hooks/post-checkout" = {
+          executable = true;
+          text = worktreeBootstrapHook;
+        };
+      };
+
+    # Runs after linkGeneration so the previous generation's settings.json
+    # symlink is already gone when we drop the real file in its place.
+    home.activation.claudeSettings = lib.hm.dag.entryAfter ["linkGeneration"] ''
+      run ${claudeSettingsInstall}
+    '';
+
+    # Machine-local tooling output that no repo should ever track. Global
+    # rather than per-repo .gitignore: these are our tools, not the projects',
+    # so they must not land in a shared repo's ignore file.
+    programs.git = lib.mkIf config.importConfig.git.enable {
+      settings.core.hooksPath = "${config.home.homeDirectory}/.config/git/hooks";
+      ignores =
+        [
+          "CLAUDE.local.md"
+          "**/.claude/settings.local.json"
+        ]
+        ++ lib.optional config.code.claude-code.codegraph.enable ".codegraph/";
+    };
 
     # VS Code settings for Claude Code extension (only when VS Code is enabled)
     programs.vscode.profiles.default.userSettings = lib.mkIf config.code.vscode.enable {
@@ -1201,6 +1532,10 @@ in {
 
         # Brave for the Claude browser extension
         brave
+
+        # Browser automation CLI for agents — `/qa-plan` drives it over CDP.
+        # Built from pkgs/agent-browser/package.nix.
+        agent-browser
       ]
       ++ lib.optionals config.code.claude-code.codeburn.enable [
         codeburn # AI coding token usage tracker

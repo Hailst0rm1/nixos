@@ -29,6 +29,11 @@
           "keys/ssh/github" = {
             path = "/home/${config.username}/.ssh/github";
           };
+          # Second GitHub account (K-Dfirmed / Dfirmed org) — selected per-repo
+          # by the hasconfig include in terminal/git.nix.
+          "keys/ssh/github-dfirmed" = {
+            path = "/home/${config.username}/.ssh/github-dfirmed";
+          };
           "keys/ssh/yubia" = {
             path = "/home/${config.username}/.ssh/yubia";
           };

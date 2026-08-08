@@ -38,6 +38,18 @@ in {
 
         "github.com" = {
           identityFile = "~/.ssh/github";
+          identitiesOnly = true;
+        };
+
+        # Second GitHub account (K-Dfirmed / Dfirmed org). Key selection has to
+        # happen per-remote, not per-repo — a repo can hold remotes on both
+        # accounts — so it hangs off the host alias rather than core.sshCommand.
+        # terminal/git.nix rewrites Dfirmed URLs onto this alias automatically.
+        "github-dfirmed" = {
+          hostname = "github.com";
+          user = "git";
+          identityFile = "~/.ssh/github-dfirmed";
+          identitiesOnly = true;
         };
 
         "git.pontonsecurity.com" = {
