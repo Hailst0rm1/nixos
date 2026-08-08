@@ -239,7 +239,12 @@
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
               echo -e "''${CYAN}⬇️  Pulling remote changes...''${RESET}"
-              git pull origin master
+              if ! git pull --rebase origin master; then
+                echo -e "''${RED}''${BOLD}❌ Pull failed. Resolve conflicts, run: git rebase --continue (or --abort), then rerun ${name}.''${RESET}"
+                notify-send -e "${notifyName} Failed!" "Pull failed — resolve conflicts manually" --icon=dialog-error --urgency=critical 2>/dev/null
+                popd >/dev/null 2>/dev/null
+                exit 1
+              fi
             fi
           fi
         fi
@@ -455,7 +460,19 @@
               notify-send -e "NixOS Config" "Pushing changes to GitHub..." --icon=emblem-synchronizing 2>/dev/null
               git add .
               git commit -m "${config.hostname}: $user_msg ($current)"
-              git push && echo -e "''${GREEN}''${BOLD}✅ Pushed to GitHub!''${RESET}" || echo -e "''${RED}''${BOLD}❌ Push failed!''${RESET}"
+              if git push; then
+                echo -e "''${GREEN}''${BOLD}✅ Pushed to GitHub!''${RESET}"
+              else
+                # Remote moved since the pre-build fetch (multi-host race) —
+                # rebase our commit on top and retry once.
+                echo -e "''${YELLOW}⚠️  Push rejected — rebasing on remote and retrying...''${RESET}"
+                if git pull --rebase origin master && git push; then
+                  echo -e "''${GREEN}''${BOLD}✅ Pushed to GitHub!''${RESET}"
+                else
+                  echo -e "''${RED}''${BOLD}❌ Push failed! Finish the rebase (git rebase --continue or --abort), then git push manually.''${RESET}"
+                  notify-send -e "${notifyName} Push Failed!" "Rebase/push needs manual resolution" --icon=dialog-error --urgency=critical 2>/dev/null
+                fi
+              fi
             else
               echo -e "''${YELLOW}⏭️  Skipping commit (no message provided)''${RESET}"
             fi
