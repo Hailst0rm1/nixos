@@ -10,11 +10,11 @@
 # Auth is interactive (`higgsfield auth login`), so no sops wrapper is needed.
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "higgsfield-cli";
-  version = "1.1.22";
+  version = "1.1.23";
 
   src = fetchurl {
     url = "https://github.com/higgsfield-ai/cli/releases/download/v${finalAttrs.version}/hf_${finalAttrs.version}_linux_amd64.tar.gz";
-    hash = "sha256-dorDvUG2HsENbAdl8VogGRJdlKF8MNUCZiNb34qrbT8=";
+    hash = "sha256-yDyxwD0tdgtDxBKh3qXqXuqQ+PzSXA/t0Ga2fVjsIRQ=";
   };
 
   sourceRoot = ".";
