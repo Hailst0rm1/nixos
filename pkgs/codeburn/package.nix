@@ -10,24 +10,24 @@
   # upstream's main branch never reach this derivation until the hash
   # changes. Bump `litellmRelease` to a newer https://github.com/BerriAI/litellm
   # release tag and refresh the hash to pick up new model prices.
-  litellmRelease = "v1.95.0";
+  litellmRelease = "v1.96.0";
   litellmPricing = fetchurl {
     url = "https://raw.githubusercontent.com/BerriAI/litellm/refs/tags/${litellmRelease}/model_prices_and_context_window.json";
-    hash = "sha256-rz4ZK33HnIDnAh0xm3wWolGI3/cnXSCx/jL29KEVHFY=";
+    hash = "sha256-uje7RtxGYvS/7XHbkBaGRO+RdxP6BzvTl3dTdtVaaxw=";
   };
 in
   buildNpmPackage rec {
     pname = "codeburn";
-    version = "0.9.19";
+    version = "0.9.20";
 
     src = fetchFromGitHub {
       owner = "getagentseal";
       repo = "codeburn";
       rev = "v${version}";
-      hash = "sha256-upA986jO+oeBviitqMhEHf2DgAnZAancmqdqVsY/dEI=";
+      hash = "sha256-t9T6cMIveGsX60HSHKoqXbk7Hrd0CkRxryZUnmgQI5c=";
     };
 
-    npmDepsHash = "sha256-/YTr1x2ka1hUvZPLAlG6Ek5Dw86VosYx3mtFyr5Ardk=";
+    npmDepsHash = "sha256-t36Q1NLjY0I//m/XJrPdxe0a6LvYqgY5+HOphMzlE5M=";
 
     # `dash/` is a separate Vite app with its own lockfile, built into
     # dist/dash and served by `codeburn web`. Vendor it so the sandbox never
