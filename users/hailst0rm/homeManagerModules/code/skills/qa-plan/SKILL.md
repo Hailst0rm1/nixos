@@ -1,11 +1,11 @@
 ---
 name: qa-plan
-description: Produce a manual QA plan for freshly-built work by cross-referencing a GitHub issue against its diff, smoke the running app in a browser, and deliver the plan — as a comment on the branch's PR when one exists, or as a qa-report.md file for the packaging stage to post when it does not. Use as the runtime gate before work is handed back to a human or a PR opens — when the user says "qa this" or asks how to test something by hand, when new UI needs a screenshot or a responsive pass, or when an implementation just landed and wants checking in the running app.
+description: Produce a manual QA plan for freshly-built work by cross-referencing a GitHub issue against its diff, smoke the running app in a browser, and commit the plan with its screenshots to the branch as the evidence artifact. Use as the runtime gate before work is handed back to a human or a PR opens — when the user says "qa this" or asks how to test something by hand, when new UI needs a screenshot or a responsive pass, or when an implementation just landed and wants checking in the running app.
 ---
 
 # QA Plan
 
-Produce a manual QA plan a human can follow to verify, in the running app, that freshly-built work actually does what its issue promised — then deliver it where the work lives: as a comment on the branch's PR when one exists, or as a `qa-report.md` file for the packaging stage to post when it does not.
+Produce a manual QA plan a human can follow to verify, in the running app, that freshly-built work actually does what its issue promised — then commit it, with its screenshots, to `qa/issue-<N>/` on the branch. The commit is where this skill ends; publishing it is someone else's step.
 
 ## Lane
 
@@ -17,9 +17,9 @@ Static review reads the diff and can tell you the code is correct. It cannot tel
 
 ### 1. Resolve the target
 
-Take the issue number from the argument (e.g. `/qa-plan 4`). If none was given, infer it from the branch name or recent commit messages (`#N`, `Closes #N`); if still ambiguous, ask. If the project has no issue tracker at all, run the whole skill anyway — step 6 delivers the plan as a file.
+Take the issue number from the argument (e.g. `/qa-plan 4`). If none was given, infer it from the branch name or recent commit messages (`#N`, `Closes #N`); if still ambiguous, ask. If the project has no issue tracker at all, run the whole skill anyway — step 6 commits the plan as a file either way.
 
-Also resolve where the plan will be delivered: `gh pr view --json number,url` succeeds when the current branch has a PR. PR exists → the plan lands there as a comment. No PR → the plan lands in `qa-report.md` at the worktree root, and whichever stage later opens the PR posts it.
+Two facts decide step 6, so gather them now: whether the branch already has a PR (`gh pr view --json number,url` succeeds), and whether the repo documents a workflow that claims delivery — an `AGENTS.md` naming a `qa` stage, or a wiki it points at.
 
 Gather the two inputs:
 
@@ -63,10 +63,12 @@ Before writing a manual checklist, catch gross breakage automatically.
    agent-browser a11y           # axe audit: WCAG violations with selectors
    ```
 3. **Capture a screenshot matrix.** Whatever width the browser happened to open at hides the most common layout bugs: an element that collides at 800px looks fine at 1440px, and a banner that's correct on desktop clips on a phone. Set a real desktop size *and* sample the widths where this app's own CSS changes — read the `@media` breakpoints in the touched components and shoot just above and just below each (defects cluster at those boundaries), plus one phone width (~360px). If the app themes, shoot the desktop width in both.
+   Shoot into `qa/issue-<N>/` — step 6 commits that directory, so the frames land where they will be read from:
    ```sh
-   agent-browser set viewport 1440 900 && agent-browser screenshot /tmp/qa-1440.png
-   agent-browser set viewport 360 800  && agent-browser screenshot /tmp/qa-360.png
-   agent-browser set media dark        && agent-browser screenshot /tmp/qa-1440-dark.png
+   mkdir -p qa/issue-<N>
+   agent-browser set viewport 1440 900 && agent-browser screenshot qa/issue-<N>/qa-1440.png
+   agent-browser set viewport 360 800  && agent-browser screenshot qa/issue-<N>/qa-360.png
+   agent-browser set media dark        && agent-browser screenshot qa/issue-<N>/qa-1440-dark.png
    ```
 
 **Done when** every changed route has been opened, both log streams read, and a frame saved at every width in the matrix. Report what the smoke found (booted clean / a route 500'd / a console error) immediately — don't bury a failure in the checklist.
@@ -92,6 +94,8 @@ agent-browser eval 'document.documentElement.scrollWidth > window.innerWidth'   
 ```
 
 Two rectangles overlap when their x-ranges and y-ranges both intersect. Compute that for every element the diff touched against its neighbours, at each captured width, **with realistic non-empty data and in hover and active states** — empty data and resting state are where crowding hides, because a table with two rows and no hover has room the real screen does not.
+
+**Make that data synthetic.** The frames get committed in step 6 and git history has no undo, so real client names, hostnames, identities and case material stay out of a frame. Realistic *shape*, invented *content*.
 
 Then `Read` the saved frames for the claims no number proves:
 
@@ -125,58 +129,48 @@ Turn the surfaces from step 2 into a checklist a human runs by hand. Organize in
 
 ### Security & auth boundaries
 - [ ] **<protected route> blocks unauth** — While signed out, visit <route>. Expect: redirected / denied, not exposed.
+
+## Frames
+
+![1440px](qa-1440.png)
+![360px](qa-360.png)
 ```
+
+Everything above `## Frames` is what gets posted as the PR comment, so keep the frames below that line and nothing else there.
 
 Guidance for good items:
 - **Lead with wiring.** The integration section is the highest-value one — it is the class of bug static review and unit tests both miss. For each new screen, ask "what did the issue say should reach this, and does it?"
 - **Test behaviors, not code.** "Submitting an expired magic link shows an error" — never "verifyToken() throws".
 - **Cover the states a real user hits**: the empty form, the slow network, the wrong input, the expired session — not just the happy path the tests already proved.
-- **Write visual expectations a screenshot can prove.** "The banner says 'scheduled for deletion'" passes even when that banner renders *underneath* the hero. Pair each visual item with the matrix frame that demonstrates it.
+- **Write visual expectations a screenshot can prove.** "The banner says 'scheduled for deletion'" passes even when that banner renders *underneath* the hero. Name the matrix frame that demonstrates each visual item (`qa-360.png`), so a reader knows which one to scroll to.
 - **Tie back to acceptance criteria.** Every acceptance criterion should map to at least one check.
 
-### 6. Attach the frames, then deliver the plan
+### 6. Commit the report
 
-Deliver to the destination resolved in step 1:
+**For UI changes someone has to *see* the layout to catch a layout bug** — a list of filenames is not evidence. Frames live in the file, checkboxes in the comment; each surface renders one of them.
 
-- **The branch has a PR** → post the plan as a **comment on that PR** (updating your own earlier QA comment if one exists rather than stacking a new one). The issue number in the plan's heading keeps GitHub cross-linking the issue thread.
-- **No PR yet** → write the complete plan — smoke line, checklist, inlined frame URLs, and the local artifact paths — to **`qa-report.md` at the worktree root**, ready to be posted verbatim as a PR comment by whichever stage opens the PR. Say in your closing message that the report awaits posting. Do **not** comment on the issue and do **not** relabel anything in this mode.
+Write the whole plan — AI-disclaimer first line, smoke line, the four checklist sections, then a `## Frames` heading carrying the frames — to **`qa/issue-<N>/qa-report.md`**, beside the PNGs from step 3. Reference each frame by its bare filename so the path stays relative:
 
-**For UI changes the frames must render inside the comment.** A list of filenames is not evidence, and neither is a link a reader has to click: someone has to *see* the layout to catch a layout bug.
+```markdown
+## Frames
 
-GitHub renders an external image by fetching it **anonymously** through its Camo proxy, so any URL that a stranger can `GET` renders inline — on public and private repos alike. Upload each frame to a host that gives you one, then inline it:
-
-```sh
-for f in /tmp/qa-*.png; do
-  curl -s -F "reqtype=fileupload" -F "fileToUpload=@$f" https://catbox.moe/user/api.php
-done
+![1440px](qa-1440.png)
+![360px](qa-360.png)
 ```
 
-Verify each URL the same way Camo will, before you trust it as evidence:
+Commit the directory to the branch, and stop there:
 
 ```sh
-curl -sI "<url>" | grep -iE '^(HTTP|content-type)'     # want 200 + image/*
+git add qa/issue-<N> && git commit -m "qa: report and frames for #<N>"
 ```
 
-Inline the URLs beside the check each one proves, keep the AI-disclaimer first line, then deliver — PR comment or `qa-report.md`, per the routing above:
+The commit is the deliverable. Everything past it — pushing, PR comments, tracker labels — belongs to whoever publishes:
 
-```sh
-gh pr comment <PR> --body-file <file>     # PR mode only
-```
+- **The repo documents a workflow** — an `AGENTS.md` naming a `qa` stage, or a wiki it points at — → follow what it says about delivery, and do nothing it does not ask for.
+- **No documented workflow, and the branch has a PR** → post everything **above** `## Frames` as a comment on that PR, updating your own earlier QA comment rather than stacking a new one, and link the report at `blob/$(git rev-parse HEAD)/` so the SHA holds the review to the frames it was given. Then open that link and confirm the frames appear — a broken image is not evidence.
+- **No PR** → say in your closing message that the report awaits posting, and leave the tracker alone.
 
-⚠️ **The frames land on a public host.** catbox serves them from a short unlisted URL with no authentication and no expiry, and GitHub's proxy caches whatever it fetches — so deleting the upload later does not reliably unpublish it. That is a deliberate trade for zero-setup evidence. Two consequences worth acting on:
-
-- Say so once in your closing message when the repo is private, so nobody is surprised about where a screenshot of an unreleased product now lives.
-- Swap the endpoint to `https://litterbox.catbox.moe/resources/internals/api.php` with `-F "time=72h"` when a frame shows anything you would not publish — same one-line call, but the file expires. The cost is that the plan's images die after three days.
-
-If a repo is public anyway, none of this applies: link the frames however you like.
-
-Finally — **PR mode only** — if this tracker uses a triage label for "a human takes it from here", set it: a posted QA plan is exactly the moment work crosses from agent-driven to human-verified. Check the labels the repo actually has first (`gh label list`); skip this silently if there is no such label. In file mode the pipeline is not done with the work yet, so never relabel.
-
-```sh
-gh issue edit <N> --add-label ready-for-human --remove-label ready-for-agent
-```
-
-If the user asked for a dry run, or you are running inside a test, write the plan to a file and print the path instead of posting — and **do not relabel**. Never touch a live tracker during evaluation.
+If the user asked for a dry run, or you are running inside a test, leave the report uncommitted and print its path instead. Never touch a live tracker during evaluation.
 
 ### 7. Report what you found, and offer the fix
 
