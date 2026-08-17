@@ -18,7 +18,7 @@
   pyproject-nix,
   pyproject-build-systems,
 }: let
-  version = "2026.8.13";
+  version = "2026.8.16";
 
   src = fetchFromGitHub {
     owner = "NousResearch";
@@ -26,7 +26,7 @@
     # Upstream now publishes CalVer release tags; pin to the latest stable tag.
     # Bump rev + hash to pull new upstream releases.
     rev = "v${version}";
-    hash = "sha256-A+pprddWqewhUjD8d+PLdTHAO5SZV6YwPhJrC2T2dFE=";
+    hash = "sha256-TsWcNR6JVj+PaqwodGrtcIgmOG6bzXtIDWw+e2txPdk=";
   };
 
   # Python environment built from upstream's uv.lock via uv2nix — deterministic,
@@ -39,7 +39,7 @@
   # moved web/ (and apps/desktop) into one npm workspace, so the dashboard
   # frontend is now built via buildNpmPackage against the root lockfile rather
   # than a per-folder `npm ci`. Matches pkgs/hermes-desktop/package.nix.
-  npmDepsHash = "sha256-B/i/G3g/ZJNdc8Ip83mO38fzpz76QLHxd4G2/SnESGo=";
+  npmDepsHash = "sha256-s5gdscyuI2FzUrRLlcw5ADgsTYmLdaO+oCCyoSZcUIU=";
 
   npmDeps = fetchNpmDeps {
     inherit src;
