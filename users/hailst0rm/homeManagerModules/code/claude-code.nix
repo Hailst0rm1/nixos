@@ -70,15 +70,22 @@
     })
     (mattpocockPlugin.skills ++ mattpocockExtraSkills));
 
-  # Excalidraw's export API as a self-contained UMD bundle, for the
-  # excalidraw-diagram skill's renderer. Vendored rather than imported from
-  # esm.sh: esm.sh serves a module graph of root-relative specifiers, which
-  # resolve to file:///... and 404 when the render template loads over file://.
-  # Latest stable — 0.1.3 exists only as `-test*` prereleases.
-  excalidrawUtilsRelease = "0.1.2";
+  # Excalidraw's export API as a self-contained ES module (zero imports, 231
+  # woff2 faces inlined), for the excalidraw-diagram skill's renderer. Vendored
+  # rather than imported from esm.sh, which serves a module graph of
+  # root-relative specifiers that 404 against a local origin.
+  #
+  # Deliberately a prerelease, and NOT to be "corrected" to 0.1.2: 0.1.2 is the
+  # newest stable but dates from 2022, and its bundled core computes text `y`
+  # from the legacy `baseline` element property that current Excalidraw files no
+  # longer carry — every text element renders at y=NaN, overprinting multi-line
+  # text on one line. 0.1.3-test32 (2025-04) is the newest published standalone
+  # build with a current core.
+  excalidrawUtilsRelease = "0.1.3-test32";
   excalidrawUtils = pkgs.fetchurl {
-    url = "https://unpkg.com/@excalidraw/utils@${excalidrawUtilsRelease}/dist/excalidraw-utils.min.js";
-    hash = "sha256-Z746ybJFupeapjjZp9wkvsuWez5+P5HPK3pOS9J+Tmo=";
+    url = "https://unpkg.com/@excalidraw/utils@${excalidrawUtilsRelease}/dist/prod/index.js";
+    hash = "sha256-d1+92GexeP6Pmo0zTNAR6/V8ZznozDi2epxSSNC99Sc=";
+    name = "excalidraw-utils-${excalidrawUtilsRelease}.js";
   };
 
   perplexityMcpWrapper = mkSecretEnvWrapper {
@@ -1503,10 +1510,11 @@ in {
         # (no `agent-browser install`, chromium default, --headed) the stub can't know.
         ".claude/skills/agent-browser".source = "${pkgs.agent-browser}/skills/agent-browser";
 
-        # The excalidraw-diagram skill's renderer drives agent-browser against
-        # this bundle, so rendering needs no network and no playwright (whose
-        # binary wheels and downloaded chromium both fail to load on NixOS).
-        ".claude/skills/excalidraw-diagram/references/excalidraw-utils.min.js".source = excalidrawUtils;
+        # The excalidraw-diagram skill's renderer serves this bundle over a
+        # throwaway localhost server and drives it with agent-browser, so
+        # rendering needs no network and no playwright (whose binary wheels and
+        # downloaded chromium both fail to load on NixOS).
+        ".claude/skills/excalidraw-diagram/references/excalidraw-utils.js".source = excalidrawUtils;
       }
       // mattpocockSkillFiles
       // twentyfirstSkillFiles

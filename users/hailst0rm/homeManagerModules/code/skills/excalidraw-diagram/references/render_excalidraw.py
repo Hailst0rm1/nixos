@@ -4,21 +4,25 @@ Usage:
     python3 ~/.claude/skills/excalidraw-diagram/references/render_excalidraw.py \
         <path-to-file.excalidraw> [--output path.png] [--scale 2]
 
-Needs no setup: `agent-browser` drives nixpkgs chromium, and the Excalidraw
-export bundle sits next to this script.
+Needs no setup and no network: `agent-browser` drives nixpkgs chromium, and the
+Excalidraw export bundle sits next to this script.
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
+import functools
+import http.server
 import json
 import subprocess
 import sys
 import tempfile
+import threading
 from pathlib import Path
 
 HERE = Path(__file__).parent
-BUNDLE = HERE / "excalidraw-utils.min.js"
+BUNDLE = HERE / "excalidraw-utils.js"
 TEMPLATE = HERE / "render_template.html"
 
 # A dedicated session, so renders never clobber other agent-browser work.
@@ -48,7 +52,7 @@ def load(path: Path) -> dict:
 
 
 def build_page(data: dict, scale: int) -> Path:
-    """Write a self-contained HTML page with the diagram inlined."""
+    """Write a self-contained render directory, and return it."""
     if not BUNDLE.exists():
         fail(f"export bundle missing at {BUNDLE} (it is fetched by claude-code.nix)")
 
@@ -56,13 +60,37 @@ def build_page(data: dict, scale: int) -> Path:
     payload = json.dumps(data).replace("</", "<\\/")
     html = (
         TEMPLATE.read_text(encoding="utf-8")
-        .replace("__BUNDLE__", BUNDLE.as_uri())
         .replace("__DATA__", payload)
         .replace("__SCALE__", str(scale))
     )
-    page = Path(tempfile.mkdtemp(prefix="excalidraw-render-")) / "render.html"
-    page.write_text(html, encoding="utf-8")
-    return page
+
+    directory = Path(tempfile.mkdtemp(prefix="excalidraw-render-"))
+    (directory / "render.html").write_text(html, encoding="utf-8")
+    # Symlinked, not copied: the bundle is ~19MB and the server follows links.
+    (directory / BUNDLE.name).symlink_to(BUNDLE.resolve())
+    return directory
+
+
+@contextlib.contextmanager
+def serve(directory: Path):
+    """Serve `directory` on localhost, yielding its base URL.
+
+    Chromium refuses to load ES modules from a file:// origin, so the render
+    page needs a real HTTP origin.
+    """
+    handler = functools.partial(QuietHandler, directory=str(directory))
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, *args) -> None:
+        pass
 
 
 def browser(*args: str, check: bool = True) -> tuple[int, str]:
@@ -78,28 +106,31 @@ def browser(*args: str, check: bool = True) -> tuple[int, str]:
 
 
 def render(source: Path, output: Path, scale: int) -> Path:
-    page = build_page(load(source), scale)
+    directory = build_page(load(source), scale)
 
-    browser("open", page.as_uri())
+    with serve(directory) as base_url:
+        browser("open", f"{base_url}/render.html")
 
-    # The export runs async in the page. No SVG means it threw, and the page
-    # title carries the reason.
-    code, _ = browser("wait", "#root svg", check=False)
-    if code != 0:
-        _, title = browser("eval", "document.title")
-        fail(f"Excalidraw export produced no SVG. Page reported: {title}")
+        # The export runs async in the page. No SVG means it threw, and the
+        # page title carries the reason.
+        code, _ = browser("wait", "#root svg", check=False)
+        if code != 0:
+            _, title = browser("eval", "document.title")
+            fail(f"Excalidraw export produced no SVG. Page reported: {title}")
 
-    # An element screenshot only paints what the viewport covers, so anything
-    # below the fold comes back blank. Grow the viewport to the whole diagram.
-    _, dimensions = browser(
-        "eval",
-        "(()=>{const s=document.querySelector('#root svg');"
-        "return s.getAttribute('width')+' '+s.getAttribute('height')})()",
-    )
-    width, height = (round(float(v)) for v in dimensions.strip('"').split())
-    browser("set", "viewport", str(width), str(height))
+        # An element screenshot only paints what the viewport covers, so
+        # anything below the fold comes back blank. Grow the viewport to the
+        # whole diagram.
+        _, dimensions = browser(
+            "eval",
+            "(()=>{const s=document.querySelector('#root svg');"
+            "return s.getAttribute('width')+' '+s.getAttribute('height')})()",
+        )
+        width, height = (round(float(v)) for v in dimensions.strip('"').split())
+        browser("set", "viewport", str(width), str(height))
 
-    browser("screenshot", "#root svg", str(output))
+        browser("screenshot", "#root svg", str(output))
+
     return output
 
 

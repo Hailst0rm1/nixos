@@ -8,45 +8,56 @@
     #root { display: inline-block; }
     #root svg { display: block; }
   </style>
-  <!-- Self-contained UMD bundle exposing window.ExcalidrawUtils. A classic
-       script, not an ES module: esm.sh's module graph uses root-relative
-       specifiers, which resolve against file:// and 404. -->
-  <script src="__BUNDLE__"></script>
 </head>
 <body>
   <div id="root"></div>
   <script type="application/json" id="diagram">__DATA__</script>
-  <script>
-    (async () => {
-      try {
-        const data = JSON.parse(document.getElementById("diagram").textContent);
-        const appState = Object.assign({}, data.appState || {}, {
-          exportBackground: true,
-          exportWithDarkMode: false,
-        });
-        appState.viewBackgroundColor = appState.viewBackgroundColor || "#ffffff";
+  <script type="module">
+    // Served over http://127.0.0.1 rather than opened as a file: Chromium
+    // blocks ES module loading from a file:// origin as cross-origin.
+    try {
+      const { exportToSvg } = await import("./excalidraw-utils.js");
 
-        const svg = await ExcalidrawUtils.exportToSvg({
-          elements: data.elements || [],
-          appState: appState,
-          files: data.files || {},
-        });
+      const data = JSON.parse(document.getElementById("diagram").textContent);
+      const appState = Object.assign({}, data.appState || {}, {
+        exportBackground: true,
+        exportWithDarkMode: false,
+      });
+      appState.viewBackgroundColor = appState.viewBackgroundColor || "#ffffff";
 
-        // Scale the SVG itself rather than the device pixel ratio, so the
-        // screenshot stays vector-crisp. Clamped to Chromium's 16384px texture
-        // limit, past which a capture silently truncates to white.
-        const natural = ["width", "height"].map((a) => parseFloat(svg.getAttribute(a)));
-        const scale = Math.min(__SCALE__, 16384 / Math.max(...natural));
-        svg.setAttribute("width", String(natural[0] * scale));
-        svg.setAttribute("height", String(natural[1] * scale));
+      const svg = await exportToSvg({
+        elements: data.elements || [],
+        appState: appState,
+        files: data.files || {},
+      });
 
-        document.getElementById("root").appendChild(svg);
-        window.__renderedScale = scale;
-        document.title = "READY";
-      } catch (err) {
-        document.title = "ERROR: " + err.message;
+      // Scale the SVG itself rather than the device pixel ratio, so the
+      // screenshot stays vector-crisp. Clamped to Chromium's 16384px texture
+      // limit, past which a capture silently truncates to white.
+      const natural = ["width", "height"].map((a) => parseFloat(svg.getAttribute(a)));
+      const scale = Math.min(__SCALE__, 16384 / Math.max(...natural));
+      svg.setAttribute("width", String(natural[0] * scale));
+      svg.setAttribute("height", String(natural[1] * scale));
+
+      document.getElementById("root").appendChild(svg);
+
+      // A core that disagrees with the element schema places text at y=NaN,
+      // which paints every line on top of the last and shows up nowhere in the
+      // JSON. Fail loudly instead.
+      const broken = [...svg.querySelectorAll("text")].filter(
+        (t) => !Number.isFinite(parseFloat(t.getAttribute("y"))),
+      );
+      if (broken.length) {
+        throw new Error(
+          `${broken.length} text element(s) positioned at a non-finite y — ` +
+            "the export bundle does not match the element schema",
+        );
       }
-    })();
+
+      document.title = "READY";
+    } catch (err) {
+      document.title = "ERROR: " + err.message;
+    }
   </script>
 </body>
 </html>
