@@ -70,6 +70,17 @@
     })
     (mattpocockPlugin.skills ++ mattpocockExtraSkills));
 
+  # Excalidraw's export API as a self-contained UMD bundle, for the
+  # excalidraw-diagram skill's renderer. Vendored rather than imported from
+  # esm.sh: esm.sh serves a module graph of root-relative specifiers, which
+  # resolve to file:///... and 404 when the render template loads over file://.
+  # Latest stable — 0.1.3 exists only as `-test*` prereleases.
+  excalidrawUtilsRelease = "0.1.2";
+  excalidrawUtils = pkgs.fetchurl {
+    url = "https://unpkg.com/@excalidraw/utils@${excalidrawUtilsRelease}/dist/excalidraw-utils.min.js";
+    hash = "sha256-Z746ybJFupeapjjZp9wkvsuWez5+P5HPK3pOS9J+Tmo=";
+  };
+
   perplexityMcpWrapper = mkSecretEnvWrapper {
     name = "perplexity-mcp-wrapper";
     env.PERPLEXITY_API_KEY = "services/perplexity/api-key";
@@ -1491,6 +1502,11 @@ in {
         # The always-on browser rule stays as-is; it carries the NixOS specifics
         # (no `agent-browser install`, chromium default, --headed) the stub can't know.
         ".claude/skills/agent-browser".source = "${pkgs.agent-browser}/skills/agent-browser";
+
+        # The excalidraw-diagram skill's renderer drives agent-browser against
+        # this bundle, so rendering needs no network and no playwright (whose
+        # binary wheels and downloaded chromium both fail to load on NixOS).
+        ".claude/skills/excalidraw-diagram/references/excalidraw-utils.min.js".source = excalidrawUtils;
       }
       // mattpocockSkillFiles
       // twentyfirstSkillFiles

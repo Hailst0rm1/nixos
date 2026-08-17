@@ -1,5 +1,31 @@
 # Excalidraw JSON Schema
 
+## File Wrapper
+
+```json
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [...],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "gridSize": 20
+  },
+  "files": {}
+}
+```
+
+## House Style
+
+| Property | Value |
+|----------|-------|
+| `roughness` | `0` for clean and technical diagrams (the default choice); `1` only when a hand-drawn feel is asked for |
+| `strokeWidth` | `1` for lines and dividers, `2` for shapes and primary arrows, `3` sparingly for the main flow or a key connection |
+| `opacity` | `100` on every element — hierarchy comes from color, size and stroke width, never transparency |
+| `fontFamily` | `3`, at `fontSize` 16, `textAlign: "center"`, `verticalAlign: "middle"` |
+| `text`, `originalText` | Readable words only, and identical to each other |
+
 ## Element Types
 
 | Type | Use For |

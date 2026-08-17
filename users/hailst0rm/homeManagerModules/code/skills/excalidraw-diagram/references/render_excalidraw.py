@@ -1,188 +1,119 @@
-"""Render Excalidraw JSON to PNG using Playwright + headless Chromium.
+"""Render Excalidraw JSON to PNG via agent-browser.
 
 Usage:
-    cd .claude/skills/excalidraw-diagram/references
-    uv run python render_excalidraw.py <path-to-file.excalidraw> [--output path.png] [--scale 2] [--width 1920]
+    python3 ~/.claude/skills/excalidraw-diagram/references/render_excalidraw.py \
+        <path-to-file.excalidraw> [--output path.png] [--scale 2]
 
-First-time setup:
-    cd .claude/skills/excalidraw-diagram/references
-    uv sync
-    uv run playwright install chromium
+Needs no setup: `agent-browser` drives nixpkgs chromium, and the Excalidraw
+export bundle sits next to this script.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
+HERE = Path(__file__).parent
+BUNDLE = HERE / "excalidraw-utils.min.js"
+TEMPLATE = HERE / "render_template.html"
 
-def validate_excalidraw(data: dict) -> list[str]:
-    """Validate Excalidraw JSON structure. Returns list of errors (empty = valid)."""
-    errors: list[str] = []
+# A dedicated session, so renders never clobber other agent-browser work.
+SESSION = "excalidraw-render"
+
+
+def fail(message: str) -> None:
+    print(f"ERROR: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def load(path: Path) -> dict:
+    """Read and validate an .excalidraw file."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        fail(f"invalid JSON in {path}: {e}")
 
     if data.get("type") != "excalidraw":
-        errors.append(f"Expected type 'excalidraw', got '{data.get('type')}'")
+        fail(f"expected type 'excalidraw', got '{data.get('type')}'")
+    if not isinstance(data.get("elements"), list):
+        fail("'elements' must be an array")
+    if not data["elements"]:
+        fail("'elements' is empty — nothing to render")
 
-    if "elements" not in data:
-        errors.append("Missing 'elements' array")
-    elif not isinstance(data["elements"], list):
-        errors.append("'elements' must be an array")
-    elif len(data["elements"]) == 0:
-        errors.append("'elements' array is empty — nothing to render")
-
-    return errors
+    return data
 
 
-def compute_bounding_box(elements: list[dict]) -> tuple[float, float, float, float]:
-    """Compute bounding box (min_x, min_y, max_x, max_y) across all elements."""
-    min_x = float("inf")
-    min_y = float("inf")
-    max_x = float("-inf")
-    max_y = float("-inf")
+def build_page(data: dict, scale: int) -> Path:
+    """Write a self-contained HTML page with the diagram inlined."""
+    if not BUNDLE.exists():
+        fail(f"export bundle missing at {BUNDLE} (it is fetched by claude-code.nix)")
 
-    for el in elements:
-        if el.get("isDeleted"):
-            continue
-        x = el.get("x", 0)
-        y = el.get("y", 0)
-        w = el.get("width", 0)
-        h = el.get("height", 0)
-
-        # For arrows/lines, points array defines the shape relative to x,y
-        if el.get("type") in ("arrow", "line") and "points" in el:
-            for px, py in el["points"]:
-                min_x = min(min_x, x + px)
-                min_y = min(min_y, y + py)
-                max_x = max(max_x, x + px)
-                max_y = max(max_y, y + py)
-        else:
-            min_x = min(min_x, x)
-            min_y = min(min_y, y)
-            max_x = max(max_x, x + abs(w))
-            max_y = max(max_y, y + abs(h))
-
-    if min_x == float("inf"):
-        return (0, 0, 800, 600)
-
-    return (min_x, min_y, max_x, max_y)
+    # `</` would close the <script> block early, whatever the JSON contains.
+    payload = json.dumps(data).replace("</", "<\\/")
+    html = (
+        TEMPLATE.read_text(encoding="utf-8")
+        .replace("__BUNDLE__", BUNDLE.as_uri())
+        .replace("__DATA__", payload)
+        .replace("__SCALE__", str(scale))
+    )
+    page = Path(tempfile.mkdtemp(prefix="excalidraw-render-")) / "render.html"
+    page.write_text(html, encoding="utf-8")
+    return page
 
 
-def render(
-    excalidraw_path: Path,
-    output_path: Path | None = None,
-    scale: int = 2,
-    max_width: int = 1920,
-) -> Path:
-    """Render an .excalidraw file to PNG. Returns the output PNG path."""
-    # Import playwright here so validation errors show before import errors
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        print("ERROR: playwright not installed.", file=sys.stderr)
-        print("Run: cd .claude/skills/excalidraw-diagram/references && uv sync && uv run playwright install chromium", file=sys.stderr)
-        sys.exit(1)
+def browser(*args: str, check: bool = True) -> tuple[int, str]:
+    result = subprocess.run(
+        ["agent-browser", "--session", SESSION, *args],
+        capture_output=True,
+        text=True,
+    )
+    output = (result.stdout + result.stderr).strip()
+    if check and result.returncode != 0:
+        fail(f"agent-browser {args[0]} failed: {output}")
+    return result.returncode, output
 
-    # Read and validate
-    raw = excalidraw_path.read_text(encoding="utf-8")
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError as e:
-        print(f"ERROR: Invalid JSON in {excalidraw_path}: {e}", file=sys.stderr)
-        sys.exit(1)
 
-    errors = validate_excalidraw(data)
-    if errors:
-        print(f"ERROR: Invalid Excalidraw file:", file=sys.stderr)
-        for err in errors:
-            print(f"  - {err}", file=sys.stderr)
-        sys.exit(1)
+def render(source: Path, output: Path, scale: int) -> Path:
+    page = build_page(load(source), scale)
 
-    # Compute viewport size from element bounding box
-    elements = [e for e in data["elements"] if not e.get("isDeleted")]
-    min_x, min_y, max_x, max_y = compute_bounding_box(elements)
-    padding = 80
-    diagram_w = max_x - min_x + padding * 2
-    diagram_h = max_y - min_y + padding * 2
+    browser("open", page.as_uri())
 
-    # Cap viewport width, let height be natural
-    vp_width = min(int(diagram_w), max_width)
-    vp_height = max(int(diagram_h), 600)
+    # The export runs async in the page. No SVG means it threw, and the page
+    # title carries the reason.
+    code, _ = browser("wait", "#root svg", check=False)
+    if code != 0:
+        _, title = browser("eval", "document.title")
+        fail(f"Excalidraw export produced no SVG. Page reported: {title}")
 
-    # Output path
-    if output_path is None:
-        output_path = excalidraw_path.with_suffix(".png")
+    # An element screenshot only paints what the viewport covers, so anything
+    # below the fold comes back blank. Grow the viewport to the whole diagram.
+    _, dimensions = browser(
+        "eval",
+        "(()=>{const s=document.querySelector('#root svg');"
+        "return s.getAttribute('width')+' '+s.getAttribute('height')})()",
+    )
+    width, height = (round(float(v)) for v in dimensions.strip('"').split())
+    browser("set", "viewport", str(width), str(height))
 
-    # Template path (same directory as this script)
-    template_path = Path(__file__).parent / "render_template.html"
-    if not template_path.exists():
-        print(f"ERROR: Template not found at {template_path}", file=sys.stderr)
-        sys.exit(1)
-
-    template_url = template_path.as_uri()
-
-    with sync_playwright() as p:
-        try:
-            browser = p.chromium.launch(headless=True)
-        except Exception as e:
-            if "Executable doesn't exist" in str(e) or "browserType.launch" in str(e):
-                print("ERROR: Chromium not installed for Playwright.", file=sys.stderr)
-                print("Run: cd .claude/skills/excalidraw-diagram/references && uv run playwright install chromium", file=sys.stderr)
-                sys.exit(1)
-            raise
-
-        page = browser.new_page(
-            viewport={"width": vp_width, "height": vp_height},
-            device_scale_factor=scale,
-        )
-
-        # Load the template
-        page.goto(template_url)
-
-        # Wait for the ES module to load (imports from esm.sh)
-        page.wait_for_function("window.__moduleReady === true", timeout=30000)
-
-        # Inject the diagram data and render
-        json_str = json.dumps(data)
-        result = page.evaluate(f"window.renderDiagram({json_str})")
-
-        if not result or not result.get("success"):
-            error_msg = result.get("error", "Unknown render error") if result else "renderDiagram returned null"
-            print(f"ERROR: Render failed: {error_msg}", file=sys.stderr)
-            browser.close()
-            sys.exit(1)
-
-        # Wait for render completion signal
-        page.wait_for_function("window.__renderComplete === true", timeout=15000)
-
-        # Screenshot the SVG element
-        svg_el = page.query_selector("#root svg")
-        if svg_el is None:
-            print("ERROR: No SVG element found after render.", file=sys.stderr)
-            browser.close()
-            sys.exit(1)
-
-        svg_el.screenshot(path=str(output_path))
-        browser.close()
-
-    return output_path
+    browser("screenshot", "#root svg", str(output))
+    return output
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render Excalidraw JSON to PNG")
     parser.add_argument("input", type=Path, help="Path to .excalidraw JSON file")
     parser.add_argument("--output", "-o", type=Path, default=None, help="Output PNG path (default: same name with .png)")
-    parser.add_argument("--scale", "-s", type=int, default=2, help="Device scale factor (default: 2)")
-    parser.add_argument("--width", "-w", type=int, default=1920, help="Max viewport width (default: 1920)")
+    parser.add_argument("--scale", "-s", type=int, default=2, help="SVG scale factor (default: 2)")
     args = parser.parse_args()
 
     if not args.input.exists():
-        print(f"ERROR: File not found: {args.input}", file=sys.stderr)
-        sys.exit(1)
+        fail(f"file not found: {args.input}")
 
-    png_path = render(args.input, args.output, args.scale, args.width)
-    print(str(png_path))
+    print(render(args.input, args.output or args.input.with_suffix(".png"), args.scale))
 
 
 if __name__ == "__main__":

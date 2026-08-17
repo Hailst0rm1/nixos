@@ -4,54 +4,49 @@
   <meta charset="utf-8" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #ffffff; overflow: hidden; }
+    body { background: #ffffff; }
     #root { display: inline-block; }
     #root svg { display: block; }
   </style>
+  <!-- Self-contained UMD bundle exposing window.ExcalidrawUtils. A classic
+       script, not an ES module: esm.sh's module graph uses root-relative
+       specifiers, which resolve against file:// and 404. -->
+  <script src="__BUNDLE__"></script>
 </head>
 <body>
   <div id="root"></div>
-
-  <script type="module">
-    import { exportToSvg } from "https://esm.sh/@excalidraw/excalidraw?bundle";
-
-    window.renderDiagram = async function(jsonData) {
+  <script type="application/json" id="diagram">__DATA__</script>
+  <script>
+    (async () => {
       try {
-        const data = typeof jsonData === "string" ? JSON.parse(jsonData) : jsonData;
-        const elements = data.elements || [];
-        const appState = data.appState || {};
-        const files = data.files || {};
-
-        // Force white background in appState
+        const data = JSON.parse(document.getElementById("diagram").textContent);
+        const appState = Object.assign({}, data.appState || {}, {
+          exportBackground: true,
+          exportWithDarkMode: false,
+        });
         appState.viewBackgroundColor = appState.viewBackgroundColor || "#ffffff";
-        appState.exportWithDarkMode = false;
 
-        const svg = await exportToSvg({
-          elements: elements,
-          appState: {
-            ...appState,
-            exportBackground: true,
-          },
-          files: files,
+        const svg = await ExcalidrawUtils.exportToSvg({
+          elements: data.elements || [],
+          appState: appState,
+          files: data.files || {},
         });
 
-        // Clear any previous render
-        const root = document.getElementById("root");
-        root.innerHTML = "";
-        root.appendChild(svg);
+        // Scale the SVG itself rather than the device pixel ratio, so the
+        // screenshot stays vector-crisp. Clamped to Chromium's 16384px texture
+        // limit, past which a capture silently truncates to white.
+        const natural = ["width", "height"].map((a) => parseFloat(svg.getAttribute(a)));
+        const scale = Math.min(__SCALE__, 16384 / Math.max(...natural));
+        svg.setAttribute("width", String(natural[0] * scale));
+        svg.setAttribute("height", String(natural[1] * scale));
 
-        window.__renderComplete = true;
-        window.__renderError = null;
-        return { success: true, width: svg.getAttribute("width"), height: svg.getAttribute("height") };
+        document.getElementById("root").appendChild(svg);
+        window.__renderedScale = scale;
+        document.title = "READY";
       } catch (err) {
-        window.__renderComplete = true;
-        window.__renderError = err.message;
-        return { success: false, error: err.message };
+        document.title = "ERROR: " + err.message;
       }
-    };
-
-    // Signal that the module is loaded and ready
-    window.__moduleReady = true;
+    })();
   </script>
 </body>
 </html>

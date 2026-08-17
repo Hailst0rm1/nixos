@@ -1,6 +1,6 @@
 ---
 name: visualizations
-description: Use when someone asks for a hand-drawn visual, PNG image, rendered diagram, visual explanation, visualization, or says "make a visual" or "draw a visual". This generates PNG images, not editable files.
+description: Generate a hand-drawn-style illustration as a PNG through image generation — a flat raster, with no editable elements behind it. Use for sketch-style illustrations, thumbnails, and cover images, or when someone says "make a visual" or "draw a visual". For a diagram whose boxes, arrows and labels must stay editable, use excalidraw-diagram instead.
 argument-hint: "[concept to visualize]"
 ---
 
