@@ -18,7 +18,7 @@
   pyproject-nix,
   pyproject-build-systems,
 }: let
-  version = "2026.8.16";
+  version = "2026.8.16.2";
 
   src = fetchFromGitHub {
     owner = "NousResearch";
@@ -26,7 +26,7 @@
     # Upstream now publishes CalVer release tags; pin to the latest stable tag.
     # Bump rev + hash to pull new upstream releases.
     rev = "v${version}";
-    hash = "sha256-TsWcNR6JVj+PaqwodGrtcIgmOG6bzXtIDWw+e2txPdk=";
+    hash = "sha256-NoURyVuZ4EvG4K3S2oKSfJctVH9rXk4oeoXHWBNddPw=";
   };
 
   # Python environment built from upstream's uv.lock via uv2nix — deterministic,
