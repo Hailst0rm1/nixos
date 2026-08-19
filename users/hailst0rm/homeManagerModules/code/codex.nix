@@ -266,21 +266,22 @@ in {
         export PATH="${pkgs.git}/bin:$PATH"
         run ${pkgs.coreutils}/bin/mkdir -p "$codex_skills"
 
-        if [ -f "$skill_manifest" ]; then
-          while IFS= read -r destination; do
-            if [ -L "$destination" ]; then
-              target=$(${pkgs.coreutils}/bin/readlink "$destination")
-              case "$target" in
-                "$HOME/.claude/"*) run ${pkgs.coreutils}/bin/rm -f "$destination" ;;
-              esac
-            fi
-          done < "$skill_manifest"
-        fi
-
         share_skill() {
           source="$1"
           name=$(${pkgs.coreutils}/bin/basename "$(${pkgs.coreutils}/bin/dirname "$source")")
           destination="$codex_skills/$name"
+
+          # Leave an existing managed link untouched. Recreating every link on
+          # each activation makes a running Codex watcher register duplicates.
+          if [ -L "$destination" ]; then
+            target=$(${pkgs.coreutils}/bin/readlink "$destination")
+            case "$target" in
+              "$HOME/.claude/"*)
+                ${pkgs.coreutils}/bin/printf '%s\n' "$destination" >> "$next_skill_manifest"
+                return
+                ;;
+            esac
+          fi
 
           # Never replace a Codex-native or manually installed skill.
           if [ ! -e "$destination" ] && [ ! -L "$destination" ]; then
@@ -314,6 +315,17 @@ in {
               fi
             fi
           done < <(${pkgs.jq}/bin/jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "$settings")
+        fi
+
+        if [ -f "$skill_manifest" ]; then
+          while IFS= read -r destination; do
+            if ! ${pkgs.gnugrep}/bin/grep -Fxq "$destination" "$next_skill_manifest" && [ -L "$destination" ]; then
+              target=$(${pkgs.coreutils}/bin/readlink "$destination")
+              case "$target" in
+                "$HOME/.claude/"*) run ${pkgs.coreutils}/bin/rm -f "$destination" ;;
+              esac
+            fi
+          done < "$skill_manifest"
         fi
 
         if [ -f "$plugin_manifest" ]; then
