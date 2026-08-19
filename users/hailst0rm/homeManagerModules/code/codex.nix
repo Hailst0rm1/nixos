@@ -29,8 +29,29 @@
     };
     command = "${pkgs.nodejs}/bin/npx -y n8n-mcp";
   };
+
+  # Home Manager normally links this into ~/.codex from /nix/store, but Codex
+  # writes trust decisions and other interactive settings back to config.toml.
+  # Install a real copy so those writes work; the next activation restores the
+  # declared defaults, matching the mutable settings setup used for Claude.
+  codexConfigFile =
+    (pkgs.formats.toml {}).generate "codex-config.toml"
+    config.programs.codex.settings;
+  codexConfigInstall = pkgs.writeShellScript "codex-config-install" ''
+    dst="$HOME/.codex/config.toml"
+    ${pkgs.coreutils}/bin/mkdir -p "$HOME/.codex"
+    ${pkgs.coreutils}/bin/rm -f "$dst"
+    ${pkgs.coreutils}/bin/install -m 0644 ${codexConfigFile} "$dst"
+  '';
 in {
-  options.code.codex.enable = lib.mkEnableOption "Enable Codex CLI";
+  options.code.codex = {
+    enable = lib.mkEnableOption "Enable Codex CLI";
+    perplexity.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the Perplexity web search MCP server for Codex.";
+    };
+  };
 
   config = lib.mkIf config.code.codex.enable {
     programs.codex = {
@@ -161,41 +182,70 @@ in {
 
       # Settings → ~/.codex/config.toml
       settings = {
-        approval_policy = "on-request";
+        # Equivalent to Claude Code's bypassPermissions mode. Codex can run
+        # commands directly on the host without sandboxing or approval prompts.
+        approval_policy = "never";
+        sandbox_mode = "danger-full-access";
+
+        # Native approximation of the Claude status line, in the same order:
+        # version, model, project/worktree, branch + diff, context, rate limits.
+        # Codex has no native hostname or per-session USD-cost status items.
+        tui.status_line = [
+          "codex-version"
+          "model-with-reasoning"
+          "project-name"
+          "current-dir"
+          "git-branch"
+          "branch-changes"
+          "context-used"
+          "five-hour-limit"
+          "weekly-limit"
+        ];
 
         # Built-in image_gen tool (gpt-image, backed by the ChatGPT subscription).
         # Serialized to ~/.codex/config.toml [features]; reaches interactive Codex,
         # the /imagegen command, and the Claude Code codex plugin's `codex exec`.
         features.image_generation = true;
 
-        mcp_servers = {
-          nixos = {
-            command = "nix";
-            args = ["run" "github:utensils/mcp-nixos" "--"];
+        mcp_servers =
+          {
+            nixos = {
+              command = "nix";
+              args = ["run" "github:utensils/mcp-nixos" "--"];
+            };
+            filesystem = {
+              command = "npx";
+              args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
+            };
+            git = {
+              command = "uvx";
+              args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
+            };
+            exa = {
+              command = "${exaMcpWrapper}";
+              args = [];
+            };
+            n8n = {
+              command = "${n8nMcpWrapper}";
+              args = [];
+            };
+          }
+          // lib.optionalAttrs config.code.codex.perplexity.enable {
+            perplexity = {
+              command = "${perplexityMcpWrapper}";
+              args = [];
+            };
           };
-          filesystem = {
-            command = "npx";
-            args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];
-          };
-          git = {
-            command = "uvx";
-            args = ["mcp-server-git" "--repository" "/home/hailst0rm/.nixos"];
-          };
-          perplexity = {
-            command = "${perplexityMcpWrapper}";
-            args = [];
-          };
-          exa = {
-            command = "${exaMcpWrapper}";
-            args = [];
-          };
-          n8n = {
-            command = "${n8nMcpWrapper}";
-            args = [];
-          };
-        };
       };
     };
+
+    home.file.".codex/config.toml".enable = false;
+
+    # linkGeneration first removes the previous generation's symlink, then this
+    # activation step replaces it with the writable copy Codex expects.
+    home.activation.codexConfig = lib.hm.dag.entryAfter ["linkGeneration"] ''
+      run ${codexConfigInstall}
+    '';
 
     # Ensure required dependencies are available
     home.packages = with pkgs; [

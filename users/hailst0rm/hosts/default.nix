@@ -113,7 +113,10 @@
         baseUrl = lib.mkDefault "http://localhost:11434";
       };
     };
-    codex.enable = lib.mkDefault false;
+    codex = {
+      enable = lib.mkDefault false;
+      perplexity.enable = lib.mkDefault false;
+    };
     sandcastle = {
       # Default-on wherever claude-code is enabled.
       enable = lib.mkDefault false;
