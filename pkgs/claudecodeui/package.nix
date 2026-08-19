@@ -13,16 +13,16 @@
 }:
 buildNpmPackage rec {
   pname = "cloudcli-ai-cloudcli";
-  version = "1.37.1";
+  version = "1.37.2";
 
   src = fetchFromGitHub {
     owner = "siteboon";
     repo = "claudecodeui";
     rev = "v${version}";
-    hash = "sha256-8kJhAiVHA9X/bGW4rBv+iLyRq6iAoPDQX/s77OYQmIA=";
+    hash = "sha256-vNxiKVSVqb6bkmAkxD2HcFxFvKEsPK3KBu9rqKmHUCk=";
   };
 
-  npmDepsHash = "sha256-2xx4LHfUomKM76c+52Govi+zgdwHIQLQxHGu2MpYjRQ=";
+  npmDepsHash = "sha256-rEQLbWkGH3Kr4rXw1zncMlB6OvyamWtpbOfvSydG0Eg=";
 
   nativeBuildInputs = [
     python3
