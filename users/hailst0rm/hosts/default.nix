@@ -115,6 +115,7 @@
     };
     codex = {
       enable = lib.mkDefault false;
+      shareClaudeSkills.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
     };
     sandcastle = {

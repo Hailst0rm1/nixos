@@ -46,6 +46,11 @@
 in {
   options.code.codex = {
     enable = lib.mkEnableOption "Enable Codex CLI";
+    shareClaudeSkills.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Expose Claude Code's skills and compatible enabled plugins to Codex.";
+    };
     perplexity.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -188,13 +193,12 @@ in {
         sandbox_mode = "danger-full-access";
 
         # Native approximation of the Claude status line, in the same order:
-        # version, model, project/worktree, branch + diff, context, rate limits.
+        # version, model, project, branch + diff, context, rate limits.
         # Codex has no native hostname or per-session USD-cost status items.
         tui.status_line = [
           "codex-version"
           "model-with-reasoning"
           "project-name"
-          "current-dir"
           "git-branch"
           "branch-changes"
           "context-used"
@@ -246,6 +250,84 @@ in {
     home.activation.codexConfig = lib.hm.dag.entryAfter ["linkGeneration"] ''
       run ${codexConfigInstall}
     '';
+
+    # Keep Codex's own .system skills intact while exposing the skills Claude
+    # currently has. Plugins with a native Codex manifest are installed whole
+    # so their hooks and commands survive; skill-only plugins fall back to links.
+    home.activation.codexClaudeSkills = lib.mkIf config.code.codex.shareClaudeSkills.enable (
+      lib.hm.dag.entryAfter ["claudeSettings" "codexConfig"] ''
+        codex_skills="$HOME/.codex/skills"
+        skill_manifest="$HOME/.codex/.claude-shared-skills"
+        plugin_manifest="$HOME/.codex/.claude-shared-plugins"
+        next_skill_manifest=$(${pkgs.coreutils}/bin/mktemp)
+        next_plugin_manifest=$(${pkgs.coreutils}/bin/mktemp)
+        # Home Manager activation has a deliberately minimal PATH. Codex uses
+        # git internally when materialising Git-backed local plugin sources.
+        export PATH="${pkgs.git}/bin:$PATH"
+        run ${pkgs.coreutils}/bin/mkdir -p "$codex_skills"
+
+        if [ -f "$skill_manifest" ]; then
+          while IFS= read -r destination; do
+            if [ -L "$destination" ]; then
+              target=$(${pkgs.coreutils}/bin/readlink "$destination")
+              case "$target" in
+                "$HOME/.claude/"*) run ${pkgs.coreutils}/bin/rm -f "$destination" ;;
+              esac
+            fi
+          done < "$skill_manifest"
+        fi
+
+        share_skill() {
+          source="$1"
+          name=$(${pkgs.coreutils}/bin/basename "$(${pkgs.coreutils}/bin/dirname "$source")")
+          destination="$codex_skills/$name"
+
+          # Never replace a Codex-native or manually installed skill.
+          if [ ! -e "$destination" ] && [ ! -L "$destination" ]; then
+            run ${pkgs.coreutils}/bin/ln -s "$(${pkgs.coreutils}/bin/dirname "$source")" "$destination"
+            ${pkgs.coreutils}/bin/printf '%s\n' "$destination" >> "$next_skill_manifest"
+          fi
+        }
+
+        if [ -d "$HOME/.claude/skills" ]; then
+          while IFS= read -r skill; do
+            share_skill "$skill"
+          done < <(${pkgs.findutils}/bin/find -L "$HOME/.claude/skills" -mindepth 2 -maxdepth 2 -name SKILL.md -type f | ${pkgs.coreutils}/bin/sort)
+        fi
+
+        settings="$HOME/.claude/settings.json"
+        if [ -f "$settings" ]; then
+          while IFS= read -r plugin; do
+            marketplace="''${plugin#*@}"
+            plugin_root="$HOME/.claude/plugins/marketplaces/$marketplace"
+            if [ -d "$plugin_root" ]; then
+              if [ -f "$plugin_root/.codex-plugin/plugin.json" ]; then
+                plugin_name="''${plugin%@*}"
+                codex_marketplace=$(${config.programs.codex.package}/bin/codex plugin marketplace add "$plugin_root" --json | ${pkgs.jq}/bin/jq -r .marketplaceName)
+                codex_plugin="$plugin_name@$codex_marketplace"
+                run ${config.programs.codex.package}/bin/codex plugin add "$codex_plugin" --json >/dev/null
+                ${pkgs.coreutils}/bin/printf '%s\n' "$codex_plugin" >> "$next_plugin_manifest"
+              else
+                while IFS= read -r skill; do
+                  share_skill "$skill"
+                done < <(${pkgs.findutils}/bin/find -L "$plugin_root/skills" -mindepth 2 -name SKILL.md -type f 2>/dev/null | ${pkgs.coreutils}/bin/sort)
+              fi
+            fi
+          done < <(${pkgs.jq}/bin/jq -r '.enabledPlugins // {} | to_entries[] | select(.value == true) | .key' "$settings")
+        fi
+
+        if [ -f "$plugin_manifest" ]; then
+          while IFS= read -r plugin; do
+            if ! ${pkgs.gnugrep}/bin/grep -Fxq "$plugin" "$next_plugin_manifest"; then
+              ${config.programs.codex.package}/bin/codex plugin remove "$plugin" --json >/dev/null 2>&1 || true
+            fi
+          done < "$plugin_manifest"
+        fi
+
+        run ${pkgs.coreutils}/bin/mv "$next_skill_manifest" "$skill_manifest"
+        run ${pkgs.coreutils}/bin/mv "$next_plugin_manifest" "$plugin_manifest"
+      ''
+    );
 
     # Ensure required dependencies are available
     home.packages = with pkgs; [
