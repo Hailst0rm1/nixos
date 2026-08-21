@@ -387,6 +387,19 @@
     ${pkgs.coreutils}/bin/cat ${./skills/readable/SKILL.md}
   '';
 
+  # UserPromptSubmit hook: re-assert the shape once per turn. The SessionStart
+  # injection above lands at message one and decays over a long session.
+  # Claude Code's built-in output styles solve exactly this with a per-turn
+  # `turnReminder` string — a field only built-in styles get, and only one
+  # output style can be active at a time, so `readable` cannot be one without
+  # displacing the other SessionStart rulesets. This rebuilds the mechanism on
+  # the hook we already have; the first sentence is Anthropic's own Concise
+  # `turnReminder`, verbatim.
+  readableTurnReminderHook = pkgs.writeShellScript "readable-turn-reminder" ''
+    [ "''${READABLE_MODE:-on}" = "off" ] && exit 0
+    echo "Be concise: lead with the result, skip preamble and narration, keep only what the user needs. Where the response has something to skim, the readable glyphs mark the blocks that carry it."
+  '';
+
   # SessionStart hook: load personal per-project Claude notes, kept as a tracked
   # CLAUDE.k.md instead of the CLAUDE.local.md Claude reads natively.
   #
@@ -684,7 +697,7 @@ in {
       type = lib.types.bool;
       default = true;
       description = ''
-        Load the local `readable` skill (skills/readable/) from message one via a SessionStart hook: bottom line first, eight line-leading role markers (recommendation, question, done, failed, risk, blocked, assumption, tangent), tangents deferred to the end at full length, and every claim paired with its check. A fork of ayghri/i-have-adhd with the omission-prone rules removed — no list cap, no step trimming, no time estimates — and scoped to conversational output so reports, PR comments, commit messages and machine-readable markers keep their own formats. Turn off for one session with "stop readable", or per-process with READABLE_MODE=off (used for spawned Hermes workers that produce review ledgers and QA evidence).
+        Load the local `readable` skill (skills/readable/) from message one via a SessionStart hook: bottom line first, eight line-leading role markers (recommendation, question, done, failed, risk, blocked, assumption, tangent), tangents deferred to the end at full length, and every claim paired with its check. A fork of ayghri/i-have-adhd with the omission-prone rules removed — no list cap, no step trimming, no time estimates — and scoped to conversational output so reports, PR comments, commit messages and machine-readable markers keep their own formats. Absorbs the wording of Claude Code's built-in Concise output style (cut narration, short by default, state things plainly, correctness never traded for brevity) rather than enabling it, since only one output style can be active and its "these rules win" clause would otherwise override the marker layer; a paired UserPromptSubmit hook replays Concise's per-turn `turnReminder` line, which built-in styles get and hooks otherwise do not. Turn off for one session with "stop readable", or per-process with READABLE_MODE=off (used for spawned Hermes workers that produce review ledgers and QA evidence) — the env gate covers both hooks.
       '';
     };
     projectNotes.enable = lib.mkOption {
@@ -1256,6 +1269,7 @@ in {
         # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
         # - SessionStart (delegation policy): Opus-only orchestration/model-routing context.
         # - SessionStart (readable): loads the output-shape ruleset from message one.
+        # - UserPromptSubmit (readable): one-line per-turn reminder against drift.
         # - SessionStart (project notes): reads the repo's tracked CLAUDE.k.md.
         hooks = lib.mkMerge [
           (lib.mkIf config.code.claude-code.rtk.enable {
@@ -1302,6 +1316,16 @@ in {
                   {
                     type = "command";
                     command = "${readableHook}";
+                  }
+                ];
+              }
+            ];
+            UserPromptSubmit = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${readableTurnReminderHook}";
                   }
                 ];
               }
