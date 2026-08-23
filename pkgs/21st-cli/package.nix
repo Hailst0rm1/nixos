@@ -7,14 +7,14 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "21st-cli";
-  version = "1.15.1";
+  version = "1.16.0";
 
   # Published only as a bundled npm tarball — package.json has `repository:
   # null` and no GitHub mirror exists, so there is nothing to fetchFromGitHub.
   # The npm URL carries the version, so this pin is honest.
   src = fetchurl {
     url = "https://registry.npmjs.org/@21st-dev/cli/-/cli-${finalAttrs.version}.tgz";
-    hash = "sha256-yqefy2hrVXZ3RtZNTrKpNRc8b1Y58ioB0AaJRAm117s=";
+    hash = "sha256-mw0mpUtb7KIo3mg0Vy/07NAx6LYjX0FGs8wEdv3lQv4=";
   };
 
   # `21st install-skill` fetches these three markdown files from 21st.dev at
