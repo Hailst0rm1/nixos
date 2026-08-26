@@ -343,6 +343,18 @@
     - yourself: planning, review verdicts, synthesis across agent reports,
       anything user-facing
 
+    ## Waiting is free; asking costs a turn
+    A spawned agent reports back on its own and the harness notifies you
+    when it finishes, so keep working in the meantime. SendMessage and
+    ListAgents are for redirecting a live agent, never for asking whether
+    one is done. Where you need a condition the harness does not notify
+    on, arm Monitor once instead of looping.
+
+    A report that never arrives is still on disk: each subagent's last
+    message is captured to
+    /tmp/claude-subagent-reports/<session-id>/. Read that file rather than
+    re-running the agent.
+
     ## The brief — a subagent starts with zero context
     State the goal, the scope boundary, the exact return format ("file:line
     + one-line finding"), and what to skip. For Explore, set breadth
@@ -373,6 +385,72 @@
     case "''${MODEL,,}" in
       *opus*) ${pkgs.coreutils}/bin/cat ${delegationPolicy} ;;
     esac
+    exit 0
+  '';
+
+  # SubagentStop hook: persist each subagent's closing message, so a report
+  # that never reaches the orchestrator's context costs one `cat` instead of a
+  # re-run. Measured motivation: one review session lost six subagent reports
+  # and re-ran those review axes; the delegation policy above names this path
+  # so the orchestrator knows where to look.
+  #
+  # `last_assistant_message` is documented on Stop/SubagentStop input but is
+  # NOT verified against a live run here, so the hook degrades instead of
+  # assuming: the transcript path is always recorded, and an absent field is
+  # written into the file as such rather than producing an empty capture that
+  # reads like a silent agent.
+  subagentReportCaptureHook = pkgs.writeShellScript "subagent-report-capture" ''
+    INPUT=$(${pkgs.coreutils}/bin/cat)
+    jq='${pkgs.jq}/bin/jq'
+
+    # Establish parseability first. An input jq cannot read still gets written
+    # out verbatim below -- the payload is the whole point of the capture, so
+    # a parse failure must not be the one path that loses it.
+    if $jq -e . >/dev/null 2>&1 <<<"$INPUT"; then
+      session=$($jq -r '.session_id // "unknown-session"' <<<"$INPUT")
+      transcript=$($jq -r '.transcript_path // ""' <<<"$INPUT")
+      agent=$($jq -r '.agent_name // .agent_type // .agent_id // "subagent"' <<<"$INPUT")
+      message=$($jq -r '.last_assistant_message // ""' <<<"$INPUT")
+      parsed=1
+    else
+      session="unparsed"
+      transcript=""
+      agent="subagent"
+      message=""
+      parsed=0
+    fi
+    [ -n "$session" ] || session="unknown-session"
+    [ -n "$agent" ] || agent="subagent"
+
+    dir="/tmp/claude-subagent-reports/$session"
+    ${pkgs.coreutils}/bin/mkdir -p "$dir"
+
+    # One file per subagent: concurrent writers never share a file, so no
+    # locking is owed and a crashed agent leaves a partial file rather than a
+    # corrupted shared one.
+    stamp=$(${pkgs.coreutils}/bin/date -u +%Y%m%dT%H%M%SZ)
+    slug=$(${pkgs.coreutils}/bin/printf '%s' "$agent" | ${pkgs.gnused}/bin/sed 's/[^A-Za-z0-9._-]/-/g')
+    [ -n "$slug" ] || slug="subagent"
+    out="$dir/$stamp-$slug.md"
+
+    {
+      ${pkgs.coreutils}/bin/echo "# subagent report — $agent"
+      ${pkgs.coreutils}/bin/echo "captured: $stamp"
+      ${pkgs.coreutils}/bin/echo "transcript: ''${transcript:-none in hook input}"
+      ${pkgs.coreutils}/bin/echo
+      if [ "$parsed" = 0 ]; then
+        ${pkgs.coreutils}/bin/echo "Hook input was not valid JSON. Raw payload follows."
+        ${pkgs.coreutils}/bin/echo
+        ${pkgs.coreutils}/bin/printf '%s\n' "$INPUT"
+      elif [ -n "$message" ]; then
+        ${pkgs.coreutils}/bin/printf '%s\n' "$message"
+      else
+        ${pkgs.coreutils}/bin/echo "last_assistant_message was absent from the hook input --"
+        ${pkgs.coreutils}/bin/echo "read the transcript above for what this agent returned."
+      fi
+    } > "$out"
+
+    ${pkgs.coreutils}/bin/echo "subagent report captured: $out"
     exit 0
   '';
 
@@ -756,7 +834,7 @@ in {
     delegationPolicy.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Inject a subagent delegation + model-routing policy at session start, gated to Opus sessions only (SessionStart hook detects the model via hook input, the parent process's --model flag, or the saved /model default). Teaches Opus to orchestrate like Fable: fan out retrieval to haiku, bounded work to sonnet, keep judgment at the top. Fable sessions, cheaper models, and subagents never see it.";
+      description = "Inject a subagent delegation + model-routing policy at session start, gated to Opus sessions only (SessionStart hook detects the model via hook input, the parent process's --model flag, or the saved /model default). Teaches Opus to orchestrate like Fable: fan out retrieval to haiku, bounded work to sonnet, keep judgment at the top. Fable sessions, cheaper models, and subagents never see it. Also wires a SubagentStop hook that persists each subagent's closing message to /tmp/claude-subagent-reports/<session-id>/, one file per agent, so a report lost on the way back costs a `cat` instead of a re-run — the policy text names that path, so the two travel together.";
     };
     sound = {
       enable = lib.mkOption {
@@ -1268,6 +1346,7 @@ in {
         # - PreToolUse (RTK): rewrites Bash commands to token-compact equivalents.
         # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
         # - SessionStart (delegation policy): Opus-only orchestration/model-routing context.
+        # - SubagentStop (delegation policy): persists each subagent's closing message.
         # - SessionStart (readable): loads the output-shape ruleset from message one.
         # - UserPromptSubmit (readable): one-line per-turn reminder against drift.
         # - SessionStart (project notes): reads the repo's tracked CLAUDE.k.md.
@@ -1304,6 +1383,16 @@ in {
                   {
                     type = "command";
                     command = "${delegationPolicyHook}";
+                  }
+                ];
+              }
+            ];
+            SubagentStop = [
+              {
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${subagentReportCaptureHook}";
                   }
                 ];
               }
