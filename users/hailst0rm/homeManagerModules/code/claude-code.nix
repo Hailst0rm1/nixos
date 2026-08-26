@@ -30,6 +30,82 @@
       twentyfirst-cli.skillNames)
   );
 
+  # MCP (Model Context Protocol) servers.
+  #
+  # Deliberately NOT assigned to `programs.claude-code.mcpServers`: that option
+  # exists only to make home-manager attach `--mcp-config` to the `claude`
+  # wrapper, and it does so with `--append-flags`, landing the flag *after*
+  # "$@". Interactive `claude` and `claude -p "…"` survive that (the prompt is
+  # positional), but every subcommand parses the flag as one of its own:
+  #
+  #   $ claude plugin list  → error: unknown option '--mcp-config'
+  #   $ claude mcp list     → error: unknown option '--mcp-config'
+  #
+  # which is why claude-plugins-update.nix has to reach past the wrapper for
+  # the unwrapped binary. Prepending alone does not fix it either: the flag is
+  # variadic, so `--mcp-config <file> plugin list` swallows `plugin` and `list`
+  # as two more config paths. Only the `--flag=value` form binds exactly one
+  # value and leaves the subcommand intact.
+  #
+  # So we leave `mcpServers` empty (home-manager then wraps nothing and takes
+  # `package` through as-is) and hand it a package we wrapped ourselves, below.
+  # Verified 2026-08-26: `plugin list`, `mcp list` and `-p` all work.
+  # Revert to the plain option once home-manager switches to `--add-flags` and
+  # the `=` form upstream.
+  claudeMcpServers =
+    {
+      nixos = {
+        command = "nix";
+        args = ["run" "github:utensils/mcp-nixos" "--"];
+      };
+    }
+    // lib.optionalAttrs config.code.claude-code.exa.enable {
+      exa = {
+        command = "${exaMcpWrapper}";
+        args = [];
+      };
+    }
+    // lib.optionalAttrs config.code.claude-code.context7.enable {
+      context7 = {
+        command = "${context7McpWrapper}";
+        args = [];
+      };
+    }
+    // lib.optionalAttrs config.code.claude-code.codegraph.enable {
+      codegraph = {
+        command = "${codegraphMcpWrapper}";
+        args = [];
+      };
+    }
+    // lib.optionalAttrs config.code.claude-code.perplexity.enable {
+      perplexity = {
+        command = "${perplexityMcpWrapper}";
+        args = [];
+      };
+    }
+    // lib.optionalAttrs config.code.claude-code.n8n.enable {
+      n8n = {
+        command = "${n8nMcpWrapper}";
+        args = [];
+      };
+    };
+
+  claudeMcpConfigFile =
+    (pkgs.formats.json {}).generate "claude-code-mcp-config.json"
+    {mcpServers = claudeMcpServers;};
+
+  claudeCodePkg = inputs.claude-code-nix.packages.x86_64-linux.default;
+
+  claudeCodeWrapped = pkgs.symlinkJoin {
+    name = "claude-code";
+    paths = [claudeCodePkg];
+    nativeBuildInputs = [pkgs.makeWrapper];
+    postBuild = ''
+      wrapProgram $out/bin/claude --add-flags "--mcp-config=${claudeMcpConfigFile}"
+    '';
+    inherit (claudeCodePkg) meta;
+  };
+
   gsd-repo = pkgs.fetchFromGitHub {
     owner = "gsd-build";
     repo = "get-shit-done";
@@ -690,6 +766,71 @@
     ${pkgs.coreutils}/bin/rm -f "$dst"
     ${pkgs.coreutils}/bin/install -m 0644 ${claudeSettingsFile} "$dst"
   '';
+
+  # claude-mem's vector search shells out to `uvx chroma-mcp`. uv fetches
+  # python-build-standalone plus manylinux wheels, and NumPy's wheel dlopen's
+  # libstdc++.so.6 at import time — which nothing on NixOS puts in that
+  # process's search path, so chroma-mcp dies with
+  # "libstdc++.so.6: cannot open shared object file" and the worker reports
+  # "Dependencies: degraded (uvx unavailable for vector search)".
+  #
+  # nix-ld (nixosModules/system/utils.nix) does not help here: it rewrites the
+  # interpreter for the binary it launches, but the failing load is a dlopen
+  # from inside uv's own Python, which only consults LD_LIBRARY_PATH.
+  #
+  # Setting LD_LIBRARY_PATH globally would leak into every process on the
+  # system, so scope it to exactly this call instead: claude-mem takes a
+  # `CLAUDE_MEM_CHROMA_UVX_PATH` override for the uvx it invokes, so point that
+  # at a wrapper (wired up in `settings.env` below — it is read from
+  # process.env, not from ~/.claude-mem/settings.json). Verified 2026-08-26:
+  # `uvx chroma-mcp --help` succeeds through the wrapper in 2 s and the worker's
+  # "degraded" line disappears.
+  claudeMemUvx = pkgs.writeShellScriptBin "uvx" ''
+    export LD_LIBRARY_PATH="${lib.makeLibraryPath [pkgs.stdenv.cc.cc.lib pkgs.zlib]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    exec ${pkgs.uv}/bin/uvx "$@"
+  '';
+
+  claudeMemSettingsFile =
+    (pkgs.formats.json {}).generate "claude-mem-managed-settings.json"
+    config.code.claude-code.claude-mem.settings;
+
+  # Merge rather than replace — see the `claude-mem.settings` option for why the
+  # file cannot be a store symlink.
+  claudeMemSettingsInstall = pkgs.writeShellScript "claude-mem-settings-install" ''
+    set -eu
+    dir="$HOME/.claude-mem"
+    dst="$dir/settings.json"
+    ${pkgs.coreutils}/bin/mkdir -p "$dir"
+    [ -f "$dst" ] || ${pkgs.coreutils}/bin/printf '{}\n' > "$dst"
+
+    tmp="$(${pkgs.coreutils}/bin/mktemp "$dir/.settings.json.XXXXXX")"
+    ${pkgs.jq}/bin/jq -S -s '.[0] * .[1]' "$dst" ${claudeMemSettingsFile} > "$tmp"
+
+    if ${pkgs.jq}/bin/jq -S . "$dst" | ${pkgs.diffutils}/bin/cmp -s - "$tmp"; then
+      ${pkgs.coreutils}/bin/rm -f "$tmp"
+      exit 0
+    fi
+
+    ${pkgs.coreutils}/bin/mv -f "$tmp" "$dst"
+    ${pkgs.coreutils}/bin/chmod 0644 "$dst"
+    echo "claude-mem: settings.json updated"
+
+    # The worker caches settings at start, so a changed file only takes effect
+    # once it goes down. Path is version-scoped and mutable (the marketplace
+    # clone), so resolve the newest one at runtime rather than pinning it.
+    scripts=""
+    for c in "$HOME"/.claude/plugins/cache/thedotmack/claude-mem/*/scripts; do
+      # An unmatched glob stays literal, so the -f test is what filters it —
+      # keep it inside an `if` so a false test can't trip `set -e`.
+      if [ -f "$c/worker-service.cjs" ] && [ -f "$c/bun-runner.js" ]; then scripts="$c"; fi
+    done
+    if [ -n "$scripts" ]; then
+      echo "claude-mem: stopping worker so it reloads (next session restarts it)"
+      # Must go through bun-runner: worker-service.cjs uses bun-only APIs and
+      # crashes when handed straight to node.
+      ${pkgs.nodejs}/bin/node "$scripts/bun-runner.js" "$scripts/worker-service.cjs" stop >/dev/null 2>&1 || true
+    fi
+  '';
 in {
   options.code.claude-code = {
     enable = lib.mkEnableOption "Enable Claude Code CLI";
@@ -737,8 +878,8 @@ in {
     };
     marketing-skills.enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Enable the coreyhaines31/marketingskills plugin (marketing-skills@marketingskills): 47 marketing skills for founders and technical marketers — CRO, copywriting, cold email, SEO/AI-SEO, paid ads, ad creative, pricing, referrals, revops, customer research, AARRR marketing plans, and more.";
+      default = false;
+      description = "Enable the coreyhaines31/marketingskills plugin (marketing-skills@marketingskills): 47 marketing skills for founders and technical marketers — CRO, copywriting, cold email, SEO/AI-SEO, paid ads, ad creative, pricing, referrals, revops, customer research, AARRR marketing plans, and more. Default-off after the 2026-08-26 audit: one lifetime invocation in 451 startups, and its 50 broadly-worded trigger descriptions (schema, image, video, analytics) compete for the capped skill-listing budget against skills that are actually used.";
     };
     printing-press.enable = lib.mkOption {
       type = lib.types.bool;
@@ -747,8 +888,26 @@ in {
     };
     playground.enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Enable the Anthropic-verified playground plugin (playground@claude-plugins-official): /playground generates self-contained interactive HTML playgrounds (design, data explorer, concept map, document critique, diff review, code map) with live preview and copyable prompt output.";
+      default = false;
+      description = "Enable the Anthropic-verified playground plugin (playground@claude-plugins-official): /playground generates self-contained interactive HTML playgrounds (design, data explorer, concept map, document critique, diff review, code map) with live preview and copyable prompt output. Default-off after the 2026-08-26 audit: 4 lifetime invocations, last 2026-06-15, and visual-explainer covers the same ground.";
+    };
+
+    skill-creator.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the Anthropic-verified skill-creator plugin (skill-creator@claude-plugins-official): scaffolds new skills, edits existing ones, and runs eval/benchmark suites against a skill's description to measure triggering accuracy. Default-off after the 2026-08-26 audit: 1 lifetime invocation in 451 startups, while skill authoring in practice goes through the local `writing-for-agents` skill. Re-enable if you start iterating on skill descriptions with its eval harness rather than by hand.";
+    };
+
+    obsidian.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the kepano/obsidian-skills plugin (obsidian@obsidian-skills): obsidian-cli, obsidian-markdown, obsidian-bases, json-canvas, and `defuddle` (strips a web page to clean markdown). Default-off after the 2026-08-26 audit: zero invocations across 387 startups since install. `defuddle` is the one piece with a live use case (it should be replacing WebFetch on article/doc pages) — re-enable together with a rule that names it, or the plugin sits idle again.";
+    };
+
+    gsd.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Link the gsd-build/get-shit-done workflow into ~/.claude: 67 `/gsd:*` commands and 33 `gsd-*` subagents implementing a full `.planning/`-directory methodology (roadmap → spec → discuss → plan → execute → verify). Default-off after the 2026-08-26 audit: the 33 agent definitions cost a measured 3,645 tokens of startup context every session (agent listings, unlike skill listings, are not budget-capped) against zero agent spawns ever and one `/gsd:help` invocation on 2026-05-08. Commands and agents are gated together because the commands dispatch to the agents — shipping one without the other only produces broken slash commands.";
     };
     visual-explainer.enable = lib.mkOption {
       type = lib.types.bool;
@@ -790,12 +949,64 @@ in {
         Enable the openai/codex-plugin-cc plugin for Claude Code (slash commands /codex:setup, /codex:review, /codex:status, /codex:result and the codex:codex-rescue subagent). The plugin shells out to the local Codex CLI; defaults to whatever `code.codex.enable` is set to so the binary is present.
       '';
     };
-    claude-mem.enable = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = ''
-        Enable the thedotmack/claude-mem plugin: persistent memory across Claude Code sessions. Captures tool-use observations, compresses them with an AI provider, and re-injects relevant context on session start. Hooks and worker live entirely under ~/.claude/plugins/marketplaces/thedotmack/ (mutable, not nix-managed), so it coexists with the nix-rendered settings.json. Requires `node` (already provided) and an AI provider configured at runtime — see https://docs.claude-mem.ai.
-      '';
+    claude-mem = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Enable the thedotmack/claude-mem plugin: persistent memory across Claude Code sessions. Captures tool-use observations, compresses them with an AI provider, and re-injects relevant context on session start. Hooks and worker live entirely under ~/.claude/plugins/marketplaces/thedotmack/ (mutable, not nix-managed), so it coexists with the nix-rendered settings.json. Requires `node` (already provided) and an AI provider configured at runtime — see https://docs.claude-mem.ai.
+        '';
+      };
+
+      settings = lib.mkOption {
+        type = lib.types.attrsOf lib.types.str;
+        default = {
+          # 2026-08-26 audit. The three knobs that decide what claude-mem costs:
+          #
+          # SKIP_TOOLS  — the PostToolUse hook is registered with matcher "*"
+          #   inside the plugin's own hooks.json, which we cannot patch (it is a
+          #   mutable marketplace clone that `claude plugin update` overwrites
+          #   nightly). The worker filters internally instead:
+          #   worker-service.cjs / transcript-watcher.cjs both do
+          #   `if (SKIP_TOOLS.has(t.toolName)) return {status:"skipped"}`.
+          #   Adding Read/Grep/Glob to upstream's list drops the observation
+          #   pass — and its Haiku call — for the tool calls that generated 34%
+          #   of the 10,878-row database while writing back nothing actionable.
+          #   The hook still fires (~361 ms/call); what this saves is API spend
+          #   and database growth, not hook latency.
+          #
+          # CONTEXT_OBSERVATIONS / CONTEXT_SESSION_COUNT — the SessionStart
+          #   digest measured 2,938 tokens, split 1,474 (50 observation lines) /
+          #   1,359 (10 session-summary blocks) / 104 header. It is not a fixed
+          #   cost: it grew ~870 tokens mid-audit when that session's own
+          #   summary landed. Both counts scale roughly linearly, so 20/5 caps
+          #   the digest near ~1,500 tokens instead of letting it drift upward.
+          CLAUDE_MEM_SKIP_TOOLS = "ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion,Read,Grep,Glob";
+          CLAUDE_MEM_CONTEXT_OBSERVATIONS = "20";
+          CLAUDE_MEM_CONTEXT_SESSION_COUNT = "5";
+
+          # Declared rather than left implicit: semantic recall is the only read
+          # path claude-mem has that anyone would use, and it had never once
+          # worked on this machine before `claudeMemUvx` (above) fixed the
+          # chroma-mcp launch. Turning it off makes `mem-search` pointless;
+          # leaving it on without the wrapper just logs "degraded" forever.
+          CLAUDE_MEM_CHROMA_ENABLED = "true";
+        };
+        description = ''
+          Keys to enforce in ~/.claude-mem/settings.json on every activation.
+
+          That file cannot be a /nix/store symlink: claude-mem owns it (70+ keys,
+          including provider credentials it writes itself via `updateSettings`),
+          and a read-only symlink would break both its own writes and any key a
+          future version adds. So activation merges these keys into whatever is
+          on disk — declared keys win, every other key is left untouched — and
+          stops the worker when the merge actually changes something, since the
+          worker reads settings once at start. The next session's SessionStart
+          hook brings it back up.
+
+          Only applied when `claude-mem.enable` is true.
+        '';
+      };
     };
     tokenOptimizer.enable = lib.mkOption {
       type = lib.types.bool;
@@ -895,7 +1106,9 @@ in {
 
     programs.claude-code = {
       enable = true;
-      package = inputs.claude-code-nix.packages.x86_64-linux.default;
+      # Pre-wrapped with `--mcp-config=<file>` so `claude plugin|mcp|doctor …`
+      # stop erroring on the flag — see claudeCodeWrapped above.
+      package = claudeCodeWrapped;
 
       # Skills (managed via skillsDir, see ./skills/)
       skillsDir = ./skills;
@@ -1113,14 +1326,23 @@ in {
           '';
         }
         // lib.optionalAttrs config.code.claude-code.codegraph.enable {
+          # This rule carried "CodeGraph does not parse Nix" until 2026-08-26,
+          # which was false and kept the tool out of this repo — the one we work
+          # in most. codegraph 1.5.0 ships tree-sitter-nix plus a nix extractor
+          # (attrsets, bindings, let, function expressions, inherit, import);
+          # indexing this repo produced 7,300 nodes from 302 files in 589 ms.
+          # The trigger is behavioural rather than "if a .codegraph/ dir exists"
+          # for the same reason: the passive form measured zero pickup across
+          # every session on record, including in fully indexed JS/TS projects
+          # where 500+ grep-like calls ran instead.
           codegraph = ''
             # CodeGraph (Semantic Code Intelligence)
 
-            When a project contains a `.codegraph/` directory, prefer CodeGraph
-            over a `grep`/`rg` + `Read` loop: one call returns the relevant
-            symbols' verbatim line-numbered source grouped by file, the call
-            paths between them, and a blast-radius summary — including
-            dynamic-dispatch hops (callbacks, interface→impl) grep cannot follow.
+            Reach for CodeGraph before the second grep of the same
+            investigation. One call returns the relevant symbols' verbatim
+            line-numbered source grouped by file, the call paths between them,
+            and a blast-radius summary — including dynamic-dispatch hops
+            (callbacks, interface→impl) grep cannot follow.
 
             The MCP surface is a single tool, `mcp__codegraph__codegraph_explore`.
             It answers "how does X work", a flow ("how does X reach Y"), or a
@@ -1141,8 +1363,7 @@ in {
             on every change, and reconciles against disk when it reconnects, so
             the index is never stale and there is nothing to re-run.
 
-            CodeGraph does not parse Nix — fall back to grep/Read for `.nix`
-            files.
+            Nix is supported, so this repo is a valid target too.
           '';
         };
 
@@ -1173,44 +1394,9 @@ in {
       #   # };
       # };
 
-      # MCP (Model Context Protocol) servers
-      mcpServers =
-        {
-          nixos = {
-            command = "nix";
-            args = ["run" "github:utensils/mcp-nixos" "--"];
-          };
-        }
-        // lib.optionalAttrs config.code.claude-code.exa.enable {
-          exa = {
-            command = "${exaMcpWrapper}";
-            args = [];
-          };
-        }
-        // lib.optionalAttrs config.code.claude-code.context7.enable {
-          context7 = {
-            command = "${context7McpWrapper}";
-            args = [];
-          };
-        }
-        // lib.optionalAttrs config.code.claude-code.codegraph.enable {
-          codegraph = {
-            command = "${codegraphMcpWrapper}";
-            args = [];
-          };
-        }
-        // lib.optionalAttrs config.code.claude-code.perplexity.enable {
-          perplexity = {
-            command = "${perplexityMcpWrapper}";
-            args = [];
-          };
-        }
-        // lib.optionalAttrs config.code.claude-code.n8n.enable {
-          n8n = {
-            command = "${n8nMcpWrapper}";
-            args = [];
-          };
-        };
+      # MCP servers live in the `claudeMcpServers` let-binding at the top of
+      # this file and reach `claude` through `claudeCodeWrapped`, not through
+      # this option — see the comment there for why.
 
       # Additional settings
       settings = {
@@ -1312,6 +1498,15 @@ in {
           {
             CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
             CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+          }
+          // lib.optionalAttrs config.code.claude-code.claude-mem.enable {
+            # Has to be an env var, not a settings.json key: claude-mem reads it
+            # straight off process.env, and its uvx search list is only
+            # [override, ~/.local/bin, ~/.cargo/bin, …] — it never consults PATH,
+            # so the uvx in /etc/profiles/per-user is invisible to it. The
+            # worker is always started by claude-mem's own SessionStart hook,
+            # which inherits this. See `claudeMemUvx` for what the wrapper fixes.
+            CLAUDE_MEM_CHROMA_UVX_PATH = "${claudeMemUvx}/bin/uvx";
           }
           // lib.optionalAttrs config.code.claude-code.ponytail.enable {
             # Ponytail intensity for every new session (lite/full/ultra/off).
@@ -1459,11 +1654,15 @@ in {
         # Plugins
         enabledPlugins =
           {
-            "skill-creator@claude-plugins-official" = true;
             # "frontend-design@claude-plugins-official" = true;  # Replaced by impeccable (strict superset)
             "impeccable@impeccable" = true;
-            "obsidian@obsidian-skills" = true;
             "context-mode@context-mode" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.skill-creator.enable {
+            "skill-creator@claude-plugins-official" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.obsidian.enable {
+            "obsidian@obsidian-skills" = true;
           }
           // lib.optionalAttrs config.code.claude-code.marketing-skills.enable {
             "marketing-skills@marketingskills" = true;
@@ -1504,12 +1703,6 @@ in {
                 repo = "anthropics/claude-plugins-official";
               };
             };
-            obsidian-skills = {
-              source = {
-                source = "github";
-                repo = "kepano/obsidian-skills";
-              };
-            };
             context-mode = {
               source = {
                 source = "github";
@@ -1520,6 +1713,14 @@ in {
               source = {
                 source = "github";
                 repo = "pbakaus/impeccable";
+              };
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.obsidian.enable {
+            obsidian-skills = {
+              source = {
+                source = "github";
+                repo = "kepano/obsidian-skills";
               };
             };
           }
@@ -1601,7 +1802,7 @@ in {
       };
     };
 
-    # GSD (Get Shit Done) commands and agents +
+    # GSD (Get Shit Done) commands and agents, gated on `gsd.enable` +
     # Matt Pocock skills (flat-linked from upstream plugin.json, plus the
     # mattpocockExtraSkills opt-ins above)
     home.file =
@@ -1609,12 +1810,6 @@ in {
         # Rendered as a mutable copy by claudeSettingsInstall instead, so
         # Claude can write /effort, /model & co. back into it at runtime.
         ".claude/settings.json".enable = false;
-
-        ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
-        ".claude/agents" = {
-          source = "${gsd-repo}/agents";
-          recursive = true;
-        };
 
         # Upstream ships a discovery stub (`hidden: true`) that pulls the real
         # workflow content from the CLI at use time — `agent-browser skills get
@@ -1628,6 +1823,13 @@ in {
         # rendering needs no network and no playwright (whose binary wheels and
         # downloaded chromium both fail to load on NixOS).
         ".claude/skills/excalidraw-diagram/references/excalidraw-utils.js".source = excalidrawUtils;
+      }
+      // lib.optionalAttrs config.code.claude-code.gsd.enable {
+        ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
+        ".claude/agents" = {
+          source = "${gsd-repo}/agents";
+          recursive = true;
+        };
       }
       // mattpocockSkillFiles
       // twentyfirstSkillFiles
@@ -1643,6 +1845,12 @@ in {
     home.activation.claudeSettings = lib.hm.dag.entryAfter ["linkGeneration"] ''
       run ${claudeSettingsInstall}
     '';
+
+    home.activation.claudeMemSettings =
+      lib.mkIf config.code.claude-code.claude-mem.enable
+      (lib.hm.dag.entryAfter ["linkGeneration"] ''
+        run ${claudeMemSettingsInstall}
+      '');
 
     # Machine-local tooling output that no repo should ever track. Global
     # rather than per-repo .gitignore: these are our tools, not the projects',

@@ -23,10 +23,11 @@
   updateScript = pkgs.writeShellScriptBin "claude-plugins-update" ''
     set -u
 
-    # The Home Manager wrapper appends `--mcp-config` to every `claude` call,
-    # which the `plugin` subcommands reject. Prefer the unwrapped binary
-    # (makeWrapper leaves it beside the wrapper as `.claude-wrapped`); fall
-    # back to the wrapper if this build isn't wrapped.
+    # claude-code.nix now wraps with `--mcp-config=<file>` ahead of "$@", so
+    # `claude plugin …` works through the wrapper again. We still prefer the
+    # unwrapped binary (makeWrapper leaves it beside the wrapper as
+    # `.claude-wrapped`) — this script wants no MCP servers spawned at all —
+    # and fall back to the wrapper if this build isn't wrapped.
     CLAUDE="${claudePkg}/bin/.claude-wrapped"
     [ -x "$CLAUDE" ] || CLAUDE="${claudePkg}/bin/claude"
 

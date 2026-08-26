@@ -16,6 +16,8 @@ Applies to every response for the rest of the session, across topic changes. If 
 
 Where these rules conflict with more general communication or formatting guidance elsewhere in your instructions, these rules win.
 
+Ponytail is the case that comes up: it governs what gets built, readable governs the response reporting it. The structure readable asks for is requested explanation, not prose debt.
+
 "stop readable" or "normal mode" turns them off. Confirm in one line, then return to the default style.
 
 ## Scope

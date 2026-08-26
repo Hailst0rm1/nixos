@@ -80,13 +80,24 @@
       shadcn.enable = lib.mkDefault true;
       twentyfirst.enable = lib.mkDefault true;
       higgsfield.enable = lib.mkDefault false;
-      marketing-skills.enable = lib.mkDefault true;
+      marketing-skills.enable = lib.mkDefault false;
+      skill-creator.enable = lib.mkDefault false;
+      obsidian.enable = lib.mkDefault false;
+      gsd.enable = lib.mkDefault false;
       perplexity.enable = lib.mkDefault false;
-      claude-mem.enable = lib.mkDefault true;
+      claude-mem = {
+        enable = lib.mkDefault true;
+        settings = lib.mkDefault {
+          CLAUDE_MEM_SKIP_TOOLS = "ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion,Read,Grep,Glob";
+          CLAUDE_MEM_CONTEXT_OBSERVATIONS = "20";
+          CLAUDE_MEM_CONTEXT_SESSION_COUNT = "5";
+          CLAUDE_MEM_CHROMA_ENABLED = "true";
+        };
+      };
       codeburn.enable = lib.mkDefault false;
       tokenOptimizer.enable = lib.mkDefault false;
       superpowers.enable = lib.mkDefault false;
-      playground.enable = lib.mkDefault true;
+      playground.enable = lib.mkDefault false;
       visual-explainer.enable = lib.mkDefault true;
       ponytail = {
         enable = lib.mkDefault true;
