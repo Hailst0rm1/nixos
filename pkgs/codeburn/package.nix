@@ -18,13 +18,13 @@
 in
   buildNpmPackage rec {
     pname = "codeburn";
-    version = "0.9.20";
+    version = "0.9.22";
 
     src = fetchFromGitHub {
       owner = "getagentseal";
       repo = "codeburn";
       rev = "v${version}";
-      hash = "sha256-t9T6cMIveGsX60HSHKoqXbk7Hrd0CkRxryZUnmgQI5c=";
+      hash = "sha256-SdD80Jb+ZKfiZr+LzxIxb4Gq0ffHiYvRyB71GN2KBR4=";
     };
 
     npmDepsHash = "sha256-t36Q1NLjY0I//m/XJrPdxe0a6LvYqgY5+HOphMzlE5M=";
