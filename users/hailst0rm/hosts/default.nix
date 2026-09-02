@@ -36,6 +36,7 @@
   browser = lib.mkDefault "firefox";
   video = lib.mkDefault "totem";
   image = lib.mkDefault "loupe";
+  camera = lib.mkDefault "snapshot";
   keyboard = lib.mkDefault "colemak-se,se";
 
   # Import configuration for other tools

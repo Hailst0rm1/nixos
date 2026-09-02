@@ -21,6 +21,12 @@
         font-size = lib.mkForce 12;
         window-decoration = false;
 
+        # New windows are a GTK activation of the running instance instead of a
+        # cold process fork, so they skip the ~1-2s GTK+EGL/shader re-init that
+        # otherwise stacks on top of iGPU contention (mpvpaper + Hyprland blur +
+        # other Wayland clients) and shows as a stuck blurred window on open.
+        gtk-single-instance = true;
+
         # Use the regular clipboard for copy-on-select so everything goes to the same place
         clipboard-paste-bracketed-safe = true;
 

@@ -42,6 +42,12 @@
       description = "The default image viewer.";
     };
 
+    camera = lib.mkOption {
+      type = lib.types.str;
+      default = "snapshot";
+      description = "The default camera application.";
+    };
+
     keyboard = lib.mkOption {
       type = lib.types.str;
       default = "se";

@@ -57,34 +57,6 @@
     esac
   '';
 
-  # Vim-arrow with per-app exception: pass Ctrl+<key> through to Obsidian and
-  # VSCode, remap to arrow direction everywhere else.
-  vim-arrow = pkgs.writeShellScript "vim-arrow" ''
-    key="$1"
-    direction="$2"
-    class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
-    # Matched case-insensitively on a substring: Obsidian's app_id is
-    # md.Obsidian on Wayland (it was plain "obsidian" when this list was
-    # written, which is why the exception silently stopped matching), and
-    # VSCode reports Code on XWayland but code natively.
-    case "''${class,,}" in
-      *obsidian*|code)
-        hyprctl dispatch sendshortcut "CTRL, $key, activewindow"
-        ;;
-      *)
-        # wtype, not sendshortcut: sendshortcut delivers to a toplevel window,
-        # and serpantinum's popups are layer-shell surfaces, so the arrow went
-        # to whatever window sat behind the panel. wtype injects through the
-        # virtual-keyboard protocol carrying its own (empty) modifier state, so
-        # the arrow reaches the focused surface as a bare Left/Right/Up/Down —
-        # evdev-level injectors like ydotool instead inherit the Ctrl still
-        # physically held, turning Ctrl+h into a word jump and missing QML
-        # `Shortcut { sequence: "Left" }` handlers entirely.
-        ${pkgs.wtype}/bin/wtype -k "$direction"
-        ;;
-    esac
-  '';
-
   cfg = config.importConfig.hyprland;
 
   # Home Manager renders `plugins = [...]` as `exec-once=hyprctl plugin load
@@ -326,6 +298,12 @@ in {
             # Zoom
             "$mainMod SHIFT, mouse_up, exec, hyprctl keyword cursor:zoom_factor \"$(hyprctl getoption cursor:zoom_factor | awk 'NR==1 {factor = $2; if (factor < 1) {factor = 1}; print factor * 2.00}')\""
             "$mainMod SHIFT, mouse_down, exec, hyprctl keyword cursor:zoom_factor \"$(hyprctl getoption cursor:zoom_factor | awk 'NR==1 {factor = $2; if (factor < 1) {factor = 1}; print factor / 2.00}')\""
+
+            # Ctrl+hjkl -> arrows (and the Ctrl+Shift word-step) are remapped
+            # below the compositor by keyd (nixosModules/system/vim-arrows.nix):
+            # real key events reach layer-shell panels and repeat natively when
+            # held, which no Hyprland bind mechanism managed — see
+            # docs/research/vim-arrow-keybindings.md.
           ]
           ++ map (n: "$mainMod SHIFT, ${toString n}, split:movetoworkspace, ${toString (
             if n == 0
@@ -356,18 +334,6 @@ in {
           "$mainMod CTRL, h, resizeactive, -30 0"
           "$mainMod CTRL, k, resizeactive, 0 -10"
           "$mainMod CTRL, j, resizeactive, 0 10"
-
-          # Vim-style arrow keys (global, override all apps), injected with wtype
-          # so they reach layer-shell panels as well as windows — see vim-arrow.
-          # j/k are routed through a wrapper so Obsidian and VSCode keep their native Ctrl+J/K.
-          "CTRL, h, exec, ${pkgs.wtype}/bin/wtype -k Left"
-          "CTRL, j, exec, ${vim-arrow} j Down"
-          "CTRL, k, exec, ${vim-arrow} k Up"
-          "CTRL, l, exec, ${pkgs.wtype}/bin/wtype -k Right"
-
-          # Word-step (Ctrl+Shift+h/l -> Ctrl+Left/Right)
-          "CTRL SHIFT, h, sendshortcut, CTRL, Left, activewindow"
-          "CTRL SHIFT, l, sendshortcut, CTRL, Right, activewindow"
         ];
 
         bindm = [
@@ -459,6 +425,7 @@ in {
         # ---Gnome applications
         (pkgs.${config.image})
         (pkgs.${config.video})
+        (pkgs.${config.camera})
         gedit # Text editor
         gnome-calculator
         gnome-music

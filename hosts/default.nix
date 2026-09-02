@@ -78,6 +78,7 @@
     kernel = lib.mkDefault "zen";
     bootloader = lib.mkDefault "grub";
     keyboard.colemak-se = lib.mkDefault true;
+    keyboard.vim-arrows = lib.mkDefault true;
     theme = {
       enable = lib.mkDefault true;
       name = lib.mkDefault "catppuccin-mocha";
