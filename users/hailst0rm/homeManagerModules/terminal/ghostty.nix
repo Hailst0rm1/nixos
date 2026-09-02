@@ -18,7 +18,7 @@
       });
       enableZshIntegration = true;
       settings = {
-        font-size = lib.mkForce 14;
+        font-size = lib.mkForce 12;
         window-decoration = false;
 
         # Use the regular clipboard for copy-on-select so everything goes to the same place

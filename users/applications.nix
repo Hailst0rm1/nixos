@@ -62,24 +62,46 @@ in {
       #(lib.mkIf cfg.spotify.enable [ pkgs-unstable.spotify ]) # Uncomment if not using spicetify flake
       (lib.mkIf cfg.youtube-music.enable [pkgs-unstable.pear-desktop])
       (lib.mkIf cfg.zen-browser.enable [inputs.zen-browser.packages.${pkgs.stdenv.hostPlatform.system}.default])
-      (lib.mkIf cfg.claude-desktop.enable [
+      (lib.mkIf cfg.claude-desktop.enable (let
+        system = pkgs.stdenv.hostPlatform.system;
+        # Upstream's claude-desktop.nix still takes a `nodePackages` arg for
+        # `nodePackages.asar`, which nixpkgs removed as a top-level alias.
+        # Override it to the real top-level `asar` package; the flake's own
+        # `claude-desktop-with-fhs` output can't be patched from here since
+        # it bakes in the unoverridden `claude-desktop` internally.
+        claude-desktop = inputs.claude-desktop.packages.${system}.claude-desktop.override {
+          nodePackages = {asar = pkgs.asar;};
+        };
+        claude-desktop-with-fhs = pkgs.buildFHSEnv {
+          name = "claude-desktop";
+          targetPkgs = pkgs: with pkgs; [docker glibc openssl nodejs uv];
+          runScript = "${claude-desktop}/bin/claude-desktop";
+          extraInstallCommands = ''
+            mkdir -p $out/share/applications
+            cp ${claude-desktop}/share/applications/claude.desktop $out/share/applications/
+
+            mkdir -p $out/share/icons
+            cp -r ${claude-desktop}/share/icons/* $out/share/icons/
+          '';
+        };
+      in [
         (pkgs.symlinkJoin {
           name = "claude-desktop-wrapped";
-          paths = [inputs.claude-desktop.packages.${pkgs.stdenv.hostPlatform.system}.claude-desktop-with-fhs];
+          paths = [claude-desktop-with-fhs];
           buildInputs = [pkgs.makeWrapper];
           postBuild = ''
             wrapProgram $out/bin/claude-desktop \
               --set LIBGL_ALWAYS_SOFTWARE 1
           '';
         })
-      ])
+      ]))
       (lib.mkIf cfg.openconnect.enable [pkgs-unstable.openconnect])
       (lib.mkIf cfg.signal.enable [pkgs-unstable.signal-desktop])
       (lib.mkIf cfg.aws-cvpn-wrapper.enable [(pkgs.callPackage ../pkgs/aws-cvpn-wrapper/package.nix {})])
 
       ## Proton Applications (with enableAll option)
       (lib.mkIf (proton.mail.enable || proton.enableAll) [pkgs-unstable.protonmail-desktop])
-      (lib.mkIf (proton.vpn.enable || proton.enableAll) [pkgs.protonvpn-gui])
+      (lib.mkIf (proton.vpn.enable || proton.enableAll) [pkgs.proton-vpn])
       (lib.mkIf (proton.pass.enable || proton.enableAll) [pkgs-unstable.proton-pass])
       (lib.mkIf (proton.authenticator.enable || proton.enableAll) [pkgs-unstable.proton-authenticator])
 

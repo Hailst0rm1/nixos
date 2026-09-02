@@ -1,0 +1,42 @@
+--- a/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-01 18:16:18.949857342 +0200
++++ b/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-01 18:17:10.186965299 +0200
+@@ -65,7 +65,17 @@
+         }
+     }
+ 
+-    property bool isHovered: bgMouse.containsMouse
++    // The clock and the weather form one group box that toggles one popup, so
++    // the box behaves as a single button: hovering either half lights and pops
++    // both. groupHovered is driven from TopBar.qml, which reads selfHovered
++    // rather than isHovered — binding the two widgets' isHovered to each other
++    // would be a loop.
++    property bool selfHovered: bgMouse.containsMouse
++    property bool groupHovered: false
++    property bool isHovered: selfHovered || groupHovered
++
++    scale: timeDateRoot.isHovered ? 1.03 : 1.0
++    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
+     property bool showLayout: false
+ 
+     property real targetY: barWindow ? barWindow.baseOffsetY : 0
+--- a/src/quickshell/bar/modules/WeatherWidget.qml	2026-09-01 18:16:18.902540698 +0200
++++ b/src/quickshell/bar/modules/WeatherWidget.qml	2026-09-01 18:17:10.187776404 +0200
+@@ -50,7 +50,17 @@
+         }
+     }
+ 
+-    property bool isHovered: bgMouse.containsMouse
++    // The clock and the weather form one group box that toggles one popup, so
++    // the box behaves as a single button: hovering either half lights and pops
++    // both. groupHovered is driven from TopBar.qml, which reads selfHovered
++    // rather than isHovered — binding the two widgets' isHovered to each other
++    // would be a loop.
++    property bool selfHovered: bgMouse.containsMouse
++    property bool groupHovered: false
++    property bool isHovered: selfHovered || groupHovered
++
++    scale: weatherWidgetRoot.isHovered ? 1.03 : 1.0
++    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
+     property bool showLayout: false
+ 
+     property real targetY: barWindow ? barWindow.baseOffsetY : 0

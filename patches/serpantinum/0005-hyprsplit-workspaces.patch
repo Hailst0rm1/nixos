@@ -1,0 +1,70 @@
+--- a/src/quickshell/bar/modules/WorkspacesWidget.qml	1970-01-01 01:00:01.000000000 +0100
++++ b/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-08-31 12:38:27.500819225 +0200
+@@ -26,7 +26,13 @@
+     property int swayActiveIndex: 0
+     property var swayOccupiedMap: ({})
+ 
+-    property int workspaceCount: (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.workspaceCount !== undefined) ? Math.max(2, Math.min(10, Config.rawSettings.bar.workspaceCount)) : ((typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.general && Config.rawSettings.general.workspaceCount !== undefined) ? Math.max(2, Math.min(10, Config.rawSettings.general.workspaceCount)) : ((typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.workspaceCount !== undefined) ? Math.max(2, Math.min(10, Config.rawSettings.workspaceCount)) : 8))
++    property int workspaceCount: (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.workspaceCount !== undefined) ? Math.max(2, Config.rawSettings.bar.workspaceCount) : ((typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.general && Config.rawSettings.general.workspaceCount !== undefined) ? Math.max(2, Config.rawSettings.general.workspaceCount) : ((typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.workspaceCount !== undefined) ? Math.max(2, Config.rawSettings.workspaceCount) : 8))
++
++    // hyprsplit: this monitor's real workspace ids are [hyprWsStart, hyprWsStart + workspaceCount - 1],
++    // not the flat 0..workspaceCount-1 range niri/sway use.
++    property var hyprMonitor: (!isNiri && !isSway && barWindow && barWindow.screen) ? Hyprland.monitorFor(barWindow.screen) : null
++    property int hyprMonitorId: hyprMonitor ? hyprMonitor.id : 0
++    property int hyprWsStart: hyprMonitorId * workspaceCount + 1
+ 
+     function wsForId(id) {
+         if (isNiri || isSway) return null;
+@@ -42,7 +48,7 @@
+         } else {
+             const fw = Hyprland.focusedWorkspace;
+             if (!fw) return -1;
+-            idx = fw.id - 1;
++            idx = fw.id - hyprWsStart;
+         }
+         return (idx >= 0 && idx < workspaceCount) ? idx : -1;
+     }
+@@ -254,7 +260,7 @@
+                             workspacesWidgetRoot.swayActiveIndex = nextIndex;
+                             Quickshell.execDetached(["swaymsg", "workspace", "number", (nextIndex + 1).toString()]);
+                         } else {
+-                            Hyprland.dispatch("hl.dsp.focus({ workspace = " + (nextIndex + 1) + " })");
++                            Hyprland.dispatch("split:workspace " + (workspacesWidgetRoot.hyprWsStart + nextIndex));
+                         }
+                     }
+                 }
+@@ -325,7 +331,7 @@
+                 id: wsPill
+ 
+                 required property int index
+-                property int wsId: index + 1
++                property int wsId: (workspacesWidgetRoot.isNiri || workspacesWidgetRoot.isSway) ? (index + 1) : (workspacesWidgetRoot.hyprWsStart + index)
+                 property var ws: workspacesWidgetRoot.wsForId(wsId)
+                 property bool isOccupied: {
+                     if (workspacesWidgetRoot.isNiri) {
+@@ -396,7 +402,7 @@
+                             workspacesWidgetRoot.swayActiveIndex = wsPill.index;
+                             Quickshell.execDetached(["swaymsg", "workspace", "number", wsPill.wsId.toString()]);
+                         } else {
+-                            Hyprland.dispatch("hl.dsp.focus({ workspace = " + wsPill.wsId + " })");
++                            Hyprland.dispatch("split:workspace " + wsPill.wsId);
+                         }
+                     }
+                 }
+--- a/src/scripts/qs_manager.sh	1970-01-01 01:00:01.000000000 +0100
++++ b/src/scripts/qs_manager.sh	2026-08-31 12:38:32.979830488 +0200
+@@ -101,11 +101,11 @@
+         fi
+     else
+         if [[ "$TARGET" == "move" ]]; then
+-            CMD='hl.dsp.window.move({ workspace = "'"$ACTION"'" })'
++            CMD="split:movetoworkspace $ACTION"
+         else
+-            CMD='hl.dsp.focus({ workspace = "'"$ACTION"'" })'
++            CMD="split:workspace $ACTION"
+         fi
+-        
++
+         hyprctl dispatch "$CMD" >/dev/null 2>&1 &
+     fi
+ 

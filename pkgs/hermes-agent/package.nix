@@ -39,7 +39,7 @@
   # moved web/ (and apps/desktop) into one npm workspace, so the dashboard
   # frontend is now built via buildNpmPackage against the root lockfile rather
   # than a per-folder `npm ci`. Matches pkgs/hermes-desktop/package.nix.
-  npmDepsHash = "sha256-YTLmdnmjCsBH2okE0UqTT8Sl4Dlf+4o1huzBdkJP9aY=";
+  npmDepsHash = "sha256-J8fQxf4gdUIWzJ5MB7mAG3zhHWoAQIQ1DqIq/fHEhhM=";
 
   npmDeps = fetchNpmDeps {
     inherit src;

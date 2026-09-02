@@ -1,0 +1,33 @@
+--- a/src/quickshell/timer/TimerFace.qml	2026-09-01 23:52:21.659074598 +0200
++++ b/src/quickshell/timer/TimerFace.qml	2026-09-01 23:53:01.811039566 +0200
+@@ -379,7 +379,7 @@
+     onAnyTimerActiveChanged: root.updateExportedState()
+ 
+     property var interceptedShortcuts: {
+-        let arr = ["Return", "Enter"];
++        let arr = ["Return", "Enter", "Tab", "Shift+Tab", "Backtab"];
+         if (root.isEditingTime) {
+             arr.push("Left", "Right", "Up", "Down");
+         } else if (stateCache.activeMode === 0 && isTimerIdle) {
+@@ -393,6 +393,21 @@
+     Shortcut { enabled: root.isActiveTab && !root.isEditingTime; sequence: "Return"; onActivated: root.toggleActiveTabState() }
+     Shortcut { enabled: root.isActiveTab && !root.isEditingTime; sequence: "Enter"; onActivated: root.toggleActiveTabState() }
+ 
++    // Tab / Shift+Tab step between timer, stopwatch, pomodoro and alarm, so the
++    // panel is usable without reaching for the mouse. Gated on isEditingTime
++    // for the same reason Return is: while a time selector is open the key
++    // belongs to the field, not to the tab bar. Wraps at both ends.
++    function cycleMode(delta) {
++        stateCache.activeMode = (stateCache.activeMode + delta + 4) % 4;
++        root.saveFullState();
++    }
++
++    Shortcut { enabled: root.isActiveTab && !root.isEditingTime; sequence: "Tab"; onActivated: root.cycleMode(1) }
++    // Shift+Tab arrives as Key_Backtab on Wayland, but not on every stack, so
++    // both spellings are bound; they are distinct sequences and cannot clash.
++    Shortcut { enabled: root.isActiveTab && !root.isEditingTime; sequence: "Shift+Tab"; onActivated: root.cycleMode(-1) }
++    Shortcut { enabled: root.isActiveTab && !root.isEditingTime; sequence: "Backtab"; onActivated: root.cycleMode(-1) }
++
+     function formatTime(ms, includeMs) {
+         if (ms < 0) ms = 0;
+         let totalSeconds = Math.floor(ms / 1000);

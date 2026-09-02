@@ -1,0 +1,63 @@
+--- a/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-01 16:47:50.370451235 +0200
++++ b/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-01 16:47:50.471451737 +0200
+@@ -105,6 +105,10 @@
+             width: targetWidth
+             Behavior on width { NumberAnimation { duration: 480; easing.type: Easing.OutQuint } }
+ 
++            // Match the hover pop ClickButton gives the wifi/bt/volume/kb pills.
++            scale: batPillMouse.containsMouse ? 1.03 : 1.0
++            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
++
+             radius: Math.min(Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2)), height / 2)
+             color: ThemeBackend.surface0
+             border.color: ThemeBackend.surface1
+@@ -259,7 +263,9 @@
+             }
+ 
+             MouseArea {
++                id: batPillMouse
+                 anchors.fill: parent
++                hoverEnabled: true
+                 cursorShape: Qt.PointingHandCursor
+                 onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle system"])
+             }
+--- a/src/quickshell/bar/modules/system/SysMonWidget.qml	2026-09-01 16:47:50.345745675 +0200
++++ b/src/quickshell/bar/modules/system/SysMonWidget.qml	2026-09-01 16:47:50.473830610 +0200
+@@ -92,6 +92,10 @@
+ 
+         height: sysLayout.pillHeight
+         width: sysLayout.pillWidth
++        // Each pill pops on its own hover, like the wifi/bt/volume/kb pills.
++        scale: pillMouse.containsMouse ? 1.03 : 1.0
++        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
++
+         radius: Math.min(Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2)), height / 2)
+         color: ThemeBackend.surface0
+         border.color: ThemeBackend.surface1
+@@ -236,6 +240,14 @@
+                 }
+             }
+         }
++
++        MouseArea {
++            id: pillMouse
++            anchors.fill: parent
++            hoverEnabled: true
++            cursorShape: Qt.PointingHandCursor
++            onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle sysmon"])
++        }
+     }
+ 
+     Row {
+@@ -267,11 +279,4 @@
+         }
+     }
+ 
+-    MouseArea {
+-        anchors.fill: parent
+-        cursorShape: Qt.PointingHandCursor
+-        onClicked: {
+-            Quickshell.execDetached(["quickshell", "-p", Caching.mainQml, "ipc", "call", "floating", "showSystemUsage"]);
+-        }
+-    }
+ }

@@ -64,7 +64,7 @@ in {
       package = inputs.codex-cli-nix.packages.x86_64-linux.default;
 
       # Global context → ~/.codex/AGENTS.md (equivalent to Claude's CLAUDE.md)
-      custom-instructions = ''
+      context = ''
         # AGENTS.md
 
         Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
@@ -304,10 +304,24 @@ in {
             if [ -d "$plugin_root" ]; then
               if [ -f "$plugin_root/.codex-plugin/plugin.json" ]; then
                 plugin_name="''${plugin%@*}"
-                codex_marketplace=$(${config.programs.codex.package}/bin/codex plugin marketplace add "$plugin_root" --json | ${pkgs.jq}/bin/jq -r .marketplaceName)
-                codex_plugin="$plugin_name@$codex_marketplace"
-                run ${config.programs.codex.package}/bin/codex plugin add "$codex_plugin" --json >/dev/null
-                ${pkgs.coreutils}/bin/printf '%s\n' "$codex_plugin" >> "$next_plugin_manifest"
+                # `codex plugin marketplace add` re-clones the plugin's git
+                # remote, so it fails whenever the network is down — and at boot
+                # Home Manager activates before DNS is up. Unguarded, that
+                # failure aborts the entire activation run under `set -e`:
+                # everything after this point is skipped, including
+                # reloadSystemd, so user services deleted from the config keep
+                # running from the previous generation (this stranded the v1
+                # quickshell bar and OSD alongside serpantinum). Skip the plugin
+                # instead and carry its previous registration forward so the
+                # prune below does not uninstall it; the next activation with a
+                # network reconciles it.
+                codex_marketplace=$(${config.programs.codex.package}/bin/codex plugin marketplace add "$plugin_root" --json | ${pkgs.jq}/bin/jq -r .marketplaceName) || true
+                if [ -n "$codex_marketplace" ] && [ "$codex_marketplace" != "null" ] \
+                  && run ${config.programs.codex.package}/bin/codex plugin add "$plugin_name@$codex_marketplace" --json >/dev/null; then
+                  ${pkgs.coreutils}/bin/printf '%s\n' "$plugin_name@$codex_marketplace" >> "$next_plugin_manifest"
+                elif [ -f "$plugin_manifest" ]; then
+                  ${pkgs.gnugrep}/bin/grep "^$plugin_name@" "$plugin_manifest" >> "$next_plugin_manifest" || true
+                fi
               else
                 while IFS= read -r skill; do
                   share_skill "$skill"

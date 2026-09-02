@@ -12,20 +12,19 @@
   buildNpmPackage,
   fetchNpmDeps,
   makeWrapper,
-  electron_40,
+  electron,
   nodejs_22,
   diffutils,
   hermes-agent,
 }: let
   nodejs = nodejs_22;
-  electron = electron_40;
   src = hermes-agent.src;
   version = "2026.6.5";
 
   # Single npm-deps fetch from the workspace root package-lock.json.
   # Matches upstream nix/lib.nix for the same main checkout; if Nix reports
   # a mismatch after a rev bump, paste the "got:" hash here.
-  npmDepsHash = "sha256-YTLmdnmjCsBH2okE0UqTT8Sl4Dlf+4o1huzBdkJP9aY=";
+  npmDepsHash = "sha256-J8fQxf4gdUIWzJ5MB7mAG3zhHWoAQIQ1DqIq/fHEhhM=";
 
   npmDeps = fetchNpmDeps {
     inherit src;

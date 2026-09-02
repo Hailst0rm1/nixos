@@ -12,6 +12,10 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    # stylix generates home.pointerCursor.{name,package,size} but no longer
+    # implies .enable — home-manager now requires it set explicitly.
+    home.pointerCursor.enable = true;
+
     stylix = {
       enable = true;
       enableReleaseChecks = false;
@@ -31,6 +35,13 @@ in {
         #nixcord.enable = true; On next release or when backported
       };
     };
+
+    # qt.kvantum's theme package gets a new store path every generation, and
+    # `xdg.configFile."Kvantum".recursive` checks each leaf file individually
+    # — checkLinkTargets resolves through the previous generation's symlink
+    # into its (now-stale) store content and reports it as a foreign file.
+    # Same fix home-manager's own error suggests for xdg.configFile."mimeapps.list".
+    xdg.configFile."Kvantum".force = true;
 
     # xdg.desktopEntries.vmware-workstation = lib.mkIf cfg.enable {
     #   name = "VMware Workstation";

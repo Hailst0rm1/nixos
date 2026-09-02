@@ -16,21 +16,24 @@
 
   '';
 
-  hyprland-preview-share-picker = pkgs.callPackage ../../../../pkgs/hyprland-preview-share-picker/package.nix {};
+  hyprland-preview-share-picker = pkgs-unstable.hyprland-preview-share-picker; # official pkg (not in stable 26.05; unstable 0.2.1 == old pin)
 
+  # Hyprland 0.55 made sendshortcut's window argument mandatory — an empty
+  # third field now fails with "invalid args" instead of defaulting to the
+  # focused window, so every call below passes `activewindow` explicitly.
   # Clipboard helpers: use Ctrl+Shift+C/V for terminals, Ctrl+C/V for everything else
   clip-copy = pkgs.writeShellScript "clip-copy" ''
     class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
     case "$class" in
       com.mitchellh.ghostty|org.wezfurlong.wezterm|kitty|Alacritty|foot)
-        hyprctl dispatch sendshortcut "CTRL SHIFT, C,"
+        hyprctl dispatch sendshortcut "CTRL SHIFT, C, activewindow"
         # Strip HTML from clipboard - terminals set text/html which Electron apps
         # misinterpret with line breaks between formatted spans
         sleep 0.05
         ${pkgs.wl-clipboard}/bin/wl-paste -n -t text/plain 2>/dev/null | ${pkgs.wl-clipboard}/bin/wl-copy
         ;;
       *)
-        hyprctl dispatch sendshortcut "CTRL, C,"
+        hyprctl dispatch sendshortcut "CTRL, C, activewindow"
         ;;
     esac
   '';
@@ -44,12 +47,12 @@
         # clipboard IMAGE needs plain Ctrl+V, which Claude Code reads directly
         # from the local clipboard; images can't cross SSH anyway.
         case "$(${pkgs.wl-clipboard}/bin/wl-paste --list-types 2>/dev/null)" in
-          *image/*) hyprctl dispatch sendshortcut "CTRL, V," ;;
-          *) hyprctl dispatch sendshortcut "CTRL SHIFT, V," ;;
+          *image/*) hyprctl dispatch sendshortcut "CTRL, V, activewindow" ;;
+          *) hyprctl dispatch sendshortcut "CTRL SHIFT, V, activewindow" ;;
         esac
         ;;
       *)
-        hyprctl dispatch sendshortcut "CTRL, V,"
+        hyprctl dispatch sendshortcut "CTRL, V, activewindow"
         ;;
     esac
   '';
@@ -60,17 +63,44 @@
     key="$1"
     direction="$2"
     class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
-    case "$class" in
-      obsidian|Code)
-        hyprctl dispatch sendshortcut "CTRL, $key,"
+    # Matched case-insensitively on a substring: Obsidian's app_id is
+    # md.Obsidian on Wayland (it was plain "obsidian" when this list was
+    # written, which is why the exception silently stopped matching), and
+    # VSCode reports Code on XWayland but code natively.
+    case "''${class,,}" in
+      *obsidian*|code)
+        hyprctl dispatch sendshortcut "CTRL, $key, activewindow"
         ;;
       *)
-        hyprctl dispatch sendshortcut ", $direction,"
+        # wtype, not sendshortcut: sendshortcut delivers to a toplevel window,
+        # and serpantinum's popups are layer-shell surfaces, so the arrow went
+        # to whatever window sat behind the panel. wtype injects through the
+        # virtual-keyboard protocol carrying its own (empty) modifier state, so
+        # the arrow reaches the focused surface as a bare Left/Right/Up/Down —
+        # evdev-level injectors like ydotool instead inherit the Ctrl still
+        # physically held, turning Ctrl+h into a word jump and missing QML
+        # `Shortcut { sequence: "Left" }` handlers entirely.
+        ${pkgs.wtype}/bin/wtype -k "$direction"
         ;;
     esac
   '';
 
   cfg = config.importConfig.hyprland;
+
+  # Home Manager renders `plugins = [...]` as `exec-once=hyprctl plugin load
+  # <path>`, which only runs once the whole config has already been parsed. So
+  # every `split:` bind below is read while hyprsplit's dispatchers still do not
+  # exist and Hyprland reports "Invalid dispatcher, requested split:... does not
+  # exist" for each one, in a red error box on every launch. (The binds do end
+  # up working — Hyprland resolves the dispatcher again at press time.)
+  #
+  # hyprlang's own `plugin = <path>` keyword loads at parse time instead, and
+  # HM's `sourceFirst` (default true) hoists `source` above the binds, so the
+  # dispatchers are registered before anything references them.
+  pluginLoad = pkgs.writeText "hyprland-plugins.conf" ''
+    plugin = ${pkgs.hyprlandPlugins.hyprsplit}/lib/libhyprsplit.so
+    plugin = ${pkgs.hyprlandPlugins.hyprspace}/lib/libhyprspace.so
+  '';
 in {
   config = lib.mkIf cfg.enable {
     home.sessionVariables.NIXOS_OZONE_WL = "1";
@@ -83,14 +113,10 @@ in {
 
     wayland.windowManager.hyprland = {
       enable = true;
+      configType = "hyprlang";
       portalPackage = null;
       xwayland.enable = true;
       systemd.enable = true;
-
-      plugins = [
-        pkgs.hyprlandPlugins.hyprsplit
-        pkgs.hyprlandPlugins.hyprspace
-      ];
 
       # extraConfig = ''
       #   bind = $mainMod,V,submap,passthru
@@ -100,6 +126,9 @@ in {
       # '';
 
       settings = {
+        # Hoisted to the top of the config by sourceFirst — see pluginLoad.
+        source = ["${pluginLoad}"];
+
         general = {
           gaps_in = 5;
           gaps_out = 10;
@@ -211,7 +240,6 @@ in {
 
         dwindle = {
           # See https://wiki.hyprland.org/Configuring/Dwindle-Layout/ for more
-          pseudotile = true; # master switch for pseudotiling. Enabling is bound to mainMod + P in the keybinds section below
           preserve_split = true; # you probably want this
           smart_split = true;
         };
@@ -252,29 +280,39 @@ in {
             "$mainMod CONTROL SHIFT, K, moveintogroup, u"
             "$mainMod CONTROL SHIFT, J, moveintogroup, d"
             "$mainMod CONTROL SHIFT, I, moveoutofgroup, r"
-            "$mainMod, P, pseudo, # dwindle"
-            "$mainMod SHIFT, J, togglesplit, # dwindle"
+            "$mainMod SHIFT, J, layoutmsg, togglesplit # dwindle"
 
             # Clipboard (Ctrl+Shift+C/V for terminals, Ctrl+C/V for other apps)
             "$mainMod, C, exec, ${clip-copy}"
             "$mainMod, V, exec, ${clip-paste}"
-            "$mainMod, A, sendshortcut, CTRL, A,"
-            "$mainMod, X, sendshortcut, CTRL, X,"
-            "$mainMod, Z, sendshortcut, CTRL, Z,"
-            "$mainMod, Y, sendshortcut, CTRL, Y,"
+            "$mainMod, A, sendshortcut, CTRL, A, activewindow"
+            "$mainMod, X, sendshortcut, CTRL, X, activewindow"
+            "$mainMod, Z, sendshortcut, CTRL, Z, activewindow"
+            "$mainMod, Y, sendshortcut, CTRL, Y, activewindow"
 
             # Applications
             "$mainMod, return, exec, GTK_IM_MODULE=simple ${config.terminal}"
             "$mainMod, P, exec, hyprpicker -alq"
-            "$mainMod, SPACE, exec, ${cfg.appLauncher} -show drun"
-            "$mainMod, R, exec, ${cfg.appLauncher} -show run"
-            "$mainMod, W, exec, ${cfg.appLauncher} -show window"
             "$mainMod SHIFT, return, exec, ${config.browser}"
             "$mainMod, N, exec, ${config.fileManager}"
             # "$mainMod, B, exec, GTK_IM_MODULE=simple ${config.terminal} -e htop"
             "$mainMod, B, exec, missioncenter"
           ]
-          ++ lib.optionals (!cfg.quickshell.ilyamiro.enable) [
+          ++ (
+            # serpantinum's launcher is a single fuzzy app+math launcher, not
+            # rofi's `-show <mode>` — R (run-only) and W (window-switcher)
+            # have no serpantinum equivalent, so they're dropped there.
+            if cfg.appLauncher == "serpantinum"
+            then [
+              "$mainMod, SPACE, exec, serpantinum msg toggle launcher"
+            ]
+            else [
+              "$mainMod, SPACE, exec, ${cfg.appLauncher} -show drun"
+              "$mainMod, R, exec, ${cfg.appLauncher} -show run"
+              "$mainMod, W, exec, ${cfg.appLauncher} -show window"
+            ]
+          )
+          ++ lib.optionals (!cfg.quickshell.ilyamiro.enable && cfg.screenshot == "hyprshot") [
             ", PRINT, exec, hyprshot -m region -o $HOME/Pictures/Screenshots"
           ]
           ++ [
@@ -319,16 +357,17 @@ in {
           "$mainMod CTRL, k, resizeactive, 0 -10"
           "$mainMod CTRL, j, resizeactive, 0 10"
 
-          # Vim-style arrow keys (global, override all apps).
+          # Vim-style arrow keys (global, override all apps), injected with wtype
+          # so they reach layer-shell panels as well as windows — see vim-arrow.
           # j/k are routed through a wrapper so Obsidian and VSCode keep their native Ctrl+J/K.
-          "CTRL, h, sendshortcut, , Left,"
+          "CTRL, h, exec, ${pkgs.wtype}/bin/wtype -k Left"
           "CTRL, j, exec, ${vim-arrow} j Down"
           "CTRL, k, exec, ${vim-arrow} k Up"
-          "CTRL, l, sendshortcut, , Right,"
+          "CTRL, l, exec, ${pkgs.wtype}/bin/wtype -k Right"
 
           # Word-step (Ctrl+Shift+h/l -> Ctrl+Left/Right)
-          "CTRL SHIFT, h, sendshortcut, CTRL, Left,"
-          "CTRL SHIFT, l, sendshortcut, CTRL, Right,"
+          "CTRL SHIFT, h, sendshortcut, CTRL, Left, activewindow"
+          "CTRL SHIFT, l, sendshortcut, CTRL, Right, activewindow"
         ];
 
         bindm = [
@@ -337,23 +376,43 @@ in {
           "$mainMod, mouse:273, resizewindow"
         ];
 
-        bindl = [
-          ",switch:on:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, disable\""
-          ",switch:off:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, 1920x1200,0x0,1\""
-          ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
-          ", XF86AudioPlay, exec, playerctl play-pause"
-          ", XF86AudioPrev, exec, playerctl previous"
-          ", XF86AudioNext, exec, playerctl next"
-          ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle && bash ~/.config/quickshell/osd/osd_trigger.sh mic"
-          ", XF86KbdLightOnOff, exec, toggle-backlit-keys"
-        ];
+        bindl =
+          [
+            ",switch:on:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, disable\""
+            ",switch:off:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, 1920x1200,0x0,1\""
+            ", XF86AudioPlay, exec, playerctl play-pause"
+            ", XF86AudioPrev, exec, playerctl previous"
+            ", XF86AudioNext, exec, playerctl next"
+            ", XF86KbdLightOnOff, exec, toggle-backlit-keys"
+          ]
+          ++ (
+            # v1's osd_trigger.sh only deploys under quickshell.ilyamiro — serpantinum
+            # has its own OSD, driven by its own CLI (see migration plan / audit doc).
+            if cfg.quickshell.serpantinum.enable
+            then [
+              ", XF86AudioMute, exec, serpantinum volume mute-toggle"
+              ", XF86AudioMicMute, exec, serpantinum volume mic-toggle"
+            ]
+            else [
+              ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
+              ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle && bash ~/.config/quickshell/osd/osd_trigger.sh mic"
+            ]
+          );
 
-        bindel = [
-          ", XF86MonBrightnessUp, exec, brightnessctl set +5% && bash ~/.config/quickshell/osd/osd_trigger.sh brightness"
-          ", XF86MonBrightnessDown, exec, brightnessctl set 5%- && bash ~/.config/quickshell/osd/osd_trigger.sh brightness"
-          ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
-          ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
-        ];
+        bindel =
+          if cfg.quickshell.serpantinum.enable
+          then [
+            ", XF86MonBrightnessUp, exec, serpantinum brightness raise"
+            ", XF86MonBrightnessDown, exec, serpantinum brightness lower"
+            ", XF86AudioRaiseVolume, exec, serpantinum volume raise"
+            ", XF86AudioLowerVolume, exec, serpantinum volume lower"
+          ]
+          else [
+            ", XF86MonBrightnessUp, exec, brightnessctl set +5% && bash ~/.config/quickshell/osd/osd_trigger.sh brightness"
+            ", XF86MonBrightnessDown, exec, brightnessctl set 5%- && bash ~/.config/quickshell/osd/osd_trigger.sh brightness"
+            ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
+            ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- && bash ~/.config/quickshell/osd/osd_trigger.sh volume"
+          ];
 
         exec-once = [
           "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP"
@@ -368,82 +427,91 @@ in {
       };
     };
 
-    home.packages = with pkgs; [
-      # Applauncher
-      #(pkgs.${cfg.appLauncher})
-      (
-        if cfg.appLauncher == "rofi"
-        then pkgs.rofi
-        else pkgs.${cfg.appLauncher}
-      )
+    home.packages = with pkgs;
+      [
+        # Applauncher
+        #(pkgs.${cfg.appLauncher})
+        (
+          if cfg.appLauncher == "rofi"
+          then pkgs.rofi
+          else pkgs.${cfg.appLauncher}
+        )
 
-      # ---Clipboard
-      wl-clipboard
-      #xclip
-      clipnotify
+        # ---Clipboard
+        wl-clipboard
+        #xclip
+        clipnotify
 
-      # ---Colour picker
-      hyprpicker
+        # ---Colour picker
+        hyprpicker
 
-      # ---Display settings
-      nwg-displays
+        # ---Display settings
+        nwg-displays
 
-      # ---File manager
-      (pkgs.${config.fileManager})
-      (
-        if config.fileManager == "nautilus"
-        then pkgs.file-roller
-        else []
-      )
+        # ---File manager
+        (pkgs.${config.fileManager})
+        (
+          if config.fileManager == "nautilus"
+          then pkgs.file-roller
+          else []
+        )
 
-      # ---Gnome applications
-      (pkgs.${config.image})
-      (pkgs.${config.video})
-      gedit # Text editor
-      gnome-calculator
-      gnome-music
-      evince # Document viewer
-      parlatype # Media player
+        # ---Gnome applications
+        (pkgs.${config.image})
+        (pkgs.${config.video})
+        gedit # Text editor
+        gnome-calculator
+        gnome-music
+        evince # Document viewer
+        parlatype # Media player
 
-      # ---Lockscreen
-      (pkgs.${cfg.lockscreen})
+        # ---Lockscreen
+        (pkgs.${cfg.lockscreen})
 
-      # ---Networkmanager
-      networkmanagerapplet
+        # ---Networkmanager
+        networkmanagerapplet
 
-      # ---Notifications
-      (pkgs.${cfg.notifications})
+        # ---Notifications
+        (pkgs.${cfg.notifications})
 
-      # ---OSD
-      # Add config in hyprland/default.nix?
-      #swayosd
+        # ---OSD
+        # Add config in hyprland/default.nix?
+        #swayosd
 
-      # --Plugins
-      hyprlandPlugins.hyprsplit
-      hyprlandPlugins.hyprspace
+        # --Plugins
+        hyprlandPlugins.hyprsplit
+        hyprlandPlugins.hyprspace
 
-      # ---Screenrecorder
-      wl-screenrec
+        # ---Screenshot
+        grim
+        slurp
+        hyprshot
 
-      # ---Screenshot
-      grim
-      slurp
-      hyprshot
+        # ---Topbar
+        (pkgs.${cfg.panel})
 
-      # ---Topbar
-      (pkgs.${cfg.panel})
+        # ---Terminal
+        #(pkgs.${config.terminal})
 
-      # ---Terminal
-      #(pkgs.${config.terminal})
+        # ---Wallpaper
+        (
+          # nixpkgs renamed swww -> awww 2026-03-22; the "swww" wallpaper
+          # selector is our own naming, kept as-is.
+          if cfg.wallpaper == "swww"
+          then pkgs-unstable.awww
+          else pkgs-unstable.${cfg.wallpaper}
+        )
+        waypaper # GUI wallpaper picker
+        ffmpeg_6 # Video converter
 
-      # ---Wallpaper
-      (pkgs-unstable.${cfg.wallpaper})
-      waypaper # GUI wallpaper picker
-      ffmpeg_6 # Video converter
-
-      # ---Other
-      playerctl
-      (lib.mkIf cfg.customScreenPicker hyprland-preview-share-picker)
-    ];
+        # ---Other
+        playerctl
+        (lib.mkIf cfg.customScreenPicker hyprland-preview-share-picker)
+      ]
+      # serpantinum's package already bundles gpu-screen-recorder/wf-recorder;
+      # wl-screenrec would be a redundant second recorder on those hosts.
+      ++ lib.optionals (!cfg.quickshell.serpantinum.enable) [
+        pkgs.wl-screenrec
+      ];
   };
 }

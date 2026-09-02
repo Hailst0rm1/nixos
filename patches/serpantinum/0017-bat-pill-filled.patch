@@ -1,0 +1,14 @@
+--- a/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-01 16:16:17.912220280 +0200
++++ b/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-01 16:16:25.401837078 +0200
+@@ -91,7 +91,10 @@
+             property real animValue: value
+             Behavior on animValue { NumberAnimation { duration: 600; easing.type: Easing.OutQuint } }
+ 
+-            property real fillRatio: Math.max(0.0, Math.min(1.0, isNaN(animValue) ? 0.0 : animValue))
++            // Battery level is already carried by the percentage text and by
++            // batDynamicColor; keep the pill fully tinted so it reads like the
++            // wifi/volume pills instead of a half-empty glass.
++            property real fillRatio: batWidgetRoot.isDesktop ? 0.0 : 1.0
+             property real fillY: height * (1.0 - fillRatio)
+             property real maxWaveAmp: batWidgetRoot.isCharging ? (barWindow ? barWindow.s(3.5) : 3.5) : (barWindow ? barWindow.s(0.5) : 0.5)
+             property real waveAmp: (fillRatio < 0.99 && fillRatio > 0.01) ? maxWaveAmp * Math.sin(fillRatio * Math.PI) : 0

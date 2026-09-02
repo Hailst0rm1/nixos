@@ -58,16 +58,22 @@
       panel = lib.mkDefault "hyprpanel";
       lockscreen = lib.mkDefault "hyprlock";
       appLauncher = lib.mkDefault "rofi";
+      screenshot = lib.mkDefault "hyprshot";
       notifications = lib.mkDefault "hyprpanel";
       wallpaper = lib.mkDefault "mpvpaper";
       monitorOrientations = lib.mkDefault {
         "0" = "left";
         "1" = "left";
       };
+      # The two shells are mutually exclusive per host, not layered: the v1
+      # fork mkForces panel/notifications/lockscreen, which beats
+      # serpantinum's mkOverride 900. Serpantinum is the default; a host that
+      # wants the v1 fork back flips both.
       quickshell.ilyamiro = {
-        enable = lib.mkDefault true;
+        enable = lib.mkDefault false;
         openweatherCityId = lib.mkDefault "2673730";
       };
+      quickshell.serpantinum.enable = lib.mkDefault true;
     };
   };
 

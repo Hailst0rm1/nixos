@@ -17,7 +17,6 @@
   autorecon = pkgs-unstable.callPackage "${nixosDir}/pkgs/autorecon/package.nix" {};
   autorecon-wrapped = builtins.readFile ./files/autorecon-wrapped.sh;
   donut = pkgs-unstable.callPackage "${nixosDir}/pkgs/donut/package.nix" {};
-  thc-hydra = pkgs-unstable.callPackage "${nixosDir}/pkgs/thc-hydra/package.nix" {};
   httpuploadexfil = pkgs-unstable.callPackage "${nixosDir}/pkgs/httpuploadexfil/package.nix" {};
   wes-ng = pkgs-unstable.callPackage "${nixosDir}/pkgs/wes-ng/package.nix" {};
   fakemeeting = pkgs.callPackage "${nixosDir}/pkgs/fakemeeting/package.nix" {};
@@ -123,7 +122,7 @@ in {
         ffuf # Fuzzing
         feroxbuster # Ffuf alternative
         # burpsuite # Webapp testing
-        caido # Burp alternative in rust
+        caido-desktop # Burp alternative in rust
         chromium # For Caido
         sqlmap # SQL Injection
         # beekeeper-studio # SQL GUI client (impure)

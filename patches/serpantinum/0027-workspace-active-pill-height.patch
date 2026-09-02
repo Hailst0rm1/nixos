@@ -1,0 +1,36 @@
+--- a/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-09-02 10:13:48.958362113 +0200
++++ b/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-09-02 10:13:49.080648163 +0200
+@@ -297,13 +297,13 @@
+             let xPos = 0;
+             let spacing = barWindow.s(8);
+             for (let i = 0; i < index; i++) {
+-                xPos += (i === activeIndex ? barWindow.s(36) : barWindow.s(18)) + spacing;
++                xPos += (i === activeIndex ? barWindow.s(30) : barWindow.s(18)) + spacing;
+             }
+             return xPos;
+         }
+ 
+         property real targetLeft: curIdx >= 0 ? getX(curIdx, curIdx) : 0
+-        property real targetRight: curIdx >= 0 ? targetLeft + barWindow.s(36) : 0
++        property real targetRight: curIdx >= 0 ? targetLeft + barWindow.s(30) : 0
+         property real actualLeft: targetLeft
+         property real actualRight: targetRight
+ 
+@@ -313,7 +313,7 @@
+         x: wsLayout.x + actualLeft
+         y: wsLayout.y + (wsLayout.height - height) / 2
+         width: actualRight - actualLeft
+-        height: barWindow.s(18)
++        height: barWindow.s(12)
+         opacity: (workspacesWidgetRoot.workspaceCount > 0 && workspacesWidgetRoot.activeIndex >= 0) ? 1.0 : 0.0
+         Behavior on opacity { NumberAnimation { duration: 180 } }
+     }
+@@ -345,7 +345,7 @@
+                 property bool isActive: index === workspacesWidgetRoot.activeIndex
+                 property bool initAnimTrigger: false
+ 
+-                width: isActive ? barWindow.s(36) : barWindow.s(18)
++                width: isActive ? barWindow.s(30) : barWindow.s(18)
+                 height: barWindow.s(18)
+                 anchors.verticalCenter: parent.verticalCenter
+ 

@@ -6,7 +6,7 @@
 
     # Home Manager manages dot files and user applications
     home-manager = {
-      # url = "github:nix-community/home-manager/release-25.11";
+      # url = "github:nix-community/home-manager/release-26.05";
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -31,7 +31,7 @@
     # };
 
     # NixOS official package source
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     # nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
     # Source so that we can use some packages from unstable as well
@@ -42,7 +42,7 @@
 
     # Stylix is used for theming
     stylix = {
-      url = "github:danth/stylix/release-25.11";
+      url = "github:danth/stylix/release-26.05";
       inputs = {
         nixpkgs.follows = "nixpkgs";
       };
@@ -114,6 +114,12 @@
       url = "github:pyproject-nix/build-system-pkgs";
       inputs.pyproject-nix.follows = "pyproject-nix";
       inputs.uv2nix.follows = "uv2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Quickshell desktop shell (v2.0.1+, no upstream tags — flake.lock pins the rev)
+    serpantinum = {
+      url = "github:ilyamiro/serpantinum";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

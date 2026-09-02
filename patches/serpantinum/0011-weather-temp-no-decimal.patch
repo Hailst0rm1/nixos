@@ -1,0 +1,14 @@
+--- a/src/scripts/weather.sh	2026-09-01 15:17:53.300841186 +0200
++++ b/src/scripts/weather.sh	2026-09-01 15:18:13.875915599 +0200
+@@ -245,9 +245,8 @@
+         else {icon: "", hex: "#cdd6f4", desc: $i18n.unknown} end;
+ 
+       def fmt_t(t):
+-        if t == null then "0.0" else
+-          ((if $is_kelvin then t + 273.15 else t end * 10 | round) / 10) | tostring | 
+-          (if contains(".") then . else . + ".0" end)
++        if t == null then "0" else
++          (if $is_kelvin then t + 273.15 else t end | round) | tostring
+         end;
+ 
+       (.) as $root |

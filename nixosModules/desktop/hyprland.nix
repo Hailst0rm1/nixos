@@ -30,6 +30,15 @@ in {
       NIXOS_OZONE_WL = "1";
     };
 
+    # serpantinum's screen recorder shells out to gpu-screen-recorder, whose
+    # KMS capture path needs a root helper for /dev/dri/card*. Without this the
+    # helper is launched through pkexec, so every recording opens a password
+    # prompt and writes no file if the prompt is dismissed. This option grants
+    # gsr-kms-server cap_sys_admin through a setcap wrapper instead. The
+    # recorder already prepends /run/wrappers/bin to its own PATH, so the
+    # bundled copy inside serpantinum picks the wrapper up too.
+    programs.gpu-screen-recorder.enable = true;
+
     programs.gnome-disks.enable = true; # Gnome disks program
     programs.dconf.enable = true;
     #programs.xfconf.enable = true;

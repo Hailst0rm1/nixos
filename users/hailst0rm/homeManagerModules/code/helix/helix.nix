@@ -236,9 +236,6 @@
       };
 
       extraPackages = with pkgs; [
-        # Code assistant
-        helix-gpt
-
         # Nix Formatting
         alejandra
 
@@ -247,7 +244,7 @@
 
         # Default Language servers
         nil # Nix
-        nodePackages.yaml-language-server # YAML / JSON
+        yaml-language-server # YAML / JSON
       ];
     };
   };

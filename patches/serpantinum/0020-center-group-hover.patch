@@ -1,0 +1,62 @@
+--- a/src/quickshell/bar/TopBar.qml	2026-09-01 18:16:18.901890311 +0200
++++ b/src/quickshell/bar/TopBar.qml	2026-09-01 18:17:34.260005636 +0200
+@@ -234,6 +234,14 @@
+     }
+ 
+     property real gap: barWindow ? barWindow.s(2) : 2
++
++    // True while the pointer is over either half of the timedate/weather
++    // group box. selfHovered, not isHovered: the widgets read this back as
++    // their groupHovered, and isHovered here would close the loop.
++    readonly property bool centerGroupHovered: {
++        if (!isModuleGrouped("timedate") || !isModuleGrouped("weather")) return false;
++        return timeDateWidget.selfHovered || weatherWidget.selfHovered;
++    }
+     property real groupGap: barWindow ? -barWindow.s(4) : -4
+     property real gap8: barWindow ? barWindow.s(10) : 10
+ 
+@@ -641,6 +649,13 @@
+ 
+             property var metrics: getGroupMetrics()
+ 
++            // Highlighting each member's own capsule instead would pinch into an
++            // hourglass where they meet — group members overlap by groupGap.
++            property bool hovered: contentWrapper.centerGroupHovered && groupIds.indexOf("timedate") !== -1
++
++            scale: hovered ? 1.03 : 1.0
++            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
++
+             x: metrics.x
+             y: barWindow ? barWindow.baseOffsetY : 0
+             width: metrics.w
+@@ -648,10 +663,12 @@
+             visible: metrics.v && (barWindow ? !barWindow.positionChanging : true) && width > 0 && !contentWrapper.isSolid && !contentWrapper.isFill
+             opacity: visible ? 1.0 : 0.0
+ 
+-            color: Qt.alpha(ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
++            color: Qt.alpha(hovered ? ThemeBackend.surface0 : ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
+             radius: ThemeBackend.borderRadius
+             border.width: 1
+-            border.color: Qt.alpha(ThemeBackend.surface0, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
++            border.color: Qt.alpha(hovered ? ThemeBackend.surface1 : ThemeBackend.surface0, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
++
++            Behavior on color { ColorAnimation { duration: 250 } }
+ 
+             Behavior on x {
+                 enabled: contentWrapper.layoutAnimationsEnabled
+@@ -978,6 +995,7 @@
+         isSolid: contentWrapper.isSolid || contentWrapper.isFill
+         moduleActive: contentWrapper.isModuleActive("timedate")
+         isGrouped: contentWrapper.isModuleGrouped("timedate")
++        groupHovered: contentWrapper.centerGroupHovered
+         targetX: contentWrapper.getModuleX("timedate", contentWrapper.layoutState)
+ 
+         Behavior on opacity {
+@@ -1020,6 +1038,7 @@
+         isSolid: contentWrapper.isSolid || contentWrapper.isFill
+         moduleActive: contentWrapper.isModuleActive("weather")
+         isGrouped: contentWrapper.isModuleGrouped("weather")
++        groupHovered: contentWrapper.centerGroupHovered
+         targetX: contentWrapper.getModuleX("weather", contentWrapper.layoutState)
+ 
+         Behavior on opacity {

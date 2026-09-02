@@ -11,7 +11,7 @@
       extraPackages = with pkgs; [
         stylelint # CSS
         stylelint-lsp
-        nodePackages.typescript-language-server # Typescript
+        typescript-language-server # Typescript
       ];
     };
   };

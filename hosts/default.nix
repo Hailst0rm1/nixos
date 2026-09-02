@@ -10,6 +10,9 @@
       # Secrets
       inputs.sops-nix.nixosModules.sops
 
+      # Serpantinum v2 Quickshell shell — system-level support module
+      inputs.serpantinum.nixosModules.default
+
       # Recursively imports all nixosModules
     ]
     ++ lib.filter
@@ -26,6 +29,21 @@
 
   # Red Teaming config
   cyber.redTools.enable = lib.mkDefault false;
+
+  # Serpantinum v2 Quickshell shell — the default shell on every Hyprland
+  # host (Tower, Laptop, Workstation, ExtDisk). The GNOME and headless hosts
+  # have nothing to run it in, so they keep it off.
+  # See docs/serpantinum-v2-migration-plan.md
+  programs.serpantinum.enable =
+    lib.mkDefault (config.desktopEnvironment.name == "hyprland");
+
+  # Root helper behind the system monitor panel's Clean Cache / Clean RAM
+  # buttons and its "Boost Priority" action. Harmless where the shell is not
+  # running — it only installs one command and one polkit rule.
+  serpantinum.sysmon = {
+    enable = lib.mkDefault true;
+    reclaimBytes = lib.mkDefault 1073741824; # 1 GiB per "Clean RAM" press
+  };
 
   # desktop/default.nix
   # Gnome is default

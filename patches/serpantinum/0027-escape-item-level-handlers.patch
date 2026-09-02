@@ -1,0 +1,55 @@
+--- a/src/quickshell/Main.qml	2026-09-02 09:57:06.606094073 +0200
++++ b/src/quickshell/Main.qml	2026-09-02 10:00:53.717986274 +0200
+@@ -19,12 +19,13 @@
+         right: true
+     }
+ 
+-    Shortcut {
+-        sequence: "Escape"
+-        context: Qt.WindowShortcut
+-        enabled: masterWindow.isVisible
+-        onActivated: switchWidget("hidden", "")
+-    }
++    // Escape is handled by widgetStack's Keys.onEscapePressed below, not by a
++    // window-level Shortcut. wtype — which the Ctrl+hjkl arrow binds use to
++    // reach layer surfaces — uploads a temporary keymap per invocation and
++    // tears the virtual keyboard down again; during that swap Qt sees a stray
++    // Escape-shaped event with no item holding focus. A WindowShortcut still
++    // matches it and closed this window at random (measured 5/9 injections);
++    // an item-level handler needs the focus and did not (0/9).
+ 
+     IpcHandler {
+         target: "main"
+--- a/src/quickshell/timer/TimerPanel.qml	2026-09-02 09:57:06.601290717 +0200
++++ b/src/quickshell/timer/TimerPanel.qml	2026-09-02 10:00:53.719977094 +0200
+@@ -87,13 +87,6 @@
+ 
+     visible: isVisible || container.animProgress > 0.001
+ 
+-    Shortcut {
+-        sequence: "Escape"
+-        context: Qt.WindowShortcut
+-        enabled: timerWindow.isVisible
+-        onActivated: TimerPanelController.hide()
+-    }
+-
+     Item {
+         id: topBarHole
+ 
+@@ -137,6 +130,16 @@
+     Item {
+         id: container
+ 
++        // Escape closes the panel from here rather than from a window-level
++        // Shortcut — see the note in Main.qml: the arrow-key binds' virtual
++        // keyboard swap fires a stray Escape that only WindowShortcuts match.
++        // Nothing inside TimerFace takes focus, so container keeps it.
++        focus: true
++        Keys.onEscapePressed: event => {
++            TimerPanelController.hide();
++            event.accepted = true;
++        }
++
+         MouseArea {
+             anchors.fill: parent
+         }

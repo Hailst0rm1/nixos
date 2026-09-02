@@ -9,6 +9,9 @@ in {
     overlays =
       [
         inputs.nix-vscode-extensions.overlays.default
+        # Builds against our nixpkgs (26.05) rather than serpantinum's own
+        # pinned nixos-unstable, per docs/serpantinum-v2-migration-plan.md.
+        inputs.serpantinum.overlays.default
         # Expose flake inputs to dir-overlays that need non-nixpkgs inputs
         # (e.g. overlays/hermes-agent.nix pulls the uv2nix stack from here).
         (_final: _prev: {flake-inputs = inputs;})

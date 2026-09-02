@@ -39,18 +39,18 @@
     WALLPAPER_DIR="${wallpaperDir}"
     INTERVAL=1800
 
-    # Wait for swww-daemon to be ready (query the socket — authoritative, unlike pgrep)
+    # Wait for awww-daemon to be ready (query the socket — authoritative, unlike pgrep)
     retries=0
-    until swww query >/dev/null 2>&1; do
+    until awww query >/dev/null 2>&1; do
       if [ "$retries" -ge 30 ]; then
-        echo "ERROR: swww-daemon not ready after 30s, giving up"
+        echo "ERROR: awww-daemon not ready after 30s, giving up"
         exit 1
       fi
-      echo "Waiting for swww-daemon... ($retries/30)"
+      echo "Waiting for awww-daemon... ($retries/30)"
       sleep 1
       retries=$((retries + 1)) # assignment always returns 0 — safe under set -e
     done
-    echo "swww-daemon is ready"
+    echo "awww-daemon is ready"
 
     # Collect static wallpapers once, sorted for a stable cycle order
     mapfile -t WALLPAPERS < <(find "$WALLPAPER_DIR" \( -name "*.jpg" -o -name "*.jpeg" -o -name "*.png" \) 2>/dev/null | sort)
@@ -64,7 +64,7 @@
     while true; do
       BG="''${WALLPAPERS[$idx]}"
       echo "Setting wallpaper: $BG"
-      if swww img "$BG" \
+      if awww img "$BG" \
         --transition-fps 60 \
         --transition-duration 2 \
         --transition-type random \
@@ -86,7 +86,7 @@ in {
 
     # Start the swww daemon via exec-once (needs to run in the Wayland session)
     wayland.windowManager.hyprland.settings.exec-once = [
-      "${pkgs.swww}/bin/swww-daemon"
+      "${pkgs.awww}/bin/awww-daemon"
     ];
 
     # Wallpaper rotation as a systemd user service
@@ -103,7 +103,7 @@ in {
         Restart = "on-failure";
         RestartSec = "10s";
         Environment = [
-          "PATH=${lib.makeBinPath [pkgs.swww pkgs.findutils pkgs.coreutils pkgs.procps pkgs.gnugrep]}:$PATH"
+          "PATH=${lib.makeBinPath [pkgs.awww pkgs.findutils pkgs.coreutils pkgs.procps pkgs.gnugrep]}:$PATH"
         ];
       };
       Install = {

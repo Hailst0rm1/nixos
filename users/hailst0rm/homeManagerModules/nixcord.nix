@@ -11,14 +11,18 @@
   # delivers the synthetic combo straight to the focused window without
   # re-entering Hyprland's bind dispatcher, so the global Ctrl+K stays intact.
   # Everywhere else Ctrl+N is passed through unchanged.
+  #
+  # The window argument is mandatory since Hyprland 0.55 — an empty third field
+  # fails with "sendshortcut: invalid args", which silently swallowed Ctrl+N
+  # everywhere (Obsidian's vimrc <C-n> included) and Discord's Ctrl+K with it.
   discord-quickswitch = pkgs.writeShellScript "discord-quickswitch" ''
     class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
     case "$class" in
       discord)
-        hyprctl dispatch sendshortcut "CTRL, K,"
+        hyprctl dispatch sendshortcut "CTRL, K, activewindow"
         ;;
       *)
-        hyprctl dispatch sendshortcut "CTRL, N,"
+        hyprctl dispatch sendshortcut "CTRL, N, activewindow"
         ;;
     esac
   '';
@@ -28,6 +32,7 @@ in {
   config = lib.mkIf config.applications.discord.enable {
     programs.nixcord = {
       enable = true; # enable Nixcord. Also installs discord package
+      discord.vencord.enable = true;
       #quickCss = "some CSS";  # quickCSS file
       config = {
         #useQuickCss = true;   # use out quickCSS

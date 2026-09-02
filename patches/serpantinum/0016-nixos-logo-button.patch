@@ -1,0 +1,33 @@
+--- a/src/quickshell/bar/modules/LeftWidget.qml	2026-09-01 16:58:52.109889017 +0200
++++ b/src/quickshell/bar/modules/LeftWidget.qml	2026-09-01 16:58:52.210268957 +0200
+@@ -75,10 +75,10 @@
+             iconOffsetX: -2
+ 
+             cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
+-            buttonIcon: "󰒓"
+-            iconFontSize: barWindow.s(15)
++            buttonIcon: "󱄅"
++            iconFontSize: barWindow.s(18)
+             accentColor: ThemeBackend.surface0
+-            textColor: isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2
++            textColor: "#ffffff"
+ 
+             Timer { running: leftWidgetRoot.moduleActive && leftWidgetRoot.showLayout && !helpButton.initAnimTrigger; interval: 70; onTriggered: helpButton.initAnimTrigger = true }
+             opacity: initAnimTrigger ? 1.0 : 0.0
+--- a/src/quickshell/bar/sidemodules/SideTopWidget.qml	2026-09-01 16:58:52.111309176 +0200
++++ b/src/quickshell/bar/sidemodules/SideTopWidget.qml	2026-09-01 16:58:52.210685774 +0200
+@@ -46,11 +46,11 @@
+         width: barWindow ? barWindow.s(30) : 30
+         height: barWindow ? barWindow.s(30) : 30
+         cornerRadius: Math.max(0, ThemeBackend.borderRadius - 2)
+-        buttonIcon: "󰒓"
++        buttonIcon: "󱄅"
+         iconOffsetX: -2
+-        iconFontSize: barWindow ? barWindow.s(15) : 15
++        iconFontSize: barWindow ? barWindow.s(18) : 18
+         accentColor: ThemeBackend.surface0
+-        textColor: isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2
++        textColor: "#ffffff"
+         onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle guide"])
+     }
+ }

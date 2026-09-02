@@ -1,0 +1,99 @@
+--- a/src/main.cpp	1970-01-01 01:00:01.000000000 +0100
++++ b/src/main.cpp	2026-09-01 00:08:55.000000000 +0200
+@@ -11,6 +11,7 @@
+ #define private public
+ #include <hyprland/src/Compositor.hpp>
+ #include <hyprland/src/config/ConfigManager.hpp>
++#include <hyprland/src/config/shared/workspace/WorkspaceRuleManager.hpp>
+ #include <hyprland/src/desktop/history/WorkspaceHistoryTracker.hpp>
+ #include <hyprland/src/desktop/state/FocusState.hpp>
+ #include <hyprland/src/event/EventBus.hpp>
+@@ -183,22 +184,23 @@
+ 
+         if (*PERSISTENT) {
+             for (auto i = RANGE.min; i <= RANGE.max; i++) {
+-                SWorkspaceRule wsRule;
+-                wsRule.workspaceString         = std::to_string(i);
+-                wsRule.workspaceId             = i;
+-                wsRule.workspaceName           = wsRule.workspaceString;
+-                wsRule.isPersistent            = true;
+-                wsRule.monitor                 = m->m_name;
+-                wsRule.layoutopts["hyprsplit"] = "1";
++                Config::CWorkspaceRule wsRule;
++                wsRule.m_workspaceString         = std::to_string(i);
++                wsRule.m_workspaceId             = i;
++                wsRule.m_workspaceName           = wsRule.m_workspaceString;
++                wsRule.m_isPersistent            = true;
++                wsRule.m_monitor                 = m->m_name;
++                wsRule.m_layoutopts["hyprsplit"] = "1";
++
++                auto&      rules = Config::workspaceRuleMgr()->m_rules;
++                const auto IT    = std::ranges::find_if(
++                    rules, [&](const auto& other) { return other.m_layoutopts.contains("hyprsplit") && other.m_workspaceId == wsRule.m_workspaceId; });
+ 
+-                const auto IT = std::ranges::find_if(g_pConfigManager->m_workspaceRules,
+-                                                     [&](const auto& other) { return other.layoutopts.contains("hyprsplit") && other.workspaceId == wsRule.workspaceId; });
+-
+-                if (IT == g_pConfigManager->m_workspaceRules.end())
+-                    g_pConfigManager->m_workspaceRules.emplace_back(wsRule);
++                if (IT == rules.end())
++                    rules.emplace_back(wsRule);
+                 else
+-                    IT->monitor = wsRule.monitor;
+-                g_pConfigManager->ensurePersistentWorkspacesPresent();
++                    IT->m_monitor = wsRule.m_monitor;
++                g_pCompositor->ensurePersistentWorkspacesPresent(Config::workspaceRuleMgr()->getAllWorkspaceRules());
+             }
+         }
+     }
+@@ -334,23 +336,13 @@
+     PWORKSPACEB->m_name = TMPNAME;
+ 
+     // swap previous workspaces
++    // Hyprland 0.55 removed CWorkspaceHistoryTracker::dataFor() with no direct
++    // replacement (the new API is navigational "previous workspace before X",
++    // not a per-workspace data lookup), so the previous-workspace-history swap
++    // that used to happen here is dropped rather than guessed at. Everything
++    // else in this dispatcher (window/ID/name/layout swap) is unaffected.
+     Desktop::History::workspaceTracker()->gc();
+ 
+-    auto workspacePrevDataA = Desktop::History::workspaceTracker()->dataFor(PWORKSPACEA);
+-    auto workspacePrevDataB = Desktop::History::workspaceTracker()->dataFor(PWORKSPACEB);
+-
+-    auto tmpPrevData = workspacePrevDataA;
+-
+-    workspacePrevDataA.previous     = workspacePrevDataB.previous;
+-    workspacePrevDataA.previousName = workspacePrevDataB.previousName;
+-    workspacePrevDataA.previousID   = workspacePrevDataB.previousID;
+-    workspacePrevDataA.previousMon  = workspacePrevDataB.previousMon;
+-
+-    workspacePrevDataB.previous     = tmpPrevData.previous;
+-    workspacePrevDataB.previousName = tmpPrevData.previousName;
+-    workspacePrevDataB.previousID   = tmpPrevData.previousID;
+-    workspacePrevDataB.previousMon  = tmpPrevData.previousMon;
+-
+     // swap layouts
+     auto workspaceLayoutA = PWORKSPACEA->m_space;
+     auto workspaceLayoutB = PWORKSPACEB->m_space;
+@@ -435,8 +427,9 @@
+     if (*PERSISTENT) {
+         const auto RANGE = MonitorRange(pMonitor);
+ 
+-        std::erase_if(g_pConfigManager->m_workspaceRules, [&](SWorkspaceRule const& rule) { return rule.layoutopts.contains("hyprsplit") && RANGE.contains(rule.workspaceId); });
+-        g_pConfigManager->ensurePersistentWorkspacesPresent();
++        std::erase_if(Config::workspaceRuleMgr()->m_rules,
++                       [&](Config::CWorkspaceRule const& rule) { return rule.m_layoutopts.contains("hyprsplit") && RANGE.contains(rule.m_workspaceId); });
++        g_pCompositor->ensurePersistentWorkspacesPresent(Config::workspaceRuleMgr()->getAllWorkspaceRules());
+     }
+ }
+ 
+@@ -536,7 +529,7 @@
+ 
+     const auto PERSISTENT = CConfigValue<Hyprlang::INT>("plugin:hyprsplit:persistent_workspaces");
+     if (*PERSISTENT) {
+-        std::erase_if(g_pConfigManager->m_workspaceRules, [](SWorkspaceRule const& rule) { return rule.layoutopts.contains("hyprsplit"); });
+-        g_pConfigManager->ensurePersistentWorkspacesPresent();
++        std::erase_if(Config::workspaceRuleMgr()->m_rules, [](Config::CWorkspaceRule const& rule) { return rule.m_layoutopts.contains("hyprsplit"); });
++        g_pCompositor->ensurePersistentWorkspacesPresent(Config::workspaceRuleMgr()->getAllWorkspaceRules());
+     }
+ }

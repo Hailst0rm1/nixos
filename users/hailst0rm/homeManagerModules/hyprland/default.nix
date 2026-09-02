@@ -75,6 +75,12 @@ in {
       description = "The default application launcher for Hyprland.";
     };
 
+    screenshot = lib.mkOption {
+      type = lib.types.enum ["hyprshot" "serpantinum"];
+      default = "hyprshot";
+      description = "The screenshot tool for Hyprland.";
+    };
+
     notifications = lib.mkOption {
       type = lib.types.str;
       default = "swaync";
@@ -102,6 +108,8 @@ in {
         description = "Icon image displayed in the lock screen circle.";
       };
     };
+
+    quickshell.serpantinum.enable = lib.mkEnableOption "Serpantinum v2 Quickshell desktop shell (replaces panel, notifications, lockscreen; supersedes quickshell.ilyamiro)";
 
     monitorOrientations = lib.mkOption {
       type = lib.types.attrsOf (lib.types.enum ["left" "right" "top" "bottom" "center"]);

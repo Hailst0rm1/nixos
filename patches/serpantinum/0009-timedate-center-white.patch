@@ -1,0 +1,28 @@
+--- a/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-01 15:17:53.285240163 +0200
++++ b/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-01 15:18:00.000865422 +0200
+@@ -139,21 +139,19 @@
+ 
+         Column {
+             id: timeCol
+-            anchors.left: parent.left
+-            anchors.leftMargin: timeDateRoot.horizontalPadding
+-            anchors.verticalCenter: parent.verticalCenter
++            anchors.centerIn: parent
+             spacing: -2
+ 
+             Text {
+-                anchors.left: parent.left
++                anchors.horizontalCenter: parent.horizontalCenter
+                 text: timeStr
+                 font.family: ThemeBackend.fontFamily
+                 font.pixelSize: barWindow ? barWindow.s(15) : 15
+                 font.weight: Font.Black
+-                color: ThemeBackend.blue
++                color: ThemeBackend.text
+             }
+             Text {
+-                anchors.left: parent.left
++                anchors.horizontalCenter: parent.horizontalCenter
+                 text: dateStr
+                 font.family: ThemeBackend.fontFamily
+                 font.pixelSize: barWindow ? barWindow.s(10) : 10

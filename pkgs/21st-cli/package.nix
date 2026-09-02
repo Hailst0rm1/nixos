@@ -57,7 +57,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     skillSources = {
       "21st-cli-use" = fetchurl {
         url = "https://21st.dev/skills/21st-cli-use.md";
-        hash = "sha256-GpjMTQSwhXC5ZyxRcBRaa6AkXHyHbm+dGDIefcWo1os=";
+        hash = "sha256-yIh2XgZAepN/i4b+YyM0NIjxGBUI0RQBgjz6nf5Li7c=";
       };
       # 21st-cli-use delegates the generate/iterate flow to this skill.
       "21st-ai" = fetchurl {
@@ -66,7 +66,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       };
       "21st-registry" = fetchurl {
         url = "https://21st.dev/skills/21st-registry.md";
-        hash = "sha256-QjE2il0E4ANOsHC85Ud2gEYPqLIP5zke8VY47OFbq1U=";
+        hash = "sha256-sd18oAODtz2Jv6aybovNlyTI8DyDssZqvXC9rhigm3Q=";
       };
       "21st-design-sync" = fetchurl {
         url = "https://21st.dev/skills/21st-design-sync.md";

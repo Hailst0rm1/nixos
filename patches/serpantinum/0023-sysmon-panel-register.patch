@@ -1,0 +1,29 @@
+--- a/src/quickshell/WindowRegistry.js	2026-09-01 22:27:36.062631466 +0200
++++ b/src/quickshell/WindowRegistry.js	2026-09-01 22:27:44.736514791 +0200
+@@ -147,6 +147,15 @@
+                 "right": { anchor: "left" } 
+             } 
+         },
++        "sysmon": { 
++            w: 1150, h: 780, comp: "syspanel/SysMonPanel.qml", 
++            pos: { 
++                "top": { anchor: "center" }, 
++                "bottom": { anchor: "center" }, 
++                "left": { anchor: "center" }, 
++                "right": { anchor: "center" } 
++            } 
++        },
+         "hidden": { 
+             w: 1, h: 1, comp: "", 
+             pos: { 
+--- a/src/quickshell/Main.qml	2026-09-01 22:27:36.110475580 +0200
++++ b/src/quickshell/Main.qml	2026-09-01 22:27:44.737514795 +0200
+@@ -258,7 +258,7 @@
+ 
+     property var widgetCache: ({})
+     property var componentCache: ({})
+-    property var _allWidgetNames: ["battery", "network", "volume", "guide", "calendar", "wallpaper", "music", "movies", "notifications", "system"]
++    property var _allWidgetNames: ["battery", "network", "volume", "guide", "calendar", "wallpaper", "music", "movies", "notifications", "system", "sysmon"]
+     property int _preloadIndex: 0
+ 
+     function widgetNameForItem(item) {

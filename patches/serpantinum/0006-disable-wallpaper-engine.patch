@@ -1,0 +1,18 @@
+--- a/src/quickshell/Shell.qml
++++ b/src/quickshell/Shell.qml
+@@ -35,8 +35,14 @@
+             monitorName: modelData.name
+         }
+     }
++    // NixOS: mpvpaper owns the background layer (importConfig.hyprland.wallpaper).
++    // WallpaperEngine's own "wallpaper-bg" layer-shell surface is opaque
++    // (color: "#0a0a0f") and sits at WlrLayer.Background above mpvpaper's
++    // surface, hiding the video wallpaper entirely. Disabled rather than made
++    // transparent so nothing races mpvpaper for the background slot.
++    // See docs/serpantinum-v2-migration-plan.md decision 7.
+     Loader {
+-        active: !performanceMode
++        active: false
+         sourceComponent: WallpaperEngine {}
+     }
+     Loader {

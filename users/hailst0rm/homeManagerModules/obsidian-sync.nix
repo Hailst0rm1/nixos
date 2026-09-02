@@ -2,13 +2,14 @@
   config,
   lib,
   pkgs,
+  pkgs-unstable,
   secretPath,
   ...
 }:
 with lib; let
   cfg = config.services.obsidian-sync;
 
-  obsidian-headless = pkgs.obsidian-headless;
+  obsidian-headless = pkgs-unstable.obsidian-headless; # official pkg (not in stable 26.05; unstable 0.0.14 > old pin)
 
   e2eePath = secretPath "services/obsidian/e2ee-password";
 

@@ -21,24 +21,24 @@ in {
       enable = true;
       enableDefaultConfig = false;
 
-      matchBlocks = {
+      settings = {
         # Default configuration for all hosts
         "*" = {
-          forwardAgent = false;
-          addKeysToAgent = "no";
-          compression = false;
-          serverAliveInterval = 0;
-          serverAliveCountMax = 3;
-          hashKnownHosts = false;
-          userKnownHostsFile = "~/.ssh/known_hosts";
-          controlMaster = "no";
-          controlPath = "~/.ssh/master-%r@%n:%p";
-          controlPersist = "no";
+          ForwardAgent = false;
+          AddKeysToAgent = "no";
+          Compression = false;
+          ServerAliveInterval = 0;
+          ServerAliveCountMax = 3;
+          HashKnownHosts = false;
+          UserKnownHostsFile = "~/.ssh/known_hosts";
+          ControlMaster = "no";
+          ControlPath = "~/.ssh/master-%r@%n:%p";
+          ControlPersist = "no";
         };
 
         "github.com" = {
-          identityFile = "~/.ssh/github";
-          identitiesOnly = true;
+          IdentityFile = "~/.ssh/github";
+          IdentitiesOnly = true;
         };
 
         # Second GitHub account (K-Dfirmed / Dfirmed org). Key selection has to
@@ -46,29 +46,25 @@ in {
         # accounts — so it hangs off the host alias rather than core.sshCommand.
         # terminal/git.nix rewrites Dfirmed URLs onto this alias automatically.
         "github-dfirmed" = {
-          hostname = "github.com";
-          user = "git";
-          identityFile = "~/.ssh/github-dfirmed";
-          identitiesOnly = true;
+          HostName = "github.com";
+          User = "git";
+          IdentityFile = "~/.ssh/github-dfirmed";
+          IdentitiesOnly = true;
         };
 
         "git.pontonsecurity.com" = {
-          user = "git";
-          identityFile = "~/.ssh/id_hailst0rm";
-          identitiesOnly = true;
-          extraOptions = {
-            PreferredAuthentications = "publickey";
-          };
+          User = "git";
+          IdentityFile = "~/.ssh/id_hailst0rm";
+          IdentitiesOnly = true;
+          PreferredAuthentications = "publickey";
         };
 
         "nix-server" = {
-          hostname = "nix-server";
-          user = "hailst0rm";
-          identityFile = ["~/.ssh/yubia" "~/.ssh/yubic"];
-          identitiesOnly = true;
-          extraOptions = {
-            PreferredAuthentications = "publickey";
-          };
+          HostName = "nix-server";
+          User = "hailst0rm";
+          IdentityFile = ["~/.ssh/yubia" "~/.ssh/yubic"];
+          IdentitiesOnly = true;
+          PreferredAuthentications = "publickey";
         };
       };
     };

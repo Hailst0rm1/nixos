@@ -10,7 +10,7 @@
 }: let
   notebooklm-py = pkgs.callPackage ../../../../pkgs/notebooklm-py/package.nix {};
   codeburn = pkgs.callPackage ../../../../pkgs/codeburn/package.nix {};
-  rtk = pkgs.callPackage ../../../../pkgs/rtk/package.nix {};
+  rtk = pkgs-unstable.rtk; # official pkg (unstable ships 0.45.0; stable 26.05 lags at 0.41.0)
   twentyfirst-cli = pkgs.callPackage ../../../../pkgs/21st-cli/package.nix {};
   # `shadcn-index` gives shadcn the global search it lacks; it shells out to the
   # same (unstable) shadcn the option below puts on PATH, so pin them together.
@@ -1110,11 +1110,11 @@ in {
       # stop erroring on the flag — see claudeCodeWrapped above.
       package = claudeCodeWrapped;
 
-      # Skills (managed via skillsDir, see ./skills/)
-      skillsDir = ./skills;
+      # Skills (managed via skills, see ./skills/)
+      skills = ./skills;
 
       # Global behavioral guidelines (Karpathy-inspired) → ~/.claude/CLAUDE.md
-      memory.text = ''
+      context = ''
         # CLAUDE.md
 
         Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
@@ -1810,6 +1810,11 @@ in {
         # Rendered as a mutable copy by claudeSettingsInstall instead, so
         # Claude can write /effort, /model & co. back into it at runtime.
         ".claude/settings.json".enable = false;
+        # home-manager's native programs.claude-code module (settings != {})
+        # writes this same file under its own key, built from an absolute
+        # path — a different attribute name than the relative key above, so
+        # it isn't covered by the disable and fights claudeSettingsInstall.
+        "${config.home.homeDirectory}/.claude/settings.json".enable = false;
 
         # Upstream ships a discovery stub (`hidden: true`) that pulls the real
         # workflow content from the CLI at use time — `agent-browser skills get
@@ -1899,7 +1904,7 @@ in {
         go # /printing-press generator shells out to `go install`/`go build`
       ]
       ++ lib.optionals config.code.claude-code.rtk.enable [
-        rtk # Token-compact CLI proxy invoked by rtkRewriteHook + meta-commands (`rtk gain`, etc.). Built from pkgs/rtk/package.nix.
+        rtk # Token-compact CLI proxy invoked by rtkRewriteHook + meta-commands (`rtk gain`, etc.). From nixpkgs-unstable.
       ]
       ++ lib.optionals config.code.claude-code.claude-mem.enable [
         bun # claude-mem's hooks shell out to `bun` via scripts/bun-runner.js

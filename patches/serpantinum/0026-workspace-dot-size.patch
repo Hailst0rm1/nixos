@@ -1,0 +1,13 @@
+--- a/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-09-02 09:19:34.081338679 +0200
++++ b/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-09-02 09:19:45.119824731 +0200
+@@ -353,7 +353,9 @@
+ 
+                 Rectangle {
+                     id: wsVisualShape
+-                    anchors.fill: parent
++                    anchors.centerIn: parent
++                    width: wsPill.isActive ? parent.width : barWindow.s(12)
++                    height: barWindow.s(12)
+                     radius: barWindow.s(10)
+                     color: wsPill.isActive ? "transparent" : (wsPill.isOccupied ? ThemeBackend.surface2 : ThemeBackend.surface0)
+                     border.width: 0
