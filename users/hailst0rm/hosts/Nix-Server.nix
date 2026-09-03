@@ -41,7 +41,7 @@ in {
   code.claude-code.exa.enable = false;
   code.claude-code.context7.enable = false;
 
-  home.packages = [pkgs.gws];
+  home.packages = [];
 
   applications = {
     bitwarden.enable = false;
