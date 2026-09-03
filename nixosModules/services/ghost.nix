@@ -74,7 +74,7 @@ in
 
       services.mysql = {
         enable = true;
-        package = pkgs.mysql80;
+        package = pkgs.mysql84;
         initialScript = pkgs.writeText "mysql-init.sql" ''
           CREATE DATABASE IF NOT EXISTS ${domainUnderscore};
           CREATE USER IF NOT EXISTS 'ghost'@'localhost' IDENTIFIED BY 'Wheat%Sedation%Rebalance9';
