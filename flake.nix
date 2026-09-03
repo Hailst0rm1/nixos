@@ -61,7 +61,7 @@
     };
 
     claude-code-nix = {
-      url = "github:sadjow/claude-code-nix";
+      url = "github:sadjow/claude-code-nix/v2.1.258";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
