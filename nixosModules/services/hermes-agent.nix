@@ -85,7 +85,7 @@ in {
 
     (lib.mkIf cfg.enable {
       environment.systemPackages =
-        [pkgs.hermes-agent pkgs.tmux]
+        [pkgs.hermes-agent pkgs.tmux pkgs-unstable.gogcli]
         ++ lib.optionals cfg.signal.enable [pkgs-unstable.signal-cli]
         ++ lib.optionals cfg.browser.enable [pkgs.agent-browser];
 
