@@ -166,15 +166,23 @@ in {
           # ~/.hermes/.env, which the gateway loads with override=True — setting
           # it here would just be clobbered. Let hermes own its platform config.
           Environment =
-            ["HERMES_PORT=${toString cfg.port}"]
+            [
+              "HERMES_PORT=${toString cfg.port}"
+              # Pin the backend: `auto` picks secret-service when a DBus session
+              # happens to exist, which would look for tokens in a keyring the
+              # password below does not unlock. The server is headless; file is
+              # the only backend that works unattended.
+              "GOG_KEYRING_BACKEND=file"
+            ]
             ++ lib.optionals cfg.browser.enable ["AGENT_BROWSER_CONFIG=/etc/agent-browser/config.json"]
             ++ lib.optionals (cfg.browser.enable && config.services.vncDisplay.enable) ["DISPLAY=:${toString config.services.vncDisplay.display}"];
-          # No EnvironmentFile: the gateway reads its platform credentials
-          # (DISCORD_*/SIGNAL_*) and LLM keys from hermes' own ~/.hermes/.env +
-          # config.yaml, which it loads with override=True — so any sops value
-          # here would be clobbered anyway. The only sops-only value
-          # (HERMES_DASHBOARD_SESSION_TOKEN) is consumed by the dashboard, not
-          # the gateway. Let hermes own its env.
+          # The only EnvironmentFile is gogcli's keyring password. The gateway's
+          # own platform credentials (DISCORD_*/SIGNAL_*) and LLM keys are NOT
+          # here: hermes reads those from ~/.hermes/.env + config.yaml with
+          # override=True, so a sops value would just be clobbered. That clobber
+          # cannot touch GOG_KEYRING_PASSWORD — override=True only overwrites
+          # keys that .env actually defines, and this is not one of them.
+          EnvironmentFile = [config.sops.secrets."services/gogcli/env".path];
         };
       };
 

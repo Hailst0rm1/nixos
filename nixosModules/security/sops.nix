@@ -61,6 +61,17 @@
           owner = "hailst0rm";
           mode = "0400";
         };
+        # gogcli's file keyring password, as a systemd EnvironmentFile line:
+        #   GOG_KEYRING_PASSWORD=<password>
+        # The gateway spawns `gog` as a subprocess, which inherits this. Without
+        # it gog aborts non-interactively ("no TTY available for keyring file
+        # backend password prompt"). EnvironmentFile, not Environment= — the
+        # latter is world-readable via `systemctl show`.
+        secrets."services/gogcli/env" = lib.mkIf config.services.hermes-agent.enable {
+          owner = "hailst0rm";
+          mode = "0400";
+          restartUnits = ["hermes-agent.service"];
+        };
         secrets."services/ghost/pontonsecurity/cert.pem" = lib.mkIf config.services.ghost.enable {
           group = "nginx";
           mode = "0440";
