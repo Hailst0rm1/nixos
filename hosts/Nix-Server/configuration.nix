@@ -73,7 +73,7 @@
 
   services = {
     homepage-dashboard = {
-      enable = true;
+      enable = false;
       icon = ../../assets/images/pontonsecurity_transparent.png;
       background = ../../assets/images/mountain.jpg;
       # colour = "gray";
@@ -409,16 +409,16 @@
       exitNodeAllowLanAccess = false;
     };
     ghost = {
-      enable = true;
+      enable = false;
       sslCertFile = config.sops.secrets."services/ghost/pontonsecurity/cert.pem".path;
       sslCertKeyFile = config.sops.secrets."services/ghost/pontonsecurity/cert.key".path;
     };
-    # code-server = {
-    #   enable = true;
-    #   port = 8443;
-    # };
+    code-server = {
+      enable = false;
+      port = 8443;
+    };
     openvscode-server = {
-      enable = true;
+      enable = false;
       port = 8443;
     };
 
