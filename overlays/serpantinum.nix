@@ -24,6 +24,7 @@ final: prev: {
         ../patches/serpantinum/0026-workspace-dot-size.patch
         ../patches/serpantinum/0027-workspace-active-pill-height.patch
         ../patches/serpantinum/0027-escape-item-level-handlers.patch
+        ../patches/serpantinum/0028-lock-wipe-gpu-shape.patch
       ];
 
     # Every --replace-fail target below occurs exactly once in its file.

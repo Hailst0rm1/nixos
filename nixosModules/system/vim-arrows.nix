@@ -37,13 +37,34 @@
           h = C-left
           u = C-right
 
-          # Keep Super+Ctrl+hjkl intact for Hyprland's resizeactive binds —
-          # without this layer keyd would turn them into Super+arrows.
+          # Keep <mod>+Ctrl+hjkl intact for Hyprland's resizeactive and
+          # moveintogroup binds — without these layers keyd rewrites them to
+          # <mod>+arrows, which Hyprland reads as its plain movefocus binds.
+          # Both mods are covered because hyprland.nix's $mainMod switches
+          # between ALT and SUPER.
           [meta+control]
           h = M-C-h
           y = M-C-y
           n = M-C-n
           u = M-C-u
+
+          [alt+control]
+          h = A-C-h
+          y = A-C-y
+          n = A-C-n
+          u = A-C-u
+
+          [meta+control+shift]
+          h = M-C-S-h
+          y = M-C-S-y
+          n = M-C-S-n
+          u = M-C-S-u
+
+          [alt+control+shift]
+          h = A-C-S-h
+          y = A-C-S-y
+          n = A-C-S-n
+          u = A-C-S-u
         '';
       };
     };
