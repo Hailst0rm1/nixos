@@ -1,6 +1,7 @@
---- a/src/assets/languages/en.json	2026-09-01 22:16:07.578593248 +0200
-+++ b/src/assets/languages/en.json	2026-09-01 22:22:00.296449703 +0200
-@@ -612,11 +612,15 @@
+diff -ruN x/src/assets/languages/en.json y/src/assets/languages/en.json
+--- a/src/assets/languages/en.json	2026-09-03 10:44:27.312576544 +0200
++++ b/src/assets/languages/en.json	2026-09-03 10:44:27.352027366 +0200
+@@ -613,11 +613,15 @@
        "tabs": {
          "timer": "Timer",
          "stopwatch": "Stopwatch",
@@ -17,7 +18,7 @@
        "pomodoro": {
          "phases": {
            "focus": "Focus",
-@@ -640,7 +644,9 @@
+@@ -641,7 +645,9 @@
          "break_over_body": "Break time is up. Let's get back to focus!",
          "pomo_skipped_title": "Pomodoro skipped",
          "pomo_skipped_focus_body": "Focus session skipped. Moving to break.",
@@ -28,9 +29,10 @@
        }
      }
    },
---- a/src/quickshell/Main.qml	2026-09-01 22:16:07.599702163 +0200
-+++ b/src/quickshell/Main.qml	2026-09-01 22:21:50.014595362 +0200
-@@ -52,9 +52,11 @@
+diff -ruN x/src/quickshell/Main.qml y/src/quickshell/Main.qml
+--- a/src/quickshell/Main.qml	2026-09-03 10:44:27.316185098 +0200
++++ b/src/quickshell/Main.qml	2026-09-03 10:44:27.352268857 +0200
+@@ -54,9 +54,11 @@
                      LauncherController.hide();
                  } else if (cmd === "open") {
                      ClipboardController.hide();
@@ -42,7 +44,7 @@
                      LauncherController.toggle();
                  }
                  return;
-@@ -65,13 +67,30 @@
+@@ -67,13 +69,30 @@
                      ClipboardController.hide();
                  } else if (cmd === "open") {
                      LauncherController.hide();
@@ -71,17 +73,18 @@
 +                return;
 +            }
  
-             let effectivelyActive = masterWindow.targetActive;
- 
---- a/src/quickshell/qmldir	2026-09-01 22:16:07.599702163 +0200
-+++ b/src/quickshell/qmldir	2026-09-01 22:21:50.012160903 +0200
+             if (cmd === "airplane" || targetWidget === "airplane" || cmd === "flight" || targetWidget === "flight") {
+                 let isAirplane = !Networking.wifiEnabled && !(Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled);
+diff -ruN x/src/quickshell/qmldir y/src/quickshell/qmldir
+--- a/src/quickshell/qmldir	2026-09-03 10:44:27.316185098 +0200
++++ b/src/quickshell/qmldir	2026-09-03 10:44:27.352358404 +0200
 @@ -1,4 +1,5 @@
  Clipboard 1.0 clipboard/Clipboard.qml
 +TimerPanel 1.0 timer/TimerPanel.qml
  Launcher 1.0 launcher/Launcher.qml
  
  Dim 1.0 Dim.qml
-@@ -31,6 +32,7 @@
+@@ -33,6 +34,7 @@
  singleton OsdController 1.0 singletons/widgetcontrols/OsdController.qml
  singleton SideMusicController 1.0 singletons/widgetcontrols/SideMusicController.qml
  singleton ClipboardController 1.0 singletons/widgetcontrols/ClipboardController.qml
@@ -89,14 +92,16 @@
  
  PopoutManager 1.0 popouts/PopoutManager.qml
  
---- a/src/quickshell/quickactions/actions/qmldir	2026-09-01 22:16:07.608626965 +0200
-+++ b/src/quickshell/quickactions/actions/qmldir	2026-09-01 22:21:50.016039251 +0200
+diff -ruN x/src/quickshell/quickactions/actions/qmldir y/src/quickshell/quickactions/actions/qmldir
+--- a/src/quickshell/quickactions/actions/qmldir	2026-09-03 10:44:27.318448216 +0200
++++ b/src/quickshell/quickactions/actions/qmldir	2026-09-03 10:44:27.352422507 +0200
 @@ -1,4 +1,3 @@
  Dock 1.0 Dock.qml
  DrawAction 1.0 DrawAction.qml
  SystemUsage 1.0 SystemUsage.qml
 -Timer 1.0 Timer.qml
---- a/src/quickshell/quickactions/actions/Timer.qml	2026-09-01 22:16:07.608626965 +0200
+diff -ruN x/src/quickshell/quickactions/actions/Timer.qml y/src/quickshell/quickactions/actions/Timer.qml
+--- a/src/quickshell/quickactions/actions/Timer.qml	2026-09-03 10:44:27.318448216 +0200
 +++ b/src/quickshell/quickactions/actions/Timer.qml	1970-01-01 01:00:00.000000000 +0100
 @@ -1,887 +0,0 @@
 -import QtQuick
@@ -986,8 +991,9 @@
 -        }
 -    }
 -}
---- a/src/quickshell/quickactions/Floating.qml	2026-09-01 22:16:07.608470155 +0200
-+++ b/src/quickshell/quickactions/Floating.qml	2026-09-01 22:21:50.015364187 +0200
+diff -ruN x/src/quickshell/quickactions/Floating.qml y/src/quickshell/quickactions/Floating.qml
+--- a/src/quickshell/quickactions/Floating.qml	2026-09-03 10:44:27.318408173 +0200
++++ b/src/quickshell/quickactions/Floating.qml	2026-09-03 10:44:27.353084869 +0200
 @@ -114,7 +114,6 @@
              property var tabModules: [
                  "actions/DrawAction.qml",
@@ -996,18 +1002,20 @@
              ]
  
              property int tabCount: Math.max(1, tabModules.length)
---- a/src/quickshell/Shell.qml	2026-09-01 22:16:07.641404883 +0200
-+++ b/src/quickshell/Shell.qml	2026-09-01 22:21:50.012263635 +0200
+diff -ruN x/src/quickshell/Shell.qml y/src/quickshell/Shell.qml
+--- a/src/quickshell/Shell.qml	2026-09-03 10:44:27.326951986 +0200
++++ b/src/quickshell/Shell.qml	2026-09-03 10:44:27.353402948 +0200
 @@ -18,6 +18,7 @@
  
      Launcher {}
-     Clipboard {}	
+     Clipboard {}    
 +    TimerPanel {}
  
      Polkit {}
      PopoutManager {}
+diff -ruN x/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml y/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml
 --- a/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml	1970-01-01 01:00:00.000000000 +0100
-+++ b/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml	2026-09-01 22:18:59.221174992 +0200
++++ b/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml	2026-09-03 10:44:27.353497083 +0200
 @@ -0,0 +1,95 @@
 +pragma Singleton
 +import QtQuick
@@ -1104,8 +1112,9 @@
 +        }
 +    }
 +}
+diff -ruN x/src/quickshell/timer/TimerFace.qml y/src/quickshell/timer/TimerFace.qml
 --- a/src/quickshell/timer/TimerFace.qml	1970-01-01 01:00:00.000000000 +0100
-+++ b/src/quickshell/timer/TimerFace.qml	2026-09-01 22:24:45.765448062 +0200
++++ b/src/quickshell/timer/TimerFace.qml	2026-09-03 10:44:27.353651555 +0200
 @@ -0,0 +1,1084 @@
 +import QtQuick
 +import QtQuick.Layouts
@@ -2191,8 +2200,9 @@
 +        }
 +    }
 +}
+diff -ruN x/src/quickshell/timer/TimerPanel.qml y/src/quickshell/timer/TimerPanel.qml
 --- a/src/quickshell/timer/TimerPanel.qml	1970-01-01 01:00:00.000000000 +0100
-+++ b/src/quickshell/timer/TimerPanel.qml	2026-09-01 22:21:30.220834453 +0200
++++ b/src/quickshell/timer/TimerPanel.qml	2026-09-03 10:44:27.353710089 +0200
 @@ -0,0 +1,462 @@
 +import QtQuick
 +import QtQuick.Window

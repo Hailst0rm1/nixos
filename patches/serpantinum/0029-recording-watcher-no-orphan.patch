@@ -1,0 +1,38 @@
+--- a/src/quickshell/bar/modules/InfoWidget.qml	2026-09-03 10:38:44.196337246 +0200
++++ b/src/quickshell/bar/modules/InfoWidget.qml	2026-09-03 10:38:50.420429617 +0200
+@@ -76,7 +76,7 @@
+         running: infoWidgetRoot.moduleActive && infoWidgetRoot.recCacheDir !== ""
+         command: infoWidgetRoot.recCacheDir ? [
+             "bash", "-c",
+-            "mkdir -p '" + infoWidgetRoot.recCacheDir + "' && inotifywait -m -e create,delete,modify,moved_to,moved_from '" + infoWidgetRoot.recCacheDir + "' 2>/dev/null"
++            "mkdir -p '" + infoWidgetRoot.recCacheDir + "'; exec inotifywait -m -e create,delete,modify,moved_to,moved_from '" + infoWidgetRoot.recCacheDir + "' 2>/dev/null"
+         ] : []
+         stdout: SplitParser {
+             onRead: data => {
+@@ -96,7 +96,6 @@
+         interval: 1000
+         repeat: false
+         onTriggered: {
+-            recWatcher.running = false;
+             recWatcher.running = true;
+         }
+     }
+--- a/src/quickshell/bar/sidemodules/SideInfoWidget.qml	2026-09-03 10:38:44.196929156 +0200
++++ b/src/quickshell/bar/sidemodules/SideInfoWidget.qml	2026-09-03 10:38:50.431996619 +0200
+@@ -76,7 +76,7 @@
+         running: sideInfoWidgetRoot.moduleActive && sideInfoWidgetRoot.recCacheDir !== ""
+         command: sideInfoWidgetRoot.recCacheDir ? [
+             "bash", "-c",
+-            "mkdir -p '" + sideInfoWidgetRoot.recCacheDir + "' && inotifywait -m -e create,delete,modify,moved_to,moved_from '" + sideInfoWidgetRoot.recCacheDir + "' 2>/dev/null"
++            "mkdir -p '" + sideInfoWidgetRoot.recCacheDir + "'; exec inotifywait -m -e create,delete,modify,moved_to,moved_from '" + sideInfoWidgetRoot.recCacheDir + "' 2>/dev/null"
+         ] : []
+         stdout: SplitParser {
+             onRead: data => {
+@@ -96,7 +96,6 @@
+         interval: 1000
+         repeat: false
+         onTriggered: {
+-            recWatcher.running = false;
+             recWatcher.running = true;
+         }
+     }

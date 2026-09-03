@@ -25,6 +25,13 @@ final: prev: {
         ../patches/serpantinum/0027-workspace-active-pill-height.patch
         ../patches/serpantinum/0027-escape-item-level-handlers.patch
         ../patches/serpantinum/0028-lock-wipe-gpu-shape.patch
+        # The recording watcher leaked one orphaned inotifywait per second per
+        # bar: its restart timer killed the bash wrapper (which forked
+        # inotifywait instead of exec'ing it, so the child survived), and that
+        # kill re-fired onExited, re-arming the timer forever. ~7 orphans/s
+        # filled user@.service TasksMax and every fork in the session then
+        # failed, freezing the whole shell.
+        ../patches/serpantinum/0029-recording-watcher-no-orphan.patch
       ];
 
     # Every --replace-fail target below occurs exactly once in its file.
