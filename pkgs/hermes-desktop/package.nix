@@ -19,12 +19,12 @@
 }: let
   nodejs = nodejs_22;
   src = hermes-agent.src;
-  version = "2026.6.5";
+  version = "2026.8.31";
 
   # Single npm-deps fetch from the workspace root package-lock.json.
   # Matches upstream nix/lib.nix for the same main checkout; if Nix reports
   # a mismatch after a rev bump, paste the "got:" hash here.
-  npmDepsHash = "sha256-J8fQxf4gdUIWzJ5MB7mAG3zhHWoAQIQ1DqIq/fHEhhM=";
+  npmDepsHash = "sha256-/PIJA1zE5NxAdECJdxwuxyn1ijFeLubPorw2cngTV28=";
 
   npmDeps = fetchNpmDeps {
     inherit src;
