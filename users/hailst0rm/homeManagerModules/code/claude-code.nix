@@ -128,6 +128,19 @@
     hash = "sha256-FPAAotNqA5aHrFDlj/XddoLs4TDKi+4J5H/mvevlOlk=";
   };
 
+  # humanlayer's show-me skill: explain the current topic in-chat with the
+  # smallest view that works (pseudocode, call/component/file trees, shape
+  # diffs), reaching for an HTML file only as a last resort — the cheap
+  # counterpart to visual-explainer's full pages. Upstream has no release
+  # tags, so track `main` by SHA like mattpocock/skills above.
+  # track-branch: main
+  humanlayer-skills-repo = pkgs.fetchFromGitHub {
+    owner = "humanlayer";
+    repo = "skills";
+    rev = "3c2629142c5d437428269b1b722b08c0b87f574d";
+    hash = "sha256-lJvu9CGAN/+dzmzck0CodRXn/p7GUkCbfyZxys4nIoU=";
+  };
+
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
   # Experimental skills not listed in plugin.json — opt them in explicitly here.
   # (As upstream promotes in-progress skills into engineering/ + plugin.json they
@@ -1828,6 +1841,8 @@ in {
         # rendering needs no network and no playwright (whose binary wheels and
         # downloaded chromium both fail to load on NixOS).
         ".claude/skills/excalidraw-diagram/references/excalidraw-utils.js".source = excalidrawUtils;
+
+        ".claude/skills/show-me".source = "${humanlayer-skills-repo}/plugins/show-me/skills/show-me";
       }
       // lib.optionalAttrs config.code.claude-code.gsd.enable {
         ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";

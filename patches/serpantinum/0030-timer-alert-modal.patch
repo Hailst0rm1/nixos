@@ -1,0 +1,82 @@
+--- a/src/quickshell/qmldir	2026-09-04 09:17:43.576719350 +0200
++++ b/src/quickshell/qmldir	2026-09-04 10:02:31.696924812 +0200
+@@ -1,5 +1,6 @@
+ Clipboard 1.0 clipboard/Clipboard.qml
+ TimerPanel 1.0 timer/TimerPanel.qml
++TimerAlert 1.0 timer/TimerAlert.qml
+ Launcher 1.0 launcher/Launcher.qml
+ 
+ Dim 1.0 Dim.qml
+--- a/src/quickshell/Shell.qml	2026-09-04 09:17:43.577708895 +0200
++++ b/src/quickshell/Shell.qml	2026-09-04 10:02:31.696999010 +0200
+@@ -19,6 +19,7 @@
+     Launcher {}
+     Clipboard {}    
+     TimerPanel {}
++    TimerAlert {}
+ 
+     Polkit {}
+     PopoutManager {}
+--- a/src/quickshell/singletons/TimerState.qml	2026-09-04 09:17:43.557471892 +0200
++++ b/src/quickshell/singletons/TimerState.qml	2026-09-04 10:02:31.697041317 +0200
+@@ -8,4 +8,8 @@
+     property string timeFormatted: ""
+     property string icon: "\uF017"
+     property string colorType: "mauve"
++
++    // Raised when a countdown reaches zero, so TimerAlert can put a modal on
++    // screen alongside the one-shot notification tone.
++    signal finished(string title, string body)
+ }
+--- a/src/quickshell/timer/TimerFace.qml	2026-09-04 09:17:43.580787956 +0200
++++ b/src/quickshell/timer/TimerFace.qml	2026-09-04 10:02:31.697620046 +0200
+@@ -351,6 +351,10 @@
+             I18n.t("quickactions.timer.notification.alarm_body", { time: root.formatTimeOfDay(stateCache.alarmTimeOfDayMs) }),
+             "preferences-system-time"
+         );
++        TimerState.finished(
++            I18n.t("quickactions.timer.notification.alarm_title"),
++            I18n.t("quickactions.timer.notification.alarm_body", { time: root.formatTimeOfDay(stateCache.alarmTimeOfDayMs) })
++        );
+         if (typeof Sounds !== "undefined") Sounds.playSfx("notifications/Sine.wav", 1.0, 0, true);
+         root.saveFullState();
+         root.updateExportedState();
+@@ -459,6 +463,10 @@
+                             I18n.t("quickactions.timer.notification.timer_finished_body", { time: root.formatTime(stateCache.timerPresetMs, false) }),
+                             "preferences-system-time"
+                         );
++                        TimerState.finished(
++                            I18n.t("quickactions.timer.notification.timer_finished_title"),
++                            I18n.t("quickactions.timer.notification.timer_finished_body", { time: root.formatTime(stateCache.timerPresetMs, false) })
++                        );
+                         root.saveFullState();
+                     } else {
+                         stateCache.timerRemainingMs = rem;
+@@ -478,19 +486,14 @@
+                         stateCache.pomoRemainingMs = 0;
+ 
+                         let phase = stateCache.pomoState;
+-                        if (phase === 0) {
+-                            root.notify(
+-                                I18n.t("quickactions.timer.notification.focus_complete_title"),
+-                                I18n.t("quickactions.timer.notification.focus_complete_body"),
+-                                "preferences-system-time"
+-                            );
+-                        } else {
+-                            root.notify(
+-                                I18n.t("quickactions.timer.notification.break_over_title"),
+-                                I18n.t("quickactions.timer.notification.break_over_body"),
+-                                "preferences-system-time"
+-                            );
+-                        }
++                        let pomoTitle = phase === 0
++                            ? I18n.t("quickactions.timer.notification.focus_complete_title")
++                            : I18n.t("quickactions.timer.notification.break_over_title");
++                        let pomoBody = phase === 0
++                            ? I18n.t("quickactions.timer.notification.focus_complete_body")
++                            : I18n.t("quickactions.timer.notification.break_over_body");
++                        root.notify(pomoTitle, pomoBody, "preferences-system-time");
++                        TimerState.finished(pomoTitle, pomoBody);
+ 
+                         pomodoroView.handleSessionComplete();
+                         root.saveFullState();

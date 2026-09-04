@@ -15,9 +15,13 @@ in {
   video = "";
   image = "";
 
-  programs.zsh.initContent = ''
-    eval "$(direnv hook zsh)"
-  '';
+  # vscode.nix normally brings direnv in; it is disabled on this host.
+  programs.direnv = {
+    enable = true;
+    enableZshIntegration = true;
+    nix-direnv.enable = true;
+    config.global.hide_env_diff = true;
+  };
 
   importConfig = {
     stylix.enable = false;

@@ -32,6 +32,7 @@ final: prev: {
         # filled user@.service TasksMax and every fork in the session then
         # failed, freezing the whole shell.
         ../patches/serpantinum/0029-recording-watcher-no-orphan.patch
+        ../patches/serpantinum/0030-timer-alert-modal.patch
       ];
 
     # Every --replace-fail target below occurs exactly once in its file.
@@ -52,6 +53,34 @@ final: prev: {
           src/quickshell/watchers/sysmon_privileged.sh
         install -Dm755 ${../patches/serpantinum/files/clipboard/localsend.py} \
           src/quickshell/clipboard/localsend.py
+        install -Dm644 ${../patches/serpantinum/files/timer/TimerAlert.qml} \
+          src/quickshell/timer/TimerAlert.qml
+
+        # Apps launched from the shell inherited serpantinum.service's cgroup,
+        # so every rebuild that restarts the unit SIGKILLed them along with it
+        # (KillMode=mixed kills the whole cgroup at stop). Electron apps died
+        # with SIGTRAP the moment their zygote was killed underneath them —
+        # Discord, Spotify and Obsidian all vanished on `nh os switch` while
+        # terminals and Firefox, launched by Hyprland, survived.
+        #
+        # DesktopEntry.execute() only moves the leader PID into a scope, so
+        # anything the app forks first stays behind. app2unit creates the
+        # app.slice scope *before* exec, so every descendant inherits it.
+        for f in src/quickshell/launcher/Launcher.qml src/quickshell/bar/sidemodules/SideLauncher.qml
+        do
+          substituteInPlace "$f" \
+            --replace-fail 'entry.execute();' \
+                           'Quickshell.execDetached(["app2unit", "--", desktopId.endsWith(".desktop") ? desktopId : desktopId + ".desktop"]);'
+        done
+        substituteInPlace src/quickshell/quickactions/actions/Dock.qml \
+          --replace-fail 'Quickshell.execDetached(["bash", "-c", loggedCmd]);' \
+                         'Quickshell.execDetached(["app2unit", "--", "bash", "-c", loggedCmd]);'
+
+        # Caps Lock OSD: every toggle threw a popup. The state itself still
+        # tracks (lastCapsLock feeds nothing else today, but leaving the
+        # assignment keeps numlock's branch symmetric).
+        substituteInPlace src/quickshell/singletons/widgetcontrols/OsdController.qml \
+          --replace-fail 'controller.show("capslock", stateNum === 1 ? "on" : "off");' ""
 
         # Temp pill: upstream's red reads as an alert at idle temperatures.
         substituteInPlace src/quickshell/bar/modules/system/SysMonWidget.qml \
@@ -171,12 +200,14 @@ final: prev: {
     #                    upstream ships only libpulseaudio, the client library.
     #   xdg-user-dirs -> xdg-user-dir, used to resolve the screenshot save
     #                    directory (XDG PICTURES).
+    #   app2unit      -> launches desktop entries into their own app.slice
+    #                    scope (see the launcher patch in postPatch).
     postFixup =
       (old.postFixup or "")
       + ''
         for bin in serpantinum serpantinumd; do
           wrapProgram "$out/bin/$bin" \
-            --prefix PATH : "${prev.lib.makeBinPath [prev.pulseaudio prev.xdg-user-dirs]}"
+            --prefix PATH : "${prev.lib.makeBinPath [prev.pulseaudio prev.xdg-user-dirs prev.app2unit]}"
         done
       '';
   });

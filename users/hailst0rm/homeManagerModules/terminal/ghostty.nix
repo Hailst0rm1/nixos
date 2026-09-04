@@ -27,6 +27,16 @@
         # other Wayland clients) and shows as a stuck blurred window on open.
         gtk-single-instance = true;
 
+        # Finishes the job the preBuild sed above starts. That sed only
+        # reaches src/renderer/generic.zig, which imports libxev's static
+        # default backend (io_uring on Linux) and so cannot be steered at
+        # runtime. Everything else goes through src/global.zig's
+        # xev.Dynamic, which `auto` resolves to io_uring on this kernel —
+        # the running instance holds 8 io_uring fds. So the renderer ran on
+        # epoll while the app and IO loops ran on io_uring, and a surface
+        # whose io_uring setup stalls comes up as a window that never paints.
+        async-backend = "epoll";
+
         # Use the regular clipboard for copy-on-select so everything goes to the same place
         clipboard-paste-bracketed-safe = true;
 
