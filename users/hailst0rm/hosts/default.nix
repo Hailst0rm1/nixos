@@ -82,6 +82,10 @@
   code = {
     claude-code = {
       enable = lib.mkDefault false;
+      freeClaudeCode = {
+        enable = lib.mkDefault true;
+        port = lib.mkDefault 38427;
+      };
       exa.enable = lib.mkDefault true;
       codegraph.enable = lib.mkDefault true;
       shadcn.enable = lib.mkDefault true;

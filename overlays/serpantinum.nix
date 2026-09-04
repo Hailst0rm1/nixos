@@ -33,6 +33,7 @@ final: prev: {
         # failed, freezing the whole shell.
         ../patches/serpantinum/0029-recording-watcher-no-orphan.patch
         ../patches/serpantinum/0030-timer-alert-modal.patch
+        ../patches/serpantinum/0031-click-popup-to-dismiss.patch
       ];
 
     # Every --replace-fail target below occurs exactly once in its file.

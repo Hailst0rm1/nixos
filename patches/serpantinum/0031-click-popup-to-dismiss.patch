@@ -1,0 +1,11 @@
+--- a/src/quickshell/notifications/Notification.qml
++++ b/src/quickshell/notifications/Notification.qml
+@@ -288,6 +288,8 @@ Rectangle {
+                         if (mainAction && typeof mainAction.invoke === "function") {
+                             mainAction.invoke();
+                         }
++                    } else if (typeRoot.isPopup) {
++                        typeRoot.doClose();
+                     }
+                 }
+             }
