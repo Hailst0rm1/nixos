@@ -85,6 +85,12 @@
       freeClaudeCode = {
         enable = lib.mkDefault true;
         port = lib.mkDefault 38427;
+        model = lib.mkDefault "nvidia_nim/nvidia/nemotron-3-super-120b-a12b";
+        fallbackModels = lib.mkDefault [
+          "open_router/z-ai/glm-5.2:free"
+          "open_router/minimax/minimax-m2.7:free"
+          "open_router/openrouter/free"
+        ];
       };
       exa.enable = lib.mkDefault true;
       codegraph.enable = lib.mkDefault true;

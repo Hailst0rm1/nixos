@@ -57,6 +57,10 @@
           "services/exa/api-key" = {};
           "services/n8n/api-key" = {};
           "services/context7/api-key" = {};
+          # Provider keys for the Free Claude Code proxy, as EnvironmentFile
+          # lines (NVIDIA_NIM_API_KEY=…, OPENROUTER_API_KEY=…) — the unit reads
+          # the whole file, so one secret covers every provider.
+          "services/free-claude-code/env" = {};
           "services/21st/api-key" = {};
           "services/github/pat" = {};
           # Sandcastle autonomous agent pipeline (see code/sandcastle.nix):

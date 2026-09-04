@@ -178,6 +178,10 @@ in {
         nix-edit = "yazi ${config.nixosDir}";
         yz = "yazi";
         claude = "claude --allow-dangerously-skip-permissions";
+        # fcc-claude prepends `--permission-mode default` unless the args already
+        # pick a mode; it recognises --dangerously-skip-permissions by that exact
+        # spelling, so the --allow- variant above would get both flags.
+        fcc-claude = "fcc-claude --dangerously-skip-permissions";
 
         # Modern commands
         ls = "lsd";
