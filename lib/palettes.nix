@@ -41,13 +41,28 @@
 
   # A cold single-hue depth ramp lit by one warm accent.
   #
-  # The neutrals are twelve steps of two same-hue ramps rather than one: the
-  # dark ramp runs out between L34 and L64, which is exactly where catppuccin
-  # puts its three overlays, so overlay0-2 come from the light ramp's dark end.
-  # That keeps `base` at catppuccin `base`'s lightness and the overlays at the
-  # overlays', so perceived depth and editor comment contrast are unchanged.
+  # Every value is a token from the styleguide's `styleguide/tokens.css`; that
+  # file is the only place a colour is born, so a role that needs a shade the
+  # styleguide lacks gets remapped onto an existing token, never a new hex.
+  # The twelve neutrals come from its two same-hue ramps: navy runs out between
+  # L34 and L43, which is where catppuccin puts its overlays, so overlay0-2
+  # come from the paper ramp's dark end.
   #
-  # `peach` is the one warm slot in this vocabulary, so it carries the accent.
+  #   crust/mantle/base  navy-950/900/800   surface0  navy-700  --surface-selected
+  #   surface1  navy-600 --border           surface2  paper-800 (== overlay0)
+  #   overlay0-2  paper-800/700/600         subtext0/1  navy-400/300 --text-muted/-secondary
+  #   text  navy-100 --text
+  #
+  # surface0 must skip navy-750: that token is `--border-subtle`, one L step off
+  # navy-800, so using it as a fill made every card, toggle and progress track
+  # sit at 1.02 contrast against the panel behind it. navy-700 is the token for
+  # a raised or selected surface and lands at 1.16. The styleguide's dark ramp
+  # is deliberately flat here and pairs it with a 1px hairline in the next step
+  # up rather than a bigger fill jump, which is what swaync.nix already draws.
+  # That leaves surface2 sharing paper-800 with overlay0 — the only alternative
+  # is navy-600, already taken by surface1.
+  #
+  # `peach` is amber-400, the styleguide's single accent.
   navy = {
     rosewater = "#FBE2EA";
     flamingo = "#E7B3C6";
@@ -69,9 +84,9 @@
     overlay2 = "#738598";
     overlay1 = "#5C6874";
     overlay0 = "#44515F";
-    surface2 = "#283A4C";
-    surface1 = "#1D2A38";
-    surface0 = "#15202D";
+    surface2 = "#44515F";
+    surface1 = "#283A4C";
+    surface0 = "#1D2A38";
     base = "#101E2D";
     mantle = "#07121F";
     crust = "#040913";
