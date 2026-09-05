@@ -611,9 +611,10 @@
     '';
 
   # statusLine: single-line bar fed JSON on stdin by Claude Code.
-  # Renders: v<version>  <model>  <hostname>  <project> {<wt>:}<branch>{*}{⇡N}{⇣N}  <ctx%>  +<add>/-<rem>  $<cost>
+  # Renders: v<version>  <model>  <hostname>  <project> <branch>{*}{⇡N}{⇣N}  <ctx%>  +<add>/-<rem>  $<cost>
   # Project = main repo basename (via git-common-dir, stable across worktrees).
-  # Worktree label only when GIT_DIR != GIT_COMMON_DIR and not a submodule.
+  # No worktree label: worktree dirs are named after their branch, so it only
+  # restated the branch a column later.
   # ANSI colors only — no OSC, no Nerd Font PUA.
   claudeStatuslineScript = pkgs.writeShellScript "claude-statusline" ''
     set -uo pipefail
@@ -638,7 +639,6 @@
 
     PROJECT=""
     GIT_SEG=""
-    WT_LABEL=""
 
     if "$GIT" rev-parse --git-dir >/dev/null 2>&1; then
       # Project: parent of shared .git/ — stable across worktrees.
@@ -649,18 +649,6 @@
         if [ -n "$COMMON_ABS" ]; then
           MAIN_ROOT=$(${pkgs.coreutils}/bin/dirname "$COMMON_ABS")
           PROJECT=$(${pkgs.coreutils}/bin/basename "$MAIN_ROOT")
-        fi
-      fi
-
-      # Worktree detection: GIT_DIR != GIT_COMMON_DIR AND not a submodule.
-      GIT_DIR_PATH=$(cd "$("$GIT" rev-parse --git-dir)" 2>/dev/null && pwd -P || echo "")
-      SUPER=$("$GIT" rev-parse --show-superproject-working-tree 2>/dev/null)
-      if [ -n "$GIT_DIR_PATH" ] && [ -n "$COMMON_ABS" ] \
-           && [ "$GIT_DIR_PATH" != "$COMMON_ABS" ] && [ -z "$SUPER" ]; then
-        WT_ROOT=$("$GIT" rev-parse --show-toplevel 2>/dev/null)
-        if [ -n "$WT_ROOT" ]; then
-          WT_NAME=$(${pkgs.coreutils}/bin/basename "$WT_ROOT")
-          WT_LABEL="''${YELLOW}''${WT_NAME}''${RESET}:"
         fi
       fi
 
@@ -679,7 +667,7 @@
         [ "$AHEAD"  -gt 0 ] && UP="''${UP}⇡''${AHEAD}"
         [ "$BEHIND" -gt 0 ] && UP="''${UP}⇣''${BEHIND}"
       fi
-      GIT_SEG=" ''${WT_LABEL}''${MAGENTA}''${BR}''${DIRTY}''${UP}''${RESET}"
+      GIT_SEG=" ''${MAGENTA}''${BR}''${DIRTY}''${UP}''${RESET}"
     fi
 
     # Non-git fallback for project name.
