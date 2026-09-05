@@ -5,6 +5,10 @@
 }: {
   programs.bat.enable = true;
 
+  # Writes ~/.config/user-dirs.dirs — without it XDG_VIDEOS_DIR etc. are unset
+  # and apps like Snapshot refuse to save recordings.
+  xdg.userDirs.enable = true;
+
   services.playerctld.enable = true;
 
   home.packages = [
