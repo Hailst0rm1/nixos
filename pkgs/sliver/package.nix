@@ -11,18 +11,18 @@
 }:
 stdenv.mkDerivation rec {
   pname = "sliver";
-  version = "1.7.3";
+  version = "1.7.7";
 
   # Fetch the client binary
   client = fetchurl {
     url = "https://github.com/BishopFox/sliver/releases/download/v${version}/sliver-client_linux-amd64";
-    sha256 = "sha256-sOMooTHk1nnpsmhVLbmcotRgUbkgWmf5t/fBYomD2q4=";
+    sha256 = "sha256-QonNHdrl7yDnHJ7KkU2FP95LVfrCBzXN+4eyQPgFK1U=";
   };
 
   # Fetch the server binary
   server = fetchurl {
     url = "https://github.com/BishopFox/sliver/releases/download/v${version}/sliver-server_linux-amd64";
-    sha256 = "sha256-4yFuzRL25+l8tFiLtthccOyjvfrYsIGP/VPMsuNXzMg=";
+    sha256 = "sha256-EMeMO26TmHl9PBVGyVwttQf2TUu9mTIGionuSoiJ4MU=";
   };
 
   dontUnpack = true;

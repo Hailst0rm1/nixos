@@ -10,24 +10,24 @@
   # upstream's main branch never reach this derivation until the hash
   # changes. Bump `litellmRelease` to a newer https://github.com/BerriAI/litellm
   # release tag and refresh the hash to pick up new model prices.
-  litellmRelease = "v1.98.0";
+  litellmRelease = "v1.99.1";
   litellmPricing = fetchurl {
     url = "https://raw.githubusercontent.com/BerriAI/litellm/refs/tags/${litellmRelease}/model_prices_and_context_window.json";
-    hash = "sha256-tVldfo4DmhMda7Fg6QwmZ4wFoLQ39ypP5X8Yp3xfUu0=";
+    hash = "sha256-Rln7FnO4tIZ480Sv55S9P1pfe/BXZ4Fj3Em0NMo7RHA=";
   };
 in
   buildNpmPackage rec {
     pname = "codeburn";
-    version = "0.9.20";
+    version = "0.9.24";
 
     src = fetchFromGitHub {
       owner = "getagentseal";
       repo = "codeburn";
       rev = "v${version}";
-      hash = "sha256-t9T6cMIveGsX60HSHKoqXbk7Hrd0CkRxryZUnmgQI5c=";
+      hash = "sha256-opz1jon0MTPy8dCgQ2Ar4mG/PET7XD2PjLgwlle+RB8=";
     };
 
-    npmDepsHash = "sha256-t36Q1NLjY0I//m/XJrPdxe0a6LvYqgY5+HOphMzlE5M=";
+    npmDepsHash = "sha256-VQ7+SvDDr83tZCj53kiBFHoUx7syBFvRzgPmOJoOvDg=";
 
     # `dash/` is a separate Vite app with its own lockfile, built into
     # dist/dash and served by `codeburn web`. Vendor it so the sandbox never
@@ -43,7 +43,7 @@ in
     preBuild = ''
       npmDeps=$dashNpmDeps npmRoot=dash npmConfigHook
       substituteInPlace package.json \
-        --replace-fail "cd dash && npm install --no-audit --no-fund --silent && npm run build" "cd dash && npm run build"
+        --replace-fail "cd dash && npm ci --no-audit --no-fund --silent && npm run build" "cd dash && npm run build"
 
       cp ${litellmPricing} litellm-raw.json
       cat > scripts/bundle-litellm.mjs << 'SCRIPT'
