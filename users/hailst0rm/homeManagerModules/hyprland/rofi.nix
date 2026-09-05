@@ -32,14 +32,14 @@
     home.file.".local/share/rofi/themes/catppuccin-mocha.rasi" = {
       text = ''
         * {
-            bg-col:  #1e1e2e;
-            bg-col-light: #1e1e2e;
+            bg-col:  ${config.palette.base};
+            bg-col-light: ${config.palette.base};
             border-col: ${config.importConfig.hyprland.accentColourHex};
-            selected-col: #1e1e2e;
+            selected-col: ${config.palette.base};
             accent: ${config.importConfig.hyprland.accentColourHex};
-            fg-col: #cdd6f4;
+            fg-col: ${config.palette.text};
             fg-col2: ${config.importConfig.hyprland.accentColourHex};
-            grey: #6c7086;
+            grey: ${config.palette.overlay0};
 
             width: 600;
             border-radius: 15px;

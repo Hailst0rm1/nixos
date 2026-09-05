@@ -6,20 +6,27 @@
   ...
 }: let
   cfg = config.importConfig.hyprland;
-  red = "#f38ba8";
-  green = "#a6e3a1";
-  text = "#cdd6f4";
-  subtext1 = "#bac2de";
-  subtext0 = "#a6adc8";
-  overlay2 = "#9399b2";
-  overlay1 = "#7f849c";
-  overlay0 = "#6c7086";
-  surface2 = "#585b70";
-  surface1 = "#45475a";
-  surface0 = "#313244";
-  base = "#1e1e2e";
-  mantle = "#181825";
-  crust = "#11111b";
+  inherit
+    (config.palette)
+    red
+    green
+    yellow
+    peach
+    blue
+    sky
+    text
+    subtext1
+    subtext0
+    overlay2
+    overlay1
+    overlay0
+    surface2
+    surface1
+    surface0
+    base
+    mantle
+    crust
+    ;
   white = "#ffffff";
 
   # Generate bar layouts for all monitors based on orientation
@@ -120,20 +127,20 @@ in {
         "theme.bar.menus.menu.notifications.no_notifications_label" = "${surface0}";
         "theme.bar.menus.menu.notifications.label" = "${cfg.accentColourHex}";
         "theme.bar.menus.menu.power.buttons.sleep.icon" = "${mantle}";
-        "theme.bar.menus.menu.power.buttons.sleep.text" = "#89dceb";
-        "theme.bar.menus.menu.power.buttons.sleep.icon_background" = "#89dceb";
+        "theme.bar.menus.menu.power.buttons.sleep.text" = "${sky}";
+        "theme.bar.menus.menu.power.buttons.sleep.icon_background" = "${sky}";
         "theme.bar.menus.menu.power.buttons.sleep.background" = "${base}";
         "theme.bar.menus.menu.power.buttons.logout.icon" = "${mantle}";
-        "theme.bar.menus.menu.power.buttons.logout.text" = "#a6e3a1";
-        "theme.bar.menus.menu.power.buttons.logout.icon_background" = "#a6e3a1";
+        "theme.bar.menus.menu.power.buttons.logout.text" = "${green}";
+        "theme.bar.menus.menu.power.buttons.logout.icon_background" = "${green}";
         "theme.bar.menus.menu.power.buttons.logout.background" = "${base}";
         "theme.bar.menus.menu.power.buttons.restart.icon" = "${mantle}";
-        "theme.bar.menus.menu.power.buttons.restart.text" = "#fab387";
-        "theme.bar.menus.menu.power.buttons.restart.icon_background" = "#fab387";
+        "theme.bar.menus.menu.power.buttons.restart.text" = "${peach}";
+        "theme.bar.menus.menu.power.buttons.restart.icon_background" = "${peach}";
         "theme.bar.menus.menu.power.buttons.restart.background" = "${base}";
         "theme.bar.menus.menu.power.buttons.shutdown.icon" = "${mantle}";
         "theme.bar.menus.menu.power.buttons.shutdown.text" = "${red}";
-        "theme.bar.menus.menu.power.buttons.shutdown.icon_background" = "#f38ba7";
+        "theme.bar.menus.menu.power.buttons.shutdown.icon_background" = "${red}";
         "theme.bar.menus.menu.power.buttons.shutdown.background" = "${base}";
         "theme.bar.menus.menu.power.border.color" = "${surface0}";
         "theme.bar.menus.menu.power.background.color" = "${crust}";
@@ -178,9 +185,9 @@ in {
         "theme.bar.menus.menu.dashboard.powermenu.confirmation.border" = "${surface0}";
         "theme.bar.menus.menu.dashboard.powermenu.confirmation.background" = "${crust}";
         "theme.bar.menus.menu.dashboard.powermenu.confirmation.card" = "${base}";
-        "theme.bar.menus.menu.dashboard.powermenu.sleep" = "#89dceb";
+        "theme.bar.menus.menu.dashboard.powermenu.sleep" = "${sky}";
         "theme.bar.menus.menu.dashboard.powermenu.logout" = "${green}";
-        "theme.bar.menus.menu.dashboard.powermenu.restart" = "#fab387";
+        "theme.bar.menus.menu.dashboard.powermenu.restart" = "${peach}";
         "theme.bar.menus.menu.dashboard.powermenu.shutdown" = "${red}";
         "theme.bar.menus.menu.dashboard.profile.name" = "${text}";
         "theme.bar.menus.menu.dashboard.border.color" = "${surface0}";
@@ -189,10 +196,10 @@ in {
         "theme.bar.menus.menu.clock.weather.hourly.temperature" = "${text}";
         "theme.bar.menus.menu.clock.weather.hourly.icon" = "${cfg.accentColourHex}";
         "theme.bar.menus.menu.clock.weather.hourly.time" = "${text}";
-        "theme.bar.menus.menu.clock.weather.thermometer.extremelycold" = "#89dceb";
-        "theme.bar.menus.menu.clock.weather.thermometer.cold" = "#89b4fa";
+        "theme.bar.menus.menu.clock.weather.thermometer.extremelycold" = "${sky}";
+        "theme.bar.menus.menu.clock.weather.thermometer.cold" = "${blue}";
         "theme.bar.menus.menu.clock.weather.thermometer.moderate" = "${green}";
-        "theme.bar.menus.menu.clock.weather.thermometer.hot" = "#fab387";
+        "theme.bar.menus.menu.clock.weather.thermometer.hot" = "${peach}";
         "theme.bar.menus.menu.clock.weather.thermometer.extremelyhot" = "${red}";
         "theme.bar.menus.menu.clock.weather.stats" = "${cfg.accentColourHex}";
         "theme.bar.menus.menu.clock.weather.status" = "${text}";
@@ -213,33 +220,33 @@ in {
         "theme.bar.menus.menu.battery.slider.puck" = "${overlay0}";
         "theme.bar.menus.menu.battery.slider.backgroundhover" = "${surface1}";
         "theme.bar.menus.menu.battery.slider.background" = "${surface0}";
-        "theme.bar.menus.menu.battery.slider.primary" = "#f9e2af";
-        "theme.bar.menus.menu.battery.icons.active" = "#f9e2af";
+        "theme.bar.menus.menu.battery.slider.primary" = "${yellow}";
+        "theme.bar.menus.menu.battery.icons.active" = "${yellow}";
         "theme.bar.menus.menu.battery.icons.passive" = "${overlay2}";
-        "theme.bar.menus.menu.battery.listitems.active" = "#f9e2af";
+        "theme.bar.menus.menu.battery.listitems.active" = "${yellow}";
         "theme.bar.menus.menu.battery.listitems.passive" = "${text}";
         "theme.bar.menus.menu.battery.text" = "${text}";
-        "theme.bar.menus.menu.battery.label.color" = "#f9e2af";
+        "theme.bar.menus.menu.battery.label.color" = "${yellow}";
         "theme.bar.menus.menu.battery.border.color" = "${surface0}";
         "theme.bar.menus.menu.battery.background.color" = "${crust}";
         "theme.bar.menus.menu.battery.card.color" = "${base}";
         "theme.bar.menus.menu.systray.dropdownmenu.divider" = "${base}";
         "theme.bar.menus.menu.systray.dropdownmenu.text" = "${text}";
         "theme.bar.menus.menu.systray.dropdownmenu.background" = "${crust}";
-        "theme.bar.menus.menu.bluetooth.iconbutton.active" = "#89b4fa";
+        "theme.bar.menus.menu.bluetooth.iconbutton.active" = "${blue}";
         "theme.bar.menus.menu.bluetooth.iconbutton.passive" = "${text}";
-        "theme.bar.menus.menu.bluetooth.icons.active" = "#89b4fa";
+        "theme.bar.menus.menu.bluetooth.icons.active" = "${blue}";
         "theme.bar.menus.menu.bluetooth.icons.passive" = "${overlay2}";
-        "theme.bar.menus.menu.bluetooth.listitems.active" = "#89b4fa";
+        "theme.bar.menus.menu.bluetooth.listitems.active" = "${blue}";
         "theme.bar.menus.menu.bluetooth.listitems.passive" = "${text}";
         "theme.bar.menus.menu.bluetooth.switch.puck" = "${surface2}";
         "theme.bar.menus.menu.bluetooth.switch.disabled" = "${surface0}";
-        "theme.bar.menus.menu.bluetooth.switch.enabled" = "#89b4fa";
+        "theme.bar.menus.menu.bluetooth.switch.enabled" = "${blue}";
         "theme.bar.menus.menu.bluetooth.switch_divider" = "${surface1}";
         "theme.bar.menus.menu.bluetooth.status" = "${overlay0}";
         "theme.bar.menus.menu.bluetooth.text" = "${text}";
-        "theme.bar.menus.menu.bluetooth.label.color" = "#89b4fa";
-        "theme.bar.menus.menu.bluetooth.scroller.color" = "#89b4fa";
+        "theme.bar.menus.menu.bluetooth.label.color" = "${blue}";
+        "theme.bar.menus.menu.bluetooth.scroller.color" = "${blue}";
         "theme.bar.menus.menu.bluetooth.border.color" = "${surface0}";
         "theme.bar.menus.menu.bluetooth.background.color" = "${crust}";
         "theme.bar.menus.menu.bluetooth.card.color" = "${base}";

@@ -16,7 +16,8 @@
 
     red = "red";
     maroon = "red";
-    peach = "red";
+
+    peach = "orange";
 
     yellow = "yellow";
 

@@ -24,19 +24,19 @@ in {
         mode = {
           normal_alt = lib.mkForce {
             fg = "${config.importConfig.hyprland.accentColourHex}";
-            bg = "#181825";
+            bg = "${config.palette.mantle}";
           };
           normal_main = lib.mkForce {
-            fg = "#181825";
+            fg = "${config.palette.mantle}";
             bg = "${config.importConfig.hyprland.accentColourHex}";
           };
           select_alt = lib.mkForce {
-            fg = "#a6e3a1";
-            bg = "#181825";
+            fg = "${config.palette.green}";
+            bg = "${config.palette.mantle}";
           };
           select_main = lib.mkForce {
-            fg = "#181825";
-            bg = "#a6e3a1";
+            fg = "${config.palette.mantle}";
+            bg = "${config.palette.green}";
           };
         };
         pick.border = lib.mkForce {fg = "${config.importConfig.hyprland.accentColourHex}";};
@@ -45,7 +45,7 @@ in {
         tabs = {
           active = {bg = lib.mkForce "${config.importConfig.hyprland.accentColourHex}";};
           inactive = lib.mkForce {
-            bg = "#181825";
+            bg = "${config.palette.mantle}";
             fg = "${config.importConfig.hyprland.accentColourHex}";
           };
         };

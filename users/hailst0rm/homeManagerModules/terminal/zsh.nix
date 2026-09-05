@@ -55,20 +55,20 @@
     zstyle ':completion:*' special-dirs false
     zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview '${pkgs-unstable.lsd}/bin/lsd -A --color always --icon always $realpath'
     zstyle ':fzf-tab:complete:cd:*' fzf-preview '${pkgs-unstable.lsd}/bin/lsd -A --color always --icon always $realpath'
-    zstyle ':fzf-tab:*' fzf-flags --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
-      --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
-      --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
-      --color=selected-bg:#45475a \
+    zstyle ':fzf-tab:*' fzf-flags --color=bg+:${config.palette.surface0},bg:${config.palette.base},spinner:${config.palette.rosewater},hl:${config.palette.red} \
+      --color=fg:${config.palette.text},header:${config.palette.red},info:${config.palette.mauve},pointer:${config.palette.rosewater} \
+      --color=marker:${config.palette.lavender},fg+:${config.palette.text},prompt:${config.palette.mauve},hl+:${config.palette.red} \
+      --color=selected-bg:${config.palette.surface1} \
       --multi \
       --bind=tab:accept
   '';
 
   sharedFzfOpts = ''
     export FZF_DEFAULT_OPTS=" \
-      --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
-      --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
-      --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
-      --color=selected-bg:#45475a \
+      --color=bg+:${config.palette.surface0},bg:${config.palette.base},spinner:${config.palette.rosewater},hl:${config.palette.red} \
+      --color=fg:${config.palette.text},header:${config.palette.red},info:${config.palette.mauve},pointer:${config.palette.rosewater} \
+      --color=marker:${config.palette.lavender},fg+:${config.palette.text},prompt:${config.palette.mauve},hl+:${config.palette.red} \
+      --color=selected-bg:${config.palette.surface1} \
       --multi"
   '';
 
@@ -216,6 +216,14 @@ in {
           local result=$(realpath "$@")
           echo "$result" | wl-copy
           echo "$result"
+        }
+
+        # Download a video (m3u8, YouTube, ...) into the NAS processing dir.
+        # Usage: ytdl <url> [name]   (name defaults to the video title)
+        ytdl () {
+          mkdir -p /mnt/nas/Processing || return 1
+          ${pkgs.yt-dlp}/bin/yt-dlp --ffmpeg-location ${pkgs.ffmpeg_6}/bin \
+            -o "/mnt/nas/Processing/''${2:-%(title)s}.%(ext)s" "$1"
         }
 
         # Pushes config to git wherever you are

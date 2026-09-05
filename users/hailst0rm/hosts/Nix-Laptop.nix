@@ -3,7 +3,7 @@
 
   # Override only what's different from default
   importConfig.hyprland = {
-    accentColour = "green";
+    accentColour = "peach";
     wallpaper = "swww";
     quickshell.ilyamiro.lockIcon = ../../../assets/images/mountain.jpg;
     monitorOrientations = {

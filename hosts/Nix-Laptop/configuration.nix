@@ -31,6 +31,7 @@ in {
   laptop = true;
   myLocation = "Barkarby";
   cyber.redTools.enable = true;
+  system.theme.name = "navy";
 
   services.openssh.enable = true;
 

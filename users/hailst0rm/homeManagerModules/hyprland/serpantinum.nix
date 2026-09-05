@@ -8,39 +8,6 @@
   cfg = config.importConfig.hyprland;
   qsCfg = cfg.quickshell.serpantinum;
 
-  # Catppuccin Mocha. Neutrals + semantic red/green stay fixed; the
-  # decorative accent-role keys (mauve/blue/teal/sapphire/peach) collapse to
-  # the one accent below — see docs/serpantinum-v2-migration-plan.md
-  # "The accent collapse".
-  mochaPalette = {
-    rosewater = "#f5e0dc";
-    flamingo = "#f2cdcd";
-    pink = "#f5c2e7";
-    mauve = "#cba6f7";
-    red = "#f38ba8";
-    maroon = "#eba0ac";
-    peach = "#fab387";
-    yellow = "#f9e2af";
-    green = "#a6e3a1";
-    teal = "#94e2d5";
-    sky = "#89dceb";
-    sapphire = "#74c7ec";
-    blue = "#89b4fa";
-    lavender = "#b4befe";
-    text = "#cdd6f4";
-    subtext1 = "#bac2de";
-    subtext0 = "#a6adc8";
-    overlay2 = "#9399b2";
-    overlay1 = "#7f849c";
-    overlay0 = "#6c7086";
-    surface2 = "#585b70";
-    surface1 = "#45475a";
-    surface0 = "#313244";
-    base = "#1e1e2e";
-    mantle = "#181825";
-    crust = "#11111b";
-  };
-
   accentHex = cfg.accentColourHex;
 
   # Same avatar/lock-screen asset as the v1 fork's quickshell.ilyamiro.lockIcon,
@@ -143,15 +110,18 @@ in {
           borderRadius = 20; # = barHeight/2 -> true capsules
           matugen = false; # true repaints the accent from the wallpaper at runtime
           activePreset = "Mocha";
+          # Neutrals + semantic red/green come straight from the active theme;
+          # the decorative accent-role keys collapse to the one accent — see
+          # docs/serpantinum-v2-migration-plan.md "The accent collapse".
           colors =
-            mochaPalette
+            config.palette
             // {
               mauve = accentHex;
               blue = accentHex;
               teal = accentHex;
               sapphire = accentHex;
               peach = accentHex;
-              # red / green deliberately left at Mocha values — semantic, not decorative
+              # red / green deliberately left at palette values — semantic, not decorative
             };
         };
 
