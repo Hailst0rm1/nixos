@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-01 15:17:53.285240163 +0200
-+++ b/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-01 15:18:00.000865422 +0200
-@@ -139,21 +139,19 @@
+--- a/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-06 12:53:52.161985420 +0200
++++ b/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-06 12:53:52.196186834 +0200
+@@ -135,21 +135,19 @@
  
          Column {
              id: timeCol
@@ -15,9 +15,9 @@
 +                anchors.horizontalCenter: parent.horizontalCenter
                  text: timeStr
                  font.family: ThemeBackend.fontFamily
-                 font.pixelSize: barWindow ? barWindow.s(15) : 15
+                 font.pixelSize: barWindow ? barWindow.s(timeDateRoot.isCompact ? 14 : 15) : (timeDateRoot.isCompact ? 14 : 15)
                  font.weight: Font.Black
--                color: ThemeBackend.blue
+-                color: timeDateRoot.isCompact ? Qt.lighter(ThemeBackend.blue, 1.1) : ThemeBackend.blue
 +                color: ThemeBackend.text
              }
              Text {
@@ -25,4 +25,4 @@
 +                anchors.horizontalCenter: parent.horizontalCenter
                  text: dateStr
                  font.family: ThemeBackend.fontFamily
-                 font.pixelSize: barWindow ? barWindow.s(10) : 10
+                 font.pixelSize: barWindow ? barWindow.s(timeDateRoot.isCompact ? 9 : 10) : (timeDateRoot.isCompact ? 9 : 10)

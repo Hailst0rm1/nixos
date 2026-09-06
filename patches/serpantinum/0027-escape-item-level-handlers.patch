@@ -1,6 +1,6 @@
---- a/src/quickshell/Main.qml	2026-09-02 09:57:06.606094073 +0200
-+++ b/src/quickshell/Main.qml	2026-09-02 10:00:53.717986274 +0200
-@@ -19,12 +19,13 @@
+--- a/src/quickshell/Main.qml	2026-09-06 13:01:53.791757967 +0200
++++ b/src/quickshell/Main.qml	2026-09-06 13:01:18.289934396 +0200
+@@ -21,12 +21,13 @@
          right: true
      }
  
@@ -18,10 +18,10 @@
 +    // matches it and closed this window at random (measured 5/9 injections);
 +    // an item-level handler needs the focus and did not (0/9).
  
-     IpcHandler {
-         target: "main"
---- a/src/quickshell/timer/TimerPanel.qml	2026-09-02 09:57:06.601290717 +0200
-+++ b/src/quickshell/timer/TimerPanel.qml	2026-09-02 10:00:53.719977094 +0200
+     function resolveTargetScreen() {
+         try {
+--- a/src/quickshell/timer/TimerPanel.qml	2026-09-06 13:01:53.794020173 +0200
++++ b/src/quickshell/timer/TimerPanel.qml	2026-09-06 13:01:18.291673137 +0200
 @@ -87,13 +87,6 @@
  
      visible: isVisible || container.animProgress > 0.001

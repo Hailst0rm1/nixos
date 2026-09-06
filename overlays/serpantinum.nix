@@ -25,13 +25,6 @@ final: prev: {
         ../patches/serpantinum/0027-workspace-active-pill-height.patch
         ../patches/serpantinum/0027-escape-item-level-handlers.patch
         ../patches/serpantinum/0028-lock-wipe-gpu-shape.patch
-        # The recording watcher leaked one orphaned inotifywait per second per
-        # bar: its restart timer killed the bash wrapper (which forked
-        # inotifywait instead of exec'ing it, so the child survived), and that
-        # kill re-fired onExited, re-arming the timer forever. ~7 orphans/s
-        # filled user@.service TasksMax and every fork in the session then
-        # failed, freezing the whole shell.
-        ../patches/serpantinum/0029-recording-watcher-no-orphan.patch
         ../patches/serpantinum/0030-timer-alert-modal.patch
         ../patches/serpantinum/0031-click-popup-to-dismiss.patch
       ];
@@ -67,12 +60,9 @@ final: prev: {
         # DesktopEntry.execute() only moves the leader PID into a scope, so
         # anything the app forks first stays behind. app2unit creates the
         # app.slice scope *before* exec, so every descendant inherits it.
-        for f in src/quickshell/launcher/Launcher.qml src/quickshell/bar/sidemodules/SideLauncher.qml
-        do
-          substituteInPlace "$f" \
-            --replace-fail 'entry.execute();' \
-                           'Quickshell.execDetached(["app2unit", "--", desktopId.endsWith(".desktop") ? desktopId : desktopId + ".desktop"]);'
-        done
+        substituteInPlace src/quickshell/launcher/Launcher.qml \
+          --replace-fail 'entry.execute();' \
+                         'Quickshell.execDetached(["app2unit", "--", desktopId.endsWith(".desktop") ? desktopId : desktopId + ".desktop"]);'
         substituteInPlace src/quickshell/quickactions/actions/Dock.qml \
           --replace-fail 'Quickshell.execDetached(["bash", "-c", loggedCmd]);' \
                          'Quickshell.execDetached(["app2unit", "--", "bash", "-c", loggedCmd]);'
@@ -88,10 +78,12 @@ final: prev: {
           --replace-fail 'accentColor: ThemeBackend.red' 'accentColor: ThemeBackend.mauve'
 
         # Media play/pause hover: green is off-palette for this theme.
-        substituteInPlace src/quickshell/bar/modules/MediaWidget.qml \
-          --replace-fail 'ThemeBackend.green : ThemeBackend.text' 'ThemeBackend.mauve : ThemeBackend.text'
-        substituteInPlace src/quickshell/bar/sidemodules/SideMediaWidget.qml \
-          --replace-fail 'ThemeBackend.green : ThemeBackend.text' 'ThemeBackend.mauve : ThemeBackend.text'
+        for f in src/quickshell/bar/modules/MediaWidget.qml src/quickshell/bar/sidemodules/SideMediaWidget.qml
+        do
+          substituteInPlace "$f" \
+            --replace-fail 'isHoveredOrHighlighted ? ThemeBackend.green :' \
+                           'isHoveredOrHighlighted ? ThemeBackend.mauve :'
+        done
 
         # Notification card: surface1 is a light grey that glares against the
         # rest of the palette; mantle sits a step below base.
@@ -103,12 +95,9 @@ final: prev: {
         # only because sapphire is a mid-tone. Our palette collapses the accent
         # roles onto one light green, so 1.5 washed the fill out to white while
         # brightness (1.1, from mauve) stayed green. Match the brightness factor.
-        for f in src/quickshell/popouts/Osd.qml src/quickshell/syspanel/SystemPanel.qml
-        do
-          substituteInPlace "$f" \
-            --replace-fail 'readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.5)' \
-                           'readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.1)'
-        done
+        substituteInPlace src/quickshell/popouts/Osd.qml \
+          --replace-fail 'readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.5)' \
+                         'readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.1)'
 
         # Lock screen: 0.55 of blurMax left the screen grab legible at rest.
         substituteInPlace src/quickshell/lock/Lock.qml \
@@ -132,11 +121,13 @@ final: prev: {
 
         # Weather temperature: plain white, not peach.
         substituteInPlace src/quickshell/bar/modules/WeatherWidget.qml \
-          --replace-fail 'color: ThemeBackend.peach' 'color: ThemeBackend.text'
+          --replace-fail 'color: weatherWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.peach, 1.1) : ThemeBackend.peach' \
+                         'color: ThemeBackend.text'
 
         # Keyboard pill: 100px truncates layout names like "Colemak-SE".
         substituteInPlace src/quickshell/bar/modules/system/KbWidget.qml \
-          --replace-fail 'maxWidth: barWindow.s(100)' 'maxWidth: barWindow.s(160)'
+          --replace-fail 'maxWidth: barWindow ? barWindow.s(kbWidgetRoot.isCompact ? 96 : 100) : (kbWidgetRoot.isCompact ? 96 : 100)' \
+                         'maxWidth: barWindow ? barWindow.s(kbWidgetRoot.isCompact ? 156 : 160) : (kbWidgetRoot.isCompact ? 156 : 160)'
 
         # Breathing room between top bar blocks.
         substituteInPlace src/quickshell/bar/TopBar.qml \
@@ -159,19 +150,17 @@ final: prev: {
         # numbers. 0018 retargets the top-bar pills; this is the vertical-bar
         # copy of the same widget.
         substituteInPlace src/quickshell/bar/sidemodules/system/SideSysMonWidget.qml \
-          --replace-fail '["quickshell", "-p", Caching.mainQml, "ipc", "call", "floating", "showSystemUsage"]' \
-                         '["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle sysmon"]'
+          --replace-fail 'FloatingController.showSystemUsage(sideSysMonRoot.barWindow ? sideSysMonRoot.barWindow.screen : null);' \
+                         'Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle sysmon"]);'
 
         # RAM glyph: upstream's \uF538 is Font Awesome 6 solid only, which Qt
-        # never resolves here, so it rendered as tofu. This one is in the Nerd
-        # Font and reads as a RAM stick rather than a second CPU chip.
+        # never resolves here, so it rendered as tofu. 2.1.1 fixed the two bar
+        # widgets itself; these two still carry it. Same codepoint the bar uses.
         for f in \
-          src/quickshell/bar/modules/system/SysMonWidget.qml \
-          src/quickshell/bar/sidemodules/system/SideSysMonWidget.qml \
           src/quickshell/quickactions/actions/SystemUsage.qml \
           src/quickshell/lock/Lock.qml
         do
-          substituteInPlace "$f" --replace-fail 'icon: "\uF538"' 'icon: ""'
+          substituteInPlace "$f" --replace-fail 'icon: "\uF538"' 'icon: "󰍛"'
         done
       '';
 

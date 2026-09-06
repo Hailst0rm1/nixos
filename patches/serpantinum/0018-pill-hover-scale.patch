@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-01 16:47:50.370451235 +0200
-+++ b/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-01 16:47:50.471451737 +0200
-@@ -105,6 +105,10 @@
+--- a/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-06 12:54:52.547733132 +0200
++++ b/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-06 12:54:52.684327509 +0200
+@@ -106,6 +106,10 @@
              width: targetWidth
              Behavior on width { NumberAnimation { duration: 480; easing.type: Easing.OutQuint } }
  
@@ -8,10 +8,10 @@
 +            scale: batPillMouse.containsMouse ? 1.03 : 1.0
 +            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
 +
-             radius: Math.min(Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2)), height / 2)
-             color: ThemeBackend.surface0
-             border.color: ThemeBackend.surface1
-@@ -259,7 +263,9 @@
+             radius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
+             color: batWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
+             border.color: batWidgetRoot.isCompact ? ThemeBackend.surface2 : ThemeBackend.surface1
+@@ -264,7 +268,9 @@
              }
  
              MouseArea {
@@ -21,9 +21,9 @@
                  cursorShape: Qt.PointingHandCursor
                  onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle system"])
              }
---- a/src/quickshell/bar/modules/system/SysMonWidget.qml	2026-09-01 16:47:50.345745675 +0200
-+++ b/src/quickshell/bar/modules/system/SysMonWidget.qml	2026-09-01 16:47:50.473830610 +0200
-@@ -92,6 +92,10 @@
+--- a/src/quickshell/bar/modules/system/SysMonWidget.qml	2026-09-06 12:54:52.547733132 +0200
++++ b/src/quickshell/bar/modules/system/SysMonWidget.qml	2026-09-06 12:54:52.685596075 +0200
+@@ -93,6 +93,10 @@
  
          height: sysLayout.pillHeight
          width: sysLayout.pillWidth
@@ -32,9 +32,9 @@
 +        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
 +
          radius: Math.min(Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2)), height / 2)
-         color: ThemeBackend.surface0
-         border.color: ThemeBackend.surface1
-@@ -236,6 +240,14 @@
+         color: sysMonWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
+         border.color: sysMonWidgetRoot.isCompact ? ThemeBackend.surface2 : ThemeBackend.surface1
+@@ -237,6 +241,14 @@
                  }
              }
          }
@@ -49,15 +49,16 @@
      }
  
      Row {
-@@ -267,11 +279,4 @@
+@@ -267,12 +279,4 @@
+             accentColor: ThemeBackend.red
          }
      }
- 
+-
 -    MouseArea {
 -        anchors.fill: parent
 -        cursorShape: Qt.PointingHandCursor
 -        onClicked: {
--            Quickshell.execDetached(["quickshell", "-p", Caching.mainQml, "ipc", "call", "floating", "showSystemUsage"]);
+-            FloatingController.showSystemUsage(sysMonWidgetRoot.barWindow ? sysMonWidgetRoot.barWindow.screen : null);
 -        }
 -    }
  }

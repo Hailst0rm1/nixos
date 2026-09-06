@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-01 18:16:18.949857342 +0200
-+++ b/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-01 18:17:10.186965299 +0200
-@@ -65,7 +65,17 @@
+--- a/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-06 13:01:53.619759285 +0200
++++ b/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-06 13:01:18.202062316 +0200
+@@ -67,7 +67,17 @@
          }
      }
  
@@ -18,10 +18,10 @@
 +    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
      property bool showLayout: false
  
-     property real targetY: barWindow ? barWindow.baseOffsetY : 0
---- a/src/quickshell/bar/modules/WeatherWidget.qml	2026-09-01 18:16:18.902540698 +0200
-+++ b/src/quickshell/bar/modules/WeatherWidget.qml	2026-09-01 18:17:10.187776404 +0200
-@@ -50,7 +50,17 @@
+     property real targetY: barWindow ? barWindow.baseOffsetY + (barWindow.barHeight - targetHeight) / 2 : 0
+--- a/src/quickshell/bar/modules/WeatherWidget.qml	2026-09-06 13:01:53.621828711 +0200
++++ b/src/quickshell/bar/modules/WeatherWidget.qml	2026-09-06 13:01:18.203088723 +0200
+@@ -52,7 +52,17 @@
          }
      }
  
@@ -39,4 +39,4 @@
 +    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
      property bool showLayout: false
  
-     property real targetY: barWindow ? barWindow.baseOffsetY : 0
+     property real targetY: barWindow ? barWindow.baseOffsetY + (barWindow.barHeight - targetHeight) / 2 : 0

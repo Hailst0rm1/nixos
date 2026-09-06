@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/TopBar.qml	2026-09-01 18:16:18.901890311 +0200
-+++ b/src/quickshell/bar/TopBar.qml	2026-09-01 18:17:34.260005636 +0200
-@@ -234,6 +234,14 @@
+--- a/src/quickshell/bar/TopBar.qml	2026-09-06 12:55:28.819925791 +0200
++++ b/src/quickshell/bar/TopBar.qml	2026-09-06 12:55:28.859443791 +0200
+@@ -235,6 +235,14 @@
      }
  
      property real gap: barWindow ? barWindow.s(2) : 2
@@ -15,7 +15,7 @@
      property real groupGap: barWindow ? -barWindow.s(4) : -4
      property real gap8: barWindow ? barWindow.s(10) : 10
  
-@@ -641,6 +649,13 @@
+@@ -648,6 +656,13 @@
  
              property var metrics: getGroupMetrics()
  
@@ -27,33 +27,34 @@
 +            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
 +
              x: metrics.x
-             y: barWindow ? barWindow.baseOffsetY : 0
-             width: metrics.w
-@@ -648,10 +663,12 @@
-             visible: metrics.v && (barWindow ? !barWindow.positionChanging : true) && width > 0 && !contentWrapper.isSolid && !contentWrapper.isFill
+             height: metrics.h
+             y: barWindow ? (barWindow.baseOffsetY + (barWindow.barHeight - height) / 2) : 0
+@@ -656,11 +671,13 @@
              opacity: visible ? 1.0 : 0.0
  
--            color: Qt.alpha(ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
-+            color: Qt.alpha(hovered ? ThemeBackend.surface0 : ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
+             color: (contentWrapper.isSolid && contentWrapper.distinctPills)
+-                ? Qt.alpha(Qt.darker(ThemeBackend.surface0, 1.15), (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
+-                : Qt.alpha(ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
++                ? Qt.alpha(hovered ? ThemeBackend.surface0 : Qt.darker(ThemeBackend.surface0, 1.15), (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
++                : Qt.alpha(hovered ? ThemeBackend.surface0 : ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
              radius: ThemeBackend.borderRadius
-             border.width: 1
--            border.color: Qt.alpha(ThemeBackend.surface0, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
-+            border.color: Qt.alpha(hovered ? ThemeBackend.surface1 : ThemeBackend.surface0, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
-+
-+            Behavior on color { ColorAnimation { duration: 250 } }
+             border.width: 0
  
++            Behavior on color { ColorAnimation { duration: 250 } }
++
              Behavior on x {
                  enabled: contentWrapper.layoutAnimationsEnabled
-@@ -978,6 +995,7 @@
-         isSolid: contentWrapper.isSolid || contentWrapper.isFill
+                 NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+@@ -1001,6 +1018,7 @@
+         distinctPills: contentWrapper.distinctPills
          moduleActive: contentWrapper.isModuleActive("timedate")
          isGrouped: contentWrapper.isModuleGrouped("timedate")
 +        groupHovered: contentWrapper.centerGroupHovered
          targetX: contentWrapper.getModuleX("timedate", contentWrapper.layoutState)
  
          Behavior on opacity {
-@@ -1020,6 +1038,7 @@
-         isSolid: contentWrapper.isSolid || contentWrapper.isFill
+@@ -1047,6 +1065,7 @@
+         distinctPills: contentWrapper.distinctPills
          moduleActive: contentWrapper.isModuleActive("weather")
          isGrouped: contentWrapper.isModuleGrouped("weather")
 +        groupHovered: contentWrapper.centerGroupHovered

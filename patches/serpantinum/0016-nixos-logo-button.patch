@@ -1,32 +1,32 @@
---- a/src/quickshell/bar/modules/LeftWidget.qml	2026-09-01 16:58:52.109889017 +0200
-+++ b/src/quickshell/bar/modules/LeftWidget.qml	2026-09-01 16:58:52.210268957 +0200
-@@ -75,10 +75,10 @@
+--- a/src/quickshell/bar/modules/LeftWidget.qml	2026-09-06 12:54:16.668505211 +0200
++++ b/src/quickshell/bar/modules/LeftWidget.qml	2026-09-06 12:54:16.720124520 +0200
+@@ -69,10 +69,10 @@
              iconOffsetX: -2
  
              cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
 -            buttonIcon: "󰒓"
--            iconFontSize: barWindow.s(15)
+-            iconFontSize: barWindow ? barWindow.s(leftWidgetRoot.isCompact ? 14 : 15) : (leftWidgetRoot.isCompact ? 14 : 15)
 +            buttonIcon: "󱄅"
-+            iconFontSize: barWindow.s(18)
-             accentColor: ThemeBackend.surface0
--            textColor: isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2
++            iconFontSize: barWindow ? barWindow.s(leftWidgetRoot.isCompact ? 17 : 18) : (leftWidgetRoot.isCompact ? 17 : 18)
+             accentColor: leftWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
+-            textColor: isHoveredOrHighlighted ? ThemeBackend.text : (leftWidgetRoot.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
 +            textColor: "#ffffff"
  
-             Timer { running: leftWidgetRoot.moduleActive && leftWidgetRoot.showLayout && !helpButton.initAnimTrigger; interval: 70; onTriggered: helpButton.initAnimTrigger = true }
-             opacity: initAnimTrigger ? 1.0 : 0.0
---- a/src/quickshell/bar/sidemodules/SideTopWidget.qml	2026-09-01 16:58:52.111309176 +0200
-+++ b/src/quickshell/bar/sidemodules/SideTopWidget.qml	2026-09-01 16:58:52.210685774 +0200
-@@ -46,11 +46,11 @@
-         width: barWindow ? barWindow.s(30) : 30
-         height: barWindow ? barWindow.s(30) : 30
-         cornerRadius: Math.max(0, ThemeBackend.borderRadius - 2)
+             opacity: leftWidgetRoot.showLayout ? 1.0 : 0.0
+             transform: Translate {
+--- a/src/quickshell/bar/sidemodules/SideTopWidget.qml	2026-09-06 12:54:16.669012393 +0200
++++ b/src/quickshell/bar/sidemodules/SideTopWidget.qml	2026-09-06 12:54:16.720247593 +0200
+@@ -44,11 +44,11 @@
+         width: barWindow ? barWindow.s(sideTopRoot.isCompact ? 28 : 30) : (sideTopRoot.isCompact ? 28 : 30)
+         height: barWindow ? barWindow.s(sideTopRoot.isCompact ? 28 : 30) : (sideTopRoot.isCompact ? 28 : 30)
+         cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
 -        buttonIcon: "󰒓"
 +        buttonIcon: "󱄅"
          iconOffsetX: -2
--        iconFontSize: barWindow ? barWindow.s(15) : 15
-+        iconFontSize: barWindow ? barWindow.s(18) : 18
-         accentColor: ThemeBackend.surface0
--        textColor: isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2
+-        iconFontSize: barWindow ? barWindow.s(sideTopRoot.isCompact ? 14 : 15) : (sideTopRoot.isCompact ? 14 : 15)
++        iconFontSize: barWindow ? barWindow.s(sideTopRoot.isCompact ? 17 : 18) : (sideTopRoot.isCompact ? 17 : 18)
+         accentColor: sideTopRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
+-        textColor: isHoveredOrHighlighted ? ThemeBackend.text : (sideTopRoot.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
 +        textColor: "#ffffff"
          onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle guide"])
      }

@@ -1,14 +1,15 @@
---- a/src/quickshell/qmldir	2026-09-04 09:17:43.576719350 +0200
-+++ b/src/quickshell/qmldir	2026-09-04 10:02:31.696924812 +0200
-@@ -1,5 +1,6 @@
+--- a/src/quickshell/qmldir	2026-09-06 12:58:08.914942002 +0200
++++ b/src/quickshell/qmldir	2026-09-06 12:58:09.019336507 +0200
+@@ -5,6 +5,7 @@
+ Floating 1.0 quickactions/Floating.qml
  Clipboard 1.0 clipboard/Clipboard.qml
  TimerPanel 1.0 timer/TimerPanel.qml
 +TimerAlert 1.0 timer/TimerAlert.qml
  Launcher 1.0 launcher/Launcher.qml
- 
- Dim 1.0 Dim.qml
---- a/src/quickshell/Shell.qml	2026-09-04 09:17:43.577708895 +0200
-+++ b/src/quickshell/Shell.qml	2026-09-04 10:02:31.696999010 +0200
+ ScreenshotOverlay 1.0 screenshot/ScreenshotOverlay.qml
+ WallpaperEngine 1.0 wallpaper/WallpaperEngine.qml
+--- a/src/quickshell/Shell.qml	2026-09-06 12:58:08.914942002 +0200
++++ b/src/quickshell/Shell.qml	2026-09-06 12:58:09.019663437 +0200
 @@ -19,6 +19,7 @@
      Launcher {}
      Clipboard {}    
@@ -17,8 +18,8 @@
  
      Polkit {}
      PopoutManager {}
---- a/src/quickshell/singletons/TimerState.qml	2026-09-04 09:17:43.557471892 +0200
-+++ b/src/quickshell/singletons/TimerState.qml	2026-09-04 10:02:31.697041317 +0200
+--- a/src/quickshell/singletons/system/TimerState.qml	2026-09-06 12:58:08.911452282 +0200
++++ b/src/quickshell/singletons/system/TimerState.qml	2026-09-06 12:58:09.019876625 +0200
 @@ -8,4 +8,8 @@
      property string timeFormatted: ""
      property string icon: "\uF017"
@@ -28,9 +29,9 @@
 +    // screen alongside the one-shot notification tone.
 +    signal finished(string title, string body)
  }
---- a/src/quickshell/timer/TimerFace.qml	2026-09-04 09:17:43.580787956 +0200
-+++ b/src/quickshell/timer/TimerFace.qml	2026-09-04 10:02:31.697620046 +0200
-@@ -351,6 +351,10 @@
+--- a/src/quickshell/timer/TimerFace.qml	2026-09-06 12:58:08.916409057 +0200
++++ b/src/quickshell/timer/TimerFace.qml	2026-09-06 12:58:09.021962926 +0200
+@@ -350,6 +350,10 @@
              I18n.t("quickactions.timer.notification.alarm_body", { time: root.formatTimeOfDay(stateCache.alarmTimeOfDayMs) }),
              "preferences-system-time"
          );
@@ -41,7 +42,7 @@
          if (typeof Sounds !== "undefined") Sounds.playSfx("notifications/Sine.wav", 1.0, 0, true);
          root.saveFullState();
          root.updateExportedState();
-@@ -459,6 +463,10 @@
+@@ -458,6 +462,10 @@
                              I18n.t("quickactions.timer.notification.timer_finished_body", { time: root.formatTime(stateCache.timerPresetMs, false) }),
                              "preferences-system-time"
                          );
@@ -52,7 +53,7 @@
                          root.saveFullState();
                      } else {
                          stateCache.timerRemainingMs = rem;
-@@ -478,19 +486,14 @@
+@@ -477,19 +485,14 @@
                          stateCache.pomoRemainingMs = 0;
  
                          let phase = stateCache.pomoState;
