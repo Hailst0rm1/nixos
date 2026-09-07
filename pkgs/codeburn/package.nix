@@ -10,10 +10,10 @@
   # upstream's main branch never reach this derivation until the hash
   # changes. Bump `litellmRelease` to a newer https://github.com/BerriAI/litellm
   # release tag and refresh the hash to pick up new model prices.
-  litellmRelease = "v1.99.1";
+  litellmRelease = "v1.100.0";
   litellmPricing = fetchurl {
     url = "https://raw.githubusercontent.com/BerriAI/litellm/refs/tags/${litellmRelease}/model_prices_and_context_window.json";
-    hash = "sha256-Rln7FnO4tIZ480Sv55S9P1pfe/BXZ4Fj3Em0NMo7RHA=";
+    hash = "sha256-qYD6DiB9CXaj+njGp8MWXsPBz9grDc//wqVXlbn29FE=";
   };
 in
   buildNpmPackage rec {
