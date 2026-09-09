@@ -120,8 +120,18 @@
       # LAN/public traffic is blocked. Ollama has no authentication of its own.
       host = lib.mkDefault "0.0.0.0";
       loadModels = lib.mkDefault ["gpt-oss:20b"];
-      # Ollama defaults to 4096, which is too small for coding agents.
-      environmentVariables.OLLAMA_CONTEXT_LENGTH = lib.mkDefault "32768";
+      environmentVariables = {
+        # Ollama's prompt budget is OLLAMA_CONTEXT_LENGTH minus the caller's
+        # max_tokens. Claude Code asks for 16384 output and sends a ~35k-token
+        # first turn, so 32768 left a 16386-token budget and silently truncated
+        # the system prompt down to its last 16k (n_keep=4) — the model then
+        # answered "Ready." to everything. 65536 clears that with headroom.
+        OLLAMA_CONTEXT_LENGTH = lib.mkDefault "65536";
+        # q8_0 KV halves the cache, so doubling the window above costs no extra
+        # VRAM (768 MiB either way). Requires flash attention.
+        OLLAMA_FLASH_ATTENTION = lib.mkDefault "1";
+        OLLAMA_KV_CACHE_TYPE = lib.mkDefault "q8_0";
+      };
     };
     hermes-agent.enable = lib.mkDefault false;
     hermes-agent.browser.enable = lib.mkDefault false;
