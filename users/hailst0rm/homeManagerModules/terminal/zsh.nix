@@ -220,10 +220,18 @@ in {
 
         # Download a video (m3u8, YouTube, ...) into the NAS processing dir.
         # Usage: ytdl <url> [name]   (name defaults to the video title)
+        # On a name collision, appends a counter: a.mp4 -> a2.mp4 -> a3.mp4
         ytdl () {
           mkdir -p /mnt/nas/Processing || return 1
-          ${pkgs.yt-dlp}/bin/yt-dlp --ffmpeg-location ${pkgs.ffmpeg_6}/bin \
-            -o "/mnt/nas/Processing/''${2:-%(title)s}.%(ext)s" "$1"
+          local yt=(${pkgs.yt-dlp}/bin/yt-dlp --ffmpeg-location ${pkgs.ffmpeg_6}/bin)
+          local out
+          out=$($yt -o "/mnt/nas/Processing/''${2:-%(title)s}.%(ext)s" --print filename "$1") || return 1
+          local stem=''${out%.*} ext=''${out##*.} n=2
+          while [[ -e "$out" ]]; do
+            out="''${stem}''${n}.''${ext}"
+            (( n++ ))
+          done
+          "''${yt[@]}" -o "$out" "$1"
         }
 
         # Pushes config to git wherever you are
