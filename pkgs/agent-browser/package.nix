@@ -9,18 +9,18 @@
   chromium,
   nix-update-script,
 }: let
-  version = "0.37.0";
+  version = "0.37.1";
 
   binary = fetchurl {
     url = "https://github.com/vercel-labs/agent-browser/releases/download/v${version}/agent-browser-linux-x64";
-    hash = "sha256-eODFoUp/ofPRrirNvcyUoEe0NbmYqMUF/MSdf6STWkk=";
+    hash = "sha256-+OX5KUvQ2nDdphhU8SAE/WHGaM1oK/tgDN9tDfc96mk=";
   };
 
   src = fetchFromGitHub {
     owner = "vercel-labs";
     repo = "agent-browser";
     tag = "v${version}";
-    hash = "sha256-tC3gMLSd2kuuYUxTx8/RwbW1Fz8IiXRLbejrTeA65LI=";
+    hash = "sha256-AgpKazIBT3CKd4Q7yQsEGhoTW+7R0Pflma6aH+6UI/U=";
   };
 in
   stdenv.mkDerivation {
