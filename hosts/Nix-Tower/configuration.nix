@@ -37,6 +37,10 @@ in {
   security.sops.enable = true;
   security.yubikey.enable = true;
   services.tailscaleAutoconnect.enable = true;
+  services.ollama.enable = true; # gpt-oss:20b on the RTX 5080, served over the tailnet
+
+  # Theme
+  system.theme.name = "navy";
 
   # Desktop performance tuning
   # Set power-profiles-daemon to performance mode on boot (ppd controls intel_pstate governor)

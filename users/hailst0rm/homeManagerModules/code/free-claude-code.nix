@@ -26,7 +26,7 @@ in {
     };
     model = lib.mkOption {
       type = lib.types.str;
-      default = "nvidia_nim/nvidia/nemotron-3-super-120b-a12b";
+      default = "ollama/gpt-oss:20b";
       description = ''
         Primary model every Claude request is routed to, as `provider/model/name`.
         Passed as MODEL in the service environment, which outranks whatever the
@@ -34,9 +34,21 @@ in {
         env over managed dotenv values). Edit here, not in the UI.
       '';
     };
+    ollamaBaseUrl = lib.mkOption {
+      type = lib.types.str;
+      default = "http://nix-tower:11434";
+      description = ''
+        Where the `ollama/*` provider sends requests, as OLLAMA_BASE_URL.
+        Nix-Tower serves the model on its RTX 5080 and binds to every interface,
+        but only tailscale0 is a trusted firewall interface — so this must be
+        the MagicDNS name, reachable from any host on the tailnet including
+        Nix-Tower itself. Ollama needs no credential, so nothing here is secret.
+      '';
+    };
     fallbackModels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
+        "nvidia_nim/nvidia/nemotron-3-super-120b-a12b"
         "open_router/z-ai/glm-5.2:free"
         "open_router/minimax/minimax-m2.7:free"
         "open_router/openrouter/free"
@@ -71,7 +83,10 @@ in {
         RestartSec = 5;
 
         Environment =
-          ["MODEL=${cfg.model}"]
+          [
+            "MODEL=${cfg.model}"
+            "OLLAMA_BASE_URL=${cfg.ollamaBaseUrl}"
+          ]
           ++ lib.optional (cfg.fallbackModels != [])
           "MODEL_FALLBACKS=${lib.concatStringsSep "," cfg.fallbackModels}";
 

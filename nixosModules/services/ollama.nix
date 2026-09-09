@@ -7,7 +7,6 @@
   cfg = config.services.ollama;
 in {
   config.services.ollama = lib.mkIf cfg.enable {
-    package = pkgs-unstable.ollama;
-    acceleration = "cuda";
+    package = pkgs-unstable.ollama-cuda;
   };
 }

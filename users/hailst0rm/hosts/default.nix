@@ -85,8 +85,10 @@
       freeClaudeCode = {
         enable = lib.mkDefault true;
         port = lib.mkDefault 38427;
-        model = lib.mkDefault "nvidia_nim/nvidia/nemotron-3-super-120b-a12b";
+        model = lib.mkDefault "ollama/gpt-oss:20b";
+        ollamaBaseUrl = lib.mkDefault "http://nix-tower:11434";
         fallbackModels = lib.mkDefault [
+          "nvidia_nim/nvidia/nemotron-3-super-120b-a12b"
           "open_router/z-ai/glm-5.2:free"
           "open_router/minimax/minimax-m2.7:free"
           "open_router/openrouter/free"

@@ -113,7 +113,16 @@
     podman.enable = lib.mkDefault false;
     openssh.enable = lib.mkDefault false;
     mattermost.enable = lib.mkDefault false;
-    ollama.enable = lib.mkDefault false;
+    ollama = {
+      enable = lib.mkDefault false;
+      # Listens on every interface, but openFirewall stays false — so tailscale0
+      # (a trusted interface, see services/tailscale.nix) is the only way in and
+      # LAN/public traffic is blocked. Ollama has no authentication of its own.
+      host = lib.mkDefault "0.0.0.0";
+      loadModels = lib.mkDefault ["gpt-oss:20b"];
+      # Ollama defaults to 4096, which is too small for coding agents.
+      environmentVariables.OLLAMA_CONTEXT_LENGTH = lib.mkDefault "32768";
+    };
     hermes-agent.enable = lib.mkDefault false;
     hermes-agent.browser.enable = lib.mkDefault false;
     hermes-agent.signal.enable = lib.mkDefault false;

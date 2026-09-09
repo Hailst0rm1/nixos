@@ -8,6 +8,10 @@
   # Writes ~/.config/user-dirs.dirs — without it XDG_VIDEOS_DIR etc. are unset
   # and apps like Snapshot refuse to save recordings.
   xdg.userDirs.enable = true;
+  # Keeps the pre-26.05 behaviour of exporting XDG_*_DIR into the session.
+  # quickshell-config/screenshot.sh and patches/serpantinum/files/clipboard/
+  # localsend.py read those variables directly.
+  xdg.userDirs.setSessionVariables = true;
 
   services.playerctld.enable = true;
 

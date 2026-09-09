@@ -3,7 +3,7 @@
 
   # Override only what's different from default
   importConfig.hyprland = {
-    accentColour = "sky";
+    accentColour = "peach";
     monitorOrientations = {
       "DP-1" = "center";
       "DP-2" = "top";
