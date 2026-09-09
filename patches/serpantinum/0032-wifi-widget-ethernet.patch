@@ -1,0 +1,75 @@
+--- a/src/quickshell/bar/modules/system/WifiWidget.qml	2026-09-09 10:46:03.541435034 +0200
++++ b/src/quickshell/bar/modules/system/WifiWidget.qml	2026-09-09 10:46:03.555271147 +0200
+@@ -18,7 +18,7 @@
+     property bool moduleActive: true
+     property bool isGrouped: false
+     property bool isCompact: isGrouped || (isSolid && distinctPills)
+-    property bool isDesktop: false
++    property bool isDesktop: SystemInfo.isDesktop
+     property string ethStatus: "Ethernet"
+     property string wifiStatus: "Off"
+     property string wifiIcon: "󰤮"
+@@ -33,12 +33,8 @@
+     property var wifiDevice: null
+ 
+     onModuleActiveChanged: {
+-        if (!moduleActive) {
+-            chassisDetector.running = false;
+-        } else {
+-            chassisDetector.running = true;
++        if (moduleActive)
+             updateNetworkData();
+-        }
+     }
+ 
+     Item {
+@@ -54,9 +50,7 @@
+             Item {
+                 property var device: modelData
+                 Component.onCompleted: {
+-                    if (device.type === DeviceType.Wired) {
+-                        wifiWidgetRoot.ethDevice = device;
+-                    } else if (device.type === DeviceType.Wifi) {
++                    if (device.type === DeviceType.Wifi) {
+                         wifiWidgetRoot.wifiDevice = device;
+                     }
+                     wifiWidgetRoot.updateNetworkData();
+@@ -94,17 +88,20 @@
+         let isWifiEnabled = Networking.wifiEnabled;
+         wifiStatus = isWifiEnabled ? "Enabled" : "Off";
+ 
+-        if (ethDevice) {
+-            if (ethDevice.connected) {
+-                ethStatus = "Connected";
+-            } else if (ethDevice.hasLink) {
+-                ethStatus = "Disconnected";
+-            } else {
+-                ethStatus = "Ethernet";
++        let bestEth = null;
++        let bestRank = -1;
++        for (let i = 0; i < netDeviceRepeater.count; i++) {
++            let item = netDeviceRepeater.itemAt(i);
++            let dev = item ? item.device : null;
++            if (!dev || dev.type !== DeviceType.Wired) continue;
++            let rank = dev.connected ? 2 : (dev.hasLink ? 1 : 0);
++            if (rank > bestRank) {
++                bestRank = rank;
++                bestEth = dev;
+             }
+-        } else {
+-            ethStatus = "Ethernet";
+         }
++        ethDevice = bestEth;
++        ethStatus = bestRank === 2 ? "Connected" : (bestRank === 1 ? "Disconnected" : "Ethernet");
+ 
+         if (!isWifiEnabled) {
+             wifiSsid = "";
+@@ -197,7 +194,7 @@
+             transform: Translate { y: wifiPill.initAnimTrigger ? 0 : barWindow.s(15); Behavior on y { NumberAnimation { duration: 620; easing.type: Easing.OutQuint } } }
+             Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
+ 
+-            onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network wifi"])
++            onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network " + (wifiWidgetRoot.showEthernet ? "eth" : "wifi")])
+         }
+     }
+ }

@@ -27,6 +27,9 @@ final: prev: {
         ../patches/serpantinum/0028-lock-wipe-gpu-shape.patch
         ../patches/serpantinum/0030-timer-alert-modal.patch
         ../patches/serpantinum/0031-click-popup-to-dismiss.patch
+        ../patches/serpantinum/0032-wifi-widget-ethernet.patch
+        ../patches/serpantinum/0033-network-popup-ethernet.patch
+        ../patches/serpantinum/0034-screenshot-crop-freeze.patch
       ];
 
     # Every --replace-fail target below occurs exactly once in its file.
@@ -60,9 +63,13 @@ final: prev: {
         # DesktopEntry.execute() only moves the leader PID into a scope, so
         # anything the app forks first stays behind. app2unit creates the
         # app.slice scope *before* exec, so every descendant inherits it.
-        substituteInPlace src/quickshell/launcher/Launcher.qml \
-          --replace-fail 'entry.execute();' \
-                         'Quickshell.execDetached(["app2unit", "--", desktopId.endsWith(".desktop") ? desktopId : desktopId + ".desktop"]);'
+        # Both call sites name the parameter desktopId, so one replacement fits.
+        for f in src/quickshell/launcher/Launcher.qml src/quickshell/dock/Dock.qml
+        do
+          substituteInPlace "$f" \
+            --replace-fail 'entry.execute();' \
+                           'Quickshell.execDetached(["app2unit", "--", desktopId.endsWith(".desktop") ? desktopId : desktopId + ".desktop"]);'
+        done
         substituteInPlace src/quickshell/quickactions/actions/Dock.qml \
           --replace-fail 'Quickshell.execDetached(["bash", "-c", loggedCmd]);' \
                          'Quickshell.execDetached(["app2unit", "--", "bash", "-c", loggedCmd]);'
@@ -153,14 +160,23 @@ final: prev: {
           --replace-fail 'FloatingController.showSystemUsage(sideSysMonRoot.barWindow ? sideSysMonRoot.barWindow.screen : null);' \
                          'Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle sysmon"]);'
 
-        # RAM glyph: upstream's \uF538 is Font Awesome 6 solid only, which Qt
-        # never resolves here, so it rendered as tofu. 2.1.1 fixed the two bar
-        # widgets itself; these two still carry it. Same codepoint the bar uses.
+        # RAM glyph: upstream carries two wrong ones. \uF538 is Font Awesome 6
+        # solid, which Qt never resolves here, so it rendered as tofu; \uF035B
+        # is Material Design "memory", a chip that reads as a second CPU icon
+        # beside the real one. Nerd Fonts' current nf-fa-memory is \uEFC5 --
+        # the RAM stick the System Monitor panel's MEMORY card already uses.
+        # Normalise every memory readout onto it so bar and panel agree.
+        for f in \
+          src/quickshell/bar/modules/system/SysMonWidget.qml \
+          src/quickshell/bar/sidemodules/system/SideSysMonWidget.qml
+        do
+          substituteInPlace "$f" --replace-fail 'icon: "󰍛"' 'icon: "\uEFC5"'
+        done
         for f in \
           src/quickshell/quickactions/actions/SystemUsage.qml \
           src/quickshell/lock/Lock.qml
         do
-          substituteInPlace "$f" --replace-fail 'icon: "\uF538"' 'icon: "󰍛"'
+          substituteInPlace "$f" --replace-fail 'icon: "\uF538"' 'icon: "\uEFC5"'
         done
       '';
 

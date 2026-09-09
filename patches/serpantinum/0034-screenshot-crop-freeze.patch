@@ -1,0 +1,75 @@
+--- a/src/quickshell/screenshot/ScreenshotOverlay.qml	2026-09-09 10:55:39.579157065 +0200
++++ b/src/quickshell/screenshot/ScreenshotOverlay.qml	2026-09-09 10:55:39.594585282 +0200
+@@ -60,6 +60,7 @@
+     property bool isLoading: false
+     property bool animateChanges: false
+     property string freezeImg: ""
++    property bool freezeHandoff: false
+     property bool isInitialized: false
+     property bool isRefreezing: false
+     property string videoBackend: "gpu-screen-recorder"
+@@ -248,7 +249,8 @@
+         refreezeProcess.running = false;
+         root.isRefreezing = false;
+         root.animateChanges = false;
+-        if (root.freezeImg !== "") Quickshell.execDetached(["bash", "-c", "rm -f " + root.freezeImg]);
++        if (root.freezeImg !== "" && !root.freezeHandoff) Quickshell.execDetached(["bash", "-c", "rm -f " + root.freezeImg]);
++        root.freezeHandoff = false;
+         root.freezeImg = "";
+         root.isActive = false;
+         root.showQrPopup = false;
+@@ -1522,6 +1524,17 @@
+ 
+     function executeCapture(openEditor, isRecord) {
+         let cmd = `bash ${Caching.serpantinumDir}/scripts/screenshot.sh --geometry "${root.geometryString}"`;
++        if (!isRecord && root.freezeImg !== "" && freezeBackground.sourceSize.width > 0 && root.width > 0) {
++            let ratio = freezeBackground.sourceSize.width / root.width;
++            let fx = Math.round(root.selX * ratio);
++            let fy = Math.round(root.selY * ratio);
++            let fw = Math.round(root.selW * ratio);
++            let fh = Math.round(root.selH * ratio);
++            if (fw > 0 && fh > 0) {
++                cmd += ` --freeze "${root.freezeImg}" --freeze-geometry "${fw}x${fh}+${fx}+${fy}"`;
++                root.freezeHandoff = true;
++            }
++        }
+         if (isRecord) {
+             if (root.targetMonitorName !== "") cmd += ` --monitor "${root.targetMonitorName}"`;
+             cmd += " --record";
+--- a/src/scripts/screenshot.sh	2026-09-09 10:55:39.580157098 +0200
++++ b/src/scripts/screenshot.sh	2026-09-09 10:56:22.105262066 +0200
+@@ -12,6 +12,8 @@
+ MIC_DEVICE=""
+ VIDEO_BACKEND="gpu-screen-recorder"
+ TARGET_MON=""
++FREEZE_SRC=""
++FREEZE_GEOM=""
+ 
+ while [[ "$#" -gt 0 ]]; do
+     case $1 in
+@@ -27,6 +29,8 @@
+         --mic-dev) MIC_DEVICE="$2"; shift 2 ;;
+         --backend) VIDEO_BACKEND="$2"; shift 2 ;;
+         --monitor) TARGET_MON="$2"; shift 2 ;;
++        --freeze) FREEZE_SRC="$2"; shift 2 ;;
++        --freeze-geometry) FREEZE_GEOM="$2"; shift 2 ;;
+         *) shift ;;
+     esac
+ done
+@@ -315,7 +319,15 @@
+     fi
+ 
+     TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
+-    if [ -n "$GEOMETRY" ]; then
++    if [ -n "$FREEZE_SRC" ]; then
++        if [ -n "$FREEZE_GEOM" ] && [ -s "$FREEZE_SRC" ]; then
++            magick "$FREEZE_SRC" -crop "$FREEZE_GEOM" +repage "$TMP_SCREENSHOT" 2>/dev/null
++        fi
++        rm -f "$FREEZE_SRC"
++    fi
++    if [ -s "$TMP_SCREENSHOT" ]; then
++        :
++    elif [ -n "$GEOMETRY" ]; then
+         grim -l 0 -g "$GEOMETRY" "$TMP_SCREENSHOT"
+     elif [ -n "$TARGET_MON" ]; then
+         grim -o "$TARGET_MON" -l 0 "$TMP_SCREENSHOT" 2>/dev/null || grim -l 0 "$TMP_SCREENSHOT"

@@ -994,11 +994,13 @@ diff -ruN a/src/quickshell/quickactions/actions/Timer.qml after/src/quickshell/q
 diff -ruN a/src/quickshell/quickactions/Floating.qml after/src/quickshell/quickactions/Floating.qml
 --- a/src/quickshell/quickactions/Floating.qml	2026-09-06 12:56:43.724008381 +0200
 +++ b/src/quickshell/quickactions/Floating.qml	2026-09-06 12:56:43.816411604 +0200
-@@ -114,7 +114,6 @@
+@@ -238,8 +238,7 @@
+ 
              property var tabModules: [
                  "actions/DrawAction.qml",
-                 "actions/SystemUsage.qml",
--                "actions/Timer.qml",
+-                "actions/SystemUsage.qml",
+-                "actions/Timer.qml"
++                "actions/SystemUsage.qml"
              ]
  
              property int tabCount: Math.max(1, tabModules.length)

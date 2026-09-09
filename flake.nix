@@ -117,7 +117,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Quickshell desktop shell (v2.0.1+, no upstream tags — flake.lock pins the rev)
+    # Quickshell desktop shell (v2.1.4+, no upstream tags — flake.lock pins the rev)
     serpantinum = {
       url = "github:ilyamiro/serpantinum";
       inputs.nixpkgs.follows = "nixpkgs";

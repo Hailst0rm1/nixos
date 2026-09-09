@@ -1,0 +1,49 @@
+--- a/src/quickshell/network/NetworkPopup.qml	2026-09-09 10:55:17.408420962 +0200
++++ b/src/quickshell/network/NetworkPopup.qml	2026-09-09 10:55:17.421092180 +0200
+@@ -50,16 +50,23 @@
+         if (!Networking || !Networking.devices) return;
+         let devs = Networking.devices.values || Networking.devices;
+         let count = devs.length !== undefined ? devs.length : (devs.count !== undefined ? devs.count : 0);
++        let bestEth = null;
++        let bestRank = -1;
+         for (let i = 0; i < count; i++) {
+             let d = devs[i] !== undefined ? devs[i] : (devs.get ? devs.get(i) : null);
+             if (!d) continue;
+-            if (!window.ethDevice && window.isEthDevice(d)) {
+-                window.ethDevice = d;
++            if (window.isEthDevice(d)) {
++                let rank = d.connected ? 2 : (d.hasLink ? 1 : 0);
++                if (rank > bestRank) {
++                    bestRank = rank;
++                    bestEth = d;
++                }
+             } else if (!window.wifiDevice && window.isWifiDevice(d)) {
+                 window.wifiDevice = d;
+                 window.startWifiScan();
+             }
+         }
++        if (bestEth) window.ethDevice = bestEth;
+     }
+ 
+     function gotoTab(tabName) {
+@@ -248,9 +255,8 @@
+ 
+                 function syncDevice() {
+                     if (!device) return;
+-                    if (window.isEthDevice(device)) {
+-                        window.ethDevice = device;
+-                    } else if (window.isWifiDevice(device)) {
++                    window.findDevices();
++                    if (window.isWifiDevice(device)) {
+                         window.wifiDevice = device;
+                         window.startWifiScan();
+                     }
+@@ -957,7 +963,7 @@
+     }
+ 
+     function rebuildEthData() {
+-        if (!window.ethDevice) window.findDevices();
++        window.findDevices();
+         let hasEth = !!window.ethDevice && (window.ethDevice.hasLink || window.ethDevice.connected);
+         window.ethPresent = hasEth;
+         if (!window.ethPresent) {
