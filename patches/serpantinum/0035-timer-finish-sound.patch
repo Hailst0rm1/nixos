@@ -1,0 +1,10 @@
+--- a/src/quickshell/timer/TimerFace.qml
++++ b/src/quickshell/timer/TimerFace.qml
+@@ -466,6 +466,7 @@
+                             I18n.t("quickactions.timer.notification.timer_finished_title"),
+                             I18n.t("quickactions.timer.notification.timer_finished_body", { time: root.formatTime(stateCache.timerPresetMs, false) })
+                         );
++                        if (typeof Sounds !== "undefined") Sounds.playSfx("notifications/Sine.wav", 1.0, 0, true);
+                         root.saveFullState();
+                     } else {
+                         stateCache.timerRemainingMs = rem;

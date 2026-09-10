@@ -1499,6 +1499,13 @@ in {
           {
             CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
             CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+            # Keeps the mcp__claude-in-chrome__* tool schemas out of every
+            # session — browser.md routes all browser automation through
+            # agent-browser instead. Checked ahead of the
+            # claudeInChromeDefaultEnabled key in ~/.claude.json, so this also
+            # outranks whatever the extension's onboarding dialog last wrote
+            # there, and it suppresses the auto-enable offer as well.
+            CLAUDE_CODE_ENABLE_CFC = "0";
           }
           // lib.optionalAttrs config.code.claude-code.claude-mem.enable {
             # Has to be an env var, not a settings.json key: claude-mem reads it

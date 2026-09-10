@@ -30,6 +30,8 @@ final: prev: {
         ../patches/serpantinum/0032-wifi-widget-ethernet.patch
         ../patches/serpantinum/0033-network-popup-ethernet.patch
         ../patches/serpantinum/0034-screenshot-crop-freeze.patch
+        ../patches/serpantinum/0035-timer-finish-sound.patch
+        ../patches/serpantinum/0036-alarm-minute-no-carry.patch
       ];
 
     # Every --replace-fail target below occurs exactly once in its file.

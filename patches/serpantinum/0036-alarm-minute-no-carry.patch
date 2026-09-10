@@ -1,0 +1,33 @@
+--- a/src/quickshell/reusables/TimeSelector.qml
++++ b/src/quickshell/reusables/TimeSelector.qml
+@@ -14,6 +14,9 @@
+     property bool isActive: false
+     property bool isWidgetVisible: true
+     property bool showSeconds: true
++    // A duration carries between segments; a wall-clock time does not — nudging
++    // an alarm's minutes past a boundary must leave the hour where it is.
++    property bool wrapSegments: false
+     property bool isEditing: hoursSeg.isEditing || minsSeg.isEditing || secsSeg.isEditing
+ 
+     property string iconFont: "Iosevka Nerd Font"
+@@ -85,8 +88,8 @@
+             h = Math.max(0, Math.min(99, h + dir));
+         } else if (root.activeSegment === 1) {
+             m += dir;
+-            if (m > 59) { m = 0; h++; }
+-            else if (m < 0) { if (h > 0) { m = 59; h--; } else { m = 0; } }
++            if (m > 59) { m = 0; if (!root.wrapSegments) h++; }
++            else if (m < 0) { if (root.wrapSegments) { m = 59; } else if (h > 0) { m = 59; h--; } else { m = 0; } }
+         } else if (root.activeSegment === 2 && root.showSeconds) {
+             sec += dir;
+             if (sec > 59) { 
+--- a/src/quickshell/timer/TimerFace.qml
++++ b/src/quickshell/timer/TimerFace.qml
+@@ -1054,6 +1054,7 @@
+                         anchors.centerIn: parent
+                         visible: !root.isAlarmArmed
+                         showSeconds: false
++                        wrapSegments: true
+                         valueMs: stateCache.alarmTimeOfDayMs
+                         isActive: root.isActiveTab && stateCache.activeMode === 3 && !root.isAlarmArmed
+                         isWidgetVisible: root.widgetVisible
