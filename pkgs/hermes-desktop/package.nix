@@ -24,7 +24,7 @@
   # Single npm-deps fetch from the workspace root package-lock.json.
   # Matches upstream nix/lib.nix for the same main checkout; if Nix reports
   # a mismatch after a rev bump, paste the "got:" hash here.
-  npmDepsHash = "sha256-/PIJA1zE5NxAdECJdxwuxyn1ijFeLubPorw2cngTV28=";
+  npmDepsHash = "sha256-y0sSnHC2GkOIjABsTYQMwtLgFm4miiXjByQm2MiOf4M=";
 
   npmDeps = fetchNpmDeps {
     inherit src;
