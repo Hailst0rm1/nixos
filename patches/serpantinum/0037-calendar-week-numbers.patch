@@ -1,0 +1,72 @@
+--- a/src/quickshell/calendar/CalendarPopup.qml	2026-09-15 14:00:15.350475532 +0200
++++ b/src/quickshell/calendar/CalendarPopup.qml	2026-09-15 14:00:15.411391815 +0200
+@@ -397,14 +397,21 @@
+         calendarModel.clear();
+ 
+         for (let i = firstDay - 1; i >= 0; i--) {
+-            calendarModel.append({ dayNum: (daysInPrevMonth - i).toString(), isCurrentMonth: false, isToday: false });
++            calendarModel.append({ dayNum: (daysInPrevMonth - i).toString(), isCurrentMonth: false, isToday: false, isWeek: false });
+         }
+         for (let i = 1; i <= daysInMonth; i++) {
+-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate) });
++            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate), isWeek: false });
+         }
+         let remaining = 42 - calendarModel.count;
+         for (let i = 1; i <= remaining; i++) {
+-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: false, isToday: false });
++            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: false, isToday: false, isWeek: false });
++        }
++        // ISO week number ahead of each row: the week is the one its Thursday
++        // falls in, counted from that Thursday's own year.
++        for (let r = 0; r < 6; r++) {
++            let thu = new Date(targetYear, targetMonth, 1 - firstDay + 7 * r + 3);
++            let dayOfYear = Math.round((thu - new Date(thu.getFullYear(), 0, 1)) / 86400000);
++            calendarModel.insert(r * 8, { dayNum: (Math.floor(dayOfYear / 7) + 1).toString(), isCurrentMonth: false, isToday: false, isWeek: true });
+         }
+     }
+ 
+@@ -848,6 +855,16 @@
+                         Layout.fillWidth: true
+                         Layout.bottomMargin: window.s(4)
+ 
++                        Text {
++                            Layout.preferredWidth: window.s(22)
++                            text: "W"
++                            font.family: ThemeBackend.fontFamily
++                            font.weight: Font.Black
++                            font.pixelSize: window.s(11.5)
++                            color: window.overlay0
++                            horizontalAlignment: Text.AlignHCenter
++                        }
++
+                         Repeater {
+                             model: [I18n.t("calendar.days.mo"), I18n.t("calendar.days.tu"), I18n.t("calendar.days.we"), I18n.t("calendar.days.th"), I18n.t("calendar.days.fr"), I18n.t("calendar.days.sa"), I18n.t("calendar.days.su")]
+                             Text {
+@@ -865,7 +882,7 @@
+                     GridLayout {
+                         Layout.fillWidth: true
+                         Layout.fillHeight: true
+-                        columns: 7
++                        columns: 8
+                         rowSpacing: window.s(2)
+                         columnSpacing: window.s(3)
+ 
+@@ -875,7 +892,8 @@
+                         Repeater {
+                             model: calendarModel
+                             ClickButton {
+-                                Layout.fillWidth: true
++                                Layout.fillWidth: !isWeek
++                                Layout.preferredWidth: isWeek ? window.s(22) : -1
+                                 Layout.fillHeight: true
+                                 enabled: false
+                                 buttonText: dayNum
+@@ -883,7 +901,7 @@
+                                 cornerRadius: window.s(5)
+                                 horizontalPadding: 0
+                                 accentColor: isToday ? window.textAccent : "transparent"
+-                                textColor: isToday ? window.base : (isCurrentMonth ? window.text : window.surface0)
++                                textColor: isWeek ? window.overlay0 : (isToday ? window.base : (isCurrentMonth ? window.text : window.surface0))
+                             }
+                         }
+                     }

@@ -1,40 +1,6 @@
---- a/src/quickshell/bar/modules/system/WifiWidget.qml	2026-09-09 10:46:03.541435034 +0200
-+++ b/src/quickshell/bar/modules/system/WifiWidget.qml	2026-09-09 10:46:03.555271147 +0200
-@@ -18,7 +18,7 @@
-     property bool moduleActive: true
-     property bool isGrouped: false
-     property bool isCompact: isGrouped || (isSolid && distinctPills)
--    property bool isDesktop: false
-+    property bool isDesktop: SystemInfo.isDesktop
-     property string ethStatus: "Ethernet"
-     property string wifiStatus: "Off"
-     property string wifiIcon: "󰤮"
-@@ -33,12 +33,8 @@
-     property var wifiDevice: null
- 
-     onModuleActiveChanged: {
--        if (!moduleActive) {
--            chassisDetector.running = false;
--        } else {
--            chassisDetector.running = true;
-+        if (moduleActive)
-             updateNetworkData();
--        }
-     }
- 
-     Item {
-@@ -54,9 +50,7 @@
-             Item {
-                 property var device: modelData
-                 Component.onCompleted: {
--                    if (device.type === DeviceType.Wired) {
--                        wifiWidgetRoot.ethDevice = device;
--                    } else if (device.type === DeviceType.Wifi) {
-+                    if (device.type === DeviceType.Wifi) {
-                         wifiWidgetRoot.wifiDevice = device;
-                     }
-                     wifiWidgetRoot.updateNetworkData();
-@@ -94,17 +88,20 @@
+--- a/src/quickshell/bar/modules/system/WifiWidget.qml	2026-09-15 13:49:52.176660359 +0200
++++ b/src/quickshell/bar/modules/system/WifiWidget.qml	2026-09-15 13:49:52.240970772 +0200
+@@ -99,17 +99,20 @@
          let isWifiEnabled = Networking.wifiEnabled;
          wifiStatus = isWifiEnabled ? "Enabled" : "Off";
  
@@ -64,7 +30,7 @@
  
          if (!isWifiEnabled) {
              wifiSsid = "";
-@@ -197,7 +194,7 @@
+@@ -290,7 +293,7 @@
              transform: Translate { y: wifiPill.initAnimTrigger ? 0 : barWindow.s(15); Behavior on y { NumberAnimation { duration: 620; easing.type: Easing.OutQuint } } }
              Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
  

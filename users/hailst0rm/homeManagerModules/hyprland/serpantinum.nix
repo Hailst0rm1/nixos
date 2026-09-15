@@ -79,7 +79,8 @@ in {
           muteSfx = true;
           weatherUnit = "metric";
           weatherInterval = 15;
-          quickactions = true;
+          # Edge-hover Quick Actions sidebar.
+          quickactions = false;
         };
 
         # `> cmd` in the launcher shells out through this prefix; upstream
