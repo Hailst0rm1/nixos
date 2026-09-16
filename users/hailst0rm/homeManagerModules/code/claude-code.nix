@@ -124,8 +124,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "3cca18b368ae95cdbdebbff572ccafa662551015";
-    hash = "sha256-dF5i37jHnqfcXD1IRSVzSSm/pfCYSUmOsEhhs5Zx340=";
+    rev = "959a8e9f1edc3adbe2f7e3054bb6fbefa6696260";
+    hash = "sha256-AbIlPEE0VWJq+NJpa56SDzhM8o7vXDBtlJHS5FCTElE=";
   };
 
   # humanlayer's show-me skill: explain the current topic in-chat with the
