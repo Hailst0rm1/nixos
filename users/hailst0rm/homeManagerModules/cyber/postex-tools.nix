@@ -178,10 +178,10 @@
 
   adPEAS = pkgs.stdenv.mkDerivation {
     pname = "adPEAS";
-    version = "v2.5.0";
+    version = "v2.5.1";
     src = pkgs.fetchurl {
-      url = "https://github.com/61106960/adPEAS/raw/refs/tags/v2.5.0/adPEAS_obf.ps1";
-      sha256 = "sha256-ChtpDx0mnjoJlX+Md19jx8f3cKIqmrlrNCqQ1DWZdqc=";
+      url = "https://github.com/61106960/adPEAS/raw/refs/tags/v2.5.1/adPEAS_obf.ps1";
+      sha256 = "sha256-z7rCb4pVYaJaf+ju9cTHLrbqjRW8vPQYH5hf41+fMpE=";
     };
     phases = ["installPhase"];
     installPhase = ''
