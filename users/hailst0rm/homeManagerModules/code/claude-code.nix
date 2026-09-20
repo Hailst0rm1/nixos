@@ -1403,6 +1403,11 @@ in {
       settings = {
         showThinkingSummaries = true;
         cleanupPeriodDays = 14;
+        # Compact at 250K instead of letting a 1M-window session run on: past
+        # that the model degrades and every turn re-reads the whole context.
+        # A settings key rather than CLAUDE_CODE_AUTO_COMPACT_WINDOW, which
+        # outranks it and blocks changing the window per session.
+        autoCompactWindow = 250000;
         tui = "default"; # opt out of fullscreen renderer + its startup prompt
         effortLevel = "high"; # default reasoning effort; /effort overrides per-session
         includeCoAuthoredBy = false;

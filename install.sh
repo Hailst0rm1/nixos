@@ -49,6 +49,15 @@ fix_owner() {
     chown -R "$REPO_OWNER" "$@"
 }
 
+# Flakes ignore untracked files, so new host files must be staged (intent-to-add)
+# before disko/nix can evaluate $SCRIPT_DIR#$HOSTNAME.
+stage_host_files() {
+    git -C "$SCRIPT_DIR" rev-parse --git-dir &>/dev/null || return 0
+    local paths=("hosts/$HOSTNAME")
+    [[ -f "$SCRIPT_DIR/users/$INSTALL_USER/hosts/$HOSTNAME.nix" ]] && paths+=("users/$INSTALL_USER/hosts/$HOSTNAME.nix")
+    sudo -u "${REPO_OWNER%%:*}" git -C "$SCRIPT_DIR" add --intent-to-add -- "${paths[@]}"
+}
+
 confirm() {
     ask "$1 [y/N] "
     read -r reply
@@ -438,14 +447,10 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
         "hyprland")               NEW_DE="hyprland" ;;
         "gnome")                  NEW_DE="gnome" ;;
         "xfce")                   NEW_DE="xfce" ;;
-        "none (headless/server)") NEW_DE="" ;;
+        "none (headless/server)") NEW_DE="headless" ;;
     esac
     if [[ "$NEW_DE" != "hyprland" ]]; then
-        if [[ -z "$NEW_DE" ]]; then
-            OVERRIDES+=$'\n  desktopEnvironment.name = "";'
-        else
-            OVERRIDES+=$'\n  desktopEnvironment.name = "'"$NEW_DE"'";'
-        fi
+        OVERRIDES+=$'\n  desktopEnvironment.name = "'"$NEW_DE"'";'
     fi
     echo ""
 
@@ -453,7 +458,7 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
     DEF_DM_ENABLE=$(get_default "enable" "$NIXOS_DEFAULTS" | head -1)
     # This is ambiguous — parse specifically from context. Default is true.
     DEF_DM_ENABLE="true"
-    if [[ -z "$NEW_DE" ]]; then
+    if [[ "$NEW_DE" == "headless" ]]; then
         # Headless: disable display manager by default
         NEW_DM_ENABLE="false"
         OVERRIDES+=$'\n  desktopEnvironment.displayManager.enable = false;'
@@ -504,7 +509,15 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
     DEF_SOPS=$(get_default "sops.enable" "$NIXOS_DEFAULTS")
     # Multiple matches possible; we want the security.sops one
     DEF_SOPS="true"
-    NEW_SOPS=$(prompt_bool "sops-nix secret management" "$DEF_SOPS")
+    # sops validates at build time that keys/yubikey/<host> exists in the secrets
+    # file, and the host needs its own age key in .sops.yaml to decrypt at boot.
+    PROMPT_SOPS="$DEF_SOPS"
+    if ! grep -q "&$HOSTNAME " "$SCRIPT_DIR/.sops.yaml" 2>/dev/null; then
+        warn "$HOSTNAME has no age key in .sops.yaml — sops would fail the build and lock the user out."
+        info "Install without sops, then add the host key + keys/yubikey/$HOSTNAME secret and enable it."
+        PROMPT_SOPS="false"
+    fi
+    NEW_SOPS=$(prompt_bool "sops-nix secret management" "$PROMPT_SOPS")
     if [[ "$NEW_SOPS" != "$DEF_SOPS" ]]; then
         OVERRIDES+=$'\n  security.sops.enable = '"$NEW_SOPS"';'
         if [[ "$NEW_SOPS" == "false" ]]; then
@@ -548,7 +561,7 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
 
     # system.kernel (enum menu)
     info "Kernel:"
-    choose_default "Select kernel" 1 "zen" "latest" "default"
+    choose_default "Select kernel" 1 "zen" "default"
     NEW_KERNEL="$CHOSEN"
     if [[ "$NEW_KERNEL" != "zen" ]]; then
         OVERRIDES+=$'\n  system.kernel = "'"$NEW_KERNEL"'";'
@@ -557,7 +570,7 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
 
     # system.bootloader (enum menu)
     info "Bootloader:"
-    choose_default "Select bootloader" 1 "grub" "systemd-boot"
+    choose_default "Select bootloader" 1 "grub" "systemd"
     NEW_BOOTLOADER="$CHOSEN"
     if [[ "$NEW_BOOTLOADER" != "grub" ]]; then
         OVERRIDES+=$'\n  system.bootloader = "'"$NEW_BOOTLOADER"'";'
@@ -650,6 +663,13 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
     NEW_VIRT_QEMU=$(prompt_bool "QEMU/KVM (host)" "$DEF_VIRT_QEMU")
     if [[ "$NEW_VIRT_QEMU" != "$DEF_VIRT_QEMU" ]]; then
         OVERRIDES+=$'\n  virtualisation.host.qemu = '"$NEW_VIRT_QEMU"';'
+    fi
+    echo ""
+
+    DEF_VIRT_DOCKER="true"
+    NEW_VIRT_DOCKER=$(prompt_bool "Docker (host)" "$DEF_VIRT_DOCKER")
+    if [[ "$NEW_VIRT_DOCKER" != "$DEF_VIRT_DOCKER" ]]; then
+        OVERRIDES+=$'\n  virtualisation.host.docker = '"$NEW_VIRT_DOCKER"';'
     fi
     echo ""
 
@@ -764,7 +784,7 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
     fi
 
     DEF_NAS="false"
-    NEW_NAS=$(prompt_bool "NAS mount" "$DEF_NAS")
+    NEW_NAS=$(prompt_bool "NAS server (Samba share)" "$DEF_NAS")
     if [[ "$NEW_NAS" != "$DEF_NAS" ]]; then
         OVERRIDES+=$'\n  services.nas.enable = '"$NEW_NAS"';'
     fi
@@ -966,7 +986,9 @@ NIXEOF
         header "Hyprland"
 
         DEF_HYPR_ENABLE="true"
-        NEW_HYPR_ENABLE=$(prompt_bool "Hyprland config" "$DEF_HYPR_ENABLE")
+        # Suggest off when the host doesn't run Hyprland; the file default stays true
+        PROMPT_HYPR_ENABLE=$([[ "$NEW_DE" == "hyprland" ]] && echo true || echo false)
+        NEW_HYPR_ENABLE=$(prompt_bool "Hyprland config" "$PROMPT_HYPR_ENABLE")
         if [[ "$NEW_HYPR_ENABLE" != "$DEF_HYPR_ENABLE" ]]; then
             HM_OVERRIDES+=$'\n  importConfig.hyprland.enable = '"$NEW_HYPR_ENABLE"';'
         fi
@@ -984,35 +1006,46 @@ NIXEOF
             fi
             echo ""
 
-            DEF_PANEL="hyprpanel"
-            NEW_PANEL=$(prompt_string "Panel" "$DEF_PANEL")
-            if [[ "$NEW_PANEL" != "$DEF_PANEL" ]]; then
-                HM_OVERRIDES+=$'\n  importConfig.hyprland.panel = "'"$NEW_PANEL"'";'
+            # Serpantinum overrides panel/launcher/lockscreen/notifications/screenshot
+            # (mkOverride 900), so those are only asked when it is turned off.
+            DEF_SERPANTINUM="true"
+            NEW_SERPANTINUM=$(prompt_bool "Serpantinum shell (panel, launcher, lockscreen, notifications)" "$DEF_SERPANTINUM")
+            if [[ "$NEW_SERPANTINUM" != "$DEF_SERPANTINUM" ]]; then
+                HM_OVERRIDES+=$'\n  importConfig.hyprland.quickshell.serpantinum.enable = '"$NEW_SERPANTINUM"';'
             fi
             echo ""
 
-            DEF_LOCK="hyprlock"
-            NEW_LOCK=$(prompt_string "Lockscreen" "$DEF_LOCK")
-            if [[ "$NEW_LOCK" != "$DEF_LOCK" ]]; then
-                HM_OVERRIDES+=$'\n  importConfig.hyprland.lockscreen = "'"$NEW_LOCK"'";'
-            fi
-            echo ""
+            if [[ "$NEW_SERPANTINUM" == "false" ]]; then
+                DEF_PANEL="hyprpanel"
+                NEW_PANEL=$(prompt_string "Panel" "$DEF_PANEL")
+                if [[ "$NEW_PANEL" != "$DEF_PANEL" ]]; then
+                    HM_OVERRIDES+=$'\n  importConfig.hyprland.panel = "'"$NEW_PANEL"'";'
+                fi
+                echo ""
 
-            DEF_LAUNCHER="rofi"
-            NEW_LAUNCHER=$(prompt_string "App launcher" "$DEF_LAUNCHER")
-            if [[ "$NEW_LAUNCHER" != "$DEF_LAUNCHER" ]]; then
-                HM_OVERRIDES+=$'\n  importConfig.hyprland.appLauncher = "'"$NEW_LAUNCHER"'";'
-            fi
-            echo ""
+                DEF_LOCK="hyprlock"
+                NEW_LOCK=$(prompt_string "Lockscreen" "$DEF_LOCK")
+                if [[ "$NEW_LOCK" != "$DEF_LOCK" ]]; then
+                    HM_OVERRIDES+=$'\n  importConfig.hyprland.lockscreen = "'"$NEW_LOCK"'";'
+                fi
+                echo ""
 
-            DEF_NOTIF="hyprpanel"
-            NEW_NOTIF=$(prompt_string "Notifications" "$DEF_NOTIF")
-            if [[ "$NEW_NOTIF" != "$DEF_NOTIF" ]]; then
-                HM_OVERRIDES+=$'\n  importConfig.hyprland.notifications = "'"$NEW_NOTIF"'";'
-            fi
-            echo ""
+                DEF_LAUNCHER="rofi"
+                NEW_LAUNCHER=$(prompt_string "App launcher" "$DEF_LAUNCHER")
+                if [[ "$NEW_LAUNCHER" != "$DEF_LAUNCHER" ]]; then
+                    HM_OVERRIDES+=$'\n  importConfig.hyprland.appLauncher = "'"$NEW_LAUNCHER"'";'
+                fi
+                echo ""
 
-            DEF_WALL="swww"
+                DEF_NOTIF="hyprpanel"
+                NEW_NOTIF=$(prompt_string "Notifications" "$DEF_NOTIF")
+                if [[ "$NEW_NOTIF" != "$DEF_NOTIF" ]]; then
+                    HM_OVERRIDES+=$'\n  importConfig.hyprland.notifications = "'"$NEW_NOTIF"'";'
+                fi
+                echo ""
+            fi
+
+            DEF_WALL="mpvpaper"
             NEW_WALL=$(prompt_string "Wallpaper" "$DEF_WALL")
             if [[ "$NEW_WALL" != "$DEF_WALL" ]]; then
                 HM_OVERRIDES+=$'\n  importConfig.hyprland.wallpaper = "'"$NEW_WALL"'";'
@@ -1036,6 +1069,13 @@ NIXEOF
         NEW_CLAUDE_CODE=$(prompt_bool "Claude Code" "$DEF_CLAUDE_CODE")
         if [[ "$NEW_CLAUDE_CODE" != "$DEF_CLAUDE_CODE" ]]; then
             HM_OVERRIDES+=$'\n  code.claude-code.enable = '"$NEW_CLAUDE_CODE"';'
+        fi
+        echo ""
+
+        DEF_CODEX="false"
+        NEW_CODEX=$(prompt_bool "Codex CLI" "$DEF_CODEX")
+        if [[ "$NEW_CODEX" != "$DEF_CODEX" ]]; then
+            HM_OVERRIDES+=$'\n  code.codex.enable = '"$NEW_CODEX"';'
         fi
         echo ""
 
@@ -1076,13 +1116,14 @@ NIXEOF
             ["openconnect"]="false"
             ["espanso"]="false"
             ["aws-cvpn-wrapper"]="false"
+            ["signal"]="true"
         )
         # Preserve order with an array
         HM_APP_ORDER=(
             "bitwarden" "brave" "discord" "firefox" "gpt4all"
             "libreOffice" "mattermost" "obsidian" "remmina" "spotify"
             "youtube-music" "zen-browser" "claude-desktop" "openconnect"
-            "espanso" "aws-cvpn-wrapper"
+            "espanso" "aws-cvpn-wrapper" "signal"
         )
 
         for app in "${HM_APP_ORDER[@]}"; do
@@ -1130,10 +1171,10 @@ NIXEOF
         # ==============================================================
         header "Services (Home Manager)"
 
-        DEF_COMPANION="false"
-        NEW_COMPANION=$(prompt_bool "Companion (Claude Code Web UI)" "$DEF_COMPANION")
-        if [[ "$NEW_COMPANION" != "$DEF_COMPANION" ]]; then
-            HM_OVERRIDES+=$'\n  services.companion.enable = '"$NEW_COMPANION"';'
+        DEF_CLAUDECODEUI="false"
+        NEW_CLAUDECODEUI=$(prompt_bool "Claude Code UI (web interface)" "$DEF_CLAUDECODEUI")
+        if [[ "$NEW_CLAUDECODEUI" != "$DEF_CLAUDECODEUI" ]]; then
+            HM_OVERRIDES+=$'\n  services.claudecodeui.enable = '"$NEW_CLAUDECODEUI"';'
         fi
         echo ""
 
@@ -1256,6 +1297,23 @@ if [[ "$CREATE_NEW_HOST" != "true" ]]; then
 
     info "Disko config: ${BOLD}$DISKO_CONFIG${NC}"
     echo ""
+
+    # disko formats whatever the host file says, not what was answered above —
+    # write the answers into the host's let-block so they actually apply.
+    if ! grep -qP '^\s*device\s*=\s*"' "$HOST_DIR/configuration.nix"; then
+        err "$HOSTNAME has no disko 'device' in its configuration.nix — it can't be installed with this script."
+        exit 1
+    fi
+    for kv in "device=$DEVICE" "swapSize=$SWAP_SIZE" "diskoConfig=$DISKO_CONFIG"; do
+        key="${kv%%=*}"
+        val="${kv#*=}"
+        cur=$(grep -m1 -oP "^\s*${key}\s*=\s*\"\K[^\"]+" "$HOST_DIR/configuration.nix" || true)
+        if [[ -n "$cur" && "$cur" != "$val" ]]; then
+            sed -i -E "0,/^\s*${key}\s*=\s*\"/ s|^(\s*${key}\s*=\s*)\"[^\"]*\"|\1\"${val}\"|" "$HOST_DIR/configuration.nix"
+            warn "Updated $key in hosts/$HOSTNAME/configuration.nix: \"$cur\" -> \"$val\""
+        fi
+    done
+    echo ""
 else
     DISKO_CONFIG="$NEW_DISKO"
 fi
@@ -1320,6 +1378,14 @@ if [[ "$MODE" == "manual" ]]; then
     echo -e "  ${GREEN}}${NC}"
     echo -e "  ${GREEN}STUBEOF${NC}"
     cmd "sudo chown $REPO_OWNER '${HW_CONFIG}'"
+    echo ""
+    ((STEP++))
+
+    info "${BOLD}Step $STEP: Stage the host files so the flake can see them${NC}"
+    cmd "git -C '${SCRIPT_DIR}' add --intent-to-add -- 'hosts/${HOSTNAME}'"
+    if [[ -f "$SCRIPT_DIR/users/$INSTALL_USER/hosts/$HOSTNAME.nix" ]]; then
+        cmd "git -C '${SCRIPT_DIR}' add --intent-to-add -- 'users/${INSTALL_USER}/hosts/${HOSTNAME}.nix'"
+    fi
     echo ""
     ((STEP++))
 
@@ -1389,9 +1455,8 @@ if [[ "$MODE" == "manual" ]]; then
     cmd "sudo nixos-install --root /mnt --flake '${CONFIG_DEST}#${HOSTNAME}' --no-channel-copy --no-root-passwd"
     echo ""
 
-    info "${BOLD}After first boot:${NC}"
-    cmd "git clone https://github.com/hailst0rm1/nixos ~/.nixos"
-    cmd "sudo nixos-rebuild boot --flake ~/.nixos#${HOSTNAME}"
+    info "${BOLD}After first boot:${NC} the config is already at ~/.nixos — commit the host files"
+    cmd "cd ~/.nixos && git add hosts/${HOSTNAME} flake.nix users/${INSTALL_USER}/hosts && git commit"
     echo ""
 
     ok "Done. Copy the commands above and run them in order."
@@ -1428,6 +1493,8 @@ STUBEOF
     ok "Created stub $HW_CONFIG"
     echo ""
 fi
+
+stage_host_files
 
 # ---------------------------------------------------------------------------
 # Step 9: Run disko (format + mount)
@@ -1584,9 +1651,8 @@ echo -e "${BOLD}========================================${NC}"
 echo ""
 echo -e "  ${GREEN}Reboot into your new system:${NC} sudo reboot"
 echo ""
-echo -e "  After first boot, clone your config and rebuild to the final state:"
-cmd "git clone https://github.com/hailst0rm1/nixos ~/.nixos"
-cmd "sudo nixos-rebuild boot --flake ~/.nixos#$HOSTNAME"
+echo -e "  After first boot, the config is already at ~/.nixos — commit the host files:"
+cmd "cd ~/.nixos && git add hosts/$HOSTNAME flake.nix users/$INSTALL_USER/hosts && git commit"
 echo ""
 echo -e "  ${YELLOW}Recovery (if install failed partway):${NC}"
 cmd "sudo nix run github:nix-community/disko/latest -- \\"

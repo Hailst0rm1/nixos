@@ -66,6 +66,10 @@ Whenever you add a new option to a module (NixOS or Home Manager), also add it t
 
 This keeps `default.nix` as the single browseable surface for "what can I toggle on this system?" — without it, options become invisible unless someone reads every module. Match the existing nesting style in `default.nix` (preserve attrset shape, group related sub-options together).
 
+### Keep `install.sh` in step
+
+`install.sh` writes option paths into new host files, with each prompt's default and enum choices hardcoded. Whenever you rename or remove an option, change its allowed values, or change its `default.nix` default, grep `install.sh` for the option path and update the matching prompt. The same goes for the host-file shape it generates and rewrites: the `device` / `swapSize` / `diskoConfig` let-bindings and the disko imports. The installer runs only on a fresh machine, so a stale path fails the first time someone installs, far from the change that broke it.
+
 ## Package Channels
 
 - `pkgs` — stable (nixos-25.11), use for system-critical packages
