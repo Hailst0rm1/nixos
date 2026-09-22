@@ -170,8 +170,15 @@ Pick a ref by precedence:
    (`git ls-remote --tags --refs <url> | tail`). Skip `-rc.*` / `-dev.*` /
    `-beta` / `-alpha` suffixes.
 2. **Current branch HEAD SHA** if no tags exist. Get it with
-   `git ls-remote <url> refs/heads/<branch>` and leave a one-line comment
-   naming the tracked branch.
+   `git ls-remote <url> refs/heads/<branch>` and add a
+   `# track-branch: <branch>` comment directly above the fetch — that
+   sentinel is what makes the auto-updater bump `rev` + `hash` to the
+   branch's live HEAD.
+
+**Skill and agent repos always take the SHA form**, tags or not: any fetch
+that feeds `~/.claude/skills`, agents, or plugins (the `*-skills-repo` /
+`humanizer-repo` fetches in `claude-code.nix`). The `# track-branch:` sentinel
+keeps them on upstream's latest; a tag pin would freeze them at that release.
 
 Use `${...}` interpolation so the version string appears exactly once — that
 form is what `scripts/nix-github-update-report.py` substitutes when bumping:
@@ -186,11 +193,11 @@ fetchurl {
   hash = "sha256-...";
 }
 
-# SHA-pin form (when no tags exist):
+# SHA-pin form (no tags, or a skill/agent repo):
 fetchFromGitHub {
   owner = "<owner>";
   repo = "<repo>";
-  # Tracks main; bump SHA + hash to pull new upstream changes.
+  # track-branch: main
   rev = "<40-char-SHA>";
   hash = "sha256-...";
 }

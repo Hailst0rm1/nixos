@@ -141,6 +141,17 @@
     hash = "sha256-BX9k5S3hwgik7AKxssUVm7VQRTjgjXVVcE2Jph88tS0=";
   };
 
+  # blader's humanizer skill: rewrite prose to strip AI writing patterns.
+  # SKILL.md sits at the repo root, so the whole tree is the skill dir.
+  # Track `main` by SHA like mattpocock/skills above.
+  # track-branch: main
+  humanizer-repo = pkgs.fetchFromGitHub {
+    owner = "blader";
+    repo = "humanizer";
+    rev = "9862685f575c65a8247f90369951df1b3416e3d6";
+    hash = "sha256-tC7vHxHDzTRgpsF7i6YnKWhAbrkeclspRJVK1osRE24=";
+  };
+
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
   # Experimental skills not listed in plugin.json — opt them in explicitly here.
   # (As upstream promotes in-progress skills into engineering/ + plugin.json they
@@ -1843,6 +1854,7 @@ in {
         ".claude/skills/excalidraw-diagram/references/excalidraw-utils.js".source = excalidrawUtils;
 
         ".claude/skills/show-me".source = "${humanlayer-skills-repo}/plugins/show-me/skills/show-me";
+        ".claude/skills/humanizer".source = humanizer-repo;
       }
       // lib.optionalAttrs config.code.claude-code.gsd.enable {
         ".claude/commands/gsd".source = "${gsd-repo}/commands/gsd";
