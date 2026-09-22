@@ -7,14 +7,14 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "21st-cli";
-  version = "1.16.0";
+  version = "1.17.1";
 
   # Published only as a bundled npm tarball — package.json has `repository:
   # null` and no GitHub mirror exists, so there is nothing to fetchFromGitHub.
   # The npm URL carries the version, so this pin is honest.
   src = fetchurl {
     url = "https://registry.npmjs.org/@21st-dev/cli/-/cli-${finalAttrs.version}.tgz";
-    hash = "sha256-mw0mpUtb7KIo3mg0Vy/07NAx6LYjX0FGs8wEdv3lQv4=";
+    hash = "sha256-9Qa1JdP3JLcC10SGXPzQDoTJGDXbeyQ+texnC+4eiAE=";
   };
 
   # `21st install-skill` fetches these three markdown files from 21st.dev at
@@ -57,12 +57,12 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     skillSources = {
       "21st-cli-use" = fetchurl {
         url = "https://21st.dev/skills/21st-cli-use.md";
-        hash = "sha256-yIh2XgZAepN/i4b+YyM0NIjxGBUI0RQBgjz6nf5Li7c=";
+        hash = "sha256-iP8FSrtDNKUJVGLdILXE7CFMm5nzJW6uYNrbOE0Ta8o=";
       };
       # 21st-cli-use delegates the generate/iterate flow to this skill.
       "21st-ai" = fetchurl {
         url = "https://21st.dev/skills/21st-ai.md";
-        hash = "sha256-vJKK9M2BoJcUthOsFzzZPcWrQuAuTQ0idKl9fyjwNPE=";
+        hash = "sha256-IpEZgC2DXsAA6GAYb/q2DawnK3rrLvL9kNX5eAx4YBI=";
       };
       "21st-registry" = fetchurl {
         url = "https://21st.dev/skills/21st-registry.md";

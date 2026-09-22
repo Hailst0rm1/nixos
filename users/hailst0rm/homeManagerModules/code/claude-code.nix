@@ -124,8 +124,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "3cca18b368ae95cdbdebbff572ccafa662551015";
-    hash = "sha256-dF5i37jHnqfcXD1IRSVzSSm/pfCYSUmOsEhhs5Zx340=";
+    rev = "c55ee46073ed923f86ce59a5eb3b6d895095d1b7";
+    hash = "sha256-L3CpIT2DeI+fUFl9fcygojtQo2DzEen69rMD1XqR1vM=";
   };
 
   # humanlayer's show-me skill: explain the current topic in-chat with the
@@ -137,8 +137,8 @@
   humanlayer-skills-repo = pkgs.fetchFromGitHub {
     owner = "humanlayer";
     repo = "skills";
-    rev = "3c2629142c5d437428269b1b722b08c0b87f574d";
-    hash = "sha256-lJvu9CGAN/+dzmzck0CodRXn/p7GUkCbfyZxys4nIoU=";
+    rev = "ca7c8088db69e315a8b2deea43820270457f8f3c";
+    hash = "sha256-BX9k5S3hwgik7AKxssUVm7VQRTjgjXVVcE2Jph88tS0=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
