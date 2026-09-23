@@ -41,7 +41,8 @@
   Invoke-CradleCrafter = pkgs.fetchFromGitHub {
     owner = "danielbohannon";
     repo = "Invoke-CradleCrafter";
-    rev = "HEAD";
+    # track-branch: master
+    rev = "3ff8bacd5fb6aa14a0b757808437c9e230932379";
     sha256 = "sha256-AVTWB5Kzrtdnb65HyHW8I0PjlVXbDyLwTE9X3hJBv14=";
   };
 in {

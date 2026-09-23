@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Unattended Windows 11 install for the DFIR/FLARE BUILD-READY base VM.
+  Carried into setup on the "UNATTEND" ISO built by dfir-create-base.
+
+  Produces: local admin `flare` / `password`, UAC off, PowerShell Unrestricted,
+  Defender/Tamper best-effort off, Guest Additions installed, then powers off.
+
+  TUNING POINTS (expect to touch these on a real host):
+    * <InstallFrom> image name — must match your ISO's edition exactly
+      (dism /Get-WimInfo on install.wim). Default here: Enterprise Evaluation.
+    * Product key — Enterprise eval installs keyless; the KMS client key below
+      is a safe generic. Swap for your edition if setup asks.
+    * Defender/Tamper — Tamper Protection can refuse registry disables; if
+      FLARE's Test-DefenderAndTamperProtection still fails, toggle it once in
+      the Windows Security GUI before snapshotting.
+    * Guest Additions silent install relies on the GA ISO drive letter scan.
+-->
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+
+  <!-- ============ WindowsPE: disk layout, image, Win11 bypasses ============ -->
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35" language="neutral"
+               versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <UserData>
+        <AcceptEula>true</AcceptEula>
+        <ProductKey>
+          <!-- Generic Win11 Enterprise KMS client key (keyless-safe for eval). -->
+          <Key>NPPR9-FWDCX-D2C8J-H872K-2YT43</Key>
+        </ProductKey>
+      </UserData>
+
+      <!-- Skip Win11 TPM/SecureBoot/RAM gates for VMs that still trip them. -->
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>reg add HKLM\System\Setup\LabConfig /v BypassTPMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Path>reg add HKLM\System\Setup\LabConfig /v BypassSecureBootCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Path>reg add HKLM\System\Setup\LabConfig /v BypassRAMCheck /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+
+      <DiskConfiguration>
+        <Disk wcm:action="add">
+          <DiskID>0</DiskID>
+          <WillWipeDisk>true</WillWipeDisk>
+          <CreatePartitions>
+            <!-- UEFI/GPT layout: Recovery, EFI, MSR, Windows -->
+            <CreatePartition wcm:action="add"><Order>1</Order><Type>Primary</Type><Size>500</Size></CreatePartition>
+            <CreatePartition wcm:action="add"><Order>2</Order><Type>EFI</Type><Size>100</Size></CreatePartition>
+            <CreatePartition wcm:action="add"><Order>3</Order><Type>MSR</Type><Size>16</Size></CreatePartition>
+            <CreatePartition wcm:action="add"><Order>4</Order><Type>Primary</Type><Extend>true</Extend></CreatePartition>
+          </CreatePartitions>
+          <ModifyPartitions>
+            <ModifyPartition wcm:action="add"><Order>1</Order><PartitionID>1</PartitionID><Label>Recovery</Label><Format>NTFS</Format><TypeID>DE94BBA4-06D1-4D40-A16A-BFD50179D6AC</TypeID></ModifyPartition>
+            <ModifyPartition wcm:action="add"><Order>2</Order><PartitionID>2</PartitionID><Label>System</Label><Format>FAT32</Format></ModifyPartition>
+            <ModifyPartition wcm:action="add"><Order>3</Order><PartitionID>3</PartitionID></ModifyPartition>
+            <ModifyPartition wcm:action="add"><Order>4</Order><PartitionID>4</PartitionID><Label>Windows</Label><Format>NTFS</Format><Letter>C</Letter></ModifyPartition>
+          </ModifyPartitions>
+        </Disk>
+      </DiskConfiguration>
+
+      <ImageInstall>
+        <OSImage>
+          <InstallFrom>
+            <MetaData wcm:action="add">
+              <Key>/IMAGE/NAME</Key>
+              <Value>Windows 11 Enterprise Evaluation</Value>
+            </MetaData>
+          </InstallFrom>
+          <InstallTo><DiskID>0</DiskID><PartitionID>4</PartitionID></InstallTo>
+        </OSImage>
+      </ImageInstall>
+    </component>
+
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <SetupUILanguage><UILanguage>en-US</UILanguage></SetupUILanguage>
+      <InputLocale>en-US</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+  </settings>
+
+  <!-- ============ specialize: disable Defender policy + UAC ============ -->
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <ComputerName>DFIR-BASE</ComputerName>
+    </component>
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <RunSynchronous>
+        <!-- Defender via policy (applied before it fully arms on first boot). -->
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Path>reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender" /v DisableAntiSpyware /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <Path>reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+        <!-- UAC off (FLARE runs elevated, unattended). -->
+        <RunSynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <Path>reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System /v EnableLUA /t REG_DWORD /d 0 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+
+  <!-- ============ oobeSystem: skip OOBE, local admin, first-logon setup ==== -->
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS"
+               xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideLocalAccountScreen>true</HideLocalAccountScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+        <ProtectYourPC>3</ProtectYourPC>
+        <SkipMachineOOBE>true</SkipMachineOOBE>
+        <SkipUserOOBE>true</SkipUserOOBE>
+      </OOBE>
+
+      <UserAccounts>
+        <LocalAccounts>
+          <LocalAccount wcm:action="add">
+            <Name>flare</Name>
+            <Group>Administrators</Group>
+            <DisplayName>flare</DisplayName>
+            <Password><Value>password</Value><PlainText>true</PlainText></Password>
+          </LocalAccount>
+        </LocalAccounts>
+      </UserAccounts>
+
+      <AutoLogon>
+        <Enabled>true</Enabled>
+        <Username>flare</Username>
+        <LogonCount>2</LogonCount>
+        <Password><Value>password</Value><PlainText>true</PlainText></Password>
+      </AutoLogon>
+
+      <FirstLogonCommands>
+        <!-- PowerShell Unrestricted (FLARE install.ps1 requires it). -->
+        <SynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <CommandLine>powershell -NoProfile -Command "Set-ExecutionPolicy Unrestricted -Force"</CommandLine>
+          <Description>execution policy</Description>
+        </SynchronousCommand>
+        <!-- Belt-and-braces Defender disable at runtime. -->
+        <SynchronousCommand wcm:action="add">
+          <Order>2</Order>
+          <CommandLine>powershell -NoProfile -Command "Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue"</CommandLine>
+          <Description>defender realtime off</Description>
+        </SynchronousCommand>
+        <!-- Trust the Oracle driver cert, then silently install Guest Additions
+             from whichever drive holds it (D..H scanned). -->
+        <SynchronousCommand wcm:action="add">
+          <Order>3</Order>
+          <CommandLine>cmd /c "for %i in (D E F G H) do @if exist %i:\cert\VBoxCertUtil.exe (%i:\cert\VBoxCertUtil.exe add-trusted-publisher %i:\cert\vbox-sha256.cer --root %i:\cert\vbox-sha256.cer)"</CommandLine>
+          <Description>trust vbox cert</Description>
+        </SynchronousCommand>
+        <SynchronousCommand wcm:action="add">
+          <Order>4</Order>
+          <CommandLine>cmd /c "for %i in (D E F G H) do @if exist %i:\VBoxWindowsAdditions.exe (start /wait %i:\VBoxWindowsAdditions.exe /S)"</CommandLine>
+          <Description>install guest additions</Description>
+        </SynchronousCommand>
+        <!-- Give GA install time to finish, then power off for the snapshot. -->
+        <SynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <CommandLine>cmd /c "shutdown /s /t 120 /c BUILD-READY"</CommandLine>
+          <Description>power off for snapshot</Description>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+    </component>
+
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64"
+               publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InputLocale>en-US</InputLocale>
+      <SystemLocale>en-US</SystemLocale>
+      <UILanguage>en-US</UILanguage>
+      <UserLocale>en-US</UserLocale>
+    </component>
+  </settings>
+</unattend>

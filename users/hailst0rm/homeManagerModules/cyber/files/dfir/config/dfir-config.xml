@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  FLARE-VM customConfig for the Windows-DFIR VM (trusted evidence processing).
+  Passed as: install.ps1 -customConfig <this file>
+  Starter forensics subset — the full FLARE RE kitchen sink lives on the
+  malware VM (see malware-config.xml). Tweak the package list over time; the
+  runtime updater (update-tools.ps1 + manifests/dfir-tools.yaml) converges the
+  running machine to your desired state.
+-->
+<config>
+  <envs>
+    <env name="VM_COMMON_DIR" value="%ProgramData%\_VM"/>
+    <env name="TOOL_LIST_DIR" value="%ProgramData%\Microsoft\Windows\Start Menu\Programs\DFIR"/>
+    <env name="RAW_TOOLS_DIR" value="%SystemDrive%\Tools"/>
+  </envs>
+  <packages>
+    <!-- Eric Zimmerman suite -->
+    <package name="mftecmd.vm"/>
+    <package name="evtxecmd.vm"/>
+    <package name="jlecmd.vm"/>
+    <package name="lecmd.vm"/>
+    <package name="pecmd.vm"/>
+    <package name="sbecmd.vm"/>
+    <package name="sqlecmd.vm"/>
+    <package name="registry_explorer.vm"/>
+    <package name="timeline_explorer.vm"/>
+    <package name="bstrings.vm"/>
+    <!-- Imaging / triage -->
+    <package name="arsenalimagemounter.vm"/>
+    <package name="autopsy.vm"/>
+    <!-- Utilities -->
+    <package name="7zip.vm"/>
+    <package name="sysinternals.vm"/>
+    <package name="notepadplusplus.vm"/>
+    <package name="python3.vm"/>
+  </packages>
+  <registry-items>
+    <!-- Show file extensions and hidden files (analyst QoL) -->
+    <registry-item path="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="HideFileExt" type="REG_DWORD" data="0"/>
+    <registry-item path="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="Hidden" type="REG_DWORD" data="1"/>
+  </registry-items>
+</config>

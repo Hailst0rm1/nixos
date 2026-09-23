@@ -1,0 +1,28 @@
+# Desired tool state for the Windows-DFIR VM.
+# Consumed by windows/update-tools.ps1, which converges the machine to this
+# list (installs missing, upgrades floating, and UNINSTALLS anything removed
+# from here since the last run — nixos-rebuild style).
+#
+#   version: latest   -> track the newest published package
+#   version: "X.Y.Z"  -> pin exactly (choco --version)
+#   source: choco     -> plain Chocolatey feed (default if omitted)
+#   source: vm        -> VM-Packages (*.vm), served from the MyGet feed
+packages:
+  - id: mftecmd.vm
+    source: vm
+    version: latest
+  - id: evtxecmd.vm
+    source: vm
+    version: latest
+  - id: registry_explorer.vm
+    source: vm
+    version: latest
+  - id: timeline_explorer.vm
+    source: vm
+    version: latest
+  - id: arsenalimagemounter.vm
+    source: vm
+    version: latest
+  - id: sysinternals.vm
+    source: vm
+    version: latest

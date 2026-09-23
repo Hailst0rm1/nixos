@@ -30,6 +30,9 @@
   # Red Teaming config
   cyber.redTools.enable = lib.mkDefault false;
 
+  # DFIR tooling + VirtualBox analysis lab
+  cyber.dfir.enable = lib.mkDefault false;
+
   # Serpantinum v2 Quickshell shell — the default shell on every Hyprland
   # host (Tower, Laptop, Workstation, ExtDisk). The GNOME and headless hosts
   # have nothing to run it in, so they keep it off.

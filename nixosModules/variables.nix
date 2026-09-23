@@ -40,5 +40,7 @@
     removableMedia = lib.mkEnableOption "Enable if OS is installed on a removable media (USB/External device).";
 
     cyber.redTools.enable = lib.mkEnableOption "Enable for offensive tooling.";
+
+    cyber.dfir.enable = lib.mkEnableOption "Enable DFIR tooling and VirtualBox analysis lab.";
   };
 }

@@ -809,6 +809,13 @@ if [[ "$CREATE_NEW_HOST" == "true" ]]; then
     fi
     echo ""
 
+    DEF_DFIR="false"
+    NEW_DFIR=$(prompt_bool "DFIR tooling + VirtualBox lab" "$DEF_DFIR")
+    if [[ "$NEW_DFIR" != "$DEF_DFIR" ]]; then
+        OVERRIDES+=$'\n  cyber.dfir.enable = '"$NEW_DFIR"';'
+    fi
+    echo ""
+
     # ===================================================================
     # Disko config
     # ===================================================================
@@ -1192,15 +1199,8 @@ NIXEOF
         fi
         echo ""
 
-        # Cyber (HM)
-        header "Cyber (Home Manager)"
-
-        DEF_HM_MALWARE="false"
-        NEW_HM_MALWARE=$(prompt_bool "Malware analysis tools" "$DEF_HM_MALWARE")
-        if [[ "$NEW_HM_MALWARE" != "$DEF_HM_MALWARE" ]]; then
-            HM_OVERRIDES+=$'\n  cyber.malwareAnalysis.enable = '"$NEW_HM_MALWARE"';'
-        fi
-        echo ""
+        # Cyber (HM) tooling follows the NixOS-level cyber.* toggles via
+        # osConfig (see users/*/hosts/default.nix), so no separate HM prompt.
 
         # --- Write the HM host file ---
         HM_HOST_DIR="$SCRIPT_DIR/users/$INSTALL_USER/hosts"

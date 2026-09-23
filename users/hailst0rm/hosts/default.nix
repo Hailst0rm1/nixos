@@ -239,7 +239,7 @@
 
   cyber = {
     redTools.enable = lib.mkDefault osConfig.cyber.redTools.enable;
-    malwareAnalysis.enable = lib.mkDefault false;
+    dfir.enable = lib.mkDefault osConfig.cyber.dfir.enable;
   };
 
   # GTK / Nautilus sidebar bookmarks

@@ -1,4 +1,4 @@
-{...}: {
+{pkgs, ...}: {
   imports = [./default.nix];
 
   # Override only what's different from default
@@ -33,4 +33,6 @@
     openconnect.enable = true;
     aws-cvpn-wrapper.enable = false;
   };
+
+  home.packages = [pkgs.slack];
 }
