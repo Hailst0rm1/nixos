@@ -1,8 +1,9 @@
 # vbox-build-flare-vm variant for the Windows-DFIR VM.
 # Usage (on the NixOS host, after the BUILD-READY snapshot exists — see README):
+#   dfir-prepare-variant dfir
 #   vbox-build-flare-vm ~/.config/dfir/variants/dfir.yaml --custom_config
-# --custom_config makes the build pass config/dfir-config.xml to install.ps1
-# (place dfir-config.xml as config.xml in the build's required-files dir).
+# --custom_config makes the build pass config/dfir-config.xml to install.ps1;
+# dfir-prepare-variant is what stages it as config.xml in the required-files dir.
 VM_NAME: DFIR-Windows.testing
 EXPORTED_VM_NAME: DFIR-Windows
 SNAPSHOTS:

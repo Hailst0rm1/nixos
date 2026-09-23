@@ -24,6 +24,11 @@
     runtimeInputs = [pkgs.xorriso];
     text = builtins.readFile ./files/dfir/host/create-base-vm.sh;
   };
+
+  # Clones the base VM into each variant's expected VM_NAME + BUILD-READY
+  # snapshot, and stages the variant's config.xml/manifest where the FLARE
+  # build scripts look for them.
+  dfir-prepare-variant = pkgs.writeShellScriptBin "dfir-prepare-variant" (builtins.readFile ./files/dfir/host/prepare-variant.sh);
 in {
   # Option declared in nixosModules/variables.nix, which is imported into both
   # the NixOS and HM namespaces (see users/hailst0rm/hosts/default.nix) — like
@@ -78,6 +83,7 @@ in {
         flare-vbox
         dfir-vm-network
         dfir-create-base
+        dfir-prepare-variant
       ];
 
     # Not yet packaged in nixpkgs (kept on the Windows DFIR VM / a later task):

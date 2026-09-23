@@ -20,14 +20,16 @@
   truth for both build-time and runtime (design decision "C, later").
 
 .PARAMETER Manifest
-  Path to the YAML manifest (default: dfir-tools.yaml next to this script).
+  Path to the YAML manifest (default: tools.yaml next to this script — which is
+  where dfir-prepare-variant stages the variant's manifest before the build
+  copies both onto the guest Desktop).
 
 .PARAMETER DryRun
   Print the install / upgrade / remove plan and exit without changing anything.
 #>
 [CmdletBinding()]
 param(
-    [string]$Manifest = (Join-Path $PSScriptRoot '..\manifests\dfir-tools.yaml'),
+    [string]$Manifest = (Join-Path $PSScriptRoot 'tools.yaml'),
     [switch]$DryRun
 )
 

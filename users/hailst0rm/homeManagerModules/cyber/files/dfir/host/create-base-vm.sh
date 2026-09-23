@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 # dfir-create-base — build a clean Windows "BUILD-READY" base VM for the FLARE
-# pipeline, unattended, from a Windows ISO.
-#
-#   dfir-create-base <windows.iso> [vm-name]
-#
-# Produces a registered VM that installs Windows via autounattend.xml (local
-# admin flare/password, UAC off, Defender/Tamper best-effort off, VirtualBox
-# Guest Additions installed), powers itself off, and — with --wait — is
-# snapshotted as "BUILD-READY", the entry point vbox-build-flare-vm expects.
+# pipeline, unattended, from a Windows ISO. See usage() for the interface.
 #
 # ponytail: the from-ISO base is the least reproducible link in the chain
 # (Win11 edition/product-key, disk layout, and the Defender/Tamper disable
@@ -16,8 +9,26 @@
 # autounattend FirstLogonCommands, which are the parts most likely to need it.
 set -euo pipefail
 
-WIN_ISO="${1:-}"
-NAME="${2:-DFIR-BUILD-BASE}"
+usage() {
+    cat <<'EOF'
+dfir-create-base — build a clean Windows "BUILD-READY" base VM for the FLARE
+pipeline, unattended, from a Windows ISO.
+
+  dfir-create-base <windows.iso> [vm-name] [--wait]
+
+Produces a registered VM that installs Windows via autounattend.xml (local
+admin flare/password, UAC off, Defender/Tamper best-effort off, VirtualBox
+Guest Additions installed), powers itself off, and — with --wait — is
+snapshotted as "BUILD-READY", the entry point vbox-build-flare-vm expects.
+The vm-name defaults to DFIR-BUILD-BASE; dfir-prepare-variant clones it into
+the per-variant VMs the build scripts look for.
+
+Options via env: DFIR_RAM DFIR_CPUS DFIR_DISK_GB DFIR_AUTOUNATTEND
+                 DFIR_WAIT=1 (same as --wait) DFIR_INSTALL_TIMEOUT
+EOF
+    exit "${1:-0}"
+}
+
 RAM="${DFIR_RAM:-8192}"
 CPUS="${DFIR_CPUS:-4}"
 DISK_GB="${DFIR_DISK_GB:-120}"
@@ -25,15 +36,22 @@ AUTOUNATTEND="${DFIR_AUTOUNATTEND:-$HOME/.config/dfir/windows/autounattend.xml}"
 WAIT_FOR_SNAPSHOT="${DFIR_WAIT:-0}"
 INSTALL_TIMEOUT="${DFIR_INSTALL_TIMEOUT:-3600}" # seconds to wait for poweroff
 
-[[ "${1:-}" == "--help" || -z "$WIN_ISO" ]] && {
-    sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
-    echo
-    echo "Options via env: DFIR_RAM DFIR_CPUS DFIR_DISK_GB DFIR_AUTOUNATTEND"
-    echo "                 DFIR_WAIT=1 (auto-snapshot on poweroff) DFIR_INSTALL_TIMEOUT"
-    echo "Flag: --wait   same as DFIR_WAIT=1"
-    exit 0
-}
-[[ "${3:-}" == "--wait" ]] && WAIT_FOR_SNAPSHOT=1
+# --wait is positional-free: accept it anywhere in the argument list.
+positional=()
+for arg in "$@"; do
+    case "$arg" in
+    --wait) WAIT_FOR_SNAPSHOT=1 ;;
+    --help | -h) usage ;;
+    -*)
+        echo "error: unknown option '$arg'" >&2
+        usage 1
+        ;;
+    *) positional+=("$arg") ;;
+    esac
+done
+WIN_ISO="${positional[0]:-}"
+NAME="${positional[1]:-DFIR-BUILD-BASE}"
+[[ -n "$WIN_ISO" ]] || usage 1
 
 command -v VBoxManage >/dev/null || {
     echo "error: VBoxManage not found — is cyber.dfir.enable set and are you in vboxusers?" >&2
@@ -102,6 +120,7 @@ if [[ "$WAIT_FOR_SNAPSHOT" != "1" ]]; then
         --description "clean Windows, UAC/Defender off, GA installed"
 
 Then build a lab VM from it (see ~/.config/dfir/README.md):
+    dfir-prepare-variant dfir
     vbox-build-flare-vm ~/.config/dfir/variants/dfir.yaml --custom_config
 EOF
     exit 0
@@ -116,7 +135,7 @@ while true; do
         echo "[*] VM powered off — taking BUILD-READY snapshot"
         VBoxManage snapshot "$NAME" take BUILD-READY \
             --description "clean Windows, UAC/Defender off, GA installed"
-        echo "[+] Done. Build a lab VM: vbox-build-flare-vm ~/.config/dfir/variants/dfir.yaml --custom_config"
+        echo "[+] Done. Next: dfir-prepare-variant dfir  (clones this base + stages config.xml)"
         exit 0
         ;;
     aborted)

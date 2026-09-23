@@ -39,47 +39,70 @@ FLARE build scripts (`vbox-build-flare-vm`, `vbox-build-remnux`,
 | `variants/dfir.yaml`         | `vbox-build-flare-vm` build config, DFIR VM |
 | `variants/malware.yaml`      | `vbox-build-flare-vm` build config, malware VM |
 | `host/vm-network.sh`         | `dfir-vm-network` — apply the NAT/isolated-net trust model |
+| `host/create-base-vm.sh`     | `dfir-create-base` — unattended Windows install → `BUILD-READY` |
+| `host/prepare-variant.sh`    | `dfir-prepare-variant` — clone base per variant + stage FLARE inputs |
 
 Edit the copies in the **repo** (`users/hailst0rm/homeManagerModules/cyber/files/dfir/`);
 the `~/.config/dfir/` entries are read-only symlinks into the Nix store.
 
 ## Build pipeline ("when possible" — needs a real host + Windows ISO)
 
-The FLARE scripts start from a hand-made **BUILD-READY** snapshot of a clean
-Windows install; they do not install Windows from ISO (that step is Packer,
-deferred). One-time base per Windows release:
+The FLARE scripts start from a **BUILD-READY** snapshot of a clean Windows
+install on the VM they are building; they do not install Windows from ISO
+(Packer is deferred). Three stages:
 
-1. Create a VM, install Windows (guest user `flare` / password `password`,
-   the credentials `vbox-build-flare-vm.py` expects), disable UAC, install
-   Guest Additions, disable Defender + Tamper Protection (FLARE needs this).
-2. Power off and snapshot it named exactly **`BUILD-READY`**.
+**1. One-time base per Windows release** — unattended, from an ISO:
 
-Then, per VM (repeatable):
+```sh
+dfir-create-base ~/iso/Win11_Enterprise_Eval.iso DFIR-BUILD-BASE --wait
+```
+
+Guest user `flare` / password `password` (the credentials
+`vbox-build-flare-vm.py` hardcodes), UAC off, Guest Additions installed,
+Defender best-effort off. `--wait` snapshots `BUILD-READY` once the VM powers
+itself off. Tamper Protection may still need one manual GUI toggle — if so,
+boot the base, turn it off, shut down, and re-take the snapshot.
+
+**2. Per variant, once** — the base is a single VM, but each build wants its
+own VM name carrying its own `BUILD-READY`, plus its config at the fixed path
+`~/FLARE-VM REQUIRED FILES/config.xml`:
+
+```sh
+dfir-prepare-variant dfir      # clone -> DFIR-Windows.testing  + stage config
+dfir-prepare-variant malware   # clone -> FLARE-Windows.testing + stage config
+```
+
+It also stages `update-tools.ps1` and the variant's manifest as `tools.yaml`,
+so both ride along to the guest Desktop with the config.
+
+**3. Build (repeatable):**
 
 ```sh
 # DFIR VM
 vbox-build-flare-vm ~/.config/dfir/variants/dfir.yaml --custom_config
-dfir-vm-network dfir DFIR-Windows
+dfir-vm-network dfir DFIR-Windows.testing
 
-# Malware VM (isolate BEFORE detonating anything)
+# Malware VM — FLARE leaves it on a host-only adapter, so isolate it
+# BEFORE detonating anything
 vbox-build-flare-vm ~/.config/dfir/variants/malware.yaml --custom_config
-dfir-vm-network malware FLARE-Windows
+dfir-vm-network malware FLARE-Windows.testing
 
 # REMnux on the isolated net (optional)
 vbox-build-remnux ~/.config/dfir/variants/remnux.yaml   # add later
 
 # Snapshot hygiene / export
-vbox-clean-snapshots FLARE-Windows
-vbox-export-snapshot FLARE-Windows <snapshot> "desc" ~/dfir-exports
+vbox-clean-snapshots FLARE-Windows.testing
+vbox-export-snapshot FLARE-Windows.testing <snapshot> "desc" ~/dfir-exports
 ```
 
-`--custom_config` expects `config.xml` in the build's required-files dir — copy
-the relevant `config/*.xml` there as `config.xml`.
+Bad package IDs in `config/*.xml` do not fail the build — check
+`~/FLARE-VM LOGS/flare-vm-failed_packages.txt` afterwards.
 
 ## Keeping tools current
 
 - **DFIR VM (reproducibility matters):** run on demand only, never on boot:
-  `powershell -File C:\...\update-tools.ps1` (add `-DryRun` to preview).
+  `powershell -File "$env:USERPROFILE\Desktop\update-tools.ps1"` (add `-DryRun`
+  to preview). It defaults to `tools.yaml` beside itself.
 - **Malware VM (freshness matters):** in the internet-enabled maintenance
   window run the updater, take a `clean-<date>` snapshot, *then*
   `dfir-vm-network malware <vm>` and detonate.
