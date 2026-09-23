@@ -33,6 +33,7 @@ in {
 
   # Override only what's different from the default
   cyber.redTools.enable = true;
+  cyber.dfir.enable = true;
   graphicDriver.nvidia.enable = true;
   security.sops.enable = true;
   security.yubikey.enable = true;
