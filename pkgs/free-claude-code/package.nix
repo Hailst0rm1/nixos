@@ -7,14 +7,15 @@
   pyproject-nix,
   pyproject-build-systems,
 }: let
-  version = "5.19.3-unstable-2026-09-04";
+  version = "6.2.71";
 
   src = fetchFromGitHub {
     owner = "Alishahryar1";
     repo = "free-claude-code";
-    # Upstream has no tags. Tracks main; bump SHA + hash to update.
-    rev = "e6f2633b69694742232452c93b9785e44fbe684f";
-    hash = "sha256-e5vnT1RG8KUAwPhqxufXUjHr67R0yCt+AI6+A8LiWoI=";
+    # Upstream now publishes release tags; pin to the latest stable one.
+    # Bump rev + hash to pull new upstream releases.
+    rev = "v${version}";
+    hash = "sha256-LJQ/XKjmCYpRoXd7fvOF7nyiYTURdKIfGgmtEo3PFtU=";
   };
 
   venv = callPackage ./python.nix {
