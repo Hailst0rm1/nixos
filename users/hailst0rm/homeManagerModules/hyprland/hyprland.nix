@@ -348,8 +348,12 @@ in {
 
         bindl =
           [
-            ",switch:on:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, disable\""
-            ",switch:off:Lid Switch,exec, hyprctl keyword monitor \"eDP-1, 1920x1200,0x0,1\""
+            # Only blank eDP-1 when another monitor remains: undocked, logind
+            # suspends on lid close and the lid-open event is lost across resume,
+            # leaving Hyprland with zero outputs (black screen).
+            ",switch:on:Lid Switch,exec, [ \"$(hyprctl monitors -j | ${pkgs.jq}/bin/jq '[.[] | select(.name != \"eDP-1\")] | length')\" -gt 0 ] && hyprctl keyword monitor \"eDP-1, disable\""
+            # reload restores eDP-1 from the per-host monitor= lines
+            ",switch:off:Lid Switch,exec, hyprctl reload"
             ", XF86AudioPlay, exec, playerctl play-pause"
             ", XF86AudioPrev, exec, playerctl previous"
             ", XF86AudioNext, exec, playerctl next"
