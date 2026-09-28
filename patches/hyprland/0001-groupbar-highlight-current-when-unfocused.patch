@@ -1,0 +1,29 @@
+--- a/src/render/decorations/CHyprGroupBarDecoration.cpp	2026-09-28 16:07:21.463548477 +0200
++++ b/src/render/decorations/CHyprGroupBarDecoration.cpp	2026-09-28 16:07:21.468836405 +0200
+@@ -161,7 +161,7 @@
+         const auto* const PCOLACTIVE   = GROUPLOCKED ? GROUPCOLACTIVELOCKED : GROUPCOLACTIVE;
+         const auto* const PCOLINACTIVE = GROUPLOCKED ? GROUPCOLINACTIVELOCKED : GROUPCOLINACTIVE;
+ 
+-        CHyprColor        color = m_dwGroupMembers[WINDOWINDEX].lock() == Desktop::focusState()->window() ? PCOLACTIVE->m_colors[0] : PCOLINACTIVE->m_colors[0];
++        CHyprColor        color = m_dwGroupMembers[WINDOWINDEX].lock() == m_window->m_group->current() ? PCOLACTIVE->m_colors[0] : PCOLINACTIVE->m_colors[0];
+         color.a *= a;
+ 
+         if (!rect.empty()) {
+@@ -196,7 +196,7 @@
+ 
+         if (!rect.empty()) {
+             if (*PGRADIENTS) {
+-                const auto GRADIENTTEX = (m_dwGroupMembers[WINDOWINDEX] == Desktop::focusState()->window() ? (GROUPLOCKED ? m_tGradientLockedActive : m_tGradientActive) :
++                const auto GRADIENTTEX = (m_dwGroupMembers[WINDOWINDEX] == m_window->m_group->current() ? (GROUPLOCKED ? m_tGradientLockedActive : m_tGradientActive) :
+                                                                                                              (GROUPLOCKED ? m_tGradientLockedInactive : m_tGradientInactive));
+                 if (GRADIENTTEX && GRADIENTTEX->ok()) {
+                     CTexPassElement::SRenderData data;
+@@ -237,7 +237,7 @@
+                             .get();
+ 
+                 SP<ITexture> titleTex;
+-                if (m_dwGroupMembers[WINDOWINDEX] == Desktop::focusState()->window())
++                if (m_dwGroupMembers[WINDOWINDEX] == m_window->m_group->current())
+                     titleTex = GROUPLOCKED ? pTitleTex->m_texLockedActive : pTitleTex->m_texActive;
+                 else
+                     titleTex = GROUPLOCKED ? pTitleTex->m_texLockedInactive : pTitleTex->m_texInactive;
