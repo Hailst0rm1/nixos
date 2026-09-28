@@ -14,24 +14,52 @@
     <env name="RAW_TOOLS_DIR" value="%SystemDrive%\Tools"/>
   </envs>
   <packages>
-    <!-- Eric Zimmerman suite -->
-    <package name="mftecmd.vm"/>
-    <package name="evtxecmd.vm"/>
-    <package name="jlecmd.vm"/>
-    <package name="lecmd.vm"/>
-    <package name="pecmd.vm"/>
-    <package name="sbecmd.vm"/>
-    <package name="sqlecmd.vm"/>
-    <package name="registry_explorer.vm"/>
-    <package name="timeline_explorer.vm"/>
-    <package name="bstrings.vm"/>
-    <!-- Imaging / triage -->
+    <!-- First, on purpose: FLARE installs in list order, and dotnet-9.vm (EZ
+         tools) pulls community vcredist140 unpinned, i.e. the latest. Every
+         *.vm that wants FLARE's pinned [14.42,14.43) then fails with "a newer
+         version is already installed". Pinning it first satisfies both.
+         Upstream: mandiant/VM-Packages#1440. -->
+    <package name="vcredist140.vm"/>
+    <!-- Forensics (https://github.com/mandiant/VM-Packages/wiki/Packages#forensic)-->
+    <package name="amcacheparser.vm"/>
+    <package name="appcompatcacheparser.vm"/>
     <package name="arsenalimagemounter.vm"/>
     <package name="autopsy.vm"/>
+    <package name="evtxecmd.vm"/>
+    <package name="ftk-imager.vm"/>
+    <package name="jlecmd.vm"/>
+    <package name="jumplist_explorer.vm"/>
+    <package name="kernel-ost-viewer.vm"/>
+    <package name="kernel-outlook-pst-viewer.vm"/>
+    <package name="lecmd.vm"/>
+    <package name="logfileparser.vm"/>
+    <package name="memprocfs.vm"/>
+    <package name="mft_explorer.vm"/>
+    <package name="mftecmd.vm"/>
+    <package name="pecmd.vm"/>
+    <package name="rbcmd.vm"/>
+    <package name="recentfilecacheparser.vm"/>
+    <package name="recmd.vm"/>
+    <package name="rla.vm"/>
+    <package name="sbecmd.vm"/>
+    <package name="sdb_explorer.vm"/>
+    <package name="sqlecmd.vm"/>
+    <package name="srumecmd.vm"/>
+    <package name="sumecmd.vm"/>
+    <package name="testdisk.vm"/>
+    <package name="timeline_explorer.vm"/>
+    <package name="vscmount.vm"/>
+    <package name="wxtcmd.vm"/>
+    <!-- Registry (https://github.com/mandiant/VM-Packages/wiki/Packages#registry)-->
+    <package name="registry_explorer.vm"/>
     <!-- Utilities -->
     <package name="7zip.vm"/>
-    <package name="sysinternals.vm"/>
+    <package name="bstrings.vm"/>
     <package name="notepadplusplus.vm"/>
+    <package name="sysinternals.vm"/>
+    <!-- Taskbar pins (windows/LayoutModification.xml) -->
+    <package name="windows-terminal.vm"/>
+    <package name="firefox"/>
     <package name="python3.vm"/>
   </packages>
   <registry-items>
@@ -39,4 +67,12 @@
     <registry-item path="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="HideFileExt" type="REG_DWORD" data="0"/>
     <registry-item path="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="Hidden" type="REG_DWORD" data="1"/>
   </registry-items>
+  <!-- FLARE only reads <cmd> inside a named <custom-item>, and runs them after
+       every package. -->
+  <custom-items>
+    <!-- Colemak-SE keyboard layout; see windows/set-colemak-se.ps1. -->
+    <custom-item name="Colemak-SE">
+      <cmd value="&amp; (Join-Path ([Environment]::GetFolderPath('Desktop')) 'set-colemak-se.ps1')"/>
+    </custom-item>
+  </custom-items>
 </config>

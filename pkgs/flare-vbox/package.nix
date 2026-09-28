@@ -35,6 +35,34 @@ in
 
     nativeBuildInputs = [makeWrapper];
 
+    # Upstream reads `sys.frozen` to detect a PyInstaller bundle, but without
+    # a default -- the attribute simply does not exist in a normal interpreter,
+    # so every VBoxManage call dies with AttributeError. We always run
+    # unfrozen, so the guard is False here.
+    # The guest account the build drives the VM through. Upstream calls it
+    # "flare", which is one of the first things evasive samples look for --
+    # GetUserName and %USERPROFILE% are near-free checks. Everything else in
+    # the script derives from this constant, including C:\Users\<user>\Desktop,
+    # so this one line moves the whole pipeline. Must stay in step with
+    # <LocalAccount> in files/dfir/windows/autounattend.xml.
+    guestUsername = "jsmith";
+
+    postPatch = ''
+      substituteInPlace virtualbox/vboxcommon.py \
+        --replace-fail 'if sys.frozen and "LD_LIBRARY_PATH" in env:' \
+                       'if getattr(sys, "frozen", False) and "LD_LIBRARY_PATH" in env:'
+
+      substituteInPlace virtualbox/vbox-build-flare-vm.py \
+        --replace-fail 'GUEST_USERNAME = "flare"' \
+                       'GUEST_USERNAME = "${finalAttrs.guestUsername}"'
+
+      # Pass our taskbar layout alongside the config; without -customLayout
+      # install.ps1 fetches upstream's. dfir-prepare-variant stages the file.
+      substituteInPlace virtualbox/vbox-build-flare-vm.py \
+        --replace-fail "-customConfig '\$desktop\config.xml'\"" \
+                       "-customConfig '\$desktop\config.xml' -customLayout '\$desktop\LayoutModification.xml'\""
+    '';
+
     installPhase = ''
       runHook preInstall
 

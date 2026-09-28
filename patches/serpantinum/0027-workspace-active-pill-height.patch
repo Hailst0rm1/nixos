@@ -1,38 +1,38 @@
---- a/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-09-06 12:57:32.009796709 +0200
-+++ b/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-09-06 12:57:32.138918506 +0200
-@@ -324,7 +324,7 @@
-             if (index < 0) return 0;
+--- a/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
++++ b/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
+@@ -38,7 +38,7 @@
+             if (index < 0 || !widget) return 0;
              let xPos = 0;
-             let spacing = barWindow.s(workspacesWidgetRoot.isCompact ? 7 : 8);
--            let activeW = barWindow.s(workspacesWidgetRoot.isCompact ? 34 : 36);
-+            let activeW = barWindow.s(workspacesWidgetRoot.isCompact ? 28 : 30);
-             let inactiveW = barWindow.s(workspacesWidgetRoot.isCompact ? 16 : 18);
+             let spacing = widget.s(widget.isCompact ? 7 : 8);
+-            let activeW = widget.s(widget.isCompact ? 34 : 36);
++            let activeW = widget.s(widget.isCompact ? 28 : 30);
+             let inactiveW = widget.s(widget.isCompact ? 16 : 18);
              for (let i = 0; i < index; i++) {
                  xPos += (i === activeIndex ? activeW : inactiveW) + spacing;
-@@ -333,7 +333,7 @@
+@@ -47,7 +47,7 @@
          }
  
-         property real targetLeft: curIdx >= 0 ? getX(curIdx, curIdx) : 0
--        property real targetRight: curIdx >= 0 ? targetLeft + barWindow.s(workspacesWidgetRoot.isCompact ? 34 : 36) : 0
-+        property real targetRight: curIdx >= 0 ? targetLeft + barWindow.s(workspacesWidgetRoot.isCompact ? 28 : 30) : 0
+         property real targetLeft: (curIdx >= 0 && widget) ? getX(curIdx, curIdx) : 0
+-        property real targetRight: (curIdx >= 0 && widget) ? targetLeft + widget.s(widget.isCompact ? 34 : 36) : 0
++        property real targetRight: (curIdx >= 0 && widget) ? targetLeft + widget.s(widget.isCompact ? 28 : 30) : 0
          property real actualLeft: targetLeft
          property real actualRight: targetRight
  
-@@ -343,7 +343,7 @@
+@@ -57,7 +57,7 @@
          x: wsLayout.x + actualLeft
          y: wsLayout.y + (wsLayout.height - height) / 2
          width: actualRight - actualLeft
--        height: barWindow.s(workspacesWidgetRoot.isCompact ? 16 : 18)
-+        height: barWindow.s(12)
-         opacity: (workspacesWidgetRoot.workspaceCount > 0 && workspacesWidgetRoot.activeIndex >= 0) ? 1.0 : 0.0
+-        height: widget ? widget.s(widget.isCompact ? 16 : 18) : 18
++        height: widget ? widget.s(12) : 12
+         opacity: (widget && widget.workspaceCount > 0 && widget.activeIndex >= 0) ? 1.0 : 0.0
          Behavior on opacity { NumberAnimation { duration: 180 } }
      }
-@@ -375,7 +375,7 @@
-                 property bool isActive: index === workspacesWidgetRoot.activeIndex
+@@ -79,7 +79,7 @@
+                 property bool isActive: widget ? (index === widget.activeIndex) : false
                  property bool initAnimTrigger: false
  
--                width: isActive ? barWindow.s(workspacesWidgetRoot.isCompact ? 34 : 36) : barWindow.s(workspacesWidgetRoot.isCompact ? 16 : 18)
-+                width: isActive ? barWindow.s(workspacesWidgetRoot.isCompact ? 28 : 30) : barWindow.s(workspacesWidgetRoot.isCompact ? 16 : 18)
-                 height: barWindow.s(workspacesWidgetRoot.isCompact ? 16 : 18)
+-                width: isActive ? (widget ? widget.s(widget.isCompact ? 34 : 36) : 36) : (widget ? widget.s(widget.isCompact ? 16 : 18) : 18)
++                width: isActive ? (widget ? widget.s(widget.isCompact ? 28 : 30) : 30) : (widget ? widget.s(widget.isCompact ? 16 : 18) : 18)
+                 height: widget ? widget.s(widget.isCompact ? 16 : 18) : 18
                  anchors.verticalCenter: parent.verticalCenter
  

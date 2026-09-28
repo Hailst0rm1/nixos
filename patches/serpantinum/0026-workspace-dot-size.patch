@@ -1,13 +1,13 @@
---- a/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-09-06 12:57:31.763358442 +0200
-+++ b/src/quickshell/bar/modules/WorkspacesWidget.qml	2026-09-06 12:57:31.842070616 +0200
-@@ -383,7 +383,9 @@
+--- a/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
++++ b/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
+@@ -87,7 +87,9 @@
  
                  Rectangle {
                      id: wsVisualShape
 -                    anchors.fill: parent
 +                    anchors.centerIn: parent
-+                    width: wsPill.isActive ? parent.width : barWindow.s(12)
-+                    height: barWindow.s(12)
-                     radius: barWindow.s(workspacesWidgetRoot.isCompact ? 8 : 10)
-                     color: wsPill.isActive ? "transparent" : (wsPill.isOccupied ? ThemeBackend.surface2 : (workspacesWidgetRoot.isCompact ? ThemeBackend.surface1 : ThemeBackend.surface0))
++                    width: wsPill.isActive ? parent.width : (widget ? widget.s(12) : 12)
++                    height: widget ? widget.s(12) : 12
+                     radius: widget ? widget.s(widget.isCompact ? 8 : 10) : 10
+                     color: wsPill.isActive ? "transparent" : (wsPill.isOccupied ? ThemeBackend.surface2 : ((widget && widget.isCompact) ? ThemeBackend.surface1 : ThemeBackend.surface0))
                      border.width: 0

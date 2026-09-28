@@ -263,7 +263,11 @@ in {
             "$mainMod, Y, sendshortcut, CTRL, Y, activewindow"
 
             # Applications
-            "$mainMod, return, exec, GTK_IM_MODULE=simple ${config.terminal}"
+            "$mainMod, return, exec, ${
+              if config.terminal == "ghostty"
+              then "ghostty +new-window"
+              else "GTK_IM_MODULE=simple ${config.terminal}"
+            }"
             "$mainMod, P, exec, hyprpicker -alq"
             "$mainMod SHIFT, return, exec, ${config.browser}"
             "$mainMod, N, exec, ${config.fileManager}"
@@ -392,6 +396,17 @@ in {
         };
       };
     };
+
+    # Without a default, xdg-open hands folders to whichever app claims
+    # inode/directory — VSCode does, so the launcher opened dirs in code.
+    xdg.mimeApps = {
+      enable = true;
+      defaultApplications."inode/directory" =
+        if config.fileManager == "nautilus"
+        then "org.gnome.Nautilus.desktop"
+        else "${config.fileManager}.desktop";
+    };
+    xdg.configFile."mimeapps.list".force = true;
 
     home.packages = with pkgs;
       [

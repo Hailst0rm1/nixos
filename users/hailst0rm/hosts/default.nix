@@ -83,7 +83,7 @@
     claude-code = {
       enable = lib.mkDefault false;
       freeClaudeCode = {
-        enable = lib.mkDefault true;
+        enable = lib.mkDefault false;
         port = lib.mkDefault 38427;
         model = lib.mkDefault "ollama/gpt-oss:20b";
         ollamaBaseUrl = lib.mkDefault "http://nix-tower:11434";

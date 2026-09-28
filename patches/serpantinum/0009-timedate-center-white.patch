@@ -1,28 +1,31 @@
---- a/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-06 12:53:52.161985420 +0200
-+++ b/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-06 12:53:52.196186834 +0200
-@@ -135,21 +135,19 @@
+--- a/src/quickshell/bar/modules/timedate/faces/ClassicFace.qml
++++ b/src/quickshell/bar/modules/timedate/faces/ClassicFace.qml
+@@ -12,24 +12,23 @@
  
-         Column {
-             id: timeCol
+     Column {
+         id: timeCol
+-        anchors.verticalCenter: parent.verticalCenter
+-        anchors.left: parent.left
++        anchors.centerIn: parent
+         spacing: -2
+ 
+         Text {
+             id: timeText
 -            anchors.left: parent.left
--            anchors.leftMargin: timeDateRoot.horizontalPadding
--            anchors.verticalCenter: parent.verticalCenter
-+            anchors.centerIn: parent
-             spacing: -2
++            anchors.horizontalCenter: parent.horizontalCenter
+             text: widget ? widget.timeStr : (typeof DateTime !== "undefined" ? DateTime.time : "12:00")
+             font.family: ThemeBackend.fontFamily
+             font.pixelSize: widget ? widget.s(widget.isCompact ? 14 : 15) : 15
+             font.weight: Font.Black
+-            color: (widget && widget.isCompact) ? Qt.lighter(ThemeBackend.blue, 1.1) : ThemeBackend.blue
++            color: ThemeBackend.text
+         }
  
-             Text {
--                anchors.left: parent.left
-+                anchors.horizontalCenter: parent.horizontalCenter
-                 text: timeStr
-                 font.family: ThemeBackend.fontFamily
-                 font.pixelSize: barWindow ? barWindow.s(timeDateRoot.isCompact ? 14 : 15) : (timeDateRoot.isCompact ? 14 : 15)
-                 font.weight: Font.Black
--                color: timeDateRoot.isCompact ? Qt.lighter(ThemeBackend.blue, 1.1) : ThemeBackend.blue
-+                color: ThemeBackend.text
-             }
-             Text {
--                anchors.left: parent.left
-+                anchors.horizontalCenter: parent.horizontalCenter
-                 text: dateStr
-                 font.family: ThemeBackend.fontFamily
-                 font.pixelSize: barWindow ? barWindow.s(timeDateRoot.isCompact ? 9 : 10) : (timeDateRoot.isCompact ? 9 : 10)
+         Text {
+             id: dateText
+             visible: widget ? widget.showDate : true
+-            anchors.left: parent.left
++            anchors.horizontalCenter: parent.horizontalCenter
+             text: widget ? widget.dateStr : (typeof DateTime !== "undefined" ? DateTime.fullDate : "Mon, Jan 1")
+             font.family: ThemeBackend.fontFamily
+             font.pixelSize: widget ? widget.s(widget.isCompact ? 9 : 10) : 10

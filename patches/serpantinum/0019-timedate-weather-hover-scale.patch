@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-06 13:01:53.619759285 +0200
-+++ b/src/quickshell/bar/modules/TimeDateWidget.qml	2026-09-06 13:01:18.202062316 +0200
-@@ -67,7 +67,17 @@
+--- a/src/quickshell/bar/modules/timedate/TimeDateWidget.qml
++++ b/src/quickshell/bar/modules/timedate/TimeDateWidget.qml
+@@ -103,7 +103,17 @@
          }
      }
  
@@ -19,8 +19,8 @@
      property bool showLayout: false
  
      property real targetY: barWindow ? barWindow.baseOffsetY + (barWindow.barHeight - targetHeight) / 2 : 0
---- a/src/quickshell/bar/modules/WeatherWidget.qml	2026-09-06 13:01:53.621828711 +0200
-+++ b/src/quickshell/bar/modules/WeatherWidget.qml	2026-09-06 13:01:18.203088723 +0200
+--- a/src/quickshell/bar/modules/WeatherWidget.qml
++++ b/src/quickshell/bar/modules/WeatherWidget.qml
 @@ -52,7 +52,17 @@
          }
      }

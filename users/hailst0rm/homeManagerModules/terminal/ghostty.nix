@@ -17,6 +17,8 @@
         '';
       });
       enableZshIntegration = true;
+      # The service is D-Bus activated by `ghostty +new-window` (the Hyprland
+      # bind), so it starts on first use and never costs anything at boot.
       settings = {
         font-size = lib.mkForce 12;
         window-decoration = false;
@@ -26,6 +28,10 @@
         # otherwise stacks on top of iGPU contention (mpvpaper + Hyprland blur +
         # other Wayland clients) and shows as a stuck blurred window on open.
         gtk-single-instance = true;
+
+        # Keep the systemd-managed instance alive with no windows open, so the
+        # next Super+Enter is a window in a warm process, not a cold start.
+        quit-after-last-window-closed = false;
 
         # Finishes the job the preBuild sed above starts. That sed only
         # reaches src/renderer/generic.zig, which imports libxev's static
@@ -58,5 +64,12 @@
         ];
       };
     };
+
+    # Was set on the Hyprland bind; windows now come from the service, so the
+    # variable has to live on the unit instead.
+    xdg.configFile."systemd/user/app-com.mitchellh.ghostty.service.d/env.conf".text = ''
+      [Service]
+      Environment=GTK_IM_MODULE=simple
+    '';
   };
 }

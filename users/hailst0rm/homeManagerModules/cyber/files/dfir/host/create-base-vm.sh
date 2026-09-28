@@ -65,24 +65,30 @@ command -v VBoxManage >/dev/null || {
     echo "error: autounattend not found: $AUTOUNATTEND" >&2
     exit 1
 }
+# Windows Setup ignores an answer file containing raw non-ASCII bytes, and does
+# it silently: setup just prompts for language/keyboard as though no file were
+# attached. Catch it here rather than 20 minutes into an install.
+if LC_ALL=C grep -qP '[^\x00-\x7F]' "$AUTOUNATTEND"; then
+    echo "error: $AUTOUNATTEND contains raw non-ASCII characters." >&2
+    echo "       Windows Setup would ignore the whole file. Offending lines:" >&2
+    LC_ALL=C grep -nP '[^\x00-\x7F]' "$AUTOUNATTEND" >&2
+    exit 1
+fi
 if VBoxManage showvminfo "$NAME" >/dev/null 2>&1; then
     echo "error: VM '$NAME' already exists — delete it first: VBoxManage unregistervm '$NAME' --delete" >&2
     exit 1
 fi
 
+# The base is a clean Windows with no samples on it, so clipboard and
+# host-to-guest drop are on here for the manual tuning this VM needs (Tamper
+# Protection has no scriptable off switch). `dfir-vm-network malware` strips
+# both when a clone becomes a detonation box -- that step is what enforces
+# isolation, not this line.
+
 # Guest Additions ISO that ships with the installed VirtualBox.
 GA_ISO="$(VBoxManage list systemproperties | sed -n 's/^Default Guest Additions ISO: *//p')"
 MACHINE_FOLDER="$(VBoxManage list systemproperties | sed -n 's/^Default machine folder: *//p')"
 DISK="$MACHINE_FOLDER/$NAME/$NAME.vdi"
-
-# Windows setup scans all attached media for autounattend.xml — carry it (and
-# any helper files) on a tiny ISO built with xorriso.
-WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
-mkdir -p "$WORK/src"
-cp "$AUTOUNATTEND" "$WORK/src/autounattend.xml"
-UNATTEND_ISO="$WORK/unattend.iso"
-xorriso -as mkisofs -quiet -J -R -V UNATTEND -o "$UNATTEND_ISO" "$WORK/src"
 
 echo "[*] Creating VM '$NAME' ($RAM MiB, $CPUS vCPU, ${DISK_GB}G disk)"
 VBoxManage createvm --name "$NAME" --ostype Windows11_64 --register
@@ -91,11 +97,21 @@ VBoxManage modifyvm "$NAME" \
     --firmware efi --chipset ich9 \
     --graphicscontroller vboxsvga \
     --nic1 nat \
-    --clipboard-mode disabled --draganddrop disabled \
+    --clipboard-mode bidirectional --draganddrop hosttoguest \
     --audio-driver none
 # Win11 requirements: vTPM 2.0 + secure boot capable. Bypasses in the
 # autounattend cover hosts where these still trip setup.
 VBoxManage modifyvm "$NAME" --tpm-type 2.0 || echo "  (warning: --tpm-type unsupported; autounattend bypass must cover it)"
+
+# Windows Setup scans every attached drive's root for autounattend.xml, so it
+# rides in on its own tiny ISO. It lives in the VM's folder, not a temp dir:
+# the VM keeps referencing this drive after the script exits, and clones
+# inherit the reference, so a /tmp path would break both.
+SRC="$(mktemp -d)"
+trap 'rm -rf "$SRC"' EXIT
+cp "$AUTOUNATTEND" "$SRC/autounattend.xml"
+UNATTEND_ISO="$MACHINE_FOLDER/$NAME/unattend.iso"
+xorriso -as mkisofs -quiet -J -R -V UNATTEND -o "$UNATTEND_ISO" "$SRC"
 
 VBoxManage createmedium disk --filename "$DISK" --size "$((DISK_GB * 1024))" --format VDI
 VBoxManage storagectl "$NAME" --name SATA --add sata --controller IntelAhci --portcount 4 --bootable on
@@ -111,18 +127,51 @@ fi
 echo "[*] Booting unattended install…"
 VBoxManage startvm "$NAME" --type gui
 
+# Tamper Protection is kernel-enforced: no answer file, registry write or
+# PowerShell call can turn it off, and FLARE refuses to install while Defender
+# is live. So every base needs one manual pass before it is usable. Print it
+# here rather than leave it to the README -- this is the moment it is needed.
+next_steps() {
+    cat <<EOF
+
+[!] REQUIRED before building any lab VM: turn Defender off by hand.
+    Tamper Protection has no scriptable off switch.
+
+      1. VBoxManage startvm "$NAME" --type gui
+      2. In the guest: Windows Security > Virus & threat protection
+                       > Manage settings
+      3. Tamper Protection -> Off. (This is the only GUI-only step: while it
+         is on, Group Policy and PowerShell edits to Defender are ignored.)
+      4. Open PowerShell as Administrator and fully disable Defender via the
+         Group Policy key FLARE checks for (real-time off alone does NOT count
+         -- Defender re-enables it, so the installer still reports "False"):
+         \$p = "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows Defender"
+         New-Item "\$p\\Real-Time Protection" -Force | Out-Null
+         Set-ItemProperty \$p DisableAntiSpyware 1 -Type DWord
+         Set-ItemProperty "\$p\\Real-Time Protection" DisableRealtimeMonitoring 1 -Type DWord
+      5. Reboot the guest -- DisableAntiSpyware only takes effect after a
+         restart. Confirm it stuck (should print 1):
+         Get-ItemPropertyValue "\$p" DisableAntiSpyware
+      6. Shut the VM down, then re-take the snapshot it will be cloned from:
+         VBoxManage snapshot "$NAME" delete BUILD-READY
+         VBoxManage snapshot "$NAME" take BUILD-READY \\
+             --description "clean Windows, UAC/Defender/Tamper off, GA installed"
+
+[*] Only then build a lab VM (see ~/.config/dfir/README.md):
+      dfir-prepare-variant dfir
+      vbox-build-flare-vm ~/.config/dfir/variants/dfir.yaml --custom_config
+EOF
+}
+
 if [[ "$WAIT_FOR_SNAPSHOT" != "1" ]]; then
     cat <<EOF
 
 [*] Windows is installing unattended. When the VM powers itself off, snapshot it:
 
     VBoxManage snapshot "$NAME" take BUILD-READY \\
-        --description "clean Windows, UAC/Defender off, GA installed"
-
-Then build a lab VM from it (see ~/.config/dfir/README.md):
-    dfir-prepare-variant dfir
-    vbox-build-flare-vm ~/.config/dfir/variants/dfir.yaml --custom_config
+        --description "clean Windows, UAC off, GA installed"
 EOF
+    next_steps
     exit 0
 fi
 
@@ -134,8 +183,8 @@ while true; do
     poweroff | saved)
         echo "[*] VM powered off — taking BUILD-READY snapshot"
         VBoxManage snapshot "$NAME" take BUILD-READY \
-            --description "clean Windows, UAC/Defender off, GA installed"
-        echo "[+] Done. Next: dfir-prepare-variant dfir  (clones this base + stages config.xml)"
+            --description "clean Windows, UAC off, GA installed"
+        next_steps
         exit 0
         ;;
     aborted)

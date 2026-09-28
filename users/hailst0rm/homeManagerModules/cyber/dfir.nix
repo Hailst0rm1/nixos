@@ -13,6 +13,10 @@
   # NixOS dfir module enabling the VirtualBox host).
   flare-vbox = pkgs.callPackage "${nixosDir}/pkgs/flare-vbox/package.nix" {};
 
+  # Parallel Volatility 3 runner (vol-wrapper) + plugin inventory generator.
+  # From unstable so it drives the same volatility3 installed below.
+  vol-wrapper = pkgs-unstable.callPackage "${nixosDir}/pkgs/vol-wrapper/package.nix" {};
+
   # Host-side lab helper: creates the isolated `malware-net` internal network
   # and applies per-VM NIC/clipboard/USB isolation via VBoxManage.
   dfir-vm-network = pkgs.writeShellScriptBin "dfir-vm-network" (builtins.readFile ./files/dfir/host/vm-network.sh);
@@ -21,7 +25,7 @@
   # Needs xorriso (to pack autounattend.xml) + ambient VBoxManage.
   dfir-create-base = pkgs.writeShellApplication {
     name = "dfir-create-base";
-    runtimeInputs = [pkgs.xorriso];
+    runtimeInputs = [pkgs.xorriso pkgs.gnugrep]; # gnugrep: the answer file's ASCII guard needs grep -P
     text = builtins.readFile ./files/dfir/host/create-base-vm.sh;
   };
 
@@ -41,6 +45,15 @@ in {
       source = ./files/dfir;
       recursive = true;
     };
+    # Colemak-SE's Windows installer, staged into both VMs by
+    # dfir-prepare-variant (see files/dfir/windows/set-colemak-se.ps1).
+    home.file.".config/dfir/windows/se-cmak_amd64.msi".source = let
+      colemakSeRelease = "1.0";
+    in
+      pkgs.fetchurl {
+        url = "https://raw.githubusercontent.com/motform/colemak-se/refs/tags/${colemakSeRelease}/release/windows/se-cmak_amd64.msi";
+        hash = "sha256-ZDPJDMrpRIApnaJvSssilSDq1RB6P1EoFaPxa3qEAFw=";
+      };
 
     home.packages =
       (with pkgs-unstable; [
@@ -57,8 +70,34 @@ in {
         ssdeep
         yara
 
+        # === FLARE-VM recommended set, Linux-native (kept off the malware VM,
+        # see files/dfir/config/malware-config.xml; the triage utilities there
+        # are on both). 7zip and file come from nixosModules/system/utils.nix. ===
+        _010editor
+        # angr-management omitted: nixpkgs python3Packages.angr 9.2.193 fails
+        # to build (missing setuptools-rust), and angr-management is pinned to 9.2.154.
+        # Installed on the malware VM instead (files/dfir/config/malware-config.xml).
+        apktool
+        asar
+        avalonia-ilspy # ILSpy's cross-platform frontend
+        bytecode-viewer
+        dex2jar
+        goresym
+        innoextract
+        js-beautify
+        keystone # kstool
+        magika
+        nasm
+        nmap
+        pe-bear
+        pycdc # pycdc + pycdas
+        upx
+        python3Packages.autoit-ripper
+        python3Packages.uncompyle6
+
         # === Filesystem / disk image forensics ===
-        sleuthkit
+        autopsy
+        # sleuthkit
         libewf
         afflib
         bulk_extractor
@@ -81,6 +120,7 @@ in {
       ++ [
         # VM lab tooling (from stable pkgs)
         flare-vbox
+        vol-wrapper
         dfir-vm-network
         dfir-create-base
         dfir-prepare-variant

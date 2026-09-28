@@ -387,9 +387,13 @@ in {
         # Source/Load Zinit
         source "''${ZINIT_HOME}/zinit.zsh" 2>/dev/null
 
-        # Add in zsh plugins
+        # Add in zsh plugins. `wait` defers loading until just after the first
+        # prompt draws; deferred plugins load in declaration order, which keeps
+        # fzf-tab -> autosuggestions -> syntax-highlighting as they must be.
         zinit light zsh-users/zsh-completions # Command flag completions
+        zinit ice wait lucid
         zinit light Aloxaf/fzf-tab # Fzf window for commands
+        zinit ice wait lucid atload'_zsh_autosuggest_start'
         zinit light zsh-users/zsh-autosuggestions # Inline suggestion
 
         # Oh-My-Posh
@@ -412,6 +416,7 @@ in {
         eval "$(zoxide init --cmd cd zsh)"
 
         # Load zsh-syntax-highlighting plugin at the end
+        zinit ice wait lucid
         zinit light zsh-users/zsh-syntax-highlighting
 
       '';

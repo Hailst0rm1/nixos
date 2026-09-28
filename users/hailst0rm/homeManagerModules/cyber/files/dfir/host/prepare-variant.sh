@@ -70,12 +70,17 @@ else
 fi
 
 # The build copies this directory into the guest Desktop, then runs install.ps1
-# with -customConfig '<Desktop>\config.xml'. Only our three managed filenames
+# with -customConfig '<Desktop>\config.xml' -customLayout
+# '<Desktop>\LayoutModification.xml'. Only our managed filenames
 # are written, so anything else you keep here survives.
 echo "[*] Staging FLARE inputs in $REQUIRED_FILES"
 mkdir -p "$REQUIRED_FILES"
 install -m644 "$CONFIG_XML" "$REQUIRED_FILES/config.xml"
+install -m644 "$DFIR_DIR/windows/LayoutModification.xml" "$REQUIRED_FILES/LayoutModification.xml"
 install -m644 "$DFIR_DIR/windows/update-tools.ps1" "$REQUIRED_FILES/update-tools.ps1"
+# Colemak-SE: the custom-item runs the script; the MSI stays as a manual fallback.
+install -m644 "$DFIR_DIR/windows/set-colemak-se.ps1" "$REQUIRED_FILES/set-colemak-se.ps1"
+install -m644 "$DFIR_DIR/windows/se-cmak_amd64.msi" "$REQUIRED_FILES/se-cmak_amd64.msi"
 install -m644 "$MANIFEST" "$REQUIRED_FILES/tools.yaml" # update-tools.ps1's default
 
 cat <<EOF

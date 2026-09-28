@@ -125,7 +125,7 @@ final: prev: {
 
         # Occupied workspace dot: surface2 sits a hair above the empty dot's
         # surface0, so occupied and empty read as the same grey.
-        substituteInPlace src/quickshell/bar/modules/WorkspacesWidget.qml \
+        substituteInPlace src/quickshell/bar/modules/workspaces/faces/PillsFace.qml \
           --replace-fail 'wsPill.isOccupied ? ThemeBackend.surface2' \
                          'wsPill.isOccupied ? ThemeBackend.overlay2'
 

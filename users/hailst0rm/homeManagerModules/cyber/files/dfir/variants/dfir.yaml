@@ -10,6 +10,6 @@ SNAPSHOTS:
   - extension: ".dynamic"
     description: "Windows DFIR VM — Zimmerman + imaging (dfir-config.xml)"
     cmd: |
-      # Ensure files are flushed; the script shuts the VM down abruptly.
-      # sync is installed by sysinternals.
-      sync;
+      # Flush the volume write cache before the abrupt shutdown. Built into
+      # Windows (Win8+), so it does not depend on the sysinternals package.
+      Write-VolumeCache C
