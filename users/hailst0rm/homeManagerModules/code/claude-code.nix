@@ -148,8 +148,8 @@
   humanizer-repo = pkgs.fetchFromGitHub {
     owner = "blader";
     repo = "humanizer";
-    rev = "8a0e1a13fda3052910e112e996c067b4272f6628";
-    hash = "sha256-oefz4q2OXumesQbfwI1wsIAPNAfjbi8yjJJCTv+hmBA=";
+    rev = "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8";
+    hash = "sha256-n8cbTzhlGf8VnWpPukq7XD2mucIrqyE1XMpAAc5oA8A=";
   };
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
