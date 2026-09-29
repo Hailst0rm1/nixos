@@ -7,6 +7,14 @@
 }: let
   defaultDisplay = [",highrr,auto,1"];
 
+  # Serpantinum fills several of these roles and its HM module may patch the
+  # package (see serpantinum.nix); name lookups must get that same build, or
+  # home.packages holds two serpantinums and buildEnv refuses to merge them.
+  tool = name:
+    if name == "serpantinum"
+    then config.programs.serpantinum.package
+    else pkgs.${name};
+
   startScript = pkgs.writeShellScriptBin "start" ''
 
     ${pkgs.networkmanagerapplet}/bin/nm-applet --indicator &
@@ -419,7 +427,7 @@ in {
         (
           if cfg.appLauncher == "rofi"
           then pkgs.rofi
-          else pkgs.${cfg.appLauncher}
+          else tool cfg.appLauncher
         )
 
         # ---Clipboard
@@ -452,13 +460,13 @@ in {
         parlatype # Media player
 
         # ---Lockscreen
-        (pkgs.${cfg.lockscreen})
+        (tool cfg.lockscreen)
 
         # ---Networkmanager
         networkmanagerapplet
 
         # ---Notifications
-        (pkgs.${cfg.notifications})
+        (tool cfg.notifications)
 
         # ---OSD
         # Add config in hyprland/default.nix?
@@ -474,7 +482,7 @@ in {
         hyprshot
 
         # ---Topbar
-        (pkgs.${cfg.panel})
+        (tool cfg.panel)
 
         # ---Terminal
         #(pkgs.${config.terminal})

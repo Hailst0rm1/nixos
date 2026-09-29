@@ -1,0 +1,189 @@
+--- a/src/quickshell/lock/Lock.qml	2026-09-29 15:16:32.884628456 +0200
++++ b/src/quickshell/lock/Lock.qml	2026-09-29 15:38:04.144471725 +0200
+@@ -22,6 +22,77 @@
+     property bool isUnlocking: false
+ 
+     property bool isNiri: false
++    // pam_u2f's cue message is only set while the key is flashing for a touch.
++    // The text is latched so it fades out with the pill instead of vanishing
++    // the moment the check ends.
++    property bool u2fShown: false
++    property string u2fText: ""
++    property double u2fCueSince: 0
++
++    component U2fCue: Rectangle {
++        id: cue
++        property real px: 1
++        property string text: ""
++        property bool shown: false
++
++        implicitWidth: cueRow.implicitWidth + 28 * px
++        implicitHeight: 34 * px
++        radius: height / 2
++        color: Qt.rgba(0, 0, 0, 0.28)
++        border.width: Math.max(1, px)
++        border.color: Qt.rgba(ThemeBackend.mauve.r, ThemeBackend.mauve.g, ThemeBackend.mauve.b, 0.35 + 0.45 * cue.pulse)
++        opacity: cue.shown ? 1 : 0
++        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
++
++        // One phase drives glyph, ring and border so they flash together,
++        // roughly in step with the YubiKey's own LED.
++        property real pulse: 0
++        SequentialAnimation on pulse {
++            running: cue.shown
++            loops: Animation.Infinite
++            NumberAnimation { to: 1; duration: 450; easing.type: Easing.OutCubic }
++            NumberAnimation { to: 0; duration: 650; easing.type: Easing.InCubic }
++        }
++
++        RowLayout {
++            id: cueRow
++            anchors.centerIn: parent
++            spacing: 10 * cue.px
++
++            Item {
++                Layout.preferredWidth: 18 * cue.px
++                Layout.preferredHeight: 18 * cue.px
++
++                Rectangle {
++                    anchors.centerIn: parent
++                    width: parent.width * (1 + 0.9 * cue.pulse)
++                    height: width
++                    radius: width / 2
++                    color: "transparent"
++                    border.width: Math.max(1, 1.5 * cue.px)
++                    border.color: ThemeBackend.mauve
++                    opacity: 0.6 * (1 - cue.pulse)
++                }
++
++                Text {
++                    anchors.centerIn: parent
++                    text: "󰌆"
++                    font.family: "Iosevka Nerd Font"
++                    font.pixelSize: 16 * cue.px
++                    color: ThemeBackend.mauve
++                    opacity: 0.45 + 0.55 * cue.pulse
++                }
++            }
++
++            Text {
++                text: cue.text
++                font.family: ThemeBackend.fontFamily
++                font.pixelSize: 13 * cue.px
++                font.weight: Font.Bold
++                color: "#ffffff"
++            }
++        }
++    }
+     property bool isSway: false
+     property string kbLayout: "US"
+     property int connectedScreenCount: 1
+@@ -193,6 +264,7 @@
+         lockUI.authenticating = false;
+         lockUI.statusText = I18n.t("lock.status.locked");
+         rootLock.locked = true;
++        root.u2fShown = false;
+         pamActionTimer.start();
+         kbPollerRestartTimer.restart();
+     }
+@@ -200,6 +272,8 @@
+     function finishUnlock() {
+         if (root.isUnlocking) return;
+         root.isUnlocking = true;
++        pam.abort();
++        u2fPam.abort();
+     }
+ 
+     function completeUnlock() {
+@@ -241,12 +315,62 @@
+         onTriggered: {
+             if (rootLock.locked) {
+                 pam.start();
++                if (!u2fPam.active) u2fPam.start();
++            }
++        }
++    }
++
++    // The YubiKey gives up on a touch after ~30s, so the key check runs as its
++    // own PAM stack and restarts whenever it lapses, independent of the
++    // password prompt. Without a key plugged in it fails at once and polls.
++    Timer {
++        id: u2fRetryTimer
++        interval: 1000
++        onTriggered: {
++            if (rootLock.locked && !root.isUnlocking) u2fPam.start();
++        }
++    }
++
++    Timer {
++        id: u2fHideTimer
++        interval: 2000
++        onTriggered: root.u2fShown = false
++    }
++
++    PamContext {
++        id: u2fPam
++        config: "serpantinum-u2f"
++
++        onMessageChanged: {
++            if (message === "") return;
++            u2fHideTimer.stop();
++            root.u2fText = message;
++            root.u2fCueSince = Date.now();
++            root.u2fShown = true;
++        }
++
++        // On success the cue stays up and fades with the lock screen. On the
++        // key's ~30s touch timeout it is held across the retry gap so it does
++        // not blink; any earlier failure (key pulled) hides it at once.
++        // ponytail: elapsed-time heuristic, assumes the key times out after >25s.
++        onCompleted: (result) => {
++            if (result === PamResult.Success) {
++                root.finishUnlock();
++                return;
+             }
++            if (Date.now() - root.u2fCueSince > 25000) u2fHideTimer.restart();
++            else root.u2fShown = false;
++            u2fRetryTimer.restart();
++        }
++        onError: {
++            root.u2fShown = false;
++            u2fRetryTimer.restart();
+         }
+     }
+ 
+     PamContext {
+         id: pam
++        config: "serpantinum-password"
+ 
+         onCompleted: (result) => {
+             lockUI.authenticating = false;
+@@ -1120,6 +1244,14 @@
+                                     opacity: 0.85
+                                 }
+ 
++                                U2fCue {
++                                    Layout.alignment: Qt.AlignHCenter
++                                    Layout.topMargin: screenRoot.s(18)
++                                    px: screenRoot.s(1)
++                                    text: root.u2fText
++                                    shown: root.u2fShown
++                                }
++
+                                 Timer {
+                                     id: clockTimer
+                                     interval: 1000; running: true; repeat: true; triggeredOnStart: true
+@@ -1303,6 +1435,13 @@
+                                                 }
+                                             }
+ 
++                                            U2fCue {
++                                                Layout.alignment: Qt.AlignHCenter
++                                                px: screenRoot.s(1)
++                                                text: root.u2fText
++                                                shown: root.u2fShown
++                                            }
++
+                                             RowLayout {
+                                                 Layout.alignment: Qt.AlignHCenter
+                                                 spacing: screenRoot.s(10)

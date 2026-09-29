@@ -378,11 +378,15 @@ prepare_variant() {
     echo "[*] Staging FLARE inputs in $REQUIRED_FILES"
     mkdir -p "$REQUIRED_FILES"
     install -m644 "$config_xml" "$REQUIRED_FILES/config.xml"
+    # No comments in that file: Windows 11 silently drops every taskbar pin if
+    # anything sits between <?xml?> and the root element. File Explorer is
+    # pinned by app ID; the others by .lnk (TOOL_LIST_DIR spelled out).
     install -m644 "$DFIR_DIR/windows/LayoutModification.xml" "$REQUIRED_FILES/LayoutModification.xml"
     install -m644 "$DFIR_DIR/windows/update-tools.ps1" "$REQUIRED_FILES/update-tools.ps1"
-    # Colemak-SE: the custom-item runs the script; the MSI stays as a manual fallback.
+    # Colemak-SE: the custom-item runs the script; its folder stays as a manual fallback.
     install -m644 "$DFIR_DIR/windows/set-colemak-se.ps1" "$REQUIRED_FILES/set-colemak-se.ps1"
-    install -m644 "$DFIR_DIR/windows/se-cmak_amd64.msi" "$REQUIRED_FILES/se-cmak_amd64.msi"
+    rm -rf "$REQUIRED_FILES/colemak-se" "$REQUIRED_FILES/se-cmak_amd64.msi" # latter: pre-folder layout
+    cp -rL --no-preserve=mode "$DFIR_DIR/windows/colemak-se" "$REQUIRED_FILES/colemak-se"
     install -m644 "$manifest" "$REQUIRED_FILES/tools.yaml" # update-tools.ps1's default
 }
 
@@ -435,8 +439,10 @@ variant_stage() {
         local logs="$HOME/.local/state/dfir/flare-vm-logs"
         echo "    Failed packages do not fail the build — check $logs/flare-vm-failed_packages.txt"
         # VM-Apply-Configurations logs its one catch-all error and carries on,
-        # dropping every config section after the one that threw.
-        if grep -F "An error occurred while applying config" "$logs/flare-vm-log.txt" 2>/dev/null; then
+        # dropping every config section after the one that threw. Only
+        # [installer.vm] applies our config.xml; debloat.vm runs the same
+        # function over upstream's own debloat config, whose errors are not ours.
+        if grep -F "An error occurred while applying config" "$logs/flare-vm-log.txt" 2>/dev/null | grep -F "[installer.vm]"; then
             echo "[!] FLARE's config step failed (above), so later config sections — custom-items like Colemak-SE and the taskbar — did not run."
         fi
     elif [[ "$variant" == malware ]]; then

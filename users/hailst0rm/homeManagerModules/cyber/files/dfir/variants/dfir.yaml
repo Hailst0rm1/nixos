@@ -8,11 +8,11 @@ EXPORTED_VM_NAME: DFIR-Windows
 SNAPSHOTS:
   - extension: ".dynamic"
     # VM-Clean-Up empties the Desktop before the snapshot; keep the updater,
-    # its manifest, the Colemak-SE fallback installer and the Tools shortcut
+    # its manifest, the Colemak-SE installer folder and the Tools shortcut
     # folder (TOOL_LIST_DIR). Passed verbatim to PowerShell as
     # -excludeFiles/-excludeFolders, hence the quoted arrays.
-    protected_files: "'update-tools.ps1','tools.yaml','se-cmak_amd64.msi'"
-    protected_folders: "'Tools'"
+    protected_files: "'update-tools.ps1','tools.yaml'"
+    protected_folders: "'Tools','colemak-se'"
     description: "Windows DFIR VM — Zimmerman + imaging (dfir-config.xml)"
     cmd: |
       # Flush the volume write cache before the abrupt shutdown. Built into

@@ -37,7 +37,7 @@ FLARE build scripts (`vbox-build-flare-vm`, `vbox-build-remnux`,
 | `config/malware-config.xml`  | FLARE `-customConfig` for the malware VM (FLARE's recommended set minus Linux-native tools, which `dfir.nix` puts on the host) |
 | `manifests/dfir-tools.yaml`  | Desired runtime tool state, DFIR VM |
 | `manifests/malware-tools.yaml`| Desired runtime tool state, malware VM |
-| `windows/set-colemak-se.ps1` | Installs + enables Colemak-SE on both VMs (FLARE custom-item); the MSI is fetched by `dfir.nix` and left on the Desktop as fallback |
+| `windows/set-colemak-se.ps1` | Installs + enables Colemak-SE on both VMs (FLARE custom-item); the installer folder is fetched by `dfir.nix` and left on the Desktop (`colemak-se\`) as fallback |
 | `windows/LayoutModification.xml` | Taskbar pins for both VMs (Explorer, Terminal, Notepad++, Firefox), passed as `install.ps1 -customLayout` |
 | `windows/update-tools.ps1`   | Convergent reconcile (installs/upgrades/removes to match a manifest) |
 | `variants/dfir.yaml`         | `vbox-build-flare-vm` build config, DFIR VM |

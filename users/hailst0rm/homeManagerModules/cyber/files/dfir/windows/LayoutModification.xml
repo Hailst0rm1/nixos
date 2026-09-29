@@ -1,36 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Taskbar pins for both lab VMs, in order. Passed as install.ps1 -customLayout
-  (pkgs/flare-vbox patches the build to add it; dfir-lab stages
-  this file). Replaces upstream flare-vm/LayoutModification.xml. A pin whose
-  shortcut does not exist is skipped, so every target must come from a
-  package in both config/*-config.xml.
--->
 <LayoutModificationTemplate
     xmlns="http://schemas.microsoft.com/Start/2014/LayoutModification"
     xmlns:defaultlayout="http://schemas.microsoft.com/Start/2014/FullDefaultLayout"
     xmlns:start="http://schemas.microsoft.com/Start/2014/StartLayout"
     xmlns:taskbar="http://schemas.microsoft.com/Start/2014/TaskbarLayout"
     Version="1">
-  <LayoutOptions StartTileGroupCellWidth="6" StartTileGroupsColumnCount="1" />
-  <DefaultLayoutOverride>
-    <StartLayoutCollection>
-      <defaultlayout:StartLayout GroupCellWidth="6">
-      </defaultlayout:StartLayout>
-    </StartLayoutCollection>
-  </DefaultLayoutOverride>
-    <CustomTaskbarLayoutCollection PinListPlacement="Replace">
-      <defaultlayout:TaskbarLayout>
-        <taskbar:TaskbarPinList>
-          <taskbar:DesktopApp DesktopApplicationLinkPath="%AppData%\Microsoft\Windows\Start Menu\Programs\System Tools\File Explorer.lnk"/>
-          <!-- windows-terminal.vm -->
-          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Productivity Tools\Windows Terminal.lnk"/>
-          <!-- notepadplusplus.vm -->
-          <taskbar:DesktopApp DesktopApplicationLinkPath="%TOOL_LIST_DIR%\Productivity Tools\notepad++.lnk"/>
-          <!-- community `firefox` (FLARE has no firefox.vm); Mozilla's installer
-               puts its shortcut in the all-users Start Menu -->
-          <taskbar:DesktopApp DesktopApplicationLinkPath="%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Firefox.lnk"/>
-        </taskbar:TaskbarPinList>
-      </defaultlayout:TaskbarLayout>
-    </CustomTaskbarLayoutCollection>
+  <CustomTaskbarLayoutCollection PinListPlacement="Replace">
+    <defaultlayout:TaskbarLayout>
+      <taskbar:TaskbarPinList>
+        <taskbar:DesktopApp DesktopApplicationID="Microsoft.Windows.Explorer"/>
+        <taskbar:DesktopApp DesktopApplicationLinkPath="%USERPROFILE%\Desktop\Tools\Productivity Tools\Windows Terminal.lnk"/>
+        <taskbar:DesktopApp DesktopApplicationLinkPath="%USERPROFILE%\Desktop\Tools\Productivity Tools\notepad++.lnk"/>
+        <taskbar:DesktopApp DesktopApplicationLinkPath="%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\Firefox.lnk"/>
+      </taskbar:TaskbarPinList>
+    </defaultlayout:TaskbarLayout>
+  </CustomTaskbarLayoutCollection>
 </LayoutModificationTemplate>

@@ -3,7 +3,12 @@
   pkgs,
   lib,
   ...
-}: {
+}: let
+  # attrByPath: hosts without a Home Manager user have no such path.
+  serpantinumLock =
+    lib.attrByPath ["home-manager" "users" config.username "importConfig" "hyprland" "lockscreen"] null config
+    == "serpantinum";
+in {
   options.security.yubikey.enable = lib.mkEnableOption "Enable yubikey";
 
   config = lib.mkIf config.security.yubikey.enable {
@@ -37,6 +42,16 @@
           u2fAuth = lib.mkDefault true;
           sshAgentAuth = lib.mkDefault true; # Use SSH_AUTH_SOCK for sudo
         };
+        # Serpantinum's lock screen runs these two side by side (patch 0038,
+        # applied in the HM serpantinum module under the same condition). The
+        # YubiKey only waits ~30s for a touch, so a single login-style stack
+        # (u2f, then password) left only the password once that window lapsed.
+        # Split, the key check can loop on its own while the password waits.
+        serpantinum-u2f = lib.mkIf serpantinumLock {
+          unixAuth = false;
+          u2fAuth = true;
+        };
+        serpantinum-password = lib.mkIf serpantinumLock {u2fAuth = false;};
       };
     };
 

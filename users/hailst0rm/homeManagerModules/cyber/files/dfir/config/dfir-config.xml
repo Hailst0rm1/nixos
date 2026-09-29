@@ -83,9 +83,12 @@
          profile, which Windows reads when it creates a *new* profile, and
          jsmith's already exists by then. The Start Layout policy (what
          gpedit's Start Menu and Taskbar > Start Layout writes) applies the
-         same file to existing users at their next sign-in. -->
+         same file to existing users at their next sign-in, but only once per
+         user, recorded in HKCU Taskband, and Windows already read it at a
+         sign-in mid-install, before the pinned shortcuts existed. Dropping
+         Taskband makes the next sign-in (first boot after the build) re-apply it. -->
     <custom-item name="Taskbar layout">
-      <cmd value="reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer /v StartLayoutFile /t REG_EXPAND_SZ /d C:\Users\Default\AppData\Local\Microsoft\Windows\Shell\LayoutModification.xml /f; reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer /v LockedStartLayout /t REG_DWORD /d 1 /f"/>
+      <cmd value="reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer /v StartLayoutFile /t REG_EXPAND_SZ /d C:\Users\Default\AppData\Local\Microsoft\Windows\Shell\LayoutModification.xml /f; reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer /v LockedStartLayout /t REG_DWORD /d 1 /f; reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskband /f"/>
     </custom-item>
     <!-- Colemak-SE keyboard layout; see windows/set-colemak-se.ps1. -->
     <custom-item name="Colemak-SE">

@@ -44,14 +44,17 @@ in {
       recursive = true;
     };
     # Colemak-SE's Windows installer, staged into both VMs by
-    # dfir-lab (see files/dfir/windows/set-colemak-se.ps1).
-    home.file.".config/dfir/windows/se-cmak_amd64.msi".source = let
+    # dfir-lab (see files/dfir/windows/set-colemak-se.ps1). The whole release
+    # dir: the MSKLC MSI is uncompressed and reads se-cmak.dll from the
+    # amd64/ i386/ ia64/ wow64/ folders beside it (msiexec 1603 without them).
+    home.file.".config/dfir/windows/colemak-se".source = let
       colemakSeRelease = "1.0";
-    in
-      pkgs.fetchurl {
-        url = "https://raw.githubusercontent.com/motform/colemak-se/refs/tags/${colemakSeRelease}/release/windows/se-cmak_amd64.msi";
-        hash = "sha256-ZDPJDMrpRIApnaJvSssilSDq1RB6P1EoFaPxa3qEAFw=";
-      };
+    in "${pkgs.fetchFromGitHub {
+      owner = "motform";
+      repo = "colemak-se";
+      rev = colemakSeRelease;
+      hash = "sha256-EyNWXf2F9HJTPfLQEKq5zxA/hYrsRs1s3MZkM4cc+A4=";
+    }}/release/windows";
 
     home.packages =
       (with pkgs-unstable; [

@@ -3,14 +3,14 @@
   default input method for this user, the welcome screen and new users.
 
   Run by a FLARE <custom-item> after all packages (both config/*-config.xml).
-  The MSI sits next to this script on the Desktop (staged by
-  dfir-lab), so if this fails, double-click it and pick the layout
+  The MSI sits in colemak-se\ next to this script on the Desktop (staged by
+  dfir-lab) with the DLL folders it installs from, so if this fails, double-click it and pick the layout
   in Settings > Time & language > Language & region. Log: colemak-se.log here.
 #>
 $ErrorActionPreference = 'Stop'
 Start-Transcript (Join-Path $PSScriptRoot 'colemak-se.log') -Force | Out-Null
 try {
-    $msi = Join-Path $PSScriptRoot 'se-cmak_amd64.msi'
+    $msi = Join-Path $PSScriptRoot 'colemak-se\se-cmak_amd64.msi'
     $p = Start-Process msiexec -ArgumentList "/i `"$msi`" /qn /norestart" -Wait -PassThru
     if ($p.ExitCode -notin 0, 3010) { throw "msiexec exited $($p.ExitCode)" }
 

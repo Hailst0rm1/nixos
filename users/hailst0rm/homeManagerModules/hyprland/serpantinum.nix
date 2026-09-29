@@ -3,6 +3,7 @@
   pkgs,
   lib,
   config,
+  osConfig,
   ...
 }: let
   cfg = config.importConfig.hyprland;
@@ -70,7 +71,15 @@ in {
       enable = true;
       # Built via overlays.default against our nixpkgs 26.05, not
       # self.packages.<system>.default (serpantinum's own pinned unstable).
-      package = pkgs.serpantinum;
+      # With a YubiKey, the lock screen polls it on its own PAM stack; the
+      # stacks it names are declared in nixosModules/security/yubikey.nix.
+      package =
+        if osConfig.security.yubikey.enable && cfg.lockscreen == "serpantinum"
+        then
+          pkgs.serpantinum.overrideAttrs (old: {
+            patches = old.patches ++ [../../../../patches/serpantinum/0038-lock-u2f-loop.patch];
+          })
+        else pkgs.serpantinum;
 
       settings = {
         general = {
@@ -176,6 +185,21 @@ in {
     systemd.user.services.serpantinum.Service = {
       ExecStartPre = "${pkgs.util-linux}/bin/flock -w 15 /tmp/serpantinumd.lock true";
       RestartSec = 2;
+    };
+
+    # Lock before suspend (lid close, suspend key, `systemctl suspend`), so the
+    # machine wakes locked. Serpantinum's own idle daemon has no sleep hook, and
+    # its sleep button locks itself — only laptops suspend any other way.
+    # inhibit_sleep = 3 holds logind's delay inhibitor until the
+    # ext-session-lock is actually up, not just until the command returns.
+    services.hypridle = lib.mkIf (osConfig.laptop && cfg.lockscreen == "serpantinum") {
+      enable = true;
+      settings.general = {
+        lock_cmd = "serpantinum lock";
+        before_sleep_cmd = "loginctl lock-session";
+        after_sleep_cmd = "hyprctl dispatch dpms on";
+        inhibit_sleep = 3;
+      };
     };
 
     # v1's SHIFT+S (settings) and SHIFT+D (monitors) have no v2 equivalent —
