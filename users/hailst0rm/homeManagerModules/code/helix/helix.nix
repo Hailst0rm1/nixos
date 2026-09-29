@@ -8,6 +8,25 @@
   options.code.helix.enable = lib.mkEnableOption "Enable Helix";
 
   config = lib.mkIf (config.editor == "hx" || config.editor == "helix" || config.code.helix.enable) {
+    # Helix.desktop sets Terminal=true, which xdg-open/gio resolves to xterm;
+    # wrap hx in our own terminal instead.
+    xdg.desktopEntries.helix-term = {
+      name = "Helix";
+      exec = "${config.terminal} -e hx %F";
+      icon = "helix";
+      noDisplay = true;
+    };
+    xdg.mimeApps = {
+      enable = true;
+      defaultApplications = lib.genAttrs [
+        "text/plain"
+        "text/markdown"
+        "text/xml"
+        "text/x-c++hdr"
+        "text/x-c++src"
+      ] (_: "helix-term.desktop");
+    };
+
     programs.helix = {
       enable = true;
       package = pkgs-unstable.helix;
