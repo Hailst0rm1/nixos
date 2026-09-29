@@ -26,3 +26,8 @@ packages:
   - id: sysinternals.vm
     source: vm
     version: latest
+  # Not in dfir-config.xml: the installer blocks on a browser page until it is
+  # closed, which stalls the unattended FLARE build. Harmless here.
+  - id: kernel-ost-viewer.vm
+    source: vm
+    version: latest

@@ -10,7 +10,10 @@
 <config>
   <envs>
     <env name="VM_COMMON_DIR" value="%ProgramData%\_VM"/>
-    <env name="TOOL_LIST_DIR" value="%ProgramData%\Microsoft\Windows\Start Menu\Programs\DFIR"/>
+    <!-- Desktop, not the all-users Start Menu: Start only lists that one
+         level deep, so the categorised shortcuts were hard to reach. The
+         variant yaml protects the folder from VM-Clean-Up. -->
+    <env name="TOOL_LIST_DIR" value="%UserProfile%\Desktop\Tools"/>
     <env name="RAW_TOOLS_DIR" value="%SystemDrive%\Tools"/>
   </envs>
   <packages>
@@ -29,7 +32,9 @@
     <package name="ftk-imager.vm"/>
     <package name="jlecmd.vm"/>
     <package name="jumplist_explorer.vm"/>
-    <package name="kernel-ost-viewer.vm"/>
+    <!-- kernel-ost-viewer.vm: its installer opens a "thank you" page and waits
+         for the browser to close, stalling the unattended build. Installed
+         by update-tools.ps1 instead (manifests/dfir-tools.yaml). -->
     <package name="kernel-outlook-pst-viewer.vm"/>
     <package name="lecmd.vm"/>
     <package name="logfileparser.vm"/>
@@ -64,12 +69,24 @@
   </packages>
   <registry-items>
     <!-- Show file extensions and hidden files (analyst QoL) -->
-    <registry-item path="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="HideFileExt" type="REG_DWORD" data="0"/>
-    <registry-item path="HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="Hidden" type="REG_DWORD" data="1"/>
+    <!-- Upstream's format, all five attributes required: name is mandatory,
+         path is a PowerShell drive (HKCU:\), type a RegistryValueKind (DWord).
+         A malformed item throws, and VM-Apply-Configurations runs every
+         section in one try, so it silently skips all custom-items below. -->
+    <registry-item name="Show known file extensions" path="HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="HideFileExt" type="DWord" data="0"/>
+    <registry-item name="Show hidden files" path="HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" value="Hidden" type="DWord" data="1"/>
   </registry-items>
   <!-- FLARE only reads <cmd> inside a named <custom-item>, and runs them after
        every package. -->
   <custom-items>
+    <!-- Taskbar pins. install.ps1 only drops -customLayout into the Default
+         profile, which Windows reads when it creates a *new* profile, and
+         jsmith's already exists by then. The Start Layout policy (what
+         gpedit's Start Menu and Taskbar > Start Layout writes) applies the
+         same file to existing users at their next sign-in. -->
+    <custom-item name="Taskbar layout">
+      <cmd value="reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer /v StartLayoutFile /t REG_EXPAND_SZ /d C:\Users\Default\AppData\Local\Microsoft\Windows\Shell\LayoutModification.xml /f; reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\Explorer /v LockedStartLayout /t REG_DWORD /d 1 /f"/>
+    </custom-item>
     <!-- Colemak-SE keyboard layout; see windows/set-colemak-se.ps1. -->
     <custom-item name="Colemak-SE">
       <cmd value="&amp; (Join-Path ([Environment]::GetFolderPath('Desktop')) 'set-colemak-se.ps1')"/>

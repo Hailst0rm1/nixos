@@ -432,7 +432,13 @@ variant_stage() {
         vbox-build-flare-vm "$yaml" --do-not-install-flare-vm --date "${date%.base}"
     elif decide "Build '$vm' now? (FLARE's install takes a few hours)" "$BUILD"; then
         vbox-build-flare-vm "$yaml" --custom_config
-        echo "    Failed packages do not fail the build — check $HOME/.local/state/dfir/flare-vm-logs/flare-vm-failed_packages.txt"
+        local logs="$HOME/.local/state/dfir/flare-vm-logs"
+        echo "    Failed packages do not fail the build — check $logs/flare-vm-failed_packages.txt"
+        # VM-Apply-Configurations logs its one catch-all error and carries on,
+        # dropping every config section after the one that threw.
+        if grep -F "An error occurred while applying config" "$logs/flare-vm-log.txt" 2>/dev/null; then
+            echo "[!] FLARE's config step failed (above), so later config sections — custom-items like Colemak-SE and the taskbar — did not run."
+        fi
     elif [[ "$variant" == malware ]]; then
         echo "[!] Not built. Before any detonation run: dfir-vm-network malware '$vm'"
         return 0

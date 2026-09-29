@@ -1,0 +1,17 @@
+--- a/virtualbox/vboxcommon.py
++++ b/virtualbox/vboxcommon.py
+@@ -287,7 +287,13 @@
+     check_interval = 5  # seconds
+     start_time = time.time()
+     while time.time() - start_time < timeout:
+-        if eval(condition):
++        # showvminfo fails with VBOX_E_INVALID_OBJECT_STATE while a VM is
++        # mid power-off; that is "not there yet", not a failure.
++        try:
++            met = eval(condition)
++        except RuntimeError:
++            met = False
++        if met:
+             time.sleep(5)  # wait a bit to be careful and avoid any weird races
+             return True
+         time.sleep(check_interval)

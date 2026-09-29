@@ -29,13 +29,19 @@ in
     ldflags = ["-s" "-w"];
 
     postInstall = ''
-      mv $out/bin/VolGolangWrapper $out/bin/vol-wrapper
-      # --suffix: an activated venv or a vol earlier on PATH still wins.
-      wrapProgram $out/bin/vol-wrapper --suffix PATH : ${volatility3}/bin
-
       install -Dm755 vol_plugin_inventory.py $out/libexec/vol-plugin-inventory
       makeWrapper ${python}/bin/python $out/bin/vol-plugin-inventory \
         --add-flags $out/libexec/vol-plugin-inventory
+
+      # -t reads plugins.csv from the cwd by default; ship one generated from
+      # the pinned volatility3. A later --plugins on the command line wins.
+      mkdir -p $out/share/vol-wrapper
+      (cd $out/share/vol-wrapper && HOME=$TMPDIR PATH=${volatility3}/bin:$PATH $out/bin/vol-plugin-inventory)
+
+      mv $out/bin/VolGolangWrapper $out/bin/vol-wrapper
+      # --suffix: an activated venv or a vol earlier on PATH still wins.
+      wrapProgram $out/bin/vol-wrapper --suffix PATH : ${volatility3}/bin \
+        --add-flags "--plugins $out/share/vol-wrapper/plugins.csv"
     '';
 
     meta = {

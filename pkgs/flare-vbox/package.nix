@@ -35,6 +35,10 @@ in
 
     nativeBuildInputs = [makeWrapper];
 
+    # wait_until() let a transient VBoxManage error while a VM is mid
+    # power-off crash the whole build, after the hours-long FLARE install.
+    patches = [../../patches/flare-vbox/0001-wait-until-tolerate-state-transitions.patch];
+
     # Upstream reads `sys.frozen` to detect a PyInstaller bundle, but without
     # a default -- the attribute simply does not exist in a normal interpreter,
     # so every VBoxManage call dies with AttributeError. We always run
@@ -67,6 +71,10 @@ in
       substituteInPlace virtualbox/vbox-build-flare-vm.py \
         --replace-fail '"~/FLARE-VM LOGS"' '"~/.local/state/dfir/flare-vm-logs"' \
         --replace-fail '"~/FLARE-VM REQUIRED FILES"' '"~/.local/share/dfir/flare-vm-required-files"'
+      # Same for exported OVAs (relative to $HOME; vbox-export-snapshot's
+      # --export_dir_name defaults to this too).
+      substituteInPlace virtualbox/vboxcommon.py \
+        --replace-fail 'EXPORT_DIR_NAME = "EXPORTED VMS"' 'EXPORT_DIR_NAME = ".local/share/dfir/exported-vms"'
 
       substituteInPlace virtualbox/vbox-build-flare-vm.py \
         --replace-fail 'GUEST_USERNAME = "flare"' \

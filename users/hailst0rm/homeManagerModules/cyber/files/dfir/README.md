@@ -97,7 +97,7 @@ vbox-build-remnux ~/.config/dfir/variants/remnux.yaml   # add later
 
 # Snapshot hygiene / export
 vbox-clean-snapshots FLARE-Windows.testing
-vbox-export-snapshot FLARE-Windows.testing <snapshot> "desc" ~/dfir-exports
+vbox-export-snapshot FLARE-Windows.testing <snapshot> "desc"   # -> ~/.local/share/dfir/exported-vms
 ```
 
 ### Disabling Defender by hand (Group Policy)
