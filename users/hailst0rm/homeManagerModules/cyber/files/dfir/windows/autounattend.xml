@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Unattended Windows 11 install for the DFIR/FLARE BUILD-READY base VM.
-  Carried into setup on the "UNATTEND" ISO built by dfir-create-base.
+  Carried into setup on the "UNATTEND" ISO built by dfir-lab.
 
   Produces: local admin `jsmith` / `password`, UAC off, PowerShell Unrestricted,
   Defender/Tamper best-effort off, Guest Additions installed, then powers off.
@@ -9,7 +9,7 @@
   THIS FILE MUST STAY PURE ASCII. Windows Setup silently ignores an answer
   file containing raw non-ASCII bytes, then prompts for language and keyboard
   as if no file were present. Use numeric character references (&#8212;) if you
-  ever need a non-ASCII character. dfir-create-base enforces this before
+  ever need a non-ASCII character. dfir-lab enforces this before
   building the ISO.
 
   TUNING POINTS (expect to touch these on a real host):

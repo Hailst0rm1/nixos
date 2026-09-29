@@ -52,12 +52,28 @@ in
         --replace-fail 'if sys.frozen and "LD_LIBRARY_PATH" in env:' \
                        'if getattr(sys, "frozen", False) and "LD_LIBRARY_PATH" in env:'
 
+      # set_network_to_hostonly switches NIC 1 to hostonly without naming the
+      # host interface, so the next startvm dies with "Nonexistent host networking
+      # interface" (empty name) -- mid-build, after the FLARE install.
+      # Upstream's own vbox-adapter-check.py passes --hostonlyadapter for this.
+      substituteInPlace virtualbox/vboxcommon.py \
+        --replace-fail '    ensure_hostonlyif_exists()' \
+                       '    hostonlyif_name = ensure_hostonlyif_exists()' \
+        --replace-fail '"--nic1", "hostonly"])' \
+                       '"--nic1", "hostonly", "--hostonlyadapter1", hostonlyif_name])'
+
+      # Upstream drops both working dirs straight into $HOME. Logs are state;
+      # the required-files dir is staged by dfir-lab, which must use the same path.
+      substituteInPlace virtualbox/vbox-build-flare-vm.py \
+        --replace-fail '"~/FLARE-VM LOGS"' '"~/.local/state/dfir/flare-vm-logs"' \
+        --replace-fail '"~/FLARE-VM REQUIRED FILES"' '"~/.local/share/dfir/flare-vm-required-files"'
+
       substituteInPlace virtualbox/vbox-build-flare-vm.py \
         --replace-fail 'GUEST_USERNAME = "flare"' \
                        'GUEST_USERNAME = "${finalAttrs.guestUsername}"'
 
       # Pass our taskbar layout alongside the config; without -customLayout
-      # install.ps1 fetches upstream's. dfir-prepare-variant stages the file.
+      # install.ps1 fetches upstream's. dfir-lab stages the file.
       substituteInPlace virtualbox/vbox-build-flare-vm.py \
         --replace-fail "-customConfig '\$desktop\config.xml'\"" \
                        "-customConfig '\$desktop\config.xml' -customLayout '\$desktop\LayoutModification.xml'\""

@@ -4,7 +4,7 @@
 
   Run by a FLARE <custom-item> after all packages (both config/*-config.xml).
   The MSI sits next to this script on the Desktop (staged by
-  dfir-prepare-variant), so if this fails, double-click it and pick the layout
+  dfir-lab), so if this fails, double-click it and pick the layout
   in Settings > Time & language > Language & region. Log: colemak-se.log here.
 #>
 $ErrorActionPreference = 'Stop'

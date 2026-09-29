@@ -21,18 +21,16 @@
   # and applies per-VM NIC/clipboard/USB isolation via VBoxManage.
   dfir-vm-network = pkgs.writeShellScriptBin "dfir-vm-network" (builtins.readFile ./files/dfir/host/vm-network.sh);
 
-  # Builds the clean Windows BUILD-READY base VM from an ISO, unattended.
-  # Needs xorriso (to pack autounattend.xml) + ambient VBoxManage.
-  dfir-create-base = pkgs.writeShellApplication {
-    name = "dfir-create-base";
-    runtimeInputs = [pkgs.xorriso pkgs.gnugrep]; # gnugrep: the answer file's ASCII guard needs grep -P
-    text = builtins.readFile ./files/dfir/host/create-base-vm.sh;
+  # Interactive wizard over the whole build pipeline: unattended Windows base
+  # from an ISO -> Defender step -> per-variant clone + staged FLARE inputs ->
+  # vbox-build-flare-vm -> dfir-vm-network. Needs xorriso (to pack
+  # autounattend.xml) + ambient VBoxManage.
+  dfir-lab = pkgs.writeShellApplication {
+    name = "dfir-lab";
+    # gnugrep: the answer file's ASCII guard needs grep -P
+    runtimeInputs = [pkgs.xorriso pkgs.gnugrep flare-vbox dfir-vm-network];
+    text = builtins.readFile ./files/dfir/host/dfir-lab.sh;
   };
-
-  # Clones the base VM into each variant's expected VM_NAME + BUILD-READY
-  # snapshot, and stages the variant's config.xml/manifest where the FLARE
-  # build scripts look for them.
-  dfir-prepare-variant = pkgs.writeShellScriptBin "dfir-prepare-variant" (builtins.readFile ./files/dfir/host/prepare-variant.sh);
 in {
   # Option declared in nixosModules/variables.nix, which is imported into both
   # the NixOS and HM namespaces (see users/hailst0rm/hosts/default.nix) — like
@@ -46,7 +44,7 @@ in {
       recursive = true;
     };
     # Colemak-SE's Windows installer, staged into both VMs by
-    # dfir-prepare-variant (see files/dfir/windows/set-colemak-se.ps1).
+    # dfir-lab (see files/dfir/windows/set-colemak-se.ps1).
     home.file.".config/dfir/windows/se-cmak_amd64.msi".source = let
       colemakSeRelease = "1.0";
     in
@@ -122,8 +120,7 @@ in {
         flare-vbox
         vol-wrapper
         dfir-vm-network
-        dfir-create-base
-        dfir-prepare-variant
+        dfir-lab
       ];
 
     # Not yet packaged in nixpkgs (kept on the Windows DFIR VM / a later task):

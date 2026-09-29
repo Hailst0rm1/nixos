@@ -26,7 +26,8 @@ NixOS host (trusted)          Win-DFIR (semi-permanent)     Win-Malware (disposa
 
 `cyber.dfir.enable = true` installs the host toolkit, VirtualBox, the wrapped
 FLARE build scripts (`vbox-build-flare-vm`, `vbox-build-remnux`,
-`vbox-clean-snapshots`, `vbox-export-snapshot`), and `dfir-vm-network`.
+`vbox-clean-snapshots`, `vbox-export-snapshot`), `dfir-vm-network`, and the
+`dfir-lab` build wizard.
 
 ## Files here
 
@@ -42,8 +43,7 @@ FLARE build scripts (`vbox-build-flare-vm`, `vbox-build-remnux`,
 | `variants/dfir.yaml`         | `vbox-build-flare-vm` build config, DFIR VM |
 | `variants/malware.yaml`      | `vbox-build-flare-vm` build config, malware VM |
 | `host/vm-network.sh`         | `dfir-vm-network` — trust model: NAT/isolated net, plus hardware spoofing for the malware VM |
-| `host/create-base-vm.sh`     | `dfir-create-base` — unattended Windows install → `BUILD-READY` |
-| `host/prepare-variant.sh`    | `dfir-prepare-variant` — clone base per variant + stage FLARE inputs |
+| `host/dfir-lab.sh`           | `dfir-lab` — interactive wizard: ISO → base `BUILD-READY` → Defender step → per-variant clone + build + network |
 
 Edit the copies in the **repo** (`users/hailst0rm/homeManagerModules/cyber/files/dfir/`);
 the `~/.config/dfir/` entries are read-only symlinks into the Nix store.
@@ -52,77 +52,46 @@ the `~/.config/dfir/` entries are read-only symlinks into the Nix store.
 
 The FLARE scripts start from a **BUILD-READY** snapshot of a clean Windows
 install on the VM they are building; they do not install Windows from ISO
-(Packer is deferred). Three stages:
-
-**1. One-time base per Windows release** — unattended, from an ISO:
+(Packer is deferred). Run the wizard and answer its prompts:
 
 ```sh
-dfir-create-base ~/iso/Win11_Enterprise_Eval.iso DFIR-BUILD-BASE --wait
+dfir-lab
 ```
 
-Guest user `jsmith` / password `password`, on a machine named `WS-FIN-0412`.
-Upstream hardcodes the account as `flare`, which evasive samples check for via
-`GetUserName` and `%USERPROFILE%`; `pkgs/flare-vbox/package.nix` patches
-`GUEST_USERNAME` to match the account this answer file creates. **Change the
-two together or the build cannot log into the guest.** UAC off, Guest
-Additions installed.
-`--wait` snapshots `BUILD-READY` once the VM powers itself off.
+It walks five stages, and each one checks what already exists before doing
+anything — an existing base, a half-finished install, a clone that was already
+built, a VM that is still running. It never deletes a VM without a yes.
 
-**Then one manual step, every time you build a base.** Tamper Protection has
-no scriptable off switch: `WdFilter.sys` blocks registry and PowerShell edits
-to Defender's keys even as SYSTEM, which is what Tamper Protection is for. So
-the answer file cannot turn Defender off, and FLARE refuses to install while
-it is on. Boot the base and:
+1. **Base** (once per Windows release) — asks for the ISO, creates
+   `DFIR-BUILD-BASE`, installs Windows unattended and snapshots `BUILD-READY`
+   when the VM powers itself off. Guest user `jsmith` / password `password`,
+   on a machine named `WS-FIN-0412`. Upstream hardcodes the account as `flare`,
+   which evasive samples check for via `GetUserName` and `%USERPROFILE%`;
+   `pkgs/flare-vbox/package.nix` patches `GUEST_USERNAME` to match the account
+   the answer file creates. **Change the two together (and `GUEST_USER` in
+   `host/dfir-lab.sh`) or the build cannot log into the guest.** UAC off,
+   Guest Additions installed.
+2. **Defender** (once per base) — the one manual step, below. The wizard
+   boots the base, prints these steps, verifies the policy from inside the
+   guest, and re-takes `BUILD-READY` with the description
+   `clean Windows, UAC/Defender/Tamper off, GA installed`. That description is
+   how later runs know this step is done.
+3. **Variant** — clones the base into the variant's `VM_NAME` with its own
+   `BUILD-READY`, and stages its `config.xml`, taskbar layout,
+   `update-tools.ps1` and manifest (as `tools.yaml`) into
+   `~/.local/share/dfir/flare-vm-required-files/`, which the build copies to
+   the guest Desktop. Both variants share that directory, so the wizard stages
+   each one right before its build.
+4. **Build** — `vbox-build-flare-vm variants/<variant>.yaml --custom_config`.
+5. **Network** — `dfir-vm-network <variant> <vm>`. FLARE leaves the malware VM
+   on a host-only adapter; this isolates it before anything is detonated.
 
-1. Windows Security → Virus & threat protection → Manage settings →
-   **Tamper Protection: Off**. This is the *only* GUI-only step — while it is
-   on, Group Policy and PowerShell edits to Defender are silently ignored.
-2. Fully disable Defender via the Group Policy key (real-time-off alone does
-   **not** count — Defender re-enables it, and FLARE's installer keeps
-   reporting "Windows Defender Disabled: False"). In an **admin** PowerShell:
-   ```powershell
-   $p = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender"
-   New-Item "$p\Real-Time Protection" -Force | Out-Null
-   Set-ItemProperty $p DisableAntiSpyware 1 -Type DWord
-   Set-ItemProperty "$p\Real-Time Protection" DisableRealtimeMonitoring 1 -Type DWord
-   ```
-3. **Reboot** — `DisableAntiSpyware` only takes effect after a restart (this is
-   the "reboot, and rerun installer" the FLARE message asks for). Confirm it
-   stuck: `Get-ItemPropertyValue "$p" DisableAntiSpyware` prints `1`.
-4. Shut down, then re-take the snapshot:
-   ```sh
-   VBoxManage snapshot DFIR-BUILD-BASE delete BUILD-READY
-   VBoxManage snapshot DFIR-BUILD-BASE take BUILD-READY \
-     --description "clean Windows, UAC/Defender/Tamper off, GA installed"
-   ```
+Bad package IDs in `config/*.xml` do not fail the build — check
+`~/.local/state/dfir/flare-vm-logs/flare-vm-failed_packages.txt` afterwards.
 
-This is a one-time cost per Windows release: both lab VMs clone the snapshot,
-so they inherit the fixed state.
-
-**2. Per variant, once** — the base is a single VM, but each build wants its
-own VM name carrying its own `BUILD-READY`, plus its config at the fixed path
-`~/FLARE-VM REQUIRED FILES/config.xml`:
+Outside the wizard:
 
 ```sh
-dfir-prepare-variant dfir      # clone -> DFIR-Windows.testing  + stage config
-dfir-prepare-variant malware   # clone -> FLARE-Windows.testing + stage config
-```
-
-It also stages `update-tools.ps1` and the variant's manifest as `tools.yaml`,
-so both ride along to the guest Desktop with the config.
-
-**3. Build (repeatable):**
-
-```sh
-# DFIR VM
-vbox-build-flare-vm ~/.config/dfir/variants/dfir.yaml --custom_config
-dfir-vm-network dfir DFIR-Windows.testing
-
-# Malware VM — FLARE leaves it on a host-only adapter, so isolate it
-# BEFORE detonating anything
-vbox-build-flare-vm ~/.config/dfir/variants/malware.yaml --custom_config
-dfir-vm-network malware FLARE-Windows.testing
-
 # REMnux on the isolated net (optional)
 vbox-build-remnux ~/.config/dfir/variants/remnux.yaml   # add later
 
@@ -131,8 +100,62 @@ vbox-clean-snapshots FLARE-Windows.testing
 vbox-export-snapshot FLARE-Windows.testing <snapshot> "desc" ~/dfir-exports
 ```
 
-Bad package IDs in `config/*.xml` do not fail the build — check
-`~/FLARE-VM LOGS/flare-vm-failed_packages.txt` afterwards.
+### Disabling Defender by hand (Group Policy)
+
+The scripts cannot do this. Tamper Protection is kernel-enforced:
+`WdFilter.sys` blocks registry and PowerShell edits to Defender's keys even as
+SYSTEM, so the answer file cannot turn Defender off, and FLARE refuses to
+install while it is on. In the base VM's guest:
+
+1. Windows Security → Virus & threat protection → Manage settings →
+   **Tamper Protection: Off**. This is the *only* GUI-only step — while it is
+   on, the policies below are silently ignored.
+2. `Win+R` → `gpedit.msc` → Computer Configuration → Administrative Templates →
+   Windows Components → Microsoft Defender Antivirus:
+   - **Turn off Microsoft Defender Antivirus** → Enabled
+   - Real-time Protection → **Turn off real-time protection** → Enabled
+
+   Then `gpupdate /force` in an admin prompt. Real-time-off alone does **not**
+   count — Defender re-enables it, and FLARE's installer keeps reporting
+   "Windows Defender Disabled: False".
+
+   No `gpedit.msc` (Home edition)? Write the same policy values from an
+   **admin** PowerShell:
+   ```powershell
+   $p = "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender"
+   New-Item "$p\Real-Time Protection" -Force | Out-Null
+   Set-ItemProperty $p DisableAntiSpyware 1 -Type DWord
+   Set-ItemProperty "$p\Real-Time Protection" DisableRealtimeMonitoring 1 -Type DWord
+   ```
+3. **Reboot** — the policy only takes effect after a restart (this is the
+   "reboot, and rerun installer" the FLARE message asks for). Confirm it stuck:
+   `Get-ItemPropertyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender" DisableAntiSpyware`
+   prints `1`.
+4. Leave the guest running and let `dfir-lab` verify and re-snapshot. Without
+   the wizard, shut down and:
+   ```sh
+   VBoxManage snapshot DFIR-BUILD-BASE delete BUILD-READY
+   VBoxManage snapshot DFIR-BUILD-BASE take BUILD-READY \
+     --description "clean Windows, UAC/Defender/Tamper off, GA installed"
+   ```
+
+### Non-interactive (agents, scripts)
+
+Any flag skips the wizard and runs only the named stages, in pipeline order,
+without prompts. `--rebuild` / `--reclone` are the consent to delete a VM;
+without them existing VMs are kept.
+
+```sh
+dfir-lab --status                          # key=value state of base + variants
+dfir-lab --iso ~/iso/Win11.iso             # create the base (no-op if it exists)
+dfir-lab --defender                        # exits 3 until a human did the steps above
+dfir-lab --variant both                    # clone + stage + build + network
+dfir-lab --variant malware --reclone --no-build
+dfir-lab --variant dfir --resume              # finish a build that died after the FLARE install
+```
+
+Exit codes: `0` ok, `1` error, `3` waiting on the manual Defender step
+(re-run `dfir-lab --defender` once the guest is back up after its reboot).
 
 ### What `dfir-vm-network malware` hardens
 

@@ -21,7 +21,7 @@
 
 .PARAMETER Manifest
   Path to the YAML manifest (default: tools.yaml next to this script — which is
-  where dfir-prepare-variant stages the variant's manifest before the build
+  where dfir-lab stages the variant's manifest before the build
   copies both onto the guest Desktop).
 
 .PARAMETER DryRun
