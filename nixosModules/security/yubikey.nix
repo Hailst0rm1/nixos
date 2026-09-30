@@ -8,6 +8,7 @@
   serpantinumLock =
     lib.attrByPath ["home-manager" "users" config.username "importConfig" "hyprland" "lockscreen"] null config
     == "serpantinum";
+  serpantinum = lib.attrByPath ["home-manager" "users" config.username "programs" "serpantinum" "enable"] false config;
 in {
   options.security.yubikey.enable = lib.mkEnableOption "Enable yubikey";
 
@@ -53,6 +54,13 @@ in {
         };
         serpantinum-password = lib.mkIf serpantinumLock {u2fAuth = false;};
       };
+    };
+
+    # Feeds serpantinum's bottom-edge "touch your key" toast (patch 0039) over
+    # its unix socket; the toast is the notification, so no libnotify popups.
+    programs.yubikey-touch-detector = lib.mkIf serpantinum {
+      enable = true;
+      libnotify = false;
     };
 
     environment.systemPackages = with pkgs; [

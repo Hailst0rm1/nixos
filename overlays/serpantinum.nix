@@ -129,6 +129,24 @@ final: prev: {
           --replace-fail 'wsPill.isOccupied ? ThemeBackend.surface2' \
                          'wsPill.isOccupied ? ThemeBackend.overlay2'
 
+        # Screenshot: move the existing box while holding mainMod (Alt) instead
+        # of Shift; a plain drag still draws a new one.
+        substituteInPlace src/quickshell/screenshot/ScreenshotOverlay.qml \
+          --replace-fail 'if (mods & Qt.ShiftModifier) return 2;' \
+                         'if (mods & Qt.AltModifier) return 2;'
+        # Hyprland's global `$mainMod, mouse:272, movewindow` swallows that
+        # Alt-drag before the overlay sees it, so drop the bind while the overlay
+        # is open. A submap can't do it: Hyprland 0.55 matches mouse binds
+        # against the global submap whatever submap is active. ALT mirrors
+        # $mainMod in homeManagerModules/hyprland/hyprland.nix. Closing unbinds
+        # first so a double close can't stack two binds; should the overlay die
+        # while open, `hyprctl reload` brings the bind back.
+        substituteInPlace src/quickshell/screenshot/ScreenshotOverlay.qml \
+          --replace-fail 'root.isActive = true;' \
+                         'root.isActive = true; Quickshell.execDetached(["hyprctl", "keyword", "unbind", "ALT,mouse:272"]);' \
+          --replace-fail 'root.isActive = false;' \
+                         'root.isActive = false; Quickshell.execDetached(["hyprctl", "--batch", "keyword unbind ALT,mouse:272 ; keyword bindm ALT,mouse:272,movewindow"]);'
+
         # Weather temperature: plain white, not peach.
         substituteInPlace src/quickshell/bar/modules/WeatherWidget.qml \
           --replace-fail 'color: weatherWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.peach, 1.1) : ThemeBackend.peach' \

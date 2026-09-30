@@ -1,0 +1,20 @@
+--- a/src/quickshell/qmldir	2026-09-29 16:12:13.671912749 +0200
++++ b/src/quickshell/qmldir	2026-09-29 16:12:13.683433362 +0200
+@@ -7,6 +7,7 @@
+ Clipboard 1.0 clipboard/Clipboard.qml
+ TimerPanel 1.0 timer/TimerPanel.qml
+ TimerAlert 1.0 timer/TimerAlert.qml
++YubiKeyToast 1.0 yubikey/YubiKeyToast.qml
+ Launcher 1.0 launcher/Launcher.qml
+ ScreenshotOverlay 1.0 screenshot/ScreenshotOverlay.qml
+ WallpaperEngine 1.0 wallpaper/WallpaperEngine.qml
+--- a/src/quickshell/Shell.qml	2026-09-29 16:12:13.671912749 +0200
++++ b/src/quickshell/Shell.qml	2026-09-29 16:12:13.688913075 +0200
+@@ -21,6 +21,7 @@
+     Clipboard {}    
+     TimerPanel {}
+     TimerAlert {}
++    YubiKeyToast {}
+ 
+     Polkit {}
+     PopoutManager {}

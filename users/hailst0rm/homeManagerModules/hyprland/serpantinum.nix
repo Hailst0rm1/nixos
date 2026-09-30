@@ -71,13 +71,24 @@ in {
       enable = true;
       # Built via overlays.default against our nixpkgs 26.05, not
       # self.packages.<system>.default (serpantinum's own pinned unstable).
-      # With a YubiKey, the lock screen polls it on its own PAM stack; the
-      # stacks it names are declared in nixosModules/security/yubikey.nix.
+      # YubiKey-only additions, paired with nixosModules/security/yubikey.nix:
+      # the lock screen polls the key on its own PAM stack (0038), and a toast
+      # slides up whenever the key flashes for a touch, fed by
+      # yubikey-touch-detector (0039 + YubiKeyToast.qml).
       package =
-        if osConfig.security.yubikey.enable && cfg.lockscreen == "serpantinum"
+        if osConfig.security.yubikey.enable
         then
           pkgs.serpantinum.overrideAttrs (old: {
-            patches = old.patches ++ [../../../../patches/serpantinum/0038-lock-u2f-loop.patch];
+            patches =
+              old.patches
+              ++ lib.optional (cfg.lockscreen == "serpantinum") ../../../../patches/serpantinum/0038-lock-u2f-loop.patch
+              ++ [../../../../patches/serpantinum/0039-yubikey-toast-register.patch];
+            postPatch =
+              old.postPatch
+              + ''
+                install -Dm644 ${../../../../patches/serpantinum/files/yubikey/YubiKeyToast.qml} \
+                  src/quickshell/yubikey/YubiKeyToast.qml
+              '';
           })
         else pkgs.serpantinum;
 
