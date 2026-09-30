@@ -56,6 +56,9 @@ in {
       hash = "sha256-EyNWXf2F9HJTPfLQEKq5zxA/hYrsRs1s3MZkM4cc+A4=";
     }}/release/windows";
 
+    # Curated plugin lists for `vol-wrapper -m` (see the README beside them).
+    home.file."cyber/dfir/vol-modules".source = ./files/vol-modules;
+
     home.packages =
       (with pkgs-unstable; [
         # === Reverse engineering / static analysis ===
