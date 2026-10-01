@@ -1665,6 +1665,14 @@ in {
         effortLevel = "high"; # default reasoning effort; /effort overrides per-session
         includeCoAuthoredBy = false;
         skipDangerousModePermissionPrompt = true;
+        # When a safety classifier flags a request (most often cyber/bio), switch
+        # to the per-category fallback model and keep going instead of pausing to
+        # ask. Cyber flags on Fable/Opus 5.5/Opus 5 re-run on Opus 4.8; the target
+        # is fixed per category, not the `fallbackModel` chain (that is overload-
+        # only). `true` is already CC's default — pinned here so a future default
+        # flip can't start interrupting sessions, and `false` would hard-error
+        # headless `-p` runs. See docs/en/model-config#automatic-model-fallback.
+        switchModelsOnFlag = true;
 
         # System-prompt bloat trimming (see aihero.dev "How To Kill The Bloat
         # In Claude Code's System Prompt"). Each flag drops a whole feature —

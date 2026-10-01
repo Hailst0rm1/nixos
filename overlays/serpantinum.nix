@@ -109,9 +109,9 @@ final: prev: {
           --replace-fail 'readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.5)' \
                          'readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.1)'
 
-        # Lock screen: 0.55 of blurMax left the screen grab legible at rest.
+        # Lock screen: 0.72 of blurMax left the screen grab legible at rest.
         substituteInPlace src/quickshell/lock/Lock.qml \
-          --replace-fail 'blur: screenRoot.inputActive ? 1.0 : 0.55' \
+          --replace-fail 'blur: screenRoot.inputActive ? 1.0 : 0.72' \
                          'blur: screenRoot.inputActive ? 1.0 : 0.9'
 
         # Lock screen: the grim freeze shot only reached the blurred layer while

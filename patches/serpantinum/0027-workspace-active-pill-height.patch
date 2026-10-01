@@ -1,6 +1,6 @@
 --- a/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
 +++ b/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
-@@ -38,7 +38,7 @@
+@@ -38,7 +38,7 @@ Item {
              if (index < 0 || !widget) return 0;
              let xPos = 0;
              let spacing = widget.s(widget.isCompact ? 7 : 8);
@@ -8,17 +8,17 @@
 +            let activeW = widget.s(widget.isCompact ? 28 : 30);
              let inactiveW = widget.s(widget.isCompact ? 16 : 18);
              for (let i = 0; i < index; i++) {
-                 xPos += (i === activeIndex ? activeW : inactiveW) + spacing;
-@@ -47,7 +47,7 @@
+                 if (typeof widget.isShown === "function" && !widget.isShown(i))
+@@ -57,7 +57,7 @@ Item {
+             }
+             return (curIdx >= 0 && widget) ? getX(curIdx, curIdx) : 0;
          }
- 
-         property real targetLeft: (curIdx >= 0 && widget) ? getX(curIdx, curIdx) : 0
 -        property real targetRight: (curIdx >= 0 && widget) ? targetLeft + widget.s(widget.isCompact ? 34 : 36) : 0
 +        property real targetRight: (curIdx >= 0 && widget) ? targetLeft + widget.s(widget.isCompact ? 28 : 30) : 0
          property real actualLeft: targetLeft
          property real actualRight: targetRight
  
-@@ -57,7 +57,7 @@
+@@ -67,7 +67,7 @@ Item {
          x: wsLayout.x + actualLeft
          y: wsLayout.y + (wsLayout.height - height) / 2
          width: actualRight - actualLeft
@@ -27,12 +27,12 @@
          opacity: (widget && widget.workspaceCount > 0 && widget.activeIndex >= 0) ? 1.0 : 0.0
          Behavior on opacity { NumberAnimation { duration: 180 } }
      }
-@@ -79,7 +79,7 @@
-                 property bool isActive: widget ? (index === widget.activeIndex) : false
-                 property bool initAnimTrigger: false
+@@ -92,7 +92,7 @@ Item {
  
--                width: isActive ? (widget ? widget.s(widget.isCompact ? 34 : 36) : 36) : (widget ? widget.s(widget.isCompact ? 16 : 18) : 18)
-+                width: isActive ? (widget ? widget.s(widget.isCompact ? 28 : 30) : 30) : (widget ? widget.s(widget.isCompact ? 16 : 18) : 18)
+                 visible: shown
+                 width: shown
+-                    ? (isActive ? (widget ? widget.s(widget.isCompact ? 34 : 36) : 36) : (widget ? widget.s(widget.isCompact ? 16 : 18) : 18))
++                    ? (isActive ? (widget ? widget.s(widget.isCompact ? 28 : 30) : 30) : (widget ? widget.s(widget.isCompact ? 16 : 18) : 18))
+                     : 0
                  height: widget ? widget.s(widget.isCompact ? 16 : 18) : 18
                  anchors.verticalCenter: parent.verticalCenter
- 

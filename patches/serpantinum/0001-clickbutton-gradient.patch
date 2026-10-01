@@ -1,5 +1,5 @@
---- a/src/quickshell/reusables/ClickButton.qml	1970-01-01 01:00:01.000000000 +0100
-+++ b/src/quickshell/reusables/ClickButton.qml	2026-08-31 12:32:28.323721252 +0200
+--- a/src/quickshell/reusables/buttons/ClickButton.qml	1970-01-01 01:00:01.000000000 +0100
++++ b/src/quickshell/reusables/buttons/ClickButton.qml	2026-08-31 12:32:28.323721252 +0200
 @@ -54,7 +54,11 @@
          anchors.fill: parent
          radius: root.cornerRadius

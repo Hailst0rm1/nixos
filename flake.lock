@@ -941,11 +941,11 @@
         "serpantinum-wallpapers": "serpantinum-wallpapers"
       },
       "locked": {
-        "lastModified": 1790201799,
-        "narHash": "sha256-uzkXo0srBrGeNug0jud0UqyJbE50W/C9k+39Z8d11e0=",
+        "lastModified": 1790856007,
+        "narHash": "sha256-sf/SulzAciH+e/4BphWqSKRG5FRiofNKPxnYMX1ozSI=",
         "owner": "ilyamiro",
         "repo": "serpantinum",
-        "rev": "9f0e36bd9199c1d379701d052b884762b0de008b",
+        "rev": "1038a439c8019f3685cd3634e1ffb8f9793188ce",
         "type": "github"
       },
       "original": {

@@ -1,5 +1,5 @@
---- a/src/quickshell/reusables/TimeSelector.qml
-+++ b/src/quickshell/reusables/TimeSelector.qml
+--- a/src/quickshell/reusables/inputs/TimeSelector.qml
++++ b/src/quickshell/reusables/inputs/TimeSelector.qml
 @@ -14,6 +14,9 @@
      property bool isActive: false
      property bool isWidgetVisible: true
