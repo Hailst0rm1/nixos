@@ -162,15 +162,6 @@
           inherit hermes-agent;
         };
 
-        # Sandcastle agent sandbox image (rootless Podman). Build + load with:
-        #   nix build .#sandcastle-agent-image && podman load < result
-        sandcastle-agent-image =
-          inputs.nixpkgs.legacyPackages.x86_64-linux.callPackage
-          ./pkgs/sandcastle-agent-image/package.nix {
-            claude-code = inputs.claude-code-nix.packages.x86_64-linux.default;
-            codex = inputs.codex-cli-nix.packages.x86_64-linux.default;
-          };
-
         # Experimental VM for redteaming
         # h4kn1x = mkImage {
         #   inherit system nixos-dir username;

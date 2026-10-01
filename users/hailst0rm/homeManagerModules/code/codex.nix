@@ -19,6 +19,18 @@
     command = "${pkgs.nodejs}/bin/npx -y exa-mcp-server";
   };
 
+  context7McpWrapper = mkSecretEnvWrapper {
+    name = "context7-mcp-wrapper";
+    env.CONTEXT7_API_KEY = "services/context7/api-key";
+    command = "${pkgs.nodejs}/bin/npx -y @upstash/context7-mcp";
+  };
+
+  codegraphMcpWrapper = mkSecretEnvWrapper {
+    name = "codegraph-mcp-wrapper";
+    staticEnv.CODEGRAPH_TELEMETRY = "0";
+    command = "${pkgs.nodejs}/bin/npx -y @colbymchenry/codegraph serve --mcp";
+  };
+
   n8nMcpWrapper = mkSecretEnvWrapper {
     name = "n8n-mcp-wrapper";
     env.N8N_API_KEY = "services/n8n/api-key";
@@ -63,127 +75,14 @@ in {
       enable = true;
       package = inputs.codex-cli-nix.packages.x86_64-linux.default;
 
-      # Global context → ~/.codex/AGENTS.md (equivalent to Claude's CLAUDE.md)
-      context = ''
-        # AGENTS.md
-
-        Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
-
-        **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
-
-        ## 1. Think Before Coding
-
-        **Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-        Before implementing:
-        - State your assumptions explicitly. If uncertain, ask.
-        - If multiple interpretations exist, present them - don't pick silently.
-        - If a simpler approach exists, say so. Push back when warranted.
-        - If something is unclear, stop. Name what's confusing. Ask.
-
-        ## 2. Simplicity First
-
-        **Minimum code that solves the problem. Nothing speculative.**
-
-        - No features beyond what was asked.
-        - No abstractions for single-use code.
-        - No "flexibility" or "configurability" that wasn't requested.
-        - No error handling for impossible scenarios.
-        - If you write 200 lines and it could be 50, rewrite it.
-
-        Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-        ## 3. Surgical Changes
-
-        **Touch only what you must. Clean up only your own mess.**
-
-        When editing existing code:
-        - Don't "improve" adjacent code, comments, or formatting.
-        - Don't refactor things that aren't broken.
-        - Match existing style, even if you'd do it differently.
-        - If you notice unrelated dead code, mention it - don't delete it.
-
-        When your changes create orphans:
-        - Remove imports/variables/functions that YOUR changes made unused.
-        - Don't remove pre-existing dead code unless asked.
-
-        The test: Every changed line should trace directly to the user's request.
-
-        ## 4. Goal-Driven Execution
-
-        **Define success criteria. Loop until verified.**
-
-        Transform tasks into verifiable goals:
-        - "Add validation" → "Write tests for invalid inputs, then make them pass"
-        - "Fix the bug" → "Write a test that reproduces it, then make it pass"
-        - "Refactor X" → "Ensure tests pass before and after"
-
-        For multi-step tasks, state a brief plan:
-        ```
-        1. [Step] → verify: [check]
-        2. [Step] → verify: [check]
-        3. [Step] → verify: [check]
-        ```
-
-        Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
-
-        ---
-
-        **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
-      '';
-
-      # NEEDS FLAKE UPDATE
-      # Rules (equivalent to Claude's rules)
-      # rules.nix-ecosystem = ''
-      #   # Nix Ecosystem
-
-      #   General knowledge for working in any Nix-based environment.
-
-      #   ## Package Discovery & Experimentation
-      #   - Search for packages: `nix search nixpkgs <query>`
-      #   - Try a package without installing: `nix shell nixpkgs#<package>` or `nix run nixpkgs#<package>`
-      #   - Check package info: `nix eval nixpkgs#<package>.meta.description`
-
-      #   ## Development Environments with direnv
-      #   Add a `shell.nix` or `default.nix` to the project directory:
-      #   ```nix
-      #   # save as shell.nix
-      #   { pkgs ? import <nixpkgs> {}}:
-      #   pkgs.mkShell {
-      #     packages = [ pkgs.hello ];
-      #   }
-      #   ```
-      #   Then enable direnv:
-      #   ```shell
-      #   echo "use nix" >> .envrc
-      #   direnv allow
-      #   ```
-      #   For flake-based projects, use `use flake` instead of `use nix` in `.envrc`.
-
-      #   ## Flakes
-      #   - `nix flake show` — inspect flake outputs
-      #   - `nix flake check` — validate a flake
-      #   - `nix flake update` — update all inputs
-      #   - `nix flake lock --update-input <input>` — update a single input
-
-      #   ## Secrets Management
-      #   - Use sops-nix for managing secrets in NixOS configurations
-      #   - Never hardcode credentials or sensitive data
-      #   - Secret files are encrypted at rest and decrypted at activation time
-      #   - Access secrets via `config.sops.secrets.<name>.path`
-
-      #   ## Debugging
-      #   - `nix repl` — interactive Nix evaluator; load a flake with `:lf .`
-      #   - `nix eval` — evaluate an expression without building
-      #   - `nix build --print-build-logs` — see full build output
-      #   - `nixos-rebuild build` — verify a NixOS config builds without switching
-
-      #   ## Security
-      #   - Follow OPSEC principles in all code
-      #   - Think adversarially about code execution
-      #   - Consider defensive coding practices
-      #   - Document security implications of changes
-      # '';
+      # Global context → ~/.codex/AGENTS.md. Claude's CLAUDE.md is the one
+      # source, so the two cannot drift. Codex `rules` are command-approval
+      # `.rules` files, not instructions, so the nix-ecosystem rule rides along
+      # here instead.
+      context =
+        builtins.replaceStrings ["# CLAUDE.md"] ["# AGENTS.md"] config.programs.claude-code.context
+        + "\n"
+        + config.programs.claude-code.rules.nix-ecosystem;
 
       # Settings → ~/.codex/config.toml
       settings = {
@@ -229,6 +128,21 @@ in {
               command = "${exaMcpWrapper}";
               args = [];
             };
+          }
+          # Same switches as Claude Code, so one toggle covers both agents.
+          // lib.optionalAttrs config.code.claude-code.context7.enable {
+            context7 = {
+              command = "${context7McpWrapper}";
+              args = [];
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.codegraph.enable {
+            codegraph = {
+              command = "${codegraphMcpWrapper}";
+              args = [];
+            };
+          }
+          // lib.optionalAttrs config.code.claude-code.n8n.enable {
             n8n = {
               command = "${n8nMcpWrapper}";
               args = [];
@@ -300,7 +214,10 @@ in {
         if [ -f "$settings" ]; then
           while IFS= read -r plugin; do
             marketplace="''${plugin#*@}"
-            plugin_root="$HOME/.claude/plugins/marketplaces/$marketplace"
+            # Pinned marketplaces (claude-code.nix pluginMarketplaces) are store
+            # trees linked here; the unpinned ones are Claude's own git clones.
+            plugin_root="$HOME/.claude/marketplaces/$marketplace"
+            [ -d "$plugin_root" ] || plugin_root="$HOME/.claude/plugins/marketplaces/$marketplace"
             if [ -d "$plugin_root" ]; then
               if [ -f "$plugin_root/.codex-plugin/plugin.json" ]; then
                 plugin_name="''${plugin%@*}"

@@ -50,8 +50,9 @@ Reach these with `-t <os>`, which runs everything.
 ## When volatility3 updates
 
 Volatility renames plugins (most detections moved under `*.malware.*` and
-`windows.registry.*`). A stale name fails only that one module at run time.
-Check the lists against the installed inventory:
+`windows.registry.*`). The build fails when a listed name no longer exists in
+the pinned inventory (see `vol-modules` in `dfir.nix`). A deprecated alias
+still runs, so it passes the build; this stricter check flags those too:
 
 ```sh
 csv=$(dirname "$(readlink -f "$(which vol-wrapper)")")/../share/vol-wrapper/plugins.csv

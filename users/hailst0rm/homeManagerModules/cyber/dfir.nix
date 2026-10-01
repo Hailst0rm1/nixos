@@ -31,6 +31,18 @@
     runtimeInputs = [pkgs.xorriso pkgs.gnugrep flare-vbox dfir-vm-network];
     text = builtins.readFile ./files/dfir/host/dfir-lab.sh;
   };
+
+  # Curated plugin lists for `vol-wrapper -m` (see the README beside them).
+  # Volatility renames plugins, so fail the build when a listed name is gone
+  # from the pinned inventory rather than letting that one module fail mid-run.
+  vol-modules = pkgs.runCommand "vol-modules" {} ''
+    cp -r ${./files/vol-modules} $out
+    cut -d, -f1 ${vol-wrapper}/share/vol-wrapper/plugins.csv > known
+    if stale=$(cat $out/*.txt | sort -u | grep -vxFf known); then
+      echo "vol-modules: not in volatility3's plugin inventory:" $stale >&2
+      exit 1
+    fi
+  '';
 in {
   # Option declared in nixosModules/variables.nix, which is imported into both
   # the NixOS and HM namespaces (see users/hailst0rm/hosts/default.nix) — like
@@ -56,8 +68,7 @@ in {
       hash = "sha256-EyNWXf2F9HJTPfLQEKq5zxA/hYrsRs1s3MZkM4cc+A4=";
     }}/release/windows";
 
-    # Curated plugin lists for `vol-wrapper -m` (see the README beside them).
-    home.file."cyber/dfir/vol-modules".source = ./files/vol-modules;
+    home.file."cyber/dfir/vol-modules".source = vol-modules;
 
     home.packages =
       (with pkgs-unstable; [

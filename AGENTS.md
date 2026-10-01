@@ -180,6 +180,28 @@ that feeds `~/.claude/skills`, agents, or plugins (the `*-skills-repo` /
 `humanizer-repo` fetches in `claude-code.nix`). The `# track-branch:` sentinel
 keeps them on upstream's latest; a tag pin would freeze them at that release.
 
+**Claude Code plugins are pinned the same way, and nothing updates them at
+runtime.** A third-party plugin marketplace is a `*-marketplace-repo` fetch in
+`claude-code.nix`, listed in `pluginMarketplaces` under the `name` from its
+`.claude-plugin/marketplace.json`. That links the tree to
+`~/.claude/marketplaces/<name>` and declares it as a `directory` source. Never
+declare one as `source = "github"`: that form can only name a branch, so
+Claude Code runs whatever upstream pushed last. There is no update timer. A
+plugin moves when the sweep bumps its `rev`, and `home.activation.claudePlugins`
+reinstalls it on the next switch.
+
+Before adding a plugin, check that its marketplace.json lists it with a
+relative `source` (`"./"`, `"./plugin"`). If the entry names an external repo,
+the pin covers the catalogue and not the code. `cli-printing-press` is the one
+such case today and stays on a `github` source, along with Anthropic's own
+`claude-plugins-official`.
+
+Codex reads a different manifest from the same tree,
+`.agents/plugins/marketplace.json`, so check that one too when the tree has a
+`.codex-plugin/`. `ponytail`'s names upstream `main`; `ponytail-marketplace` in
+`claude-code.nix` rewrites the entry to the local tree so the pin holds for
+Codex as well.
+
 Use `${...}` interpolation so the version string appears exactly once — that
 form is what `scripts/nix-github-update-report.py` substitutes when bumping:
 

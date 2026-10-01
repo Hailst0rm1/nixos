@@ -41,8 +41,8 @@
   #   $ claude plugin list  → error: unknown option '--mcp-config'
   #   $ claude mcp list     → error: unknown option '--mcp-config'
   #
-  # which is why claude-plugins-update.nix has to reach past the wrapper for
-  # the unwrapped binary. Prepending alone does not fix it either: the flag is
+  # which is why claudePluginsSync has to reach past the wrapper for the
+  # unwrapped binary. Prepending alone does not fix it either: the flag is
   # variadic, so `--mcp-config <file> plugin list` swallows `plugin` and `list`
   # as two more config paths. Only the `--flag=value` form binds exactly one
   # value and leaves the subcommand intact.
@@ -151,6 +151,136 @@
     rev = "225a6f39ac85f76ee48dbad772ea4abe4ed6c9d8";
     hash = "sha256-n8cbTzhlGf8VnWpPukq7XD2mucIrqyE1XMpAAc5oA8A=";
   };
+
+  # Plugin marketplaces, pinned by SHA like the skill repos above. A `github`
+  # marketplace source can only name a branch, so Claude Code would run
+  # whatever upstream pushed last. These trees are linked to
+  # ~/.claude/marketplaces/<name> and declared as `directory` sources instead,
+  # so a plugin changes only when its `rev` here does. The pin reaches the
+  # plugin itself only because each marketplace.json lists it by a relative
+  # `source`; one that names an external repo cannot be pinned this way.
+  # track-branch: main
+  impeccable-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "pbakaus";
+    repo = "impeccable";
+    rev = "0d6b47ea19b63afe15e3f93a44d5d9fbbc6fd275";
+    hash = "sha256-zZa/J/6aNNebOo7EQUXXJ7mHO8mHo0CGNOlcdKA6H1M=";
+  };
+  # track-branch: main
+  context-mode-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "mksglu";
+    repo = "context-mode";
+    rev = "ab347abd23cdf08b8dbfa74d86e202b41b10654a";
+    hash = "sha256-cziR4BnEmmtSCTMJoHPuLZiljmQRMRnAfFOOsXnkWMo=";
+  };
+  # track-branch: main
+  obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "kepano";
+    repo = "obsidian-skills";
+    rev = "3ccff5338ea700537839b21900aa5358a0402c98";
+    hash = "sha256-kyH07EVmwIEC/q6i91Kz8mPE78j9ITga2NZUpU1+nHU=";
+  };
+  # track-branch: main
+  marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "coreyhaines31";
+    repo = "marketingskills";
+    rev = "5b2c0007766c6a1cf1d53fd8fc73e979e0821022";
+    hash = "sha256-x2dcZrwUMaGK4wHNQtE2TvPH5mBR474mW0Y5fQb19dw=";
+  };
+  # track-branch: main
+  visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "nicobailon";
+    repo = "visual-explainer";
+    rev = "7163c3e10660912e0b89e1af465db9f387282b88";
+    hash = "sha256-QO7jv6vK30shxJ+iKWfiSf04PSFeNESWx//yur7RcTc=";
+  };
+  # track-branch: main
+  ponytail-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "DietrichGebert";
+    repo = "ponytail";
+    rev = "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156";
+    hash = "sha256-PES5XrSYx0VBXWVHEDRykGy0SAmJfV/luzy8Gfg0aAQ=";
+  };
+  # Codex reads .agents/plugins/marketplace.json, which sends it to upstream
+  # `main` for the plugin itself, past the pin. Point that entry back at this
+  # tree. The build fails if upstream changes the entry.
+  ponytail-marketplace = pkgs.runCommand "ponytail-marketplace" {} ''
+    cp -r ${ponytail-marketplace-repo} $out
+    chmod -R u+w $out
+    ${pkgs.jq}/bin/jq '
+      if (.plugins | length) == 1 and .plugins[0].source.url == "https://github.com/DietrichGebert/ponytail.git"
+      then .plugins[0].source = {source: "local", path: "./"}
+      else error("ponytail Codex manifest changed upstream")
+      end
+    ' ${ponytail-marketplace-repo}/.agents/plugins/marketplace.json > $out/.agents/plugins/marketplace.json
+  '';
+  # track-branch: main
+  n8n-skills-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "czlonkowski";
+    repo = "n8n-skills";
+    rev = "19cd793f4789e3ef9c657ccf26e097f641a77df0";
+    hash = "sha256-Dn9aoLpNisbAMX2s6KY05UTPIfAYoTYwAYvxSg5ThAM=";
+  };
+  # track-branch: main
+  codex-plugin-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "openai";
+    repo = "codex-plugin-cc";
+    rev = "db52e28f4d9ded852ab3942cea316258ae4ef346";
+    hash = "sha256-S/R4kHTcIHBcG0TRX063C7ILXZZm0oMqunchPGg6ToU=";
+  };
+  # track-branch: main
+  claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "thedotmack";
+    repo = "claude-mem";
+    rev = "ade13f3067d3de486f41dbd8ed90ac5c854de718";
+    hash = "sha256-xQB3eRT34T2zDDMeGl27Bsvv4KBSuf7i6WTM0TOHz8g=";
+  };
+  # track-branch: main
+  token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
+    owner = "alexgreensh";
+    repo = "token-optimizer";
+    rev = "9ea1977acab5ab57421068064fc3bf2f0d4b2fdf";
+    hash = "sha256-z6m+GsL6cwdggMviOXcLcftKR7U4LUhrgOwNKPfql3o=";
+  };
+
+  # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
+  # the name Claude Code registers the marketplace under.
+  pluginMarketplaces =
+    {
+      impeccable = impeccable-marketplace-repo;
+    }
+    // lib.optionalAttrs config.code.claude-code.context-mode.enable {
+      context-mode = context-mode-marketplace-repo;
+    }
+    // lib.optionalAttrs config.code.claude-code.obsidian.enable {
+      obsidian-skills = obsidian-skills-marketplace-repo;
+    }
+    // lib.optionalAttrs config.code.claude-code.marketing-skills.enable {
+      marketingskills = marketingskills-marketplace-repo;
+    }
+    // lib.optionalAttrs config.code.claude-code.visual-explainer.enable {
+      visual-explainer-marketplace = visual-explainer-marketplace-repo;
+    }
+    // lib.optionalAttrs config.code.claude-code.ponytail.enable {
+      ponytail = ponytail-marketplace;
+    }
+    // lib.optionalAttrs config.code.claude-code.n8n.enable {
+      n8n-mcp-skills = n8n-skills-marketplace-repo;
+    }
+    // lib.optionalAttrs config.code.claude-code.codex.enable {
+      openai-codex = codex-plugin-marketplace-repo;
+    }
+    // lib.optionalAttrs config.code.claude-code.claude-mem.enable {
+      thedotmack = claude-mem-marketplace-repo;
+    }
+    // lib.optionalAttrs config.code.claude-code.tokenOptimizer.enable {
+      alexgreensh-token-optimizer = token-optimizer-marketplace-repo;
+    };
+
+  pluginMarketplace = plugin: lib.last (lib.splitString "@" plugin);
+  pinnedPlugins =
+    lib.filter (plugin: pluginMarketplaces ? ${pluginMarketplace plugin})
+    (lib.attrNames (lib.filterAttrs (_: enabled: enabled) config.programs.claude-code.settings.enabledPlugins));
 
   mattpocockPlugin = lib.importJSON "${mattpocock-skills-repo}/.claude-plugin/plugin.json";
   # Experimental skills not listed in plugin.json — opt them in explicitly here.
@@ -360,6 +490,71 @@
     fi
   '';
 
+  # Codegraph-first gate. In a project with a .codegraph/ index, grep-style
+  # searches (the Grep tool, or rg/grep/git grep starting a shell segment) are
+  # denied until a codegraph query ran in the session within the last 10
+  # minutes. The rule text alone measured 0.7% pickup on 2026-09-30 (20
+  # codegraph calls against 3,048 grep-style ones in argos); blocking forces
+  # enough use to judge the tool against grep.
+  codegraphGateHook = pkgs.writeShellScript "codegraph-gate" ''
+    PATH=${lib.makeBinPath [pkgs.coreutils pkgs.findutils pkgs.jq]}
+    INPUT=$(cat)
+    TOOL=$(jq -r '.tool_name // empty' <<<"$INPUT")
+    SID=$(jq -r '.session_id // empty' <<<"$INPUT")
+    CWD=$(jq -r '.cwd // empty' <<<"$INPUT")
+    [ -n "$SID" ] || exit 0
+    STAMP="''${XDG_RUNTIME_DIR:-/tmp}/claude-codegraph-gate/$SID"
+
+    # A command counts when it starts a shell segment, so `git log | grep x`
+    # (filtering output) passes while `cd repo && rtk rg x` does not.
+    # ponytail: regex over the raw string, so a quoted "; grep" is a false
+    # hit. It costs one codegraph call; parse the command if that bites.
+    SEG='(^|&&|\|\||;|\n)\s*(\w+=\S+\s+)*(rtk\s+)?'
+    cmd_matches() {
+      jq -e --arg re "$SEG$1" '.tool_input.command // "" | test($re)' <<<"$INPUT" >/dev/null
+    }
+
+    QUERY=false
+    SEARCH=false
+    DIR=$CWD
+    case "$TOOL" in
+      mcp__codegraph__*) QUERY=true ;;
+      Grep)
+        SEARCH=true
+        DIR=$(jq -r '.tool_input.path // .cwd // empty' <<<"$INPUT")
+        ;;
+      Bash)
+        cmd_matches 'codegraph\s+(explore|query|context|node|callers|callees|impact)\b' && QUERY=true
+        cmd_matches '(git\s+)?(rg|grep|egrep|fgrep)(\s|$)' && SEARCH=true
+        ;;
+    esac
+
+    if $QUERY; then
+      mkdir -p "''${STAMP%/*}" && touch "$STAMP"
+      exit 0
+    fi
+    $SEARCH || exit 0
+    [ -n "$(find "$STAMP" -mmin -10 2>/dev/null)" ] && exit 0
+
+    case "$DIR" in
+      /*) ;;
+      *) DIR="$CWD/$DIR" ;;
+    esac
+    [ -d "$DIR" ] || DIR=$(dirname "$DIR")
+    while [ "$DIR" != / ] && [ ! -d "$DIR/.codegraph" ]; do
+      DIR=$(dirname "$DIR")
+    done
+    [ -d "$DIR/.codegraph" ] || exit 0
+
+    jq -cn --arg dir "$DIR" '{
+      "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "deny",
+        "permissionDecisionReason": ("\($dir) has a CodeGraph index, so query it first: mcp__codegraph__codegraph_explore, or `codegraph explore <query>` in Bash. A codegraph query unlocks grep-style searches in this session for 10 minutes. Retry this search after it if you still need it.")
+      }
+    }'
+  '';
+
   # Stop hook: nudge user to run /handoff once the session exceeds
   # `sessionHandoffReminder.thresholdMinutes`. Auto-dismisses once the
   # handoff skill has actually been invoked (detected via a Skill
@@ -409,8 +604,8 @@
   # Model detection is layered: the documented `model` input field is
   # empirically absent from SessionStart input (docs: "not guaranteed"), so
   # fall back to the parent claude process's --model flag, then the saved
-  # /model default (undocumented ~/.claude.json cache slot — best-effort; on
-  # a miss the policy is simply not injected, which is harmless).
+  # /model default (`model` in ~/.claude/settings.json; on a miss the policy
+  # is simply not injected, which is harmless).
   delegationPolicy = pkgs.writeText "delegation-policy.md" ''
     # Delegation & Model Routing
 
@@ -479,7 +674,7 @@
 
     # Saved /model default.
     if [ -z "$MODEL" ]; then
-      MODEL=$(${pkgs.jq}/bin/jq -r '[(.clientDataCacheSlots // {}) | .[] | .model? // empty] | first // empty' "$HOME/.claude.json" 2>/dev/null)
+      MODEL=$(${pkgs.jq}/bin/jq -r '.model // empty' "$HOME/.claude/settings.json" 2>/dev/null)
     fi
 
     case "''${MODEL,,}" in
@@ -592,6 +787,9 @@
   # memory files, and correct per-worktree (each has its own toplevel).
   projectNotesHook = pkgs.writeShellScript "claude-project-notes" ''
     root=$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null) || exit 0
+    # Repos set up from ~/Code/workflow ship their own project-level hook that
+    # prints the same file; yield to it so the notes load once.
+    [ -x "$root/scripts/claude-project-notes.sh" ] && exit 0
     [ -f "$root/CLAUDE.k.md" ] && ${pkgs.coreutils}/bin/cat "$root/CLAUDE.k.md"
     exit 0
   '';
@@ -779,6 +977,36 @@
     ${pkgs.coreutils}/bin/install -m 0644 ${claudeSettingsFile} "$dst"
   '';
 
+  # Installed plugin code lives in ~/.claude/plugins/cache, copied from the
+  # marketplace tree. `claude plugin update` compares version strings, so a new
+  # rev that keeps its plugin.json version never reaches that copy (checked
+  # against 2.1.283 on 2026-09-30). Reinstall instead, once per pin change: the
+  # stamp records the tree each plugin was last installed from. No network is
+  # involved, and a failure only leaves the stamp unwritten for the next run.
+  claudePluginsSync = pkgs.writeShellScript "claude-plugins-sync" ''
+    # The unwrapped binary, so no MCP servers are spawned (see the mcpServers
+    # note above); falls back to the wrapper if this build isn't wrapped.
+    CLAUDE="${config.programs.claude-code.finalPackage}/bin/.claude-wrapped"
+    [ -x "$CLAUDE" ] || CLAUDE="${config.programs.claude-code.finalPackage}/bin/claude"
+    stamps="$HOME/.claude/plugins/nix-pins"
+    ${pkgs.coreutils}/bin/mkdir -p "$stamps"
+    changed=
+    sync() {
+      [ "$(${pkgs.coreutils}/bin/cat "$stamps/$1" 2>/dev/null)" = "$2" ] && return
+      echo "claude plugin $1: installing from $2"
+      "$CLAUDE" plugin marketplace add "$HOME/.claude/marketplaces/''${1#*@}" >/dev/null || return
+      changed=1
+      "$CLAUDE" plugin uninstall --keep-data "$1" >/dev/null 2>&1
+      "$CLAUDE" plugin install "$1" >/dev/null && echo "$2" > "$stamps/$1"
+    }
+    ${lib.concatMapStringsSep "\n" (plugin: "sync ${lib.escapeShellArg plugin} ${pluginMarketplaces.${pluginMarketplace plugin}}") pinnedPlugins}
+    # uninstall/install rewrite enabledPlugins in settings.json; put the
+    # declared file back.
+    if [ -n "$changed" ]; then
+      ${claudeSettingsInstall}
+    fi
+  '';
+
   # claude-mem's vector search shells out to `uvx chroma-mcp`. uv fetches
   # python-build-standalone plus manylinux wheels, and NumPy's wheel dlopen's
   # libstdc++.so.6 at import time — which nothing on NixOS puts in that
@@ -865,8 +1093,13 @@ in {
       type = lib.types.bool;
       default = true;
       description = ''
-        Enable the colbymchenry/codegraph MCP server: tree-sitter + SQLite/FTS5 code-intelligence with symbol search, callers/callees, and impact analysis. Runs as a global MCP server; only does useful work in projects that have been initialized with `codegraph init` (creates `.codegraph/`). 100% local, no API keys. Supports TS/JS, Python, Go, Rust, Java, C#, PHP, Ruby, C/C++, Swift, Kotlin, Dart, Lua, Luau, Svelte, Liquid, Pascal — NOT Nix.
+        Enable the colbymchenry/codegraph MCP server: tree-sitter + SQLite/FTS5 code-intelligence with symbol search, callers/callees, and impact analysis. Runs as a global MCP server; only does useful work in projects that have been initialized with `codegraph init` (creates `.codegraph/`). 100% local, no API keys. Supports TS/JS, Python, Go, Rust, Java, C#, PHP, Ruby, C/C++, Swift, Kotlin, Dart, Lua, Luau, Svelte, Liquid, Pascal, Nix.
       '';
+    };
+    codegraph.grepGate.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "In projects with a `.codegraph/` index, deny grep-style searches (Grep tool, rg/grep/git grep) until a codegraph query ran in the session within the last 10 minutes. Forces codegraph to go first so its usefulness can be judged against grep.";
     };
     perplexity.enable = lib.mkOption {
       type = lib.types.bool;
@@ -920,6 +1153,11 @@ in {
       type = lib.types.bool;
       default = false;
       description = "Link the gsd-build/get-shit-done workflow into ~/.claude: 67 `/gsd:*` commands and 33 `gsd-*` subagents implementing a full `.planning/`-directory methodology (roadmap → spec → discuss → plan → execute → verify). Default-off after the 2026-08-26 audit: the 33 agent definitions cost a measured 3,645 tokens of startup context every session (agent listings, unlike skill listings, are not budget-capped) against zero agent spawns ever and one `/gsd:help` invocation on 2026-05-08. Commands and agents are gated together because the commands dispatch to the agents — shipping one without the other only produces broken slash commands.";
+    };
+    context-mode.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Enable the mksglu/context-mode plugin: sandboxed `ctx_*` tools that keep large command output out of the conversation, plus hooks that redirect Bash, Read, Grep and WebFetch toward them. Off since the 2026-09-30 audit measured 134 `ctx_execute` calls against 8,017 Bash calls in 14 days; RTK covers the same saving through a hook.";
     };
     visual-explainer.enable = lib.mkOption {
       type = lib.types.bool;
@@ -1362,9 +1600,8 @@ in {
             current source. Query another indexed project — a sibling repo, or a
             service inside a monorepo — by passing `projectPath`.
 
-            Subagents and non-MCP harnesses have no MCP tools, so they use the
-            identical CLI instead: `codegraph explore <query>`. Also on the CLI
-            only: `codegraph node|query|callers|callees|impact|files|status`
+            Harnesses without MCP use the identical CLI instead:
+            `codegraph explore <query>`. Also on the CLI only: `codegraph node|query|callers|callees|impact|files|status`
             (the same operations exist as MCP tools but are unlisted by default;
             `CODEGRAPH_MCP_TOOLS=explore,node,search,...` re-lists them).
 
@@ -1376,6 +1613,11 @@ in {
             the index is never stale and there is nothing to re-run.
 
             Nix is supported, so this repo is a valid target too.
+
+            In an indexed project a PreToolUse hook denies grep-style searches
+            (the Grep tool, `rg`, `grep`, `git grep`) until a codegraph query
+            has run in the session within the last 10 minutes. Query first,
+            then grep for whatever the graph did not answer.
           '';
         };
 
@@ -1563,6 +1805,7 @@ in {
 
         # Hooks:
         # - PreToolUse (RTK): rewrites Bash commands to token-compact equivalents.
+        # - PreToolUse (codegraph gate): denies grep-style searches in indexed projects until codegraph was queried.
         # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
         # - SessionStart (delegation policy): Opus-only orchestration/model-routing context.
         # - SubagentStop (delegation policy): persists each subagent's closing message.
@@ -1578,6 +1821,19 @@ in {
                   {
                     type = "command";
                     command = "${rtkRewriteHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf (config.code.claude-code.codegraph.enable && config.code.claude-code.codegraph.grepGate.enable) {
+            PreToolUse = [
+              {
+                matcher = "Bash|Grep|mcp__codegraph__.*";
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${codegraphGateHook}";
                   }
                 ];
               }
@@ -1675,11 +1931,28 @@ in {
           })
         ];
 
+        # A repo that vendors a skill we already load as a plugin lists it twice
+        # (`impeccable` and `impeccable:impeccable`). Keep the repo copy callable
+        # by its bare name but drop its description, so the plugin copy is the
+        # one Claude matches on. Personal skills need no entry: they already
+        # replace a project skill of the same name.
+        skillOverrides =
+          {
+            impeccable = "name-only";
+          }
+          // lib.optionalAttrs config.code.claude-code.ponytail.enable {
+            ponytail = "name-only";
+            ponytail-review = "name-only";
+            ponytail-audit = "name-only";
+          };
+
         # Plugins
         enabledPlugins =
           {
             # "frontend-design@claude-plugins-official" = true;  # Replaced by impeccable (strict superset)
             "impeccable@impeccable" = true;
+          }
+          // lib.optionalAttrs config.code.claude-code.context-mode.enable {
             "context-mode@context-mode" = true;
           }
           // lib.optionalAttrs config.code.claude-code.skill-creator.enable {
@@ -1704,7 +1977,7 @@ in {
             "ponytail@ponytail" = true;
           }
           // lib.optionalAttrs config.code.claude-code.n8n.enable {
-            "n8n-skills@n8n-skills" = true;
+            "n8n-mcp-skills@n8n-mcp-skills" = true;
           }
           // lib.optionalAttrs config.code.claude-code.printing-press.enable {
             "cli-printing-press@cli-printing-press" = true;
@@ -1719,64 +1992,16 @@ in {
             "token-optimizer@alexgreensh-token-optimizer" = true;
           };
 
+        # Third-party marketplaces are the pinned trees in pluginMarketplaces
+        # (see there). Two stay on a branch: claude-plugins-official is
+        # Anthropic's own catalogue, and cli-printing-press lists its plugin by
+        # `github` source, which a marketplace pin cannot reach.
         extraKnownMarketplaces =
           {
             claude-plugins-official = {
               source = {
                 source = "github";
                 repo = "anthropics/claude-plugins-official";
-              };
-            };
-            context-mode = {
-              source = {
-                source = "github";
-                repo = "mksglu/context-mode";
-              };
-            };
-            impeccable = {
-              source = {
-                source = "github";
-                repo = "pbakaus/impeccable";
-              };
-            };
-          }
-          // lib.optionalAttrs config.code.claude-code.obsidian.enable {
-            obsidian-skills = {
-              source = {
-                source = "github";
-                repo = "kepano/obsidian-skills";
-              };
-            };
-          }
-          // lib.optionalAttrs config.code.claude-code.marketing-skills.enable {
-            marketingskills = {
-              source = {
-                source = "github";
-                repo = "coreyhaines31/marketingskills";
-              };
-            };
-          }
-          // lib.optionalAttrs config.code.claude-code.visual-explainer.enable {
-            visual-explainer-marketplace = {
-              source = {
-                source = "github";
-                repo = "nicobailon/visual-explainer";
-              };
-            };
-          }
-          // lib.optionalAttrs config.code.claude-code.ponytail.enable {
-            ponytail = {
-              source = {
-                source = "github";
-                repo = "DietrichGebert/ponytail";
-              };
-            };
-          }
-          // lib.optionalAttrs config.code.claude-code.n8n.enable {
-            n8n-skills = {
-              source = {
-                source = "github";
-                repo = "czlonkowski/n8n-skills";
               };
             };
           }
@@ -1788,30 +2013,13 @@ in {
               };
             };
           }
-          // lib.optionalAttrs config.code.claude-code.codex.enable {
-            openai-codex = {
-              source = {
-                source = "github";
-                repo = "openai/codex-plugin-cc";
-              };
+          // lib.mapAttrs (name: _: {
+            source = {
+              source = "directory";
+              path = "${config.home.homeDirectory}/.claude/marketplaces/${name}";
             };
-          }
-          // lib.optionalAttrs config.code.claude-code.claude-mem.enable {
-            thedotmack = {
-              source = {
-                source = "github";
-                repo = "thedotmack/claude-mem";
-              };
-            };
-          }
-          // lib.optionalAttrs config.code.claude-code.tokenOptimizer.enable {
-            alexgreensh-token-optimizer = {
-              source = {
-                source = "github";
-                repo = "alexgreensh/token-optimizer";
-              };
-            };
-          };
+          })
+          pluginMarketplaces;
 
         # Editor preferences (if claude-code supports this)
         editor = {
@@ -1865,6 +2073,7 @@ in {
       }
       // mattpocockSkillFiles
       // twentyfirstSkillFiles
+      // lib.mapAttrs' (name: src: lib.nameValuePair ".claude/marketplaces/${name}" {source = src;}) pluginMarketplaces
       // lib.optionalAttrs config.importConfig.git.enable {
         ".config/git/hooks/post-checkout" = {
           executable = true;
@@ -1876,6 +2085,12 @@ in {
     # symlink is already gone when we drop the real file in its place.
     home.activation.claudeSettings = lib.hm.dag.entryAfter ["linkGeneration"] ''
       run ${claudeSettingsInstall}
+    '';
+
+    # After claudeSettings: `claude plugin` reads the marketplace declarations
+    # from settings.json.
+    home.activation.claudePlugins = lib.hm.dag.entryAfter ["claudeSettings"] ''
+      run ${claudePluginsSync}
     '';
 
     home.activation.claudeMemSettings =

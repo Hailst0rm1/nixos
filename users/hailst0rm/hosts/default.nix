@@ -94,18 +94,22 @@
           "open_router/openrouter/free"
         ];
       };
+      n8n.enable = lib.mkDefault false;
       exa.enable = lib.mkDefault true;
+      context7.enable = lib.mkDefault true;
       codegraph.enable = lib.mkDefault true;
+      codegraph.grepGate.enable = lib.mkDefault true;
       shadcn.enable = lib.mkDefault true;
       twentyfirst.enable = lib.mkDefault true;
       higgsfield.enable = lib.mkDefault false;
       marketing-skills.enable = lib.mkDefault false;
+      printing-press.enable = lib.mkDefault false;
       skill-creator.enable = lib.mkDefault false;
       obsidian.enable = lib.mkDefault false;
       gsd.enable = lib.mkDefault false;
       perplexity.enable = lib.mkDefault false;
       claude-mem = {
-        enable = lib.mkDefault true;
+        enable = lib.mkDefault false;
         settings = lib.mkDefault {
           CLAUDE_MEM_SKIP_TOOLS = "ListMcpResourcesTool,SlashCommand,Skill,TodoWrite,AskUserQuestion,Read,Grep,Glob";
           CLAUDE_MEM_CONTEXT_OBSERVATIONS = "20";
@@ -116,7 +120,9 @@
       codeburn.enable = lib.mkDefault false;
       tokenOptimizer.enable = lib.mkDefault false;
       superpowers.enable = lib.mkDefault false;
+      rtk.enable = lib.mkDefault true;
       playground.enable = lib.mkDefault false;
+      context-mode.enable = lib.mkDefault false;
       visual-explainer.enable = lib.mkDefault true;
       ponytail = {
         enable = lib.mkDefault true;
@@ -124,7 +130,6 @@
       };
       readable.enable = lib.mkDefault true;
       projectNotes.enable = lib.mkDefault true;
-      pluginAutoUpdate.enable = lib.mkDefault true;
       delegationPolicy.enable = lib.mkDefault true;
       sessionHandoffReminder = {
         enable = lib.mkDefault true;
@@ -147,18 +152,6 @@
       enable = lib.mkDefault false;
       shareClaudeSkills.enable = lib.mkDefault true;
       perplexity.enable = lib.mkDefault false;
-    };
-    sandcastle = {
-      # Default-on wherever claude-code is enabled.
-      enable = lib.mkDefault false;
-      container = lib.mkDefault "podman";
-      image = lib.mkDefault "sandcastle-agent:latest";
-      model = lib.mkDefault "claude-opus-4-7";
-      effort = lib.mkDefault "high";
-      baseBranch = lib.mkDefault "master";
-      maxIssues = lib.mkDefault 4;
-      concurrency = lib.mkDefault 2;
-      implementIterations = lib.mkDefault 40;
     };
     helix = {
       enable = lib.mkDefault true;
