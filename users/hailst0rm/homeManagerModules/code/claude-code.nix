@@ -163,15 +163,15 @@
   impeccable-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "pbakaus";
     repo = "impeccable";
-    rev = "0d6b47ea19b63afe15e3f93a44d5d9fbbc6fd275";
-    hash = "sha256-zZa/J/6aNNebOo7EQUXXJ7mHO8mHo0CGNOlcdKA6H1M=";
+    rev = "e103efe779e2dd01274dabae83531fef00bf2563";
+    hash = "sha256-6mF4Kw0w3QnMiqS0PfNT+Dhne/JzfnVZ+pTcobCZNkY=";
   };
   # track-branch: main
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "ab347abd23cdf08b8dbfa74d86e202b41b10654a";
-    hash = "sha256-cziR4BnEmmtSCTMJoHPuLZiljmQRMRnAfFOOsXnkWMo=";
+    rev = "80d4e823adebbe1e758b558522e3da20312a66cc";
+    hash = "sha256-/SQtayVb2GumKkysbXDGHQXVeGNklA6FrqD8Y7/+w5M=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -184,22 +184,22 @@
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "coreyhaines31";
     repo = "marketingskills";
-    rev = "5b2c0007766c6a1cf1d53fd8fc73e979e0821022";
-    hash = "sha256-x2dcZrwUMaGK4wHNQtE2TvPH5mBR474mW0Y5fQb19dw=";
+    rev = "dda3841f0b294e01e93b1541486beefbfab0915e";
+    hash = "sha256-qSSbl+KOmxUSn98i94hRwe0YGP+f6kteg7YrTtMIFNA=";
   };
   # track-branch: main
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "nicobailon";
     repo = "visual-explainer";
-    rev = "7163c3e10660912e0b89e1af465db9f387282b88";
-    hash = "sha256-QO7jv6vK30shxJ+iKWfiSf04PSFeNESWx//yur7RcTc=";
+    rev = "5846f5aef34a23c8fea389d2f23ce56224cbf840";
+    hash = "sha256-/3Ot2/2zE/5b2gTlH9g5jK7KlTeJY8BxyPJ0vfrd2VY=";
   };
   # track-branch: main
   ponytail-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "DietrichGebert";
     repo = "ponytail";
-    rev = "e3ba2aa6f1e6f0bc4d69eb09c9f0d0a93af56156";
-    hash = "sha256-PES5XrSYx0VBXWVHEDRykGy0SAmJfV/luzy8Gfg0aAQ=";
+    rev = "c982cd411abb53323c4baa1baa3c2f020b8d0b08";
+    hash = "sha256-vDDBC6DmV4CIZNnLi5SbqiLqhpcveXXxguLpci2iayo=";
   };
   # Codex reads .agents/plugins/marketplace.json, which sends it to upstream
   # `main` for the plugin itself, past the pin. Point that entry back at this
@@ -232,15 +232,15 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "ade13f3067d3de486f41dbd8ed90ac5c854de718";
-    hash = "sha256-xQB3eRT34T2zDDMeGl27Bsvv4KBSuf7i6WTM0TOHz8g=";
+    rev = "0a8a0ee27505dc897f1157418b72093084fcfde3";
+    hash = "sha256-rbxE/7CGfX0NiKX2uuEsw7bDHEai/N8qICGSg0Ja1TQ=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "alexgreensh";
     repo = "token-optimizer";
-    rev = "9ea1977acab5ab57421068064fc3bf2f0d4b2fdf";
-    hash = "sha256-z6m+GsL6cwdggMviOXcLcftKR7U4LUhrgOwNKPfql3o=";
+    rev = "02c801751d99c66ba02c7bcbb5ea236315de28e1";
+    hash = "sha256-2/D48m1Gz1M1jtsiLzfTCA6/FrLVINOQPTaLtX45Lxk=";
   };
 
   # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
