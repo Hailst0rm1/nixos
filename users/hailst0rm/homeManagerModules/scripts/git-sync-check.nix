@@ -125,10 +125,16 @@
       else ''
             # Server: Write notification to state file for terminal display
             mkdir -p "${stateDir}"
+            # Commit subjects are multi-line and can contain shell
+            # metacharacters; the banner sources this file, so write each value
+            # as one double-quoted string with \ " $ ` escaped.
+            ESC='s/[\\"$`]/\\&/g'
+            COMMITS_ESC=$(printf '%s' "$COMMITS" | sed "$ESC")
+            FILES_ESC=$(printf '%s' "$CHANGED_FILES" | sed "$ESC")
             cat > "${stateDir}/update-available" << ENDMSG
         BEHIND=$BEHIND
-        COMMITS=$(echo "$COMMITS" | sed 's/"/\\"/g')
-        CHANGED_FILES=$(echo "$CHANGED_FILES" | sed 's/"/\\"/g')
+        COMMITS="$COMMITS_ESC"
+        CHANGED_FILES="$FILES_ESC"
         ENDMSG
       ''
     }
@@ -200,10 +206,16 @@
       ''
       else ''
             mkdir -p "${stateDir}"
+            # Commit subjects are multi-line and can contain shell
+            # metacharacters; the banner sources this file, so write each value
+            # as one double-quoted string with \ " $ ` escaped.
+            ESC='s/[\\"$`]/\\&/g'
+            COMMITS_ESC=$(printf '%s' "$COMMITS" | sed "$ESC")
+            FILES_ESC=$(printf '%s' "$CHANGED_FILES" | sed "$ESC")
             cat > "${stateDir}/build-stale" << ENDMSG
         COMMITS_BEHIND=$COMMITS_BEHIND
-        COMMITS=$(echo "$COMMITS" | sed 's/"/\\"/g')
-        CHANGED_FILES=$(echo "$CHANGED_FILES" | sed 's/"/\\"/g')
+        COMMITS="$COMMITS_ESC"
+        CHANGED_FILES="$FILES_ESC"
         ENDMSG
       ''
     }

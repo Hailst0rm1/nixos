@@ -65,6 +65,23 @@
     esac
   '';
 
+  # `ghostty +new-window` always passes its own cwd to the running instance
+  # (Hyprland's, i.e. $HOME), and that explicit --working-directory overrides
+  # window-inherit-working-directory. Ghostty's own new_window action does
+  # inherit, so send that to the focused window and keep +new-window only for
+  # when the focused window is something else.
+  ghostty-new = pkgs.writeShellScript "ghostty-new" ''
+    class=$(hyprctl activewindow -j | ${pkgs.jq}/bin/jq -r '.class')
+    case "$class" in
+      com.mitchellh.ghostty)
+        hyprctl dispatch sendshortcut "CTRL SHIFT, N, activewindow"
+        ;;
+      *)
+        ghostty +new-window
+        ;;
+    esac
+  '';
+
   cfg = config.importConfig.hyprland;
 
   # Home Manager renders `plugins = [...]` as `exec-once=hyprctl plugin load
@@ -273,7 +290,7 @@ in {
             # Applications
             "$mainMod, return, exec, ${
               if config.terminal == "ghostty"
-              then "ghostty +new-window"
+              then "${ghostty-new}"
               else "GTK_IM_MODULE=simple ${config.terminal}"
             }"
             "$mainMod, P, exec, hyprpicker -alq"

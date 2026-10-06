@@ -35,6 +35,9 @@ in {
   system.theme.name = "navy";
 
   services.openssh.enable = true;
+  services.velociraptor.enable = true;
+  services.timesketch.enable = true;
+  services.openrelik.enable = true;
 
   services.nas.client = {
     enable = true;

@@ -114,6 +114,20 @@
     };
     gitlab.serverIp = lib.mkDefault "100.84.181.70";
     podman.enable = lib.mkDefault false;
+    timesketch = {
+      enable = lib.mkDefault false;
+      bindAddress = lib.mkDefault "127.0.0.1";
+      port = lib.mkDefault 5000;
+      opensearchMemoryGb = lib.mkDefault 2;
+    };
+    openrelik.enable = lib.mkDefault false;
+    velociraptor = {
+      enable = lib.mkDefault false;
+      bindAddress = lib.mkDefault "127.0.0.1";
+      guiPort = lib.mkDefault 8889;
+      frontendPort = lib.mkDefault 8000;
+      openFirewall = lib.mkDefault false;
+    };
     openssh.enable = lib.mkDefault false;
     mattermost.enable = lib.mkDefault false;
     ollama = {
