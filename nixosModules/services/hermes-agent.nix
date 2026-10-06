@@ -157,7 +157,9 @@ in {
           # "Gateway already running" (flap loop → rebuild activation fails).
           # `--profile default` resolves to ~/.hermes (the default bot's home),
           # immune to active_profile.
-          ExecStart = "${pkgs.hermes-agent}/bin/hermes --profile default gateway";
+          # One system-owned multiplexer; do not install competing per-profile
+          # or default user gateway services with `hermes gateway install`.
+          ExecStart = "${pkgs.hermes-agent}/bin/hermes --profile default gateway run";
           Restart = "on-failure";
           RestartSec = 10;
           DynamicUser = false;
@@ -167,6 +169,9 @@ in {
           # it here would just be clobbered. Let hermes own its platform config.
           Environment =
             [
+              "HOME=/home/hailst0rm"
+              "HERMES_HOME=/home/hailst0rm/.hermes"
+              "GATEWAY_MULTIPLEX_PROFILES=true"
               "HERMES_PORT=${toString cfg.port}"
               # Pin the backend: `auto` picks secret-service when a DBus session
               # happens to exist, which would look for tokens in a keyring the

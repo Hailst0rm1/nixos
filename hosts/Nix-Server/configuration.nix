@@ -376,8 +376,9 @@
     hermes-agent = {
       enable = true;
       # Discord/Signal platform credentials and channel scoping live in hermes'
-      # own ~/.hermes/.env (default profile = system bot; dev-orchestrator is a
-      # separate user-profile gateway under ~/.hermes/profiles/dev-orchestrator/).
+      # own ~/.hermes/.env. The default system gateway multiplexes all profiles,
+      # including coding-orchestrator and dev-orchestrator; no user gateway
+      # services should be installed alongside hermes-agent.service.
       # The gateway loads .env with override=True, so configuring them here would
       # just be clobbered — hermes owns its platform config.
       signal.enable = false;
