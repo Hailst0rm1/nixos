@@ -663,6 +663,22 @@
         "type": "github"
       }
     },
+    "isochron": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791305602,
+        "narHash": "sha256-D9bOzuNjZJ5lyQ8N5enSA7QVfXI0w0MDz9spo67lbkE=",
+        "ref": "refs/heads/main",
+        "rev": "63678a0103978b84daaa91974b2d86046ee4a90f",
+        "revCount": 1,
+        "type": "git",
+        "url": "ssh://git@github-dfirmed/Dfirmed/isochron"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github-dfirmed/Dfirmed/isochron"
+      }
+    },
     "nix-vscode-extensions": {
       "inputs": {
         "nixpkgs": [
@@ -918,6 +934,7 @@
         "disko": "disko",
         "home-manager": "home-manager",
         "hyprland": "hyprland",
+        "isochron": "isochron",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixcord": "nixcord",
         "nixos-hardware": "nixos-hardware",

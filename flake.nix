@@ -122,6 +122,12 @@
       url = "github:ilyamiro/serpantinum";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Private DFIR tool (Rust/egui), fetched over SSH; flake.lock pins the rev
+    isochron = {
+      url = "git+ssh://git@github-dfirmed/Dfirmed/isochron";
+      flake = false;
+    };
   };
 
   outputs = inputs @ {self, ...}: let

@@ -13,6 +13,9 @@
   # NixOS dfir module enabling the VirtualBox host).
   flare-vbox = pkgs.callPackage "${nixosDir}/pkgs/flare-vbox/package.nix" {};
 
+  # Private Rust/egui tool; source is the `isochron` flake input (git+ssh).
+  isochron = pkgs.callPackage "${nixosDir}/pkgs/isochron/package.nix" {src = inputs.isochron;};
+
   # Parallel Volatility 3 runner (vol-wrapper) + plugin inventory generator.
   # From unstable so it drives the same volatility3 installed below.
   vol-wrapper = pkgs-unstable.callPackage "${nixosDir}/pkgs/vol-wrapper/package.nix" {};
@@ -136,6 +139,7 @@ in {
         # VM lab tooling (from stable pkgs)
         flare-vbox
         vol-wrapper
+        isochron
         dfir-vm-network
         dfir-lab
       ];
