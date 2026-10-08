@@ -404,11 +404,15 @@
       # The semantic index describes the code actually checked out here, so each
       # worktree builds its own rather than sharing one. Only for projects already
       # using codegraph — a global hook must not index every repo you clone.
+      #
+      # Tested on the database, not the directory: `codegraph init` writes a
+      # tracked .codegraph/.gitignore, so a fresh worktree of an indexed repo
+      # already has the directory and a `! -d` guard never fires.
       common=$(git rev-parse --git-common-dir 2>/dev/null) || chain "$@"
       common=$(cd "$common" && pwd)
       main_worktree=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
 
-      if [ ! -d .codegraph ] \
+      if [ ! -f .codegraph/codegraph.db ] \
         && [ -d "$main_worktree/.codegraph" ] \
         && command -v codegraph >/dev/null 2>&1
       then
@@ -2087,6 +2091,16 @@ in {
           executable = true;
           text = worktreeBootstrapHook;
         };
+      }
+      // lib.optionalAttrs config.code.claude-code.rtk.enable {
+        # `rtk git diff` / `rtk git show` (0.45.0) print the stat line and an
+        # empty "Changes:" — every hunk is dropped — so a reviewer reading a
+        # diff through the rewrite hook sees nothing and re-runs it raw.
+        # Verified with `XDG_CONFIG_HOME=<dir> rtk rewrite 'git diff HEAD~1'`.
+        ".config/rtk/config.toml".text = ''
+          [hooks]
+          exclude_commands = ["git diff", "git show"]
+        '';
       };
 
     # Runs after linkGeneration so the previous generation's settings.json
