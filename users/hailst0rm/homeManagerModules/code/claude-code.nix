@@ -124,8 +124,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "6fd947921b935b7e1e69293a200400f0fdd5c15f";
-    hash = "sha256-c36sg+3AyW+iZ730QKXqwejpFOL+2neWlZhL5Jc7Rcs=";
+    rev = "f3fc5632f401156837ee3872f14fe33ccf1024ea";
+    hash = "sha256-rDTDP9smBDjVOloz61ZqWIMEn9sME5V4ulde1c79MaY=";
   };
 
   # humanlayer's show-me skill: explain the current topic in-chat with the
@@ -163,15 +163,15 @@
   impeccable-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "pbakaus";
     repo = "impeccable";
-    rev = "12cddef816754b7e11d7e304a4dd505d5da6e813";
-    hash = "sha256-LVO+jBFsflHDGQDykLthrfpAbmdyqrb183Xqh30A1Hc=";
+    rev = "778c8a7b71ccd5bfe3ca6ac68c15d9d872d0f87d";
+    hash = "sha256-tIY5FgzPsg3O1IZAS1xxyXq+kj3TBzT6LxgzTCfAD6w=";
   };
   # track-branch: main
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "c396a2377a291903cc84f2628682b64848556a2e";
-    hash = "sha256-MFnKQyjI1QPaSnYYh2Jv6DEwuX5OurvZh7pHA98ZuAM=";
+    rev = "2a7a92ab00496a4848decdd7b651daf9ccd90d96";
+    hash = "sha256-9GCyFpZSW0oQdu1LjAZYqjUXLMwC4zTcJGKSoJ538w0=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -184,8 +184,8 @@
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "coreyhaines31";
     repo = "marketingskills";
-    rev = "5e721d73ac85be8ba917d6a9ca9cb5bc98f02b80";
-    hash = "sha256-iaypG46wIhvUnB5SEk9LTo+KiAr7j5a722LGsi0qwGg=";
+    rev = "b9ba399dd88b082b926e261e8ccfb843d20aa066";
+    hash = "sha256-NR71t/Rq52BlYDZkOONFowHzbNABCAPIlsBhf1MRBto=";
   };
   # track-branch: main
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
@@ -198,8 +198,8 @@
   ponytail-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "DietrichGebert";
     repo = "ponytail";
-    rev = "552acd5efd0aeae2583a12efe39373d2f076f25e";
-    hash = "sha256-w6qwghKJYH3D6tQ3xUO7TtPXhYWiilId0BIEQSaUkNg=";
+    rev = "b088b2df6e08d4306c6a3c3d575fe38c2d2d2989";
+    hash = "sha256-U+TGSju2VBYHqaWZckf/QQMZXZ15KhOREfpA5EN/Deo=";
   };
   # Codex reads .agents/plugins/marketplace.json, which sends it to upstream
   # `main` for the plugin itself, past the pin. Point that entry back at this
