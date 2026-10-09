@@ -124,8 +124,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "d81f3a183412e71a5b1e84ca21bc1a35eea03a60";
-    hash = "sha256-zQ/wVrcHjIC+UjP4nDw3HARMqZd6LIDFmHKlp8AADYI=";
+    rev = "b0618bc436ad893b3c5e84e55fba86586d34a404";
+    hash = "sha256-1QwFBwG+gORvDvW4HM0LrZlHZKmKtWr7pUHU0MAXF2Y=";
   };
 
   # humanlayer's show-me skill: explain the current topic in-chat with the
@@ -137,8 +137,8 @@
   humanlayer-skills-repo = pkgs.fetchFromGitHub {
     owner = "humanlayer";
     repo = "skills";
-    rev = "ca7c8088db69e315a8b2deea43820270457f8f3c";
-    hash = "sha256-BX9k5S3hwgik7AKxssUVm7VQRTjgjXVVcE2Jph88tS0=";
+    rev = "653b6411c1f70c275a18e37673b042ff99f67ceb";
+    hash = "sha256-W3dFEdIi4sz4CAZvaj1xjtN7xTRebF/WHOTQYCIe2Xo=";
   };
 
   # blader's humanizer skill: rewrite prose to strip AI writing patterns.
@@ -163,15 +163,15 @@
   impeccable-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "pbakaus";
     repo = "impeccable";
-    rev = "e103efe779e2dd01274dabae83531fef00bf2563";
-    hash = "sha256-6mF4Kw0w3QnMiqS0PfNT+Dhne/JzfnVZ+pTcobCZNkY=";
+    rev = "d631a8827f99414d2b6daba4ef08b7f8701751d7";
+    hash = "sha256-0QpNzNnSon34/VVPPaitnSTBjpu9qJGXJzCJctS4gM0=";
   };
   # track-branch: main
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "80d4e823adebbe1e758b558522e3da20312a66cc";
-    hash = "sha256-/SQtayVb2GumKkysbXDGHQXVeGNklA6FrqD8Y7/+w5M=";
+    rev = "51a716fd2be075fc71610f876f44ea6895b46970";
+    hash = "sha256-k7Hm+gIdzII+jZGcJXUFRmJXYzKP0m4lde8fDORAekE=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -184,22 +184,22 @@
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "coreyhaines31";
     repo = "marketingskills";
-    rev = "dda3841f0b294e01e93b1541486beefbfab0915e";
-    hash = "sha256-qSSbl+KOmxUSn98i94hRwe0YGP+f6kteg7YrTtMIFNA=";
+    rev = "1efedbc5148b54b2f0f6c6c9fe0be62e151c7fff";
+    hash = "sha256-L+Z+q6Nt2+fX6DemdFTXvpOOAcpdbofohiiwc3PxWvg=";
   };
   # track-branch: main
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "nicobailon";
     repo = "visual-explainer";
-    rev = "5846f5aef34a23c8fea389d2f23ce56224cbf840";
-    hash = "sha256-/3Ot2/2zE/5b2gTlH9g5jK7KlTeJY8BxyPJ0vfrd2VY=";
+    rev = "0cc6f15452c455a05fb7fceb036d0da31387c69c";
+    hash = "sha256-SZHF5LqA7Cu9Vp+DibKn00UwA0FtB76Ij8PuV3/mbIY=";
   };
   # track-branch: main
   ponytail-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "DietrichGebert";
     repo = "ponytail";
-    rev = "c982cd411abb53323c4baa1baa3c2f020b8d0b08";
-    hash = "sha256-vDDBC6DmV4CIZNnLi5SbqiLqhpcveXXxguLpci2iayo=";
+    rev = "9cc65d03aa2da1db7121b912d03596409ee340b8";
+    hash = "sha256-diYM3gqcEboVi7OQff/SvlE0TKAIPTJDIggX7rZWslY=";
   };
   # Codex reads .agents/plugins/marketplace.json, which sends it to upstream
   # `main` for the plugin itself, past the pin. Point that entry back at this
@@ -232,15 +232,15 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "0a8a0ee27505dc897f1157418b72093084fcfde3";
-    hash = "sha256-rbxE/7CGfX0NiKX2uuEsw7bDHEai/N8qICGSg0Ja1TQ=";
+    rev = "fa8ab09f06aa05f958c5225cf3756ce52a3ebb96";
+    hash = "sha256-orbHBCbEVKbex+tCR+DCg9kz4aqmGyt3PqQcQ0qtOK4=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "alexgreensh";
     repo = "token-optimizer";
-    rev = "02c801751d99c66ba02c7bcbb5ea236315de28e1";
-    hash = "sha256-2/D48m1Gz1M1jtsiLzfTCA6/FrLVINOQPTaLtX45Lxk=";
+    rev = "7c05b7088364d081e066e11ffafd9b110184d1d2";
+    hash = "sha256-l0QSAJhxwO/FqXU8ltt68ZcYUBrJzUDNUVLSGxweqYQ=";
   };
 
   # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
