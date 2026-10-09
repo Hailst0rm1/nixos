@@ -559,6 +559,25 @@
     }'
   '';
 
+  # Blanket auto-allow for Bash. bypassPermissions skips the allow/deny
+  # matcher but NOT Claude Code's built-in destructive-command gate — an
+  # `sh -c`/`rm` command it can't statically analyze ("could not be checked")
+  # still prompts, which breaks unattended runs. An explicit hook `allow`
+  # short-circuits that gate. Native deny rules and any other hook's deny
+  # (e.g. the codegraph grep gate) still win, since deny outranks allow.
+  # ponytail: no input parsing — matcher is already "Bash", so every call
+  # here is a Bash call to allow. Consumes stdin to avoid SIGPIPE.
+  autoAllowBashHook = pkgs.writeShellScript "auto-allow-bash" ''
+    ${pkgs.coreutils}/bin/cat >/dev/null
+    ${pkgs.jq}/bin/jq -cn '{
+      "hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+        "permissionDecisionReason": "autoAllowBash: unattended autonomy"
+      }
+    }'
+  '';
+
   # Stop hook: nudge user to run /handoff once the session exceeds
   # `sessionHandoffReminder.thresholdMinutes`. Auto-dismisses once the
   # handoff skill has actually been invoked (detected via a Skill
@@ -1284,6 +1303,11 @@ in {
       default = false;
       description = "Install codeburn (getagentseal/codeburn): AI coding token usage tracker with a `codeburn web` dashboard.";
     };
+    autoAllowBash.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "PreToolUse hook that explicitly allows every Bash call, suppressing Claude Code's built-in destructive-command gate (the 'could not be checked' prompt on unanalyzable sh -c/rm commands) that fires even under bypassPermissions. Required for fully unattended runs. WARNING: this removes the last backstop against agent-authored rm/sh -c on this machine; native deny rules and the codegraph grep gate still apply, since a hook deny outranks this allow.";
+    };
     sessionHandoffReminder = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -1818,6 +1842,7 @@ in {
         # Hooks:
         # - PreToolUse (RTK): rewrites Bash commands to token-compact equivalents.
         # - PreToolUse (codegraph gate): denies grep-style searches in indexed projects until codegraph was queried.
+        # - PreToolUse (autoAllowBash): allows every Bash call, suppressing the built-in destructive-command gate for unattended runs.
         # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
         # - SessionStart (delegation policy): Opus-only orchestration/model-routing context.
         # - SubagentStop (delegation policy): persists each subagent's closing message.
@@ -1846,6 +1871,19 @@ in {
                   {
                     type = "command";
                     command = "${codegraphGateHook}";
+                  }
+                ];
+              }
+            ];
+          })
+          (lib.mkIf config.code.claude-code.autoAllowBash.enable {
+            PreToolUse = [
+              {
+                matcher = "Bash";
+                hooks = [
+                  {
+                    type = "command";
+                    command = "${autoAllowBashHook}";
                   }
                 ];
               }

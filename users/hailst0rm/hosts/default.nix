@@ -118,6 +118,7 @@
         };
       };
       codeburn.enable = lib.mkDefault false;
+      autoAllowBash.enable = lib.mkDefault true;
       tokenOptimizer.enable = lib.mkDefault false;
       superpowers.enable = lib.mkDefault false;
       rtk.enable = lib.mkDefault true;
