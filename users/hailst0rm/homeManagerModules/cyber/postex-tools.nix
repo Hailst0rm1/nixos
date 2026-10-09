@@ -180,8 +180,8 @@
     pname = "adPEAS";
     version = "v2.6.0";
     src = pkgs.fetchurl {
-      url = "https://github.com/61106960/adPEAS/raw/refs/tags/v2.6.0/adPEAS_obf.ps1";
-      sha256 = "sha256-Y1/b69KRL8UgpKIZ5JY9U++jKAxm/PzTMxekjhyqjJ0=";
+      url = "https://github.com/61106960/adPEAS/raw/refs/tags/v2.7.0/adPEAS_obf.ps1";
+      sha256 = "sha256-o9jO/XufEn05VHqw5QHqkomEGN/XjOmHBAnOQtnbYcQ=";
     };
     phases = ["installPhase"];
     installPhase = ''
