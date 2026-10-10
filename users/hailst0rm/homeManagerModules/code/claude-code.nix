@@ -124,8 +124,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "b0618bc436ad893b3c5e84e55fba86586d34a404";
-    hash = "sha256-1QwFBwG+gORvDvW4HM0LrZlHZKmKtWr7pUHU0MAXF2Y=";
+    rev = "49dd158d1076134a641b33efb035946536778336";
+    hash = "sha256-NljCSZNI3sZ+vbCw7pRdrwR7try4BxOFp4gdjuWYtzs=";
   };
 
   # humanlayer's show-me skill: explain the current topic in-chat with the
@@ -170,8 +170,8 @@
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "51a716fd2be075fc71610f876f44ea6895b46970";
-    hash = "sha256-k7Hm+gIdzII+jZGcJXUFRmJXYzKP0m4lde8fDORAekE=";
+    rev = "d573d8e1a0db87da3d72bbd7b5cdc88569f4c734";
+    hash = "sha256-oEfPBi5qjhDCvz3ZQ/WVNJMkbZ8jouOZrcS1szJ9E+s=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -198,8 +198,8 @@
   ponytail-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "DietrichGebert";
     repo = "ponytail";
-    rev = "9cc65d03aa2da1db7121b912d03596409ee340b8";
-    hash = "sha256-diYM3gqcEboVi7OQff/SvlE0TKAIPTJDIggX7rZWslY=";
+    rev = "9b58c1ffb790c075ca32e70a89cf1d80588f4abf";
+    hash = "sha256-S2gHV4/c8XPDqpf0jS8Q5r22//6skZjITf2T9CVhVRE=";
   };
   # Codex reads .agents/plugins/marketplace.json, which sends it to upstream
   # `main` for the plugin itself, past the pin. Point that entry back at this
@@ -218,8 +218,8 @@
   n8n-skills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "czlonkowski";
     repo = "n8n-skills";
-    rev = "19cd793f4789e3ef9c657ccf26e097f641a77df0";
-    hash = "sha256-Dn9aoLpNisbAMX2s6KY05UTPIfAYoTYwAYvxSg5ThAM=";
+    rev = "cb6caa7b3ae8d4206c768d7f69f598438ef25595";
+    hash = "sha256-5yxZHKls2sRHAWcF8InnjEn6BfAvjYdxZo9ybj47dgo=";
   };
   # track-branch: main
   codex-plugin-marketplace-repo = pkgs.fetchFromGitHub {
