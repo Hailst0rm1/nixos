@@ -170,8 +170,8 @@
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "d573d8e1a0db87da3d72bbd7b5cdc88569f4c734";
-    hash = "sha256-oEfPBi5qjhDCvz3ZQ/WVNJMkbZ8jouOZrcS1szJ9E+s=";
+    rev = "f33a26e3a40a3dcb3586378879d04cfd2eb808f7";
+    hash = "sha256-flDWJ27i1IpbP5Yydgkf8/ThEwRfkXBUL8jE/2w2dJ4=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -191,8 +191,8 @@
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "nicobailon";
     repo = "visual-explainer";
-    rev = "0cc6f15452c455a05fb7fceb036d0da31387c69c";
-    hash = "sha256-SZHF5LqA7Cu9Vp+DibKn00UwA0FtB76Ij8PuV3/mbIY=";
+    rev = "1829e4f61ee804dff3651eb9ffdec4dfb779dbfc";
+    hash = "sha256-khuQOqrIIg+e2D4nunxL5W+LWV2hoHr9OOGH3pKgTEk=";
   };
   # track-branch: main
   ponytail-marketplace-repo = pkgs.fetchFromGitHub {
@@ -239,8 +239,8 @@
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "alexgreensh";
     repo = "token-optimizer";
-    rev = "7c05b7088364d081e066e11ffafd9b110184d1d2";
-    hash = "sha256-l0QSAJhxwO/FqXU8ltt68ZcYUBrJzUDNUVLSGxweqYQ=";
+    rev = "723c19bf84acf9cf73664303a766cc20b16b12c1";
+    hash = "sha256-lj2qK6uDmsnDRFYGYgaCE9fLdNw5P4So6YAoyKHZHrg=";
   };
 
   # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
