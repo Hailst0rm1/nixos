@@ -666,11 +666,11 @@
     "isochron": {
       "flake": false,
       "locked": {
-        "lastModified": 1791305602,
-        "narHash": "sha256-D9bOzuNjZJ5lyQ8N5enSA7QVfXI0w0MDz9spo67lbkE=",
+        "lastModified": 1791651975,
+        "narHash": "sha256-M/Uv7V67SriiwzsDm+TVUlLEztQeOag5fXT+xT/QwZo=",
         "ref": "refs/heads/main",
-        "rev": "63678a0103978b84daaa91974b2d86046ee4a90f",
-        "revCount": 1,
+        "rev": "30e8d07a527d93ce21bf6aa2de702654570b0b1b",
+        "revCount": 2,
         "type": "git",
         "url": "ssh://git@github-dfirmed/Dfirmed/isochron"
       },
