@@ -912,7 +912,7 @@ NIXEOF
         fi
         echo ""
 
-        DEF_FM="nautilus"
+        DEF_FM="strata"
         NEW_FM=$(prompt_string "File manager" "$DEF_FM")
         if [[ "$NEW_FM" != "$DEF_FM" ]]; then
             HM_OVERRIDES+=$'\n  fileManager = "'"$NEW_FM"'";'

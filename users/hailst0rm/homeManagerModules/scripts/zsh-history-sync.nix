@@ -91,13 +91,14 @@ in {
         Wants = ["network-online.target"];
       };
       Service = {
-        Type = "oneshot";
+        # Start in the background so network or FIDO prompts cannot block HM activation.
+        Type = "simple";
         ExecStartPre = "${pkgs.coreutils}/bin/sleep 5";
         ExecStart = "${zhs}/bin/zsh-history-sync pull";
         Environment = syncEnv;
         StandardOutput = "journal";
         StandardError = "journal";
-        TimeoutStartSec = "120s";
+        RuntimeMaxSec = "120s";
       };
       Install.WantedBy = ["default.target"];
     };
@@ -106,12 +107,13 @@ in {
     systemd.user.services.zsh-history-sync-push = {
       Unit.Description = "Push this host's zsh history to GitHub";
       Service = {
-        Type = "oneshot";
+        # Start in the background so network or FIDO prompts cannot block HM activation.
+        Type = "simple";
         ExecStart = "${zhs}/bin/zsh-history-sync push";
         Environment = syncEnv;
         StandardOutput = "journal";
         StandardError = "journal";
-        TimeoutStartSec = "120s";
+        RuntimeMaxSec = "120s";
       };
     };
 

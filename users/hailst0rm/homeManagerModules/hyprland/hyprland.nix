@@ -433,6 +433,8 @@ in {
       defaultApplications."inode/directory" =
         if config.fileManager == "nautilus"
         then "org.gnome.Nautilus.desktop"
+        else if config.fileManager == "strata"
+        then "io.github.lgse.Strata.desktop"
         else "${config.fileManager}.desktop";
     };
     xdg.configFile."mimeapps.list".force = true;
@@ -460,11 +462,6 @@ in {
 
         # ---File manager
         (pkgs.${config.fileManager})
-        (
-          if config.fileManager == "nautilus"
-          then pkgs.file-roller
-          else []
-        )
 
         # ---Gnome applications
         (pkgs.${config.image})
@@ -523,6 +520,9 @@ in {
       # wl-screenrec would be a redundant second recorder on those hosts.
       ++ lib.optionals (!cfg.quickshell.serpantinum.enable) [
         pkgs.wl-screenrec
+      ]
+      ++ lib.optionals (config.fileManager == "nautilus") [
+        pkgs.file-roller
       ];
   };
 }

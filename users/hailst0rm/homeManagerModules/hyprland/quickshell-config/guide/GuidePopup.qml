@@ -419,7 +419,7 @@ Item {
             { k1: "ALT", k2: "TAB", action: "Window Switcher", cmd: "bash ~/.config/hypr/scripts/rofi_show.sh window" },
             { k1: "SUPER", k2: "C", action: "Clipboard History", cmd: "bash ~/.config/hypr/scripts/rofi_clipboard.sh" },
             { k1: "SUPER", k2: "F", action: "Open Firefox", cmd: "firefox" },
-            { k1: "SUPER", k2: "E", action: "Open Nautilus", cmd: "nautilus" },
+            { k1: "SUPER", k2: "N", action: "Open Strata", cmd: "strata" },
             { k1: "ALT", k2: "F4", action: "Close Active Window/Widget", cmd: "bash -c 'if hyprctl activewindow | grep -q \"title: qs-master\"; then ~/.config/quickshell/qs_manager.sh close; else hyprctl dispatch killactive; fi'" },
             { k1: "SUPER+SHIFT", k2: "F", action: "Toggle Floating", cmd: "hyprctl dispatch togglefloating" },
             { k1: "SUPER", k2: "L", action: "Lock Screen", cmd: "bash ~/.config/hypr/scripts/lock.sh" },

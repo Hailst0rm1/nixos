@@ -20,7 +20,7 @@
 
     fileManager = lib.mkOption {
       type = lib.types.str;
-      default = "nautilus";
+      default = "strata";
       description = "The default file manager.";
     };
 

@@ -1,0 +1,10 @@
+--- a/src/trusted_command.rs
++++ b/src/trusted_command.rs
+@@ -8,6 +8,7 @@
+ // NixOS setuid wrappers must take precedence over store symlinks.
+ pub(crate) const SEARCH_ROOTS: &[&str] = &[
+     "/run/wrappers/bin",
++    "@bubblewrap@/bin",
+     "/usr/bin",
+     "/usr/sbin",
+     "/bin",

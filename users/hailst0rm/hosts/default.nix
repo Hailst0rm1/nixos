@@ -32,7 +32,7 @@
   terminal = lib.mkDefault "ghostty";
   shell = lib.mkDefault "zsh";
   editor = lib.mkDefault "hx";
-  fileManager = lib.mkDefault "nautilus";
+  fileManager = lib.mkDefault "strata";
   browser = lib.mkDefault "firefox";
   video = lib.mkDefault "totem";
   image = lib.mkDefault "loupe";
