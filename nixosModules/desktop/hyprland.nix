@@ -6,6 +6,8 @@
   ...
 }: let
   cfg = config.desktopEnvironment.name;
+  hm = config.home-manager.users or {};
+  strataChooser = hm ? ${config.username} && hm.${config.username}.fileManager == "strata";
 in {
   config = lib.mkIf (cfg == "hyprland") {
     nix.settings = {
@@ -65,14 +67,23 @@ in {
       xdgOpenUsePortal = true;
       config = {
         common.default = ["gtk"];
-        hyprland.default = [
-          "gtk"
-          "hyprland"
-        ];
+        hyprland =
+          {
+            default = [
+              "gtk"
+              "hyprland"
+            ];
+          }
+          # Strata serves Open/Save dialogs; GTK takes over if it fails.
+          // lib.optionalAttrs strataChooser {
+            "org.freedesktop.impl.portal.FileChooser" = ["strata" "gtk"];
+          };
       };
-      extraPortals = [
-        pkgs.xdg-desktop-portal-gtk
-      ];
+      extraPortals =
+        [
+          pkgs.xdg-desktop-portal-gtk
+        ]
+        ++ lib.optional strataChooser pkgs.strata;
     };
 
     environment.systemPackages = with pkgs; [

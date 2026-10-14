@@ -51,7 +51,13 @@ in
       install -Dm644 data/io.github.lgse.Strata.FileManager1.service $out/share/dbus-1/services/org.freedesktop.FileManager1.service
       substituteInPlace $out/share/dbus-1/services/org.freedesktop.FileManager1.service \
         --replace-fail /usr/bin/strata $out/bin/strata
-      install -Dm644 data/icons/scalable/apps/io.github.lgse.Strata.svg $out/share/icons/hicolor/scalable/apps/io.github.lgse.Strata.svg
+      install -Dm644 data/portal/strata.portal $out/share/xdg-desktop-portal/portals/strata.portal
+      install -Dm644 data/portal/org.freedesktop.impl.portal.desktop.strata.service.in \
+        $out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.strata.service
+      substituteInPlace $out/share/dbus-1/services/org.freedesktop.impl.portal.desktop.strata.service \
+        --replace-fail @STRATA_EXECUTABLE@ $out/bin/strata
+      # The coloured README logo; the bundled app icon is plain white.
+      install -Dm644 docs/assets/logos/strata-tokyo-night.svg $out/share/icons/hicolor/scalable/apps/io.github.lgse.Strata.svg
     '';
 
     meta = {
