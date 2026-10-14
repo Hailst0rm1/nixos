@@ -112,10 +112,6 @@ in {
 
         mcp_servers =
           {
-            nixos = {
-              command = "nix";
-              args = ["run" "github:utensils/mcp-nixos" "--"];
-            };
             filesystem = {
               command = "npx";
               args = ["-y" "@modelcontextprotocol/server-filesystem" "/home/hailst0rm/.nixos"];

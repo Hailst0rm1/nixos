@@ -52,13 +52,10 @@
   # Verified 2026-08-26: `plugin list`, `mcp list` and `-p` all work.
   # Revert to the plain option once home-manager switches to `--add-flags` and
   # the `=` form upstream.
+  # nixos (github:utensils/mcp-nixos) dropped 2026-10-14: zero calls across
+  # every recorded session, and each instance idled at 50-75 MB of RAM.
   claudeMcpServers =
-    {
-      nixos = {
-        command = "nix";
-        args = ["run" "github:utensils/mcp-nixos" "--"];
-      };
-    }
+    {}
     // lib.optionalAttrs config.code.claude-code.exa.enable {
       exa = {
         command = "${exaMcpWrapper}";
