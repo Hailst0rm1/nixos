@@ -7,14 +7,14 @@
 }:
 python3.pkgs.buildPythonApplication {
   pname = "notebooklm-py";
-  version = "0.8.4";
+  version = "0.8.5";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "teng-lin";
     repo = "notebooklm-py";
-    rev = "v0.8.4";
-    hash = "sha256-kb08N6ynLbtJERXwc1gPmt9+1aECKkC0xm2Soh41MBA=";
+    rev = "v0.8.5";
+    hash = "sha256-SipvDVs/aZ3Jlzx9mNQADxY2Ih0FzhMjoL91acc9rEM=";
   };
 
   nativeBuildInputs = [makeWrapper];
@@ -26,6 +26,7 @@ python3.pkgs.buildPythonApplication {
 
   dependencies = with python3.pkgs; [
     httpx
+    idna
     click
     rich
     filelock
