@@ -14,6 +14,7 @@ in {
   imports = [inputs.spicetify-nix.homeManagerModules.spicetify];
 
   options.applications = {
+    beekeeper-studio.enable = lib.mkEnableOption "Enable Beekeeper Studio.";
     bitwarden.enable = lib.mkEnableOption "Enable Bitwarden.";
     brave.enable = lib.mkEnableOption "Enable Brave browser.";
     discord.enable = lib.mkEnableOption "Enable Discord.";
@@ -50,6 +51,7 @@ in {
   config = {
     home.packages = lib.mkMerge [
       ## Applications
+      (lib.mkIf cfg.beekeeper-studio.enable [pkgs-unstable.beekeeper-studio])
       (lib.mkIf cfg.bitwarden.enable [pkgs.bitwarden-desktop])
       (lib.mkIf cfg.brave.enable [pkgs-unstable.brave])
       # (lib.mkIf cfg.discord.enable [ pkgs-unstable.discord ])

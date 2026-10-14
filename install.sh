@@ -1107,6 +1107,7 @@ NIXEOF
 
         # Application boolean toggles
         declare -A HM_APPS=(
+            ["beekeeper-studio"]="true"
             ["bitwarden"]="true"
             ["brave"]="false"
             ["discord"]="true"
@@ -1127,7 +1128,7 @@ NIXEOF
         )
         # Preserve order with an array
         HM_APP_ORDER=(
-            "bitwarden" "brave" "discord" "firefox" "gpt4all"
+            "beekeeper-studio" "bitwarden" "brave" "discord" "firefox" "gpt4all"
             "libreOffice" "mattermost" "obsidian" "remmina" "spotify"
             "youtube-music" "zen-browser" "claude-desktop" "openconnect"
             "espanso" "aws-cvpn-wrapper" "signal"
