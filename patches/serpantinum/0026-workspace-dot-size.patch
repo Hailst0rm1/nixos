@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
-+++ b/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
-@@ -87,7 +87,9 @@
+--- a/src/quickshell/bar/faces/workspaces/PillsFace.qml
++++ b/src/quickshell/bar/faces/workspaces/PillsFace.qml
+@@ -101,7 +101,9 @@ Item {
  
                  Rectangle {
                      id: wsVisualShape

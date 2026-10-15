@@ -1,21 +1,23 @@
---- a/src/quickshell/bar/TopBar.qml	2026-09-06 12:55:28.819925791 +0200
-+++ b/src/quickshell/bar/TopBar.qml	2026-09-06 12:55:28.859443791 +0200
-@@ -235,6 +235,14 @@
+--- a/src/quickshell/bar/TopBar.qml
++++ b/src/quickshell/bar/TopBar.qml
+@@ -274,6 +274,16 @@ Item {
      }
  
      property real gap: barWindow ? barWindow.s(2) : 2
 +
 +    // True while the pointer is over either half of the timedate/weather
-+    // group box. selfHovered, not isHovered: the widgets read this back as
++    // group box. selfHovered, not isHovered: the modules read this back as
 +    // their groupHovered, and isHovered here would close the loop.
 +    readonly property bool centerGroupHovered: {
 +        if (!isModuleGrouped("timedate") || !isModuleGrouped("weather")) return false;
-+        return timeDateWidget.selfHovered || weatherWidget.selfHovered;
++        let td = getPositionedWidget("timedate");
++        let wt = getPositionedWidget("weather");
++        return !!((td && td.selfHovered) || (wt && wt.selfHovered));
 +    }
      property real groupGap: barWindow ? -barWindow.s(4) : -4
      property real gap8: barWindow ? barWindow.s(10) : 10
- 
-@@ -648,6 +656,13 @@
+     property real groupPad: (!isSolid || distinctPills) ? (barWindow ? barWindow.s(4) : 4) : 0
+@@ -630,6 +640,13 @@ Item {
  
              property var metrics: getGroupMetrics()
  
@@ -29,7 +31,7 @@
              x: metrics.x
              height: metrics.h
              y: barWindow ? (barWindow.baseOffsetY + (barWindow.barHeight - height) / 2) : 0
-@@ -656,11 +671,13 @@
+@@ -638,11 +655,13 @@ Item {
              opacity: visible ? 1.0 : 0.0
  
              color: (contentWrapper.isSolid && contentWrapper.distinctPills)
@@ -45,19 +47,11 @@
              Behavior on x {
                  enabled: contentWrapper.layoutAnimationsEnabled
                  NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
-@@ -1001,6 +1018,7 @@
-         distinctPills: contentWrapper.distinctPills
-         moduleActive: contentWrapper.isModuleActive("timedate")
-         isGrouped: contentWrapper.isModuleGrouped("timedate")
-+        groupHovered: contentWrapper.centerGroupHovered
-         targetX: contentWrapper.getModuleX("timedate", contentWrapper.layoutState)
- 
-         Behavior on opacity {
-@@ -1047,6 +1065,7 @@
-         distinctPills: contentWrapper.distinctPills
-         moduleActive: contentWrapper.isModuleActive("weather")
-         isGrouped: contentWrapper.isModuleGrouped("weather")
-+        groupHovered: contentWrapper.centerGroupHovered
-         targetX: contentWrapper.getModuleX("weather", contentWrapper.layoutState)
- 
-         Behavior on opacity {
+@@ -672,6 +691,7 @@ Item {
+             distinctPills: contentWrapper.distinctPills
+             moduleActive: contentWrapper.isModuleActive(modelData)
+             isGrouped: contentWrapper.isModuleGrouped(modelData)
++            groupHovered: (modelData === "timedate" || modelData === "weather") ? contentWrapper.centerGroupHovered : false
+             targetX: contentWrapper.getModuleX(modelData, contentWrapper.layoutState)
+             suppressAnimation: contentWrapper.suppressAnimation
+             layoutAnimationsEnabled: contentWrapper.layoutAnimationsEnabled

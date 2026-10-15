@@ -1,42 +1,50 @@
---- a/src/quickshell/bar/modules/timedate/TimeDateWidget.qml
-+++ b/src/quickshell/bar/modules/timedate/TimeDateWidget.qml
-@@ -103,7 +103,17 @@
-         }
-     }
+--- a/src/quickshell/bar/BarModule.qml
++++ b/src/quickshell/bar/BarModule.qml
+@@ -65,9 +65,22 @@ Rectangle {
+     readonly property real targetHeight: height
+     y: barWindow ? barWindow.baseOffsetY + (barWindow.barHeight - height) / 2 : 0
  
--    property bool isHovered: bgMouse.containsMouse
 +    // The clock and the weather form one group box that toggles one popup, so
 +    // the box behaves as a single button: hovering either half lights and pops
-+    // both. groupHovered is driven from TopBar.qml, which reads selfHovered
-+    // rather than isHovered — binding the two widgets' isHovered to each other
-+    // would be a loop.
-+    property bool selfHovered: bgMouse.containsMouse
++    // both. Only faces exposing selfHovered take part. groupHovered is driven
++    // from TopBar.qml, which reads selfHovered rather than isHovered — binding
++    // the two modules' isHovered to each other would be a loop.
++    readonly property bool selfHovered: !!(faceLoader.item && faceLoader.item.selfHovered)
 +    property bool groupHovered: false
-+    property bool isHovered: selfHovered || groupHovered
++    readonly property bool isHovered: selfHovered || groupHovered
 +
-+    scale: timeDateRoot.isHovered ? 1.03 : 1.0
++    scale: isHovered ? 1.03 : 1.0
 +    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
-     property bool showLayout: false
- 
-     property real targetY: barWindow ? barWindow.baseOffsetY + (barWindow.barHeight - targetHeight) / 2 : 0
---- a/src/quickshell/bar/modules/WeatherWidget.qml
-+++ b/src/quickshell/bar/modules/WeatherWidget.qml
-@@ -52,7 +52,17 @@
-         }
-     }
- 
--    property bool isHovered: bgMouse.containsMouse
-+    // The clock and the weather form one group box that toggles one popup, so
-+    // the box behaves as a single button: hovering either half lights and pops
-+    // both. groupHovered is driven from TopBar.qml, which reads selfHovered
-+    // rather than isHovered — binding the two widgets' isHovered to each other
-+    // would be a loop.
-+    property bool selfHovered: bgMouse.containsMouse
-+    property bool groupHovered: false
-+    property bool isHovered: selfHovered || groupHovered
 +
-+    scale: weatherWidgetRoot.isHovered ? 1.03 : 1.0
-+    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
-     property bool showLayout: false
+     radius: ThemeBackend.borderRadius
+     border.width: 0
+-    color: isGrouped ? "transparent" : (isSolid ? (distinctPills ? Qt.alpha(Qt.darker(ThemeBackend.surface0, 1.15), root.barOpacity) : "transparent") : Qt.alpha(ThemeBackend.base, root.barOpacity))
++    color: isGrouped ? "transparent" : (isSolid ? (distinctPills ? Qt.alpha(isHovered ? ThemeBackend.surface0 : Qt.darker(ThemeBackend.surface0, 1.15), root.barOpacity) : "transparent") : Qt.alpha(isHovered ? ThemeBackend.surface0 : ThemeBackend.base, root.barOpacity))
++    Behavior on color { ColorAnimation { duration: 250 } }
+     clip: true
  
-     property real targetY: barWindow ? barWindow.baseOffsetY + (barWindow.barHeight - targetHeight) / 2 : 0
+     width: targetWidth
+--- a/src/quickshell/bar/faces/timedate/TimeDateFace.qml
++++ b/src/quickshell/bar/faces/timedate/TimeDateFace.qml
+@@ -79,6 +79,9 @@ Item {
+     implicitWidth: targetWidth
+     implicitHeight: parent ? parent.height : 0
+ 
++    // Read by BarModule, which owns the background this face sits on.
++    readonly property bool selfHovered: bgMouse.containsMouse
++
+     MouseArea {
+         id: bgMouse
+         anchors.fill: parent
+--- a/src/quickshell/bar/faces/weather/WeatherFace.qml
++++ b/src/quickshell/bar/faces/weather/WeatherFace.qml
+@@ -28,6 +28,9 @@ Item {
+     implicitWidth: targetWidth
+     implicitHeight: parent ? parent.height : 0
+ 
++    // Read by BarModule, which owns the background this face sits on.
++    readonly property bool selfHovered: bgMouse.containsMouse
++
+     MouseArea {
+         id: bgMouse
+         anchors.fill: parent

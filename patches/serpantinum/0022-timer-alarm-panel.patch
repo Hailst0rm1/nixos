@@ -1,7 +1,6 @@
-diff -ruN a/src/assets/languages/en.json after/src/assets/languages/en.json
---- a/src/assets/languages/en.json	2026-09-06 12:56:43.713299174 +0200
-+++ b/src/assets/languages/en.json	2026-09-06 12:56:43.812695100 +0200
-@@ -626,11 +626,15 @@
+--- a/src/assets/languages/en.json
++++ b/src/assets/languages/en.json
+@@ -1019,11 +1019,15 @@
        "tabs": {
          "timer": "Timer",
          "stopwatch": "Stopwatch",
@@ -18,7 +17,7 @@ diff -ruN a/src/assets/languages/en.json after/src/assets/languages/en.json
        "pomodoro": {
          "phases": {
            "focus": "Focus",
-@@ -654,7 +658,9 @@
+@@ -1047,7 +1051,9 @@
          "break_over_body": "Break time is up. Let's get back to focus!",
          "pomo_skipped_title": "Pomodoro skipped",
          "pomo_skipped_focus_body": "Focus session skipped. Moving to break.",
@@ -27,12 +26,11 @@ diff -ruN a/src/assets/languages/en.json after/src/assets/languages/en.json
 +        "alarm_title": "Alarm",
 +        "alarm_body": "Your {time} alarm is going off."
        }
-     }
-   },
-diff -ruN a/src/quickshell/Main.qml after/src/quickshell/Main.qml
---- a/src/quickshell/Main.qml	2026-09-06 12:56:43.721437612 +0200
-+++ b/src/quickshell/Main.qml	2026-09-06 12:56:43.814387432 +0200
-@@ -89,9 +89,11 @@
+     },
+     "draw": {
+--- a/src/quickshell/Main.qml
++++ b/src/quickshell/Main.qml
+@@ -102,9 +102,11 @@ PanelWindow {
                      LauncherController.hide();
                  } else if (cmd === "open") {
                      ClipboardController.hide();
@@ -44,7 +42,7 @@ diff -ruN a/src/quickshell/Main.qml after/src/quickshell/Main.qml
                      LauncherController.toggle();
                  }
                  return;
-@@ -102,13 +104,30 @@
+@@ -115,14 +117,31 @@ PanelWindow {
                      ClipboardController.hide();
                  } else if (cmd === "open") {
                      LauncherController.hide();
@@ -57,7 +55,7 @@ diff -ruN a/src/quickshell/Main.qml after/src/quickshell/Main.qml
                  }
                  return;
              }
-+
+ 
 +            if (cmd === "timer" || targetWidget === "timer") {
 +                if (cmd === "close") {
 +                    TimerPanelController.hide();
@@ -72,13 +70,23 @@ diff -ruN a/src/quickshell/Main.qml after/src/quickshell/Main.qml
 +                }
 +                return;
 +            }
- 
++
              if (cmd === "airplane" || targetWidget === "airplane" || cmd === "flight" || targetWidget === "flight") {
                  let isAirplane = !Networking.wifiEnabled && !(Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled);
-diff -ruN a/src/quickshell/qmldir after/src/quickshell/qmldir
---- a/src/quickshell/qmldir	2026-09-06 12:56:43.723881328 +0200
-+++ b/src/quickshell/qmldir	2026-09-06 12:56:43.815143636 +0200
-@@ -4,6 +4,7 @@
+                 if (isAirplane) {
+--- a/src/quickshell/Shell.qml
++++ b/src/quickshell/Shell.qml
+@@ -21,6 +21,7 @@ ShellRoot {
+ 
+     Launcher {}
+     Clipboard {}    
++    TimerPanel {}
+ 
+     Polkit {}
+     PopoutManager {}
+--- a/src/quickshell/qmldir
++++ b/src/quickshell/qmldir
+@@ -5,6 +5,7 @@ Main 1.0 Main.qml
  Bar 1.0 bar/Bar.qml
  Floating 1.0 quickactions/Floating.qml
  Clipboard 1.0 clipboard/Clipboard.qml
@@ -86,25 +94,27 @@ diff -ruN a/src/quickshell/qmldir after/src/quickshell/qmldir
  Launcher 1.0 launcher/Launcher.qml
  ScreenshotOverlay 1.0 screenshot/ScreenshotOverlay.qml
  WallpaperEngine 1.0 wallpaper/WallpaperEngine.qml
-@@ -57,5 +58,6 @@
+@@ -64,6 +65,7 @@ singleton FloatingController 1.0 singletons/widgetcontrols/FloatingController.qm
  singleton LauncherController 1.0 singletons/widgetcontrols/LauncherController.qml
  singleton OsdController 1.0 singletons/widgetcontrols/OsdController.qml
  singleton SideMusicController 1.0 singletons/widgetcontrols/SideMusicController.qml
 +singleton TimerPanelController 1.0 singletons/widgetcontrols/TimerPanelController.qml
  singleton TrayMenuController 1.0 singletons/widgetcontrols/TrayMenuController.qml
  singleton WidgetSync 1.0 singletons/widgetcontrols/WidgetSync.qml
-diff -ruN a/src/quickshell/quickactions/actions/qmldir after/src/quickshell/quickactions/actions/qmldir
---- a/src/quickshell/quickactions/actions/qmldir	2026-09-06 12:56:43.724042799 +0200
-+++ b/src/quickshell/quickactions/actions/qmldir	2026-09-06 12:56:43.815381788 +0200
-@@ -1,4 +1,3 @@
- Dock 1.0 Dock.qml
- DrawAction 1.0 DrawAction.qml
- SystemUsage 1.0 SystemUsage.qml
--Timer 1.0 Timer.qml
-diff -ruN a/src/quickshell/quickactions/actions/Timer.qml after/src/quickshell/quickactions/actions/Timer.qml
---- a/src/quickshell/quickactions/actions/Timer.qml	2026-09-06 12:56:43.724042799 +0200
-+++ b/src/quickshell/quickactions/actions/Timer.qml	1970-01-01 01:00:00.000000000 +0100
-@@ -1,886 +0,0 @@
+ singleton DesktopMenuController singletons/widgetcontrols/DesktopMenuController.qml
+--- a/src/quickshell/quickactions/Floating.qml
++++ b/src/quickshell/quickactions/Floating.qml
+@@ -306,7 +306,6 @@ Variants {
+             property var tabModules: [
+                 "actions/DrawAction.qml",
+                 "actions/SystemUsage.qml",
+-                "actions/Timer.qml",
+                 "actions/Notes.qml"
+             ]
+ 
+--- a/src/quickshell/quickactions/actions/Timer.qml
++++ /dev/null
+@@ -1,875 +0,0 @@
 -import QtQuick
 -import QtQuick.Layouts
 -import QtQuick.Controls
@@ -322,30 +332,19 @@ diff -ruN a/src/quickshell/quickactions/actions/Timer.qml after/src/quickshell/q
 -    }
 -
 -    function updateExportedState() {
--        let icon = "\uF017";
--        let timeStr = "";
--        let colorType = "mauve";
+-        let list = [];
 -
--        if (root.anyTimerActive) {
--            if (stateCache.timerTargetEpoch > 0) {
--                icon = "\uF017";
--                timeStr = root.formatTime(stateCache.timerRemainingMs, false);
--                colorType = "mauve";
--            } else if (stateCache.swStartEpoch > 0) {
--                icon = "\uF2F2";
--                timeStr = root.formatTime(stopwatchView.currentDisplayMs, false);
--                colorType = "mauve";
--            } else if (stateCache.pomoTargetEpoch > 0) {
--                icon = "\uF085";
--                timeStr = root.formatTime(stateCache.pomoRemainingMs, false);
--                colorType = stateCache.pomoState !== 0 ? "green" : "mauve";
--            }
+-        if (stateCache.timerTargetEpoch > 0) {
+-            list.push({ icon: "\uF017", time: root.formatTime(stateCache.timerRemainingMs, false), colorType: "mauve" });
+-        }
+-        if (stateCache.swStartEpoch > 0) {
+-            list.push({ icon: "\uF2F2", time: root.formatTime(stopwatchView.currentDisplayMs, false), colorType: "mauve" });
+-        }
+-        if (stateCache.pomoTargetEpoch > 0) {
+-            list.push({ icon: "\uF085", time: root.formatTime(stateCache.pomoRemainingMs, false), colorType: stateCache.pomoState !== 0 ? "green" : "mauve" });
 -        }
 -
--        TimerState.isActive = root.anyTimerActive;
--        TimerState.timeFormatted = timeStr;
--        TimerState.icon = icon;
--        TimerState.colorType = colorType;
+-        TimerState.entries = list;
 -    }
 -
 -    function notify(title, message, icon) {
@@ -991,33 +990,15 @@ diff -ruN a/src/quickshell/quickactions/actions/Timer.qml after/src/quickshell/q
 -        }
 -    }
 -}
-diff -ruN a/src/quickshell/quickactions/Floating.qml after/src/quickshell/quickactions/Floating.qml
---- a/src/quickshell/quickactions/Floating.qml	2026-09-06 12:56:43.724008381 +0200
-+++ b/src/quickshell/quickactions/Floating.qml	2026-09-06 12:56:43.816411604 +0200
-@@ -238,8 +238,7 @@
- 
-             property var tabModules: [
-                 "actions/DrawAction.qml",
--                "actions/SystemUsage.qml",
--                "actions/Timer.qml"
-+                "actions/SystemUsage.qml"
-             ]
- 
-             property int tabCount: Math.max(1, tabModules.length)
-diff -ruN a/src/quickshell/Shell.qml after/src/quickshell/Shell.qml
---- a/src/quickshell/Shell.qml	2026-09-06 12:56:43.726087065 +0200
-+++ b/src/quickshell/Shell.qml	2026-09-06 12:56:55.743098609 +0200
-@@ -18,6 +18,7 @@
- 
-     Launcher {}
-     Clipboard {}    
-+    TimerPanel {}
- 
-     Polkit {}
-     PopoutManager {}
-diff -ruN a/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml after/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml
---- a/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml	1970-01-01 01:00:00.000000000 +0100
-+++ b/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml	2026-09-06 12:56:43.758086141 +0200
+--- a/src/quickshell/quickactions/actions/qmldir
++++ b/src/quickshell/quickactions/actions/qmldir
+@@ -2,4 +2,3 @@ Dock 1.0 Dock.qml
+ DrawAction 1.0 DrawAction.qml
+ Notes 1.0 Notes.qml
+ SystemUsage 1.0 SystemUsage.qml
+-Timer 1.0 Timer.qml
+--- /dev/null
++++ b/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml
 @@ -0,0 +1,95 @@
 +pragma Singleton
 +import QtQuick
@@ -1114,10 +1095,9 @@ diff -ruN a/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml af
 +        }
 +    }
 +}
-diff -ruN a/src/quickshell/timer/TimerFace.qml after/src/quickshell/timer/TimerFace.qml
---- a/src/quickshell/timer/TimerFace.qml	1970-01-01 01:00:00.000000000 +0100
-+++ b/src/quickshell/timer/TimerFace.qml	2026-09-06 12:56:43.766085910 +0200
-@@ -0,0 +1,1083 @@
+--- /dev/null
++++ b/src/quickshell/timer/TimerFace.qml
+@@ -0,0 +1,1071 @@
 +import QtQuick
 +import QtQuick.Layouts
 +import QtQuick.Controls
@@ -1361,34 +1341,22 @@ diff -ruN a/src/quickshell/timer/TimerFace.qml after/src/quickshell/timer/TimerF
 +    }
 +
 +    function updateExportedState() {
-+        let icon = "\uF017";
-+        let timeStr = "";
-+        let colorType = "mauve";
++        let list = [];
 +
-+        if (root.anyTimerActive) {
-+            if (stateCache.timerTargetEpoch > 0) {
-+                icon = "\uF017";
-+                timeStr = root.formatTime(stateCache.timerRemainingMs, false);
-+                colorType = "mauve";
-+            } else if (stateCache.swStartEpoch > 0) {
-+                icon = "\uF2F2";
-+                timeStr = root.formatTime(stopwatchView.currentDisplayMs, false);
-+                colorType = "mauve";
-+            } else if (stateCache.pomoTargetEpoch > 0) {
-+                icon = "\uF085";
-+                timeStr = root.formatTime(stateCache.pomoRemainingMs, false);
-+                colorType = stateCache.pomoState !== 0 ? "green" : "mauve";
-+            }
-+        } else if (root.isAlarmArmed) {
-+            icon = "\uF0F3";
-+            timeStr = root.formatCountdown(root.alarmRemainingMs);
-+            colorType = "mauve";
++        if (stateCache.timerTargetEpoch > 0) {
++            list.push({ icon: "\uF017", time: root.formatTime(stateCache.timerRemainingMs, false), colorType: "mauve" });
++        }
++        if (stateCache.swStartEpoch > 0) {
++            list.push({ icon: "\uF2F2", time: root.formatTime(stopwatchView.currentDisplayMs, false), colorType: "mauve" });
++        }
++        if (stateCache.pomoTargetEpoch > 0) {
++            list.push({ icon: "\uF085", time: root.formatTime(stateCache.pomoRemainingMs, false), colorType: stateCache.pomoState !== 0 ? "green" : "mauve" });
++        }
++        if (root.isAlarmArmed) {
++            list.push({ icon: "\uF0F3", time: root.formatCountdown(root.alarmRemainingMs), colorType: "mauve" });
 +        }
 +
-+        TimerState.isActive = root.anyTimerActive || root.isAlarmArmed;
-+        TimerState.timeFormatted = timeStr;
-+        TimerState.icon = icon;
-+        TimerState.colorType = colorType;
++        TimerState.entries = list;
 +    }
 +
 +    function notify(title, message, icon) {
@@ -2201,9 +2169,8 @@ diff -ruN a/src/quickshell/timer/TimerFace.qml after/src/quickshell/timer/TimerF
 +        }
 +    }
 +}
-diff -ruN a/src/quickshell/timer/TimerPanel.qml after/src/quickshell/timer/TimerPanel.qml
---- a/src/quickshell/timer/TimerPanel.qml	1970-01-01 01:00:00.000000000 +0100
-+++ b/src/quickshell/timer/TimerPanel.qml	2026-09-06 12:56:43.752086315 +0200
+--- /dev/null
++++ b/src/quickshell/timer/TimerPanel.qml
 @@ -0,0 +1,462 @@
 +import QtQuick
 +import QtQuick.Window

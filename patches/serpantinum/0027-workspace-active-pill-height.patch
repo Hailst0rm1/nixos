@@ -1,5 +1,5 @@
---- a/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
-+++ b/src/quickshell/bar/modules/workspaces/faces/PillsFace.qml
+--- a/src/quickshell/bar/faces/workspaces/PillsFace.qml
++++ b/src/quickshell/bar/faces/workspaces/PillsFace.qml
 @@ -38,7 +38,7 @@ Item {
              if (index < 0 || !widget) return 0;
              let xPos = 0;

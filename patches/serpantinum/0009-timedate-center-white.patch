@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/timedate/faces/ClassicFace.qml
-+++ b/src/quickshell/bar/modules/timedate/faces/ClassicFace.qml
-@@ -12,24 +12,23 @@
+--- a/src/quickshell/bar/faces/timedate/ClassicFace.qml
++++ b/src/quickshell/bar/faces/timedate/ClassicFace.qml
+@@ -12,24 +12,23 @@ Item {
  
      Column {
          id: timeCol

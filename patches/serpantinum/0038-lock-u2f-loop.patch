@@ -1,7 +1,46 @@
---- a/src/quickshell/lock/Lock.qml	2026-09-29 15:16:32.884628456 +0200
-+++ b/src/quickshell/lock/Lock.qml	2026-09-29 15:38:04.144471725 +0200
-@@ -22,6 +22,77 @@
-     property bool isUnlocking: false
+--- a/src/quickshell/bar/faces/left/LeftFace.qml.rej
++++ /dev/null
+@@ -1,16 +0,0 @@
+---- src/quickshell/bar/faces/left/LeftFace.qml	2026-09-06 12:54:16.668505211 +0200
+-+++ src/quickshell/bar/faces/left/LeftFace.qml	2026-09-06 12:54:16.720124520 +0200
+-@@ -69,10 +69,10 @@
+-             iconOffsetX: -2
+- 
+-             cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
+--            buttonIcon: "󰒓"
+--            iconFontSize: barWindow ? barWindow.s(leftWidgetRoot.isCompact ? 14 : 15) : (leftWidgetRoot.isCompact ? 14 : 15)
+-+            buttonIcon: "󱄅"
+-+            iconFontSize: barWindow ? barWindow.s(leftWidgetRoot.isCompact ? 17 : 18) : (leftWidgetRoot.isCompact ? 17 : 18)
+-             accentColor: leftWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
+--            textColor: isHoveredOrHighlighted ? ThemeBackend.text : (leftWidgetRoot.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
+-+            textColor: "#ffffff"
+- 
+-             opacity: leftWidgetRoot.showLayout ? 1.0 : 0.0
+-             transform: Translate {
+--- a/src/quickshell/bar/faces/left/SideLeftFace.qml.rej
++++ /dev/null
+@@ -1,17 +0,0 @@
+---- src/quickshell/bar/faces/left/SideLeftFace.qml	2026-09-06 12:54:16.669012393 +0200
+-+++ src/quickshell/bar/faces/left/SideLeftFace.qml	2026-09-06 12:54:16.720247593 +0200
+-@@ -44,11 +44,11 @@
+-         width: barWindow ? barWindow.s(sideTopRoot.isCompact ? 28 : 30) : (sideTopRoot.isCompact ? 28 : 30)
+-         height: barWindow ? barWindow.s(sideTopRoot.isCompact ? 28 : 30) : (sideTopRoot.isCompact ? 28 : 30)
+-         cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
+--        buttonIcon: "󰒓"
+-+        buttonIcon: "󱄅"
+-         iconOffsetX: -2
+--        iconFontSize: barWindow ? barWindow.s(sideTopRoot.isCompact ? 14 : 15) : (sideTopRoot.isCompact ? 14 : 15)
+-+        iconFontSize: barWindow ? barWindow.s(sideTopRoot.isCompact ? 17 : 18) : (sideTopRoot.isCompact ? 17 : 18)
+-         accentColor: sideTopRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
+--        textColor: isHoveredOrHighlighted ? ThemeBackend.text : (sideTopRoot.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
+-+        textColor: "#ffffff"
+-         onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle guide"])
+-     }
+- }
+--- a/src/quickshell/lock/Lock.qml
++++ b/src/quickshell/lock/Lock.qml
+@@ -22,6 +22,77 @@ Scope {
+     property int resumeRevision: 0
  
      property bool isNiri: false
 +    // pam_u2f's cue message is only set while the key is flashing for a touch.
@@ -78,7 +117,7 @@
      property bool isSway: false
      property string kbLayout: "US"
      property int connectedScreenCount: 1
-@@ -193,6 +264,7 @@
+@@ -198,6 +269,7 @@ Scope {
          lockUI.authenticating = false;
          lockUI.statusText = I18n.t("lock.status.locked");
          rootLock.locked = true;
@@ -86,7 +125,7 @@
          pamActionTimer.start();
          kbPollerRestartTimer.restart();
      }
-@@ -200,6 +272,8 @@
+@@ -205,6 +277,8 @@ Scope {
      function finishUnlock() {
          if (root.isUnlocking) return;
          root.isUnlocking = true;
@@ -95,15 +134,15 @@
      }
  
      function completeUnlock() {
-@@ -241,12 +315,62 @@
+@@ -241,12 +315,62 @@ Scope {
          onTriggered: {
              if (rootLock.locked) {
                  pam.start();
 +                if (!u2fPam.active) u2fPam.start();
-+            }
-+        }
-+    }
-+
+             }
+         }
+     }
+ 
 +    // The YubiKey gives up on a touch after ~30s, so the key check runs as its
 +    // own PAM stack and restarts whenever it lapses, independent of the
 +    // password prompt. Without a key plugged in it fails at once and polls.
@@ -141,7 +180,7 @@
 +            if (result === PamResult.Success) {
 +                root.finishUnlock();
 +                return;
-             }
++            }
 +            if (Date.now() - root.u2fCueSince > 25000) u2fHideTimer.restart();
 +            else root.u2fShown = false;
 +            u2fRetryTimer.restart();
@@ -149,19 +188,19 @@
 +        onError: {
 +            root.u2fShown = false;
 +            u2fRetryTimer.restart();
-         }
-     }
- 
++        }
++    }
++
      PamContext {
          id: pam
 +        config: "serpantinum-password"
  
          onCompleted: (result) => {
              lockUI.authenticating = false;
-@@ -1120,6 +1244,14 @@
-                                     opacity: 0.85
-                                 }
- 
+@@ -1120,6 +1244,14 @@ Scope {
+                                             anchors.fill: parent
+                                             anchors.topMargin: screenRoot.s(1.5)
+                                             anchors.bottomMargin: -screenRoot.s(1.5)
 +                                U2fCue {
 +                                    Layout.alignment: Qt.AlignHCenter
 +                                    Layout.topMargin: screenRoot.s(18)
@@ -170,10 +209,10 @@
 +                                    shown: root.u2fShown
 +                                }
 +
-                                 Timer {
-                                     id: clockTimer
-                                     interval: 1000; running: true; repeat: true; triggeredOnStart: true
-@@ -1303,6 +1435,13 @@
+                                             font.family: parent.font.family
+                                             font.pixelSize: parent.font.pixelSize
+                                             font.weight: parent.font.weight
+@@ -1399,6 +1531,13 @@ Scope {
                                                  }
                                              }
  

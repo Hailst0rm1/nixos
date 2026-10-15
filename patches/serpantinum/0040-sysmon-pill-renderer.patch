@@ -1,0 +1,231 @@
+--- a/src/quickshell/bar/faces/sysmon/SysMonFace.qml
++++ b/src/quickshell/bar/faces/sysmon/SysMonFace.qml
+@@ -105,30 +105,29 @@
+         Behavior on x { NumberAnimation { duration: 800; easing.type: Easing.OutQuint } }
+     }
+ 
+-    component SysMonCircle: Rectangle {
+-        id: circleRoot
++    component SysMonPill: Rectangle {
++        id: pillRoot
+         property real value: 0
+         property string textVal: ""
+         property string icon: ""
+         property color accentColor: root.basePrimary
+-        property bool showText: textVal !== ""
+-        property bool useSineWave: root.useSineWave
+         property bool initAnimTrigger: (!barWindow || !!(root.activeTarget && root.activeTarget.isPreview))
+ 
+         property real animValue: initAnimTrigger ? value : 0
+         Behavior on animValue { NumberAnimation { duration: 600; easing.type: Easing.OutQuint } }
+ 
+         property real fillRatio: Math.max(0.0, Math.min(1.0, isNaN(animValue) ? 0.0 : animValue))
++        property real fillY: height * (1.0 - fillRatio)
+ 
+-        implicitWidth: root.circleSize
+-        implicitHeight: root.circleSize
+-        width: implicitWidth
+-        height: implicitHeight
+-        radius: width / 2
+-        color: "transparent"
+-        border.width: 0
+-        // Each gauge pops on its own hover, like the wifi/bt/volume/kb pills.
+-        scale: circleMouse.containsMouse ? 1.03 : 1.0
++        height: sysLayout.pillHeight
++        width: sysLayout.pillWidth
++        radius: Math.min(Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2)), height / 2)
++        color: root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
++        border.color: root.isCompact ? ThemeBackend.surface2 : ThemeBackend.surface1
++        border.width: 1
++        clip: true
++        // Each pill pops on its own hover, like the wifi/bt/volume/kb pills.
++        scale: pillMouse.containsMouse ? 1.03 : 1.0
+         Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
+ 
+         Timer {
+@@ -144,37 +143,120 @@
+         }
+         Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
+ 
+-        ShaderEffect {
+-            id: circleGauge
++        Canvas {
++            id: pillCanvas
+             anchors.fill: parent
++            renderTarget: Canvas.FramebufferObject
++            renderStrategy: Canvas.Cooperative
+ 
+-            property vector2d itemSize: Qt.vector2d(width, height)
+-            property real fillRatio: circleRoot.fillRatio
+-            property real strokeWidth: barWindow ? barWindow.s(2.2) : 2.2
+-            property real useSineWave: circleRoot.useSineWave ? 1.0 : 0.0
+-            property color accentColor: circleRoot.accentColor
+-            property vector4d params: Qt.vector4d(barWindow ? barWindow.s(0.9) : 0.9, 0.0, 0.0, 0.0)
++            onPaint: {
++                var ctx = getContext("2d");
++                ctx.clearRect(0, 0, width, height);
++                if (pillRoot.fillRatio <= 0) return;
++
++                ctx.save();
++                var r = pillRoot.radius;
++                ctx.beginPath();
++                ctx.moveTo(r, 0);
++                ctx.lineTo(width - r, 0);
++                ctx.quadraticCurveTo(width, 0, width, r);
++                ctx.lineTo(width, height - r);
++                ctx.quadraticCurveTo(width, height, width - r, height);
++                ctx.lineTo(r, height);
++                ctx.quadraticCurveTo(0, height, 0, height - r);
++                ctx.lineTo(0, r);
++                ctx.quadraticCurveTo(0, 0, r, 0);
++                ctx.closePath();
++                ctx.clip();
++
++                ctx.beginPath();
++                ctx.moveTo(0, pillRoot.fillY);
++                ctx.lineTo(width, pillRoot.fillY);
++                ctx.lineTo(width, height);
++                ctx.lineTo(0, height);
++                ctx.closePath();
++
++                var grad = ctx.createLinearGradient(0, 0, 0, height);
++                grad.addColorStop(0, Qt.lighter(pillRoot.accentColor, 1.25).toString());
++                grad.addColorStop(1, pillRoot.accentColor.toString());
++                ctx.fillStyle = grad;
++                ctx.globalAlpha = 0.95;
++                ctx.fill();
++                ctx.restore();
++            }
+ 
+-            fragmentShader: "file://" + Caching.serpantinumDir + "/assets/shaders/gauges/circular_wave_gauge.frag.qsb"
++            Connections {
++                target: pillRoot
++                enabled: root.isSysVisible
++                function onFillRatioChanged() { pillCanvas.requestPaint(); }
++                function onAccentColorChanged() { pillCanvas.requestPaint(); }
++            }
+         }
+ 
+-        Text {
++        Row {
++            id: baseContentRow
+             anchors.centerIn: parent
+-            text: circleRoot.showText ? circleRoot.textVal : circleRoot.icon
+-            font.pixelSize: Math.round(circleRoot.showText
+-                ? (barWindow ? barWindow.s(root.isCompact ? 7.5 : 9) : (root.isCompact ? 7.5 : 9))
+-                : (barWindow ? barWindow.s(root.isCompact ? 9 : 11) : (root.isCompact ? 9 : 11)))
+-            font.bold: circleRoot.showText
+-            font.family: circleRoot.showText
+-                ? ((ThemeBackend.fontFamily !== undefined && ThemeBackend.fontFamily !== "") ? ThemeBackend.fontFamily : "sans-serif")
+-                : ThemeBackend.iconFont
+-            color: (ThemeBackend.text !== undefined && ThemeBackend.text !== "") ? ThemeBackend.text : "#ffffff"
+-            horizontalAlignment: Text.AlignHCenter
+-            verticalAlignment: Text.AlignVCenter
++            spacing: barWindow ? barWindow.s(root.isCompact ? 3 : 4) : (root.isCompact ? 3 : 4)
++
++            Text {
++                text: icon
++                font.family: ThemeBackend.iconFont
++                font.pixelSize: barWindow ? barWindow.s(root.isCompact ? 13.5 : 14.5) : (root.isCompact ? 13.5 : 14.5)
++                color: root.isCompact ? ThemeBackend.text : ThemeBackend.subtext0
++                anchors.verticalCenter: parent.verticalCenter
++            }
++
++            Text {
++                text: textVal
++                font.family: ThemeBackend.fontFamily
++                font.pixelSize: barWindow ? barWindow.s(root.isCompact ? 12 : 13) : (root.isCompact ? 12 : 13)
++                font.bold: true
++                color: ThemeBackend.text
++                anchors.verticalCenter: parent.verticalCenter
++            }
++        }
++
++        Item {
++            id: fillClipBox
++            anchors.bottom: parent.bottom
++            anchors.left: parent.left
++            anchors.right: parent.right
++            height: Math.max(0, parent.height * pillRoot.fillRatio)
++            clip: true
++            visible: pillRoot.fillRatio > 0
++
++            Item {
++                anchors.bottom: parent.bottom
++                anchors.left: parent.left
++                anchors.right: parent.right
++                height: pillRoot.height
++
++                Row {
++                    anchors.centerIn: parent
++                    spacing: barWindow ? barWindow.s(root.isCompact ? 3 : 4) : (root.isCompact ? 3 : 4)
++
++                    Text {
++                        text: icon
++                        font.family: ThemeBackend.iconFont
++                        font.pixelSize: barWindow ? barWindow.s(root.isCompact ? 13.5 : 14.5) : (root.isCompact ? 13.5 : 14.5)
++                        color: Qt.rgba(ThemeBackend.crust.r, ThemeBackend.crust.g, ThemeBackend.crust.b, 0.75)
++                        anchors.verticalCenter: parent.verticalCenter
++                    }
++
++                    Text {
++                        text: textVal
++                        font.family: ThemeBackend.fontFamily
++                        font.pixelSize: barWindow ? barWindow.s(root.isCompact ? 12 : 13) : (root.isCompact ? 12 : 13)
++                        font.bold: true
++                        color: ThemeBackend.crust
++                        anchors.verticalCenter: parent.verticalCenter
++                    }
++                }
++            }
+         }
+ 
+         MouseArea {
+-            id: circleMouse
++            id: pillMouse
+             anchors.fill: parent
+             hoverEnabled: true
+             cursorShape: Qt.PointingHandCursor
+@@ -187,12 +269,13 @@
+         id: sysLayout
+         anchors.centerIn: parent
+         spacing: barWindow ? barWindow.s(root.isCompact ? 5 : 6) : (root.isCompact ? 5 : 6)
+-        property int circleSize: root.circleSize
++        property int pillHeight: barWindow ? barWindow.s(root.isCompact ? 28 : 30) : (root.isCompact ? 28 : 30)
++        property int pillWidth: barWindow ? barWindow.s(root.isCompact ? 48 : 52) : (root.isCompact ? 48 : 52)
+ 
+         Repeater {
+             model: root.activeStats
+ 
+-            SysMonCircle {
++            SysMonPill {
+                 readonly property string statType: modelData
+                 value: {
+                     if (statType === "cpu") return isNaN(SysData.cpu) ? 0 : SysData.cpu / 100.0;
+@@ -202,7 +285,10 @@
+                     return 0;
+                 }
+                 textVal: {
+-                    if (statType === "temp") return isNaN(SysData.temp) ? "0" : Math.round(SysData.temp).toString();
++                    if (statType === "cpu") return (isNaN(SysData.cpu) ? 0 : Math.round(SysData.cpu)) + "%";
++                    if (statType === "ram") return (isNaN(SysData.ramPercent) ? 0 : Math.round(SysData.ramPercent)) + "%";
++                    if (statType === "temp") return (isNaN(SysData.temp) ? 0 : Math.round(SysData.temp)) + "°";
++                    if (statType === "disk") return (isNaN(SysData.diskPercent) ? 0 : Math.round(SysData.diskPercent)) + "%";
+                     return "";
+                 }
+                 icon: {
+@@ -213,10 +299,10 @@
+                     return "";
+                 }
+                 accentColor: {
+-                    if (statType === "cpu") return Qt.tint(root.basePrimary, Qt.rgba(1.0, 0.22, 0.22, 0.25));
+-                    if (statType === "ram") return Qt.lighter(root.basePrimary, 1.15);
+-                    if (statType === "temp") return Qt.darker(root.basePrimary, 1.15);
+-                    if (statType === "disk") return Qt.darker(root.basePrimary, 1.35);
++                    if (statType === "cpu") return ThemeBackend.mauve;
++                    if (statType === "ram") return ThemeBackend.sapphire;
++                    if (statType === "temp") return ThemeBackend.mauve;
++                    if (statType === "disk") return Qt.darker(ThemeBackend.sapphire, 1.2);
+                     return root.basePrimary;
+                 }
+             }

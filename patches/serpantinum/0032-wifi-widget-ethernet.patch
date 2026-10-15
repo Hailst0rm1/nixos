@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/system/WifiWidget.qml	2026-09-15 13:49:52.176660359 +0200
-+++ b/src/quickshell/bar/modules/system/WifiWidget.qml	2026-09-15 13:49:52.240970772 +0200
-@@ -99,17 +99,20 @@
+--- a/src/quickshell/bar/faces/wifi/WifiFace.qml
++++ b/src/quickshell/bar/faces/wifi/WifiFace.qml
+@@ -159,17 +159,20 @@ Item {
          let isWifiEnabled = Networking.wifiEnabled;
          wifiStatus = isWifiEnabled ? "Enabled" : "Off";
  
@@ -30,12 +30,21 @@
  
          if (!isWifiEnabled) {
              wifiSsid = "";
-@@ -290,7 +293,7 @@
-             transform: Translate { y: wifiPill.initAnimTrigger ? 0 : barWindow.s(15); Behavior on y { NumberAnimation { duration: 620; easing.type: Easing.OutQuint } } }
+@@ -324,7 +327,7 @@ Item {
+         hoverEnabled: true
+         cursorShape: Qt.PointingHandCursor
+         enabled: root.wifiStyle === "text" && !root.isPreview
+-        onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network wifi"])
++        onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network " + (root.showEthernet ? "eth" : "wifi")])
+     }
+ 
+     Row {
+@@ -387,7 +390,7 @@ Item {
+             transform: Translate { y: wifiPill.initAnimTrigger ? 0 : s(15); Behavior on y { NumberAnimation { duration: 620; easing.type: Easing.OutQuint } } }
              Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
  
--            onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network wifi"])
-+            onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network " + (wifiWidgetRoot.showEthernet ? "eth" : "wifi")])
+-            onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network wifi"])
++            onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network " + (root.showEthernet ? "eth" : "wifi")])
          }
      }
  }

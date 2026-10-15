@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/system/BatWidget.qml
-+++ b/src/quickshell/bar/modules/system/BatWidget.qml
-@@ -82,7 +82,10 @@ Rectangle {
+--- a/src/quickshell/bar/faces/bat/BatFace.qml
++++ b/src/quickshell/bar/faces/bat/BatFace.qml
+@@ -232,7 +232,10 @@ Item {
              property real animValue: value
              Behavior on animValue { NumberAnimation { duration: 600; easing.type: Easing.OutQuint } }
  
@@ -8,7 +8,7 @@
 +            // Battery level is already carried by the percentage text and by
 +            // batDynamicColor; keep the pill fully tinted so it reads like the
 +            // wifi/volume pills instead of a half-empty glass.
-+            property real fillRatio: batWidgetRoot.isDesktop ? 0.0 : 1.0
++            property real fillRatio: root.isDesktop ? 0.0 : 1.0
              property real fillWidth: width * fillRatio
  
-             height: sysLayout.pillHeight
+             readonly property real maxWaveAmp: root.isCharging ? root.s(4.5) : root.s(2.5)

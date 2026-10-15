@@ -1,6 +1,6 @@
---- a/src/quickshell/bar/modules/workspaces/WorkspacesWidget.qml
-+++ b/src/quickshell/bar/modules/workspaces/WorkspacesWidget.qml
-@@ -48,13 +48,13 @@
+--- a/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml
++++ b/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml
+@@ -58,13 +58,13 @@ Item {
          let dummy = configRevision;
          if (typeof Config !== "undefined" && Config.rawSettings) {
              if (Config.rawSettings.bar && Config.rawSettings.bar.workspaceCount !== undefined) {
@@ -17,9 +17,9 @@
              }
          }
          return 8;
-@@ -62,6 +62,13 @@
- 
-     property int workspaceCount: Math.max(2, (activeIndex >= baseWorkspaceCount) ? (activeIndex + 1) : baseWorkspaceCount)
+@@ -88,6 +88,13 @@ Item {
+         return false;
+     }
  
 +    // hyprsplit: this monitor's real workspace ids are [hyprWsStart, hyprWsStart + baseWorkspaceCount - 1],
 +    // not the flat 0..workspaceCount-1 range niri/sway use. Keyed off baseWorkspaceCount, not
@@ -31,16 +31,16 @@
      ListModel {
          id: workspaceListModel
      }
-@@ -127,7 +134,7 @@
-         if (isSway) {
-             return !!swayOccupiedMap[index];
-         }
+@@ -148,7 +155,7 @@ Item {
+     function isOccupied(index) {
+         if (isNiri) return !!(niriExistingMap[index] && niriOccupiedMap[index]);
+         if (isSway) return !!swayOccupiedMap[index];
 -        let ws = wsForId(index + 1);
 +        let ws = wsForId(hyprWsStart + index);
          return ws !== null && ws.toplevels && ws.toplevels.values && ws.toplevels.values.length > 0;
      }
  
-@@ -140,7 +147,7 @@
+@@ -165,7 +172,7 @@ Item {
              swayActiveIndex = index;
              Quickshell.execDetached(["swaymsg", "workspace", "number", wsId.toString()]);
          } else {
@@ -49,7 +49,7 @@
          }
      }
  
-@@ -153,7 +160,8 @@
+@@ -178,7 +185,8 @@ Item {
          } else {
              const fw = Hyprland.focusedWorkspace;
              if (!fw) return -1;
@@ -61,7 +61,7 @@
      }
 --- a/src/scripts/qs_manager.sh
 +++ b/src/scripts/qs_manager.sh
-@@ -93,9 +93,9 @@
+@@ -93,9 +93,9 @@ if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
          fi
      else
          if [[ "$TARGET" == "move" ]]; then

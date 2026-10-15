@@ -66,6 +66,26 @@ in {
       ];
     };
 
+    # Register Strata's already-working portal + FileManager1 integration where
+    # its Settings → "System file manager" self-check looks. Nix serves these
+    # from the profile (on XDG_DATA_DIRS) already; Strata only inspects
+    # $XDG_DATA_HOME, so mirror the three files it checks for there.
+    xdg.dataFile = {
+      # Open/Save dialogs. The portal config already prefers "strata"
+      # (nixosModules/desktop/hyprland.nix); these just need to exist.
+      "xdg-desktop-portal/portals/strata.portal".source = "${pkgs.strata}/share/xdg-desktop-portal/portals/strata.portal";
+      "dbus-1/services/org.freedesktop.impl.portal.desktop.strata.service".source = "${pkgs.strata}/share/dbus-1/services/org.freedesktop.impl.portal.desktop.strata.service";
+
+      # Reveal in File Manager. Strata's check requires Exec to equal its own
+      # current_exe, which on Nix is the wrapped binary, not $out/bin/strata.
+      # shortcut: hardcodes makeWrapper's ".strata-wrapped" name, revisit if the wrapper changes.
+      "dbus-1/services/io.github.lgse.Strata.FileManager1.service".text = ''
+        [D-BUS Service]
+        Name=org.freedesktop.FileManager1
+        Exec=${pkgs.strata}/bin/.strata-wrapped --gapplication-service
+      '';
+    };
+
     # Keep preferences writable by Strata and preserve unrelated settings.
     # The opt-in marker stops Strata offering to rewrite the portal config Nix owns.
     home.activation.strataSettings = lib.hm.dag.entryAfter ["linkGeneration"] ''

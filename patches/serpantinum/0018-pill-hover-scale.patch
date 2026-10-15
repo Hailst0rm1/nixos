@@ -1,64 +1,42 @@
---- a/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-06 12:54:52.547733132 +0200
-+++ b/src/quickshell/bar/modules/system/BatWidget.qml	2026-09-06 12:54:52.684327509 +0200
-@@ -106,6 +106,10 @@
-             width: targetWidth
-             Behavior on width { NumberAnimation { duration: 480; easing.type: Easing.OutQuint } }
- 
-+            // Match the hover pop ClickButton gives the wifi/bt/volume/kb pills.
-+            scale: batPillMouse.containsMouse ? 1.03 : 1.0
-+            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
-+
-             radius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
-             color: batWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
-             border.color: batWidgetRoot.isCompact ? ThemeBackend.surface2 : ThemeBackend.surface1
-@@ -264,7 +268,9 @@
-             }
- 
-             MouseArea {
-+                id: batPillMouse
-                 anchors.fill: parent
-+                hoverEnabled: true
-                 cursorShape: Qt.PointingHandCursor
-                 onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle system"])
-             }
---- a/src/quickshell/bar/modules/system/SysMonWidget.qml	2026-09-06 12:54:52.547733132 +0200
-+++ b/src/quickshell/bar/modules/system/SysMonWidget.qml	2026-09-06 12:54:52.685596075 +0200
-@@ -93,6 +93,10 @@
- 
-         height: sysLayout.pillHeight
-         width: sysLayout.pillWidth
-+        // Each pill pops on its own hover, like the wifi/bt/volume/kb pills.
-+        scale: pillMouse.containsMouse ? 1.03 : 1.0
+--- a/src/quickshell/bar/faces/sysmon/SysMonFace.qml
++++ b/src/quickshell/bar/faces/sysmon/SysMonFace.qml
+@@ -127,6 +127,9 @@ Item {
+         radius: width / 2
+         color: "transparent"
+         border.width: 0
++        // Each gauge pops on its own hover, like the wifi/bt/volume/kb pills.
++        scale: circleMouse.containsMouse ? 1.03 : 1.0
 +        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
-+
-         radius: Math.min(Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2)), height / 2)
-         color: sysMonWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
-         border.color: sysMonWidgetRoot.isCompact ? ThemeBackend.surface2 : ThemeBackend.surface1
-@@ -237,6 +241,14 @@
-                 }
-             }
+ 
+         Timer {
+             running: (!activeTarget || activeTarget.moduleActive) && root.showLayout && !initAnimTrigger
+@@ -169,6 +172,15 @@ Item {
+             horizontalAlignment: Text.AlignHCenter
+             verticalAlignment: Text.AlignVCenter
          }
 +
 +        MouseArea {
-+            id: pillMouse
++            id: circleMouse
 +            anchors.fill: parent
 +            hoverEnabled: true
 +            cursorShape: Qt.PointingHandCursor
++            enabled: !(root.activeTarget && root.activeTarget.isPreview)
 +            onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle sysmon"])
 +        }
      }
  
      Row {
-@@ -267,12 +279,4 @@
-             accentColor: ThemeBackend.red
+@@ -210,13 +222,4 @@ Item {
+             }
          }
      }
 -
 -    MouseArea {
 -        anchors.fill: parent
 -        cursorShape: Qt.PointingHandCursor
+-        enabled: !(root.activeTarget && root.activeTarget.isPreview)
 -        onClicked: {
--            FloatingController.showSystemUsage(sysMonWidgetRoot.barWindow ? sysMonWidgetRoot.barWindow.screen : null);
+-            FloatingController.showSystemUsage(root.barWindow ? root.barWindow.screen : null);
 -        }
 -    }
  }

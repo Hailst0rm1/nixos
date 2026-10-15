@@ -27,10 +27,16 @@ in {
       # portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
     };
 
-    environment.sessionVariables = {
-      GDK_BACKEND = "wayland,x11";
-      NIXOS_OZONE_WL = "1";
-    };
+    environment.sessionVariables =
+      {
+        GDK_BACKEND = "wayland,x11";
+        NIXOS_OZONE_WL = "1";
+      }
+      # Make GTK3/Electron/Firefox open & save dialogs use the FileChooser
+      # portal (→ Strata) instead of their built-in GTK choosers.
+      // lib.optionalAttrs strataChooser {
+        GTK_USE_PORTAL = "1";
+      };
 
     # serpantinum's screen recorder shells out to gpu-screen-recorder, whose
     # KMS capture path needs a root helper for /dev/dri/card*. Without this the

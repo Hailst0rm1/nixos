@@ -24,7 +24,6 @@ final: prev: {
         ../patches/serpantinum/0026-workspace-dot-size.patch
         ../patches/serpantinum/0027-workspace-active-pill-height.patch
         ../patches/serpantinum/0027-escape-item-level-handlers.patch
-        ../patches/serpantinum/0028-lock-wipe-gpu-shape.patch
         ../patches/serpantinum/0030-timer-alert-modal.patch
         ../patches/serpantinum/0031-click-popup-to-dismiss.patch
         ../patches/serpantinum/0032-wifi-widget-ethernet.patch
@@ -33,6 +32,13 @@ final: prev: {
         ../patches/serpantinum/0035-timer-finish-sound.patch
         ../patches/serpantinum/0036-alarm-minute-no-carry.patch
         ../patches/serpantinum/0037-calendar-week-numbers.patch
+        # Restores the pre-2.2.9 bar sysmon renderer: pill with a Canvas fill
+        # that rises and the % / ° value always visible. Upstream's module→face
+        # refactor replaced it with circular shader gauges (SysMonCircle) that
+        # only show the number for temperature. Swaps SysMonCircle back to the
+        # old SysMonPill inside the new face wrapper. The postPatch RAM-glyph
+        # substitution below still targets the icon line this patch preserves.
+        ../patches/serpantinum/0040-sysmon-pill-renderer.patch
       ];
 
     # Every --replace-fail target below occurs exactly once in its file.
@@ -83,12 +89,8 @@ final: prev: {
         substituteInPlace src/quickshell/singletons/widgetcontrols/OsdController.qml \
           --replace-fail 'controller.show("capslock", stateNum === 1 ? "on" : "off");' ""
 
-        # Temp pill: upstream's red reads as an alert at idle temperatures.
-        substituteInPlace src/quickshell/bar/modules/system/SysMonWidget.qml \
-          --replace-fail 'accentColor: ThemeBackend.red' 'accentColor: ThemeBackend.mauve'
-
         # Media play/pause hover: green is off-palette for this theme.
-        for f in src/quickshell/bar/modules/MediaWidget.qml src/quickshell/bar/sidemodules/SideMediaWidget.qml
+        for f in src/quickshell/bar/faces/media/MediaFace.qml src/quickshell/bar/faces/media/SideMediaFace.qml
         do
           substituteInPlace "$f" \
             --replace-fail 'isHoveredOrHighlighted ? ThemeBackend.green :' \
@@ -125,7 +127,7 @@ final: prev: {
 
         # Occupied workspace dot: surface2 sits a hair above the empty dot's
         # surface0, so occupied and empty read as the same grey.
-        substituteInPlace src/quickshell/bar/modules/workspaces/faces/PillsFace.qml \
+        substituteInPlace src/quickshell/bar/faces/workspaces/PillsFace.qml \
           --replace-fail 'wsPill.isOccupied ? ThemeBackend.surface2' \
                          'wsPill.isOccupied ? ThemeBackend.overlay2'
 
@@ -148,14 +150,14 @@ final: prev: {
                          'root.isActive = false; Quickshell.execDetached(["hyprctl", "--batch", "keyword unbind ALT,mouse:272 ; keyword bindm ALT,mouse:272,movewindow"]);'
 
         # Weather temperature: plain white, not peach.
-        substituteInPlace src/quickshell/bar/modules/WeatherWidget.qml \
-          --replace-fail 'color: weatherWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.peach, 1.1) : ThemeBackend.peach' \
+        substituteInPlace src/quickshell/bar/faces/weather/WeatherFace.qml \
+          --replace-fail 'color: root.isCompact ? Qt.lighter(ThemeBackend.peach, 1.1) : ThemeBackend.peach' \
                          'color: ThemeBackend.text'
 
         # Keyboard pill: 100px truncates layout names like "Colemak-SE".
-        substituteInPlace src/quickshell/bar/modules/system/KbWidget.qml \
-          --replace-fail 'maxWidth: barWindow ? barWindow.s(kbWidgetRoot.isCompact ? 96 : 100) : (kbWidgetRoot.isCompact ? 96 : 100)' \
-                         'maxWidth: barWindow ? barWindow.s(kbWidgetRoot.isCompact ? 156 : 160) : (kbWidgetRoot.isCompact ? 156 : 160)'
+        substituteInPlace src/quickshell/bar/faces/kb/KbFace.qml \
+          --replace-fail 'maxWidth: s(root.isCompact ? 96 : 100)' \
+                         'maxWidth: s(root.isCompact ? 156 : 160)'
 
         # Breathing room between top bar blocks.
         substituteInPlace src/quickshell/bar/TopBar.qml \
@@ -164,34 +166,31 @@ final: prev: {
 
         # Battery glyph stays the filled icon; the percentage and the pill
         # colour already carry the level.
-        substituteInPlace src/quickshell/bar/modules/system/BatWidget.qml \
+        substituteInPlace src/quickshell/bar/faces/bat/BatFace.qml \
           --replace-fail '(isCharging ? "󰂄" : (batCap > 20 ? "󰁹" : "󰂃"))' \
                          '(isCharging ? "󰂄" : "󰁹")'
 
-        # Sysmon pills: drop the wave animation on the fill line.
-        substituteInPlace src/quickshell/bar/modules/system/SysMonWidget.qml \
-          --replace-fail 'property real waveAmp: (fillRatio < 0.99 && fillRatio > 0.01) ? (barWindow ? barWindow.s(3.5) : 3.5) * Math.sin(fillRatio * Math.PI) : 0' \
-                         'property real waveAmp: 0'
-
         # Sysmon pills open the full System Monitor panel instead of the
         # quickactions usage tile — the panel is the larger view of the same
-        # numbers. 0018 retargets the top-bar pills; this is the vertical-bar
-        # copy of the same widget.
-        substituteInPlace src/quickshell/bar/sidemodules/system/SideSysMonWidget.qml \
-          --replace-fail 'FloatingController.showSystemUsage(sideSysMonRoot.barWindow ? sideSysMonRoot.barWindow.screen : null);' \
+        # numbers. 0018 retargets the top-bar gauges; this is the vertical-bar
+        # copy of the same face.
+        substituteInPlace src/quickshell/bar/faces/sysmon/SideSysMonFace.qml \
+          --replace-fail 'FloatingController.showSystemUsage(root.barWindow ? root.barWindow.screen : null);' \
                          'Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle sysmon"]);'
 
-        # RAM glyph: upstream carries two wrong ones. \uF538 is Font Awesome 6
-        # solid, which Qt never resolves here, so it rendered as tofu; \uF035B
-        # is Material Design "memory", a chip that reads as a second CPU icon
-        # beside the real one. Nerd Fonts' current nf-fa-memory is \uEFC5 --
-        # the RAM stick the System Monitor panel's MEMORY card already uses.
-        # Normalise every memory readout onto it so bar and panel agree.
+        # RAM glyph: Nerd Fonts' nf-fa-memory \uEFC5 is the RAM stick the System
+        # Monitor panel's MEMORY card uses; normalise every memory readout onto
+        # it so bar and panel agree. In the bar faces upstream shows RAM as
+        # \uF035C (Material Design, reads as a chip like the CPU icon beside
+        # it); the lock/quickactions tiles use \uF538 (Font Awesome solid,
+        # which Qt never resolves here, so it rendered as tofu).
         for f in \
-          src/quickshell/bar/modules/system/SysMonWidget.qml \
-          src/quickshell/bar/sidemodules/system/SideSysMonWidget.qml
+          src/quickshell/bar/faces/sysmon/SysMonFace.qml \
+          src/quickshell/bar/faces/sysmon/SideSysMonFace.qml
         do
-          substituteInPlace "$f" --replace-fail 'icon: "󰍛"' 'icon: "\uEFC5"'
+          substituteInPlace "$f" \
+            --replace-fail 'if (statType === "ram") return String.fromCodePoint(0xF035C);' \
+                           'if (statType === "ram") return String.fromCodePoint(0xEFC5);'
         done
         for f in \
           src/quickshell/quickactions/actions/SystemUsage.qml \
