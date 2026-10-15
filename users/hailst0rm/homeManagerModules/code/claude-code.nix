@@ -163,15 +163,15 @@
   impeccable-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "pbakaus";
     repo = "impeccable";
-    rev = "2f98774f86bc05563876643db37e6c37c322850f";
-    hash = "sha256-5/MtMKfDqxS3skhIaHI96g8kE5qmJ4tfDybUKQvLhxE=";
+    rev = "a231cc5b30ac7747f8088d076ece12518f2d839d";
+    hash = "sha256-0YpQdCPELaP7JlxQ68rLtZwACRFEqwkilywz6pmlBN0=";
   };
   # track-branch: main
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "dbec9809d83172a2fa3edd69cc9b95000c3b9859";
-    hash = "sha256-aYH/MnFJH2A5YuID0E1xnKWkVYpvrK8OmqpsBnq03Bs=";
+    rev = "655c67f9e1bb2d1c2a6db850447f1cfdcbbb1220";
+    hash = "sha256-SCAx+ytomf7GYlhM/9atkIxEzWRebhFV0E7rDWrVn44=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -184,8 +184,8 @@
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "coreyhaines31";
     repo = "marketingskills";
-    rev = "c7d7dfb6b460fc376b4b2204b78a9c9fd5ca6467";
-    hash = "sha256-POHMh1FFs11M+b8K7UDxASIRXnNY0aKZy6xaWU+0hpQ=";
+    rev = "55ff469422c3592dac45bcad08dfb40221981c02";
+    hash = "sha256-lTWD1IXOEgtFRg4UPInEbegAsPF1PDY+yfn6uj2NLmw=";
   };
   # track-branch: main
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
@@ -198,8 +198,8 @@
   ponytail-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "DietrichGebert";
     repo = "ponytail";
-    rev = "2961b52fc1fe6a5a87c7a959a79512e5c2f3ffe5";
-    hash = "sha256-3GopEvTySUvo0ghGz4CF6xbN7x3kbB/IHEY7Dwr4dls=";
+    rev = "84740e3d344b69b4a133201fa519eb37a62a2b2a";
+    hash = "sha256-rHFO5SqvOM7r8b8TDXUP7Wvf/HnqH+h9HbIAZWhHQVw=";
   };
   # Codex reads .agents/plugins/marketplace.json, which sends it to upstream
   # `main` for the plugin itself, past the pin. Point that entry back at this
@@ -239,8 +239,8 @@
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "alexgreensh";
     repo = "token-optimizer";
-    rev = "569465e1c233786efb447ae3960aacf574095ee0";
-    hash = "sha256-4WrDeniSiWhnAcJWQbHwU4ozyiOemqHWuvYqGAMZZGM=";
+    rev = "9b12915453c4fc7307b03b9406c2ebcfb747ffd7";
+    hash = "sha256-JxiZEi09e8VwcWngFtQiEmoOzSmgE1qTZUUNke0Eel0=";
   };
 
   # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
