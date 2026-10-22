@@ -225,12 +225,20 @@ run_nxc() {
 
 run_nxc_creds() {
   log "Running: $*" "$CREDFILE"
-  unbuffer "$@" | tee -a "$LOGFILE" | tee -a "$CREDFILE"
+  unbuffer "$@" 2>&1 | tee -a "$LOGFILE" | tee -a "$CREDFILE"
+  local status=${PIPESTATUS[0]}
+  if (( status != 0 )); then
+    log "Command exited with status $status; see output above." "$CREDFILE"
+  fi
 }
 
 run_nxc_interesting() {
   log "Running: $*" "$INTERESTINGFILE"
-  unbuffer "$@" | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
+  unbuffer "$@" 2>&1 | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
+  local status=${PIPESTATUS[0]}
+  if (( status != 0 )); then
+    log "Command exited with status $status; see output above." "$INTERESTINGFILE"
+  fi
 }
 
 run_enum() {
@@ -337,21 +345,21 @@ elevated)
 
   log "Extracting potential credential lines…"
   CREDFILE_PARSED="$OUTDIR"/"${TARGET}_creds_parsed.txt"
-  awk '{for (i=5; i<=NF; i++) printf $i (i<NF ? OFS : ORS)}' "$CREDFILE" |
-    rg -a '^\x1b\[1;33m|^Node' |
-    sed -r 's/\x1b\[[0-9;]*m//g' |
-    sort -u >"$CREDFILE_PARSED"
+  "@atm-python@" "@atm-parser@" "$OUTDIR" "$CREDFILE_PARSED" "$CREDFILE" "$INTERESTINGFILE" || exit 1
 
   # Check for GMSA account
   if grep -qF "SC_GMSA" "$CREDFILE"; then
     GMSA_MSG="GMSA Account found! See Extract gMSA Secrets in wiki"
-    echo -e "${BLUE}[+]${NC} $GMSA_MSG" | tee -a "$LOGFILE" | tee -a "$CREDFILE_PARSED"
+    echo -e "${BLUE}[+]${NC} $GMSA_MSG" | tee -a "$LOGFILE" | tee -a "$INTERESTINGFILE"
   fi
 
   echo -e "${GREEN}[✓] Raw output:           ${LOGFILE}"
   echo -e "${GREEN}[✓] Credentials (raw):    ${CREDFILE}"
   echo -e "${GREEN}[✓] Credentials (parsed): ${CREDFILE_PARSED}"
   echo -e "${GREEN}[✓] Interesting info:     ${INTERESTINGFILE}"
+  echo -e "${GREEN}[✓] Unique passwords:     ${OUTDIR}/passwords.txt"
+  echo -e "${GREEN}[✓] Unique NT hashes:     ${OUTDIR}/hashes.txt"
+  echo -e "${GREEN}[✓] Unique AES keys:      ${OUTDIR}/aes.txt"
   ;;
 
 verify)

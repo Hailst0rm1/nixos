@@ -34,7 +34,11 @@
   bloodyad = pkgs-unstable.callPackage "${nixosDir}/pkgs/bloodyad/package.nix" {};
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
-  atm = builtins.readFile ./files/atm.sh;
+  atm =
+    builtins.replaceStrings
+    ["@atm-python@" "@atm-parser@"]
+    ["${pkgs.python3}/bin/python3" "${./files/atm-parse-creds.py}"]
+    (builtins.readFile ./files/atm.sh);
   var = builtins.readFile ./files/var.sh;
   portspoof = builtins.readFile ./files/portspoof.sh;
   portmux = builtins.readFile ./files/portmux.sh;

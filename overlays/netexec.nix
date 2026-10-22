@@ -1,4 +1,23 @@
 final: prev: {
+  pythonPackagesExtensions =
+    (prev.pythonPackagesExtensions or [])
+    ++ [
+      (_pythonFinal: pythonPrev: {
+        masky = pythonPrev.masky.overridePythonAttrs (old: {
+          # Setuptools 82 removed pkg_resources; Nix installs resources as real files.
+          postPatch =
+            (old.postPatch or "")
+            + ''
+              substituteInPlace masky/lib/smb.py \
+                --replace-fail 'from pkg_resources import resource_filename' \
+                               'from importlib.resources import files' \
+                --replace-fail 'resource_filename("masky.bin", "Masky.exe")' \
+                               'str(files("masky.bin").joinpath("Masky.exe"))'
+            '';
+        });
+      })
+    ];
+
   netexec = prev.netexec.overridePythonAttrs (old: {
     # Fix 1: netexec 1.5.1 passes `signing=` to impacket's LDAPConnection,
     # but the bundled impacket (0.14.0-unstable-2025-12-03) removed that parameter.
