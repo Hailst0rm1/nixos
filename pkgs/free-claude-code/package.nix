@@ -7,7 +7,7 @@
   pyproject-nix,
   pyproject-build-systems,
 }: let
-  version = "6.16.16";
+  version = "6.16.17";
 
   src = fetchFromGitHub {
     owner = "Alishahryar1";
@@ -15,7 +15,7 @@
     # Upstream now publishes release tags; pin to the latest stable one.
     # Bump rev + hash to pull new upstream releases.
     rev = "v${version}";
-    hash = "sha256-HRAoQqVJ+Ged14codPmvk7rlg6CdbXPs7+nA5Digx7Q=";
+    hash = "sha256-wosGb1jngFI+PNY04112q58xEh3po00Y+eh811JzmrY=";
   };
 
   venv = callPackage ./python.nix {
