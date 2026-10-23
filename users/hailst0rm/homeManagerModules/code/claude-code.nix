@@ -493,8 +493,8 @@
 
   # Codegraph-first gate. In a project with a .codegraph/ index, grep-style
   # searches (the Grep tool, or rg/grep/git grep starting a shell segment) are
-  # denied until a codegraph query ran in the session within the last 10
-  # minutes. The rule text alone measured 0.7% pickup on 2026-09-30 (20
+  # denied until a codegraph query ran in the session. Searches over docs,
+  # reports and /tmp pass: the index holds code symbols only. The rule text alone measured 0.7% pickup on 2026-09-30 (20
   # codegraph calls against 3,048 grep-style ones in argos); blocking forces
   # enough use to judge the tool against grep.
   codegraphGateHook = pkgs.writeShellScript "codegraph-gate" ''
@@ -535,23 +535,32 @@
       exit 0
     fi
     $SEARCH || exit 0
-    [ -n "$(find "$STAMP" -mmin -10 2>/dev/null)" ] && exit 0
+    [ -f "$STAMP" ] && exit 0
+
+    # The index holds code symbols only (no Markdown, shell or YAML), so a
+    # search over docs, reports, handoffs or /tmp has nothing to gain from it.
+    DOCS='(\.md|\.sh|\.ya?ml|\.txt|\.toml|docs/|qa/|/tmp/|AGENTS|CLAUDE|README)'
+    jq -e --arg re "$DOCS" '
+      [.tool_input.command, .tool_input.path, .tool_input.glob, .tool_input.type]
+      | map(select(. != null)) | join(" ") | test($re)' <<<"$INPUT" >/dev/null && exit 0
 
     case "$DIR" in
       /*) ;;
       *) DIR="$CWD/$DIR" ;;
     esac
     [ -d "$DIR" ] || DIR=$(dirname "$DIR")
-    while [ "$DIR" != / ] && [ ! -d "$DIR/.codegraph" ]; do
+    # The database, not the directory: ~/.codegraph holds the tool's own
+    # daemons and telemetry and would otherwise gate every path under home.
+    while [ "$DIR" != / ] && [ ! -f "$DIR/.codegraph/codegraph.db" ]; do
       DIR=$(dirname "$DIR")
     done
-    [ -d "$DIR/.codegraph" ] || exit 0
+    [ -f "$DIR/.codegraph/codegraph.db" ] || exit 0
 
     jq -cn --arg dir "$DIR" '{
       "hookSpecificOutput": {
         "hookEventName": "PreToolUse",
         "permissionDecision": "deny",
-        "permissionDecisionReason": ("\($dir) has a CodeGraph index, so query it first: mcp__codegraph__codegraph_explore, or `codegraph explore <query>` in Bash. A codegraph query unlocks grep-style searches in this session for 10 minutes. Retry this search after it if you still need it.")
+        "permissionDecisionReason": ("\($dir) has a CodeGraph index of its code symbols (Rust, TS/JS, Python, Nix; not Markdown, shell or YAML), so ask it first: mcp__codegraph__codegraph_explore, or `codegraph explore <query>` in Bash. One codegraph query unlocks grep-style searches for the rest of this session. Retry this search after it if you still need it.")
       }
     }'
   '';
@@ -1119,7 +1128,7 @@ in {
     codegraph.grepGate.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "In projects with a `.codegraph/` index, deny grep-style searches (Grep tool, rg/grep/git grep) until a codegraph query ran in the session within the last 10 minutes. Forces codegraph to go first so its usefulness can be judged against grep.";
+      description = "In projects with a `.codegraph/` index, deny grep-style searches (Grep tool, rg/grep/git grep) until a codegraph query ran in the session; searches over docs, reports and /tmp pass. Forces codegraph to go first so its usefulness can be judged against grep.";
     };
     perplexity.enable = lib.mkOption {
       type = lib.types.bool;
@@ -1640,9 +1649,10 @@ in {
             Nix is supported, so this repo is a valid target too.
 
             In an indexed project a PreToolUse hook denies grep-style searches
-            (the Grep tool, `rg`, `grep`, `git grep`) until a codegraph query
-            has run in the session within the last 10 minutes. Query first,
-            then grep for whatever the graph did not answer.
+            (the Grep tool, `rg`, `grep`, `git grep`) over code until one
+            codegraph query has run in the session. Searches over Markdown,
+            shell, YAML, reports and `/tmp` pass: the index holds code symbols
+            only. Query first, then grep for whatever the graph did not answer.
           '';
         };
 
@@ -1797,6 +1807,9 @@ in {
             # outranks whatever the extension's onboarding dialog last wrote
             # there, and it suppresses the auto-enable offer as well.
             CLAUDE_CODE_ENABLE_CFC = "0";
+            # direnv's "loading/using flake" lines otherwise lead every Bash
+            # result in a direnv project; the dev shell still loads.
+            DIRENV_LOG_FORMAT = "";
           }
           // lib.optionalAttrs config.code.claude-code.claude-mem.enable {
             # Has to be an env var, not a settings.json key: claude-mem reads it
