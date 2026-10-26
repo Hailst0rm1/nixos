@@ -73,6 +73,7 @@ in {
           path = "/home/hailst0rm/.nixos";
           stignore = ''
             .claude
+            .codegraph
             .direnv
             result
           '';

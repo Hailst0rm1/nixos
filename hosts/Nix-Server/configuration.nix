@@ -448,6 +448,7 @@
         path = "/mnt/nas/NixOS";
         stignore = ''
           .claude
+          .codegraph
           .direnv
           result
         '';
