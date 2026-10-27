@@ -9,10 +9,10 @@
   # Postex-Tools
   rubeus = pkgs.stdenv.mkDerivation {
     pname = "rubeus";
-    version = "2025-09-15";
+    version = "REL-1029";
     src = pkgs.fetchurl {
-      url = "https://github.com/Syslifters/offsec-tools/raw/refs/heads/main/bin/Rubeus.exe";
-      sha256 = "sha256-Y3paZqhqLIYGU+TMZA1kLE53gkY/vuBoapaVwWuG48I=";
+      url = "https://github.com/Syslifters/offsec-tools/raw/refs/tags/REL-1029/bin/Rubeus.exe";
+      sha256 = "sha256-I2JK5VSNkOFwkH3ydUeE1AC6FBYSRYDdpHysT3XVrec=";
     };
     phases = ["installPhase"];
     installPhase = ''

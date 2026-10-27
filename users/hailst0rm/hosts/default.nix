@@ -100,7 +100,7 @@
       codegraph.enable = lib.mkDefault true;
       codegraph.grepGate.enable = lib.mkDefault true;
       shadcn.enable = lib.mkDefault true;
-      twentyfirst.enable = lib.mkDefault true;
+      twentyfirst.enable = lib.mkDefault false;
       higgsfield.enable = lib.mkDefault false;
       marketing-skills.enable = lib.mkDefault false;
       printing-press.enable = lib.mkDefault false;
