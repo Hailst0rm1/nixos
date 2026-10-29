@@ -81,7 +81,8 @@ in {
       # accessible via `nvidia-settings`.
       nvidiaSettings = true;
 
-      package = config.boot.kernelPackages.nvidiaPackages.latest;
+      # Stable's 595.71.05 does not support Linux 7.2's removed APIs.
+      package = (pkgs-unstable.linuxPackagesFor config.boot.kernelPackages.kernel).nvidiaPackages.latest;
 
       prime = lib.mkIf cfg.prime.offload.enable {
         offload = {

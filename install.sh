@@ -1107,7 +1107,7 @@ NIXEOF
 
         # Application boolean toggles
         declare -A HM_APPS=(
-            ["beekeeper-studio"]="true"
+            ["beekeeper-studio"]="false"
             ["bitwarden"]="true"
             ["brave"]="false"
             ["discord"]="true"

@@ -183,7 +183,7 @@ in {
         krbrelayx # Kerberos relaying and unconstrained delegation abuse (incl. addspn, dnstool, printerbug)
 
         # === Discovery ===
-        bloodhound
+        bloodhound-ce
         bloodhound-py # Bloodhound ingestor (remote SharpHound)
         manspider # SMB share spider - search filenames/content across networks
         adpulse # Active Directory security scanner with 35 automated checks

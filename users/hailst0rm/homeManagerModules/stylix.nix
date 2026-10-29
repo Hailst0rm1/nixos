@@ -6,7 +6,27 @@
   ...
 }: let
   cfg = config.importConfig.stylix;
+  rofiModule = "${inputs.stylix}/modules/rofi/hm.nix";
+  rofiSource = builtins.readFile rofiModule;
+  patchedRofi = builtins.toFile "stylix-rofi-hm.nix" (
+    assert builtins.length (lib.splitString "programs.rofi.font" rofiSource) == 2;
+      lib.replaceStrings ["programs.rofi.font"] ["programs.rofi.settings.font"] rofiSource
+  );
 in {
+  # Compatibility with Home Manager's renamed Rofi font option.
+  disabledModules = [rofiModule];
+  imports = [
+    (args:
+      import patchedRofi (args
+        // {
+          inherit lib config;
+          mkTarget = import "${inputs.stylix}/stylix/mk-target.nix" {
+            humanName = "Rofi";
+            name = "rofi";
+          };
+        }))
+  ];
+
   options.importConfig.stylix = {
     enable = lib.mkEnableOption "Enable user stylix config.";
   };

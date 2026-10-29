@@ -83,7 +83,7 @@ in {
         ghidra
         binaryninja-free
         rizin
-        cutter
+        # cutter
         radare2
         detect-it-easy
         capa # flare-capa

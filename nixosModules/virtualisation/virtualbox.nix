@@ -14,6 +14,12 @@ in {
       addNetworkInterface = true;
     };
 
+    # Create the interface before assigning addresses during activation.
+    systemd.services.network-addresses-vboxnet0 = lib.mkIf (!config.networking.useNetworkd) {
+      requires = ["vboxnet0.service"];
+      after = ["vboxnet0.service"];
+    };
+
     # Add user to vboxusers
     users.extraGroups.vboxusers.members = [
       config.username

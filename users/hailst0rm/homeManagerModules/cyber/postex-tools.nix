@@ -7,6 +7,25 @@
   ...
 }: let
   # Postex-Tools
+  # Legacy bloodhound (Electron viewer) was removed from nixpkgs upstream
+  # (dead project, Electron 11 EOL); SharpHound is now its own repo/release,
+  # so fetch the collector directly instead of extracting it from the app.
+  sharphound = pkgs.stdenv.mkDerivation {
+    pname = "sharphound";
+    version = "2.17.1";
+    src = pkgs.fetchurl {
+      url = "https://github.com/SpecterOps/SharpHound/releases/download/v2.17.1/SharpHound_v2.17.1_windows_x86.zip";
+      sha256 = "sha256-Y41tQI+HBnpmSzge/BHa5ddry/tFFFJFMUX5Y8cJsko=";
+    };
+    nativeBuildInputs = [pkgs.unzip];
+    phases = ["installPhase"];
+    installPhase = ''
+      mkdir -p $out
+      unzip -j $src SharpHound.exe SharpHound.ps1 -d $out
+      chmod 755 $out/SharpHound.exe $out/SharpHound.ps1
+    '';
+  };
+
   rubeus = pkgs.stdenv.mkDerivation {
     pname = "rubeus";
     version = "REL-1029";
@@ -198,8 +217,8 @@ in {
         mkdir -p "${config.home.homeDirectory}/cyber/wordlists-custom"
 
         cp -f ${builtins.toPath ./files/common-ssh-key-names.txt} "${config.home.homeDirectory}/cyber/wordlists-custom/common-ssh-key-names.txt"
-        cp -f ${pkgs-unstable.bloodhound}/lib/BloodHound/resources/app/Collectors/SharpHound.ps1 "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.ps1"
-        cp -f ${pkgs-unstable.bloodhound}/lib/BloodHound/resources/app/Collectors/SharpHound.exe "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.exe"
+        cp -f ${sharphound}/SharpHound.ps1 "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.ps1"
+        cp -f ${sharphound}/SharpHound.exe "${config.home.homeDirectory}/cyber/postex-tools/SharpHound.exe"
         cp -f ${rubeus}/Rubeus.exe "${config.home.homeDirectory}/cyber/postex-tools/Rubeus.exe"
         cp -f ${pkgs-unstable.mimikatz}/share/windows/mimikatz/x64/mimikatz.exe "${config.home.homeDirectory}/cyber/postex-tools/mimikatz.exe"
         cp -f ${pkgs-unstable.mimikatz}/share/windows/mimikatz/x64/mimidrv.sys "${config.home.homeDirectory}/cyber/postex-tools/mimidrv.sys"
@@ -226,7 +245,7 @@ in {
       '';
 
       packages = with pkgs-unstable; [
-        bloodhound
+        bloodhound-ce
         mimikatz
       ];
     };

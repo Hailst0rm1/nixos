@@ -175,7 +175,7 @@
   };
 
   applications = {
-    beekeeper-studio.enable = lib.mkDefault true;
+    beekeeper-studio.enable = lib.mkDefault false;
     bitwarden.enable = lib.mkDefault true;
     brave.enable = lib.mkDefault false;
     discord.enable = lib.mkDefault true;
