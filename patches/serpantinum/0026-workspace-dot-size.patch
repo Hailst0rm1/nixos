@@ -1,13 +1,18 @@
+diff --git a/src/quickshell/bar/faces/workspaces/PillsFace.qml b/src/quickshell/bar/faces/workspaces/PillsFace.qml
+index 62ffa80..d02d9b9 100644
 --- a/src/quickshell/bar/faces/workspaces/PillsFace.qml
 +++ b/src/quickshell/bar/faces/workspaces/PillsFace.qml
-@@ -101,7 +101,9 @@ Item {
+@@ -133,9 +133,11 @@ Item {
  
                  Rectangle {
                      id: wsVisualShape
 -                    anchors.fill: parent
 +                    anchors.centerIn: parent
-+                    width: wsPill.isActive ? parent.width : (widget ? widget.s(12) : 12)
-+                    height: widget ? widget.s(12) : 12
++                    width: (wsPill.isActive && !pillsFaceRoot.isVertical) ? parent.width : (widget ? widget.s(12) : 12)
++                    height: (wsPill.isActive && pillsFaceRoot.isVertical) ? parent.height : (widget ? widget.s(12) : 12)
                      radius: widget ? widget.s(widget.isCompact ? 8 : 10) : 10
-                     color: wsPill.isActive ? "transparent" : (wsPill.isOccupied ? ThemeBackend.surface2 : ((widget && widget.isCompact) ? ThemeBackend.surface1 : ThemeBackend.surface0))
-                     border.width: 0
+-                    color: (wsPill.isActive || pillsShapeGlass.active) ? "transparent" : Qt.alpha(wsPill.isOccupied ? ThemeBackend.surface2 : ((widget && widget.isCompact) ? ThemeBackend.surface1 : ThemeBackend.surface0), ThemeBackend.elementOpacity)
++                    color: (wsPill.isActive || pillsShapeGlass.active) ? "transparent" : Qt.alpha(wsPill.isOccupied ? ThemeBackend.overlay2 : ((widget && widget.isCompact) ? ThemeBackend.surface1 : ThemeBackend.surface0), ThemeBackend.elementOpacity)
+ 
+                     GlassFill {
+                         id: pillsShapeGlass

@@ -28,7 +28,6 @@ final: prev: {
         ../patches/serpantinum/0031-click-popup-to-dismiss.patch
         ../patches/serpantinum/0032-wifi-widget-ethernet.patch
         ../patches/serpantinum/0033-network-popup-ethernet.patch
-        ../patches/serpantinum/0034-screenshot-crop-freeze.patch
         ../patches/serpantinum/0035-timer-finish-sound.patch
         ../patches/serpantinum/0036-alarm-minute-no-carry.patch
         ../patches/serpantinum/0037-calendar-week-numbers.patch
@@ -73,7 +72,7 @@ final: prev: {
         # anything the app forks first stays behind. app2unit creates the
         # app.slice scope *before* exec, so every descendant inherits it.
         # Both call sites name the parameter desktopId, so one replacement fits.
-        for f in src/quickshell/launcher/Launcher.qml src/quickshell/dock/Dock.qml
+        for f in src/quickshell/launcher/Launcher.qml src/quickshell/dock/DockWindowApps.qml
         do
           substituteInPlace "$f" \
             --replace-fail 'entry.execute();' \
@@ -89,13 +88,12 @@ final: prev: {
         substituteInPlace src/quickshell/singletons/widgetcontrols/OsdController.qml \
           --replace-fail 'controller.show("capslock", stateNum === 1 ? "on" : "off");' ""
 
-        # Media play/pause hover: green is off-palette for this theme.
-        for f in src/quickshell/bar/faces/media/MediaFace.qml src/quickshell/bar/faces/media/SideMediaFace.qml
-        do
-          substituteInPlace "$f" \
-            --replace-fail 'isHoveredOrHighlighted ? ThemeBackend.green :' \
-                           'isHoveredOrHighlighted ? ThemeBackend.mauve :'
-        done
+        # Media play/pause hover: green is off-palette for this theme. The one
+        # exception to the exactly-once rule: the string is the play button in
+        # both the horizontal and the vertical layout, and both are meant.
+        substituteInPlace src/quickshell/bar/faces/media/MediaFace.qml \
+          --replace-fail 'isHoveredOrHighlighted ? ThemeBackend.green :' \
+                         'isHoveredOrHighlighted ? ThemeBackend.mauve :'
 
         # Notification card: surface1 is a light grey that glares against the
         # rest of the palette; mantle sits a step below base.
@@ -112,7 +110,7 @@ final: prev: {
                          'readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.1)'
 
         # Lock screen: 0.72 of blurMax left the screen grab legible at rest.
-        substituteInPlace src/quickshell/lock/Lock.qml \
+        substituteInPlace src/quickshell/lock/LockBackdrop.qml \
           --replace-fail 'blur: screenRoot.inputActive ? 1.0 : 0.72' \
                          'blur: screenRoot.inputActive ? 1.0 : 0.9'
 
@@ -121,15 +119,9 @@ final: prev: {
         # screenshot underneath and read as see-through. Showing it in the
         # blurred layer too makes the whole lock a blurred screen grab, the way
         # hyprlock's `path = screenshot; blur_passes = 2` did.
-        substituteInPlace src/quickshell/lock/Lock.qml \
+        substituteInPlace src/quickshell/lock/LockBackdrop.qml \
           --replace-fail 'opacity: (screenRoot.inputActive && status === Image.Ready && source.toString() !== "") ? 1.0 : 0.0' \
                          'opacity: (status === Image.Ready && source.toString() !== "") ? 1.0 : 0.0'
-
-        # Occupied workspace dot: surface2 sits a hair above the empty dot's
-        # surface0, so occupied and empty read as the same grey.
-        substituteInPlace src/quickshell/bar/faces/workspaces/PillsFace.qml \
-          --replace-fail 'wsPill.isOccupied ? ThemeBackend.surface2' \
-                         'wsPill.isOccupied ? ThemeBackend.overlay2'
 
         # Screenshot: move the existing box while holding mainMod (Alt) instead
         # of Shift; a plain drag still draws a new one.
@@ -170,34 +162,26 @@ final: prev: {
           --replace-fail '(isCharging ? "󰂄" : (batCap > 20 ? "󰁹" : "󰂃"))' \
                          '(isCharging ? "󰂄" : "󰁹")'
 
-        # Sysmon pills open the full System Monitor panel instead of the
-        # quickactions usage tile — the panel is the larger view of the same
-        # numbers. 0018 retargets the top-bar gauges; this is the vertical-bar
-        # copy of the same face.
-        substituteInPlace src/quickshell/bar/faces/sysmon/SideSysMonFace.qml \
-          --replace-fail 'FloatingController.showSystemUsage(root.barWindow ? root.barWindow.screen : null);' \
-                         'Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle sysmon"]);'
-
         # RAM glyph: Nerd Fonts' nf-fa-memory \uEFC5 is the RAM stick the System
         # Monitor panel's MEMORY card uses; normalise every memory readout onto
-        # it so bar and panel agree. In the bar faces upstream shows RAM as
-        # \uF035C (Material Design, reads as a chip like the CPU icon beside
-        # it); the lock/quickactions tiles use \uF538 (Font Awesome solid,
-        # which Qt never resolves here, so it rendered as tofu).
+        # it so bar and panel agree. Upstream shows RAM as \uF035C (Material
+        # Design, reads as a chip like the CPU icon beside it) in the bar and
+        # in the RAM widgets the lock screen is built from; the quickactions
+        # tile uses \uF538 (Font Awesome solid, which Qt never resolves here,
+        # so it rendered as tofu).
+        substituteInPlace src/quickshell/bar/faces/sysmon/SysMonFace.qml \
+          --replace-fail 'if (statType === "ram") return String.fromCodePoint(0xF035C);' \
+                         'if (statType === "ram") return String.fromCodePoint(0xEFC5);'
         for f in \
-          src/quickshell/bar/faces/sysmon/SysMonFace.qml \
-          src/quickshell/bar/faces/sysmon/SideSysMonFace.qml
+          src/quickshell/widgets/faces/usage/RamFace.qml \
+          src/quickshell/widgets/faces/usage/RamFaceCircle.qml
         do
           substituteInPlace "$f" \
-            --replace-fail 'if (statType === "ram") return String.fromCodePoint(0xF035C);' \
-                           'if (statType === "ram") return String.fromCodePoint(0xEFC5);'
+            --replace-fail 'icon: String.fromCodePoint(0xF035C)' \
+                           'icon: String.fromCodePoint(0xEFC5)'
         done
-        for f in \
-          src/quickshell/quickactions/actions/SystemUsage.qml \
-          src/quickshell/lock/Lock.qml
-        do
-          substituteInPlace "$f" --replace-fail 'icon: "\uF538"' 'icon: "\uEFC5"'
-        done
+        substituteInPlace src/quickshell/quickactions/actions/SystemUsage.qml \
+          --replace-fail 'icon: "\uF538"' 'icon: "\uEFC5"'
       '';
 
     # WelcomeTab.qml and AboutTab.qml both hardcode assets/logo.svg as the

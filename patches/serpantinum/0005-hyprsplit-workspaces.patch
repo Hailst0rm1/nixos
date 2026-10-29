@@ -1,6 +1,8 @@
+diff --git a/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml b/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml
+index 0e03a01..1e95a3b 100644
 --- a/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml
 +++ b/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml
-@@ -58,13 +58,13 @@ Item {
+@@ -78,13 +78,13 @@ Item {
          let dummy = configRevision;
          if (typeof Config !== "undefined" && Config.rawSettings) {
              if (Config.rawSettings.bar && Config.rawSettings.bar.workspaceCount !== undefined) {
@@ -17,39 +19,39 @@
              }
          }
          return 8;
-@@ -88,6 +88,13 @@ Item {
+@@ -112,6 +112,13 @@ Item {
          return false;
      }
  
 +    // hyprsplit: this monitor's real workspace ids are [hyprWsStart, hyprWsStart + baseWorkspaceCount - 1],
 +    // not the flat 0..workspaceCount-1 range niri/sway use. Keyed off baseWorkspaceCount, not
 +    // workspaceCount: the latter grows with activeIndex, which is derived from hyprWsStart.
-+    property var hyprMonitor: (!isNiri && !isSway && barWindow && barWindow.screen) ? Hyprland.monitorFor(barWindow.screen) : null
++    property var hyprMonitor: (!isNiri && !isSway && !isMango && barWindow && barWindow.screen) ? Hyprland.monitorFor(barWindow.screen) : null
 +    property int hyprMonitorId: hyprMonitor ? hyprMonitor.id : 0
 +    property int hyprWsStart: hyprMonitorId * baseWorkspaceCount + 1
 +
      ListModel {
          id: workspaceListModel
      }
-@@ -148,7 +155,7 @@ Item {
-     function isOccupied(index) {
+@@ -173,7 +180,7 @@ Item {
          if (isNiri) return !!(niriExistingMap[index] && niriOccupiedMap[index]);
          if (isSway) return !!swayOccupiedMap[index];
+         if (isMango) return !!(mangoOccupiedMap && MangoState.isOccupied(myOutput, index));
 -        let ws = wsForId(index + 1);
 +        let ws = wsForId(hyprWsStart + index);
          return ws !== null && ws.toplevels && ws.toplevels.values && ws.toplevels.values.length > 0;
      }
  
-@@ -165,7 +172,7 @@ Item {
-             swayActiveIndex = index;
-             Quickshell.execDetached(["swaymsg", "workspace", "number", wsId.toString()]);
+@@ -192,7 +199,7 @@ Item {
+         } else if (isMango) {
+             Quickshell.execDetached(["mmsg", "dispatch", "view," + wsId]);
          } else {
 -            Hyprland.dispatch("hl.dsp.focus({ workspace = " + wsId + " })");
 +            Hyprland.dispatch("split:workspace " + (hyprWsStart + index));
          }
      }
  
-@@ -178,7 +185,8 @@ Item {
+@@ -207,7 +214,8 @@ Item {
          } else {
              const fw = Hyprland.focusedWorkspace;
              if (!fw) return -1;
@@ -59,9 +61,11 @@
          }
          return idx >= 0 ? idx : -1;
      }
+diff --git a/src/scripts/qs_manager.sh b/src/scripts/qs_manager.sh
+index ee64c96..9e4064a 100755
 --- a/src/scripts/qs_manager.sh
 +++ b/src/scripts/qs_manager.sh
-@@ -93,9 +93,9 @@ if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
+@@ -99,9 +99,9 @@ if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
          fi
      else
          if [[ "$TARGET" == "move" ]]; then

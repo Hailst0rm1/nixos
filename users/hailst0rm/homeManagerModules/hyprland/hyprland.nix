@@ -102,6 +102,12 @@ in {
   config = lib.mkIf cfg.enable {
     home.sessionVariables.NIXOS_OZONE_WL = "1";
 
+    # Hyprland errors on a `source` whose file is missing; a fresh host has none yet.
+    home.activation.hyprMonitorsConf = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      monitors=${lib.escapeShellArg "${config.xdg.configHome}/hypr/monitors.conf"}
+      [ -e "$monitors" ] || { run mkdir -p "$(dirname "$monitors")"; run touch "$monitors"; }
+    '';
+
     home.file.".config/hypr/xdph.conf".text = lib.mkIf cfg.customScreenPicker ''
       screencopy {
         custom_picker_binary = ${hyprland-preview-share-picker}/bin/hyprland-preview-share-picker
@@ -114,6 +120,14 @@ in {
       portalPackage = null;
       xwayland.enable = true;
       systemd.enable = true;
+
+      # Runtime monitor layout, edited by `displays` without a rebuild. Must
+      # come after the Nix `monitor =` lines: Hyprland keeps the last rule per
+      # output name. extraConfig, not settings.source, which sourceFirst hoists
+      # to the top.
+      extraConfig = ''
+        source = ${config.xdg.configHome}/hypr/monitors.conf
+      '';
 
       # extraConfig = ''
       #   bind = $mainMod,V,submap,passthru
@@ -194,8 +208,9 @@ in {
           # "3, up, dispatcher, overview:close all"
         ];
 
-        # Use "displays" (scripts/displays.sh) to configure displays dynamically
-        # This will load the configuration if one is set using "displays" - otherwise use default value
+        # Baseline layout for a fresh install. The live layout is
+        # ~/.config/hypr/monitors.conf (written by `displays`), sourced at the
+        # end of the config below, so its rules replace these per output.
         monitor = let
           configFile = ../../hosts/displays/${config.hostname}.conf;
         in

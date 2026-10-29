@@ -1,38 +1,40 @@
+diff --git a/src/quickshell/bar/faces/workspaces/PillsFace.qml b/src/quickshell/bar/faces/workspaces/PillsFace.qml
+index d02d9b9..30d8221 100644
 --- a/src/quickshell/bar/faces/workspaces/PillsFace.qml
 +++ b/src/quickshell/bar/faces/workspaces/PillsFace.qml
-@@ -38,7 +38,7 @@ Item {
+@@ -50,7 +50,7 @@ Item {
              if (index < 0 || !widget) return 0;
-             let xPos = 0;
+             let pos = 0;
              let spacing = widget.s(widget.isCompact ? 7 : 8);
--            let activeW = widget.s(widget.isCompact ? 34 : 36);
-+            let activeW = widget.s(widget.isCompact ? 28 : 30);
-             let inactiveW = widget.s(widget.isCompact ? 16 : 18);
+-            let activeLen = widget.s(widget.isCompact ? 34 : 36);
++            let activeLen = widget.s(widget.isCompact ? 28 : 30);
+             let inactiveLen = widget.s(widget.isCompact ? 16 : 18);
              for (let i = 0; i < index; i++) {
                  if (typeof widget.isShown === "function" && !widget.isShown(i))
-@@ -57,7 +57,7 @@ Item {
+@@ -70,7 +70,7 @@ Item {
              }
-             return (curIdx >= 0 && widget) ? getX(curIdx, curIdx) : 0;
+             return (curIdx >= 0 && widget) ? getPos(curIdx, curIdx) : 0;
          }
--        property real targetRight: (curIdx >= 0 && widget) ? targetLeft + widget.s(widget.isCompact ? 34 : 36) : 0
-+        property real targetRight: (curIdx >= 0 && widget) ? targetLeft + widget.s(widget.isCompact ? 28 : 30) : 0
-         property real actualLeft: targetLeft
-         property real actualRight: targetRight
+-        property real targetEnd: (curIdx >= 0 && widget) ? targetStart + widget.s(widget.isCompact ? 34 : 36) : 0
++        property real targetEnd: (curIdx >= 0 && widget) ? targetStart + widget.s(widget.isCompact ? 28 : 30) : 0
+         property real actualStart: targetStart
+         property real actualEnd: targetEnd
  
-@@ -67,7 +67,7 @@ Item {
-         x: wsLayout.x + actualLeft
-         y: wsLayout.y + (wsLayout.height - height) / 2
-         width: actualRight - actualLeft
--        height: widget ? widget.s(widget.isCompact ? 16 : 18) : 18
-+        height: widget ? widget.s(12) : 12
-         opacity: (widget && widget.workspaceCount > 0 && widget.activeIndex >= 0) ? 1.0 : 0.0
-         Behavior on opacity { NumberAnimation { duration: 180 } }
-     }
-@@ -92,7 +92,7 @@ Item {
+@@ -83,7 +83,7 @@ Item {
+         scale: 1.0 + 0.14 * lift
+         transformOrigin: Item.Center
+ 
+-        readonly property real thickness: widget ? widget.s(widget.isCompact ? 16 : 18) : 18
++        readonly property real thickness: widget ? widget.s(12) : 12
+ 
+         x: pillsFaceRoot.isVertical ? wsLayout.x + (wsLayout.width - width) / 2 : wsLayout.x + actualStart
+         y: pillsFaceRoot.isVertical ? wsLayout.y + actualStart : wsLayout.y + (wsLayout.height - height) / 2
+@@ -116,7 +116,7 @@ Item {
  
                  visible: shown
-                 width: shown
+                 readonly property real length: shown
 -                    ? (isActive ? (widget ? widget.s(widget.isCompact ? 34 : 36) : 36) : (widget ? widget.s(widget.isCompact ? 16 : 18) : 18))
 +                    ? (isActive ? (widget ? widget.s(widget.isCompact ? 28 : 30) : 30) : (widget ? widget.s(widget.isCompact ? 16 : 18) : 18))
                      : 0
-                 height: widget ? widget.s(widget.isCompact ? 16 : 18) : 18
-                 anchors.verticalCenter: parent.verticalCenter
+                 readonly property real thickness: widget ? widget.s(widget.isCompact ? 16 : 18) : 18
+                 width: pillsFaceRoot.isVertical ? thickness : length

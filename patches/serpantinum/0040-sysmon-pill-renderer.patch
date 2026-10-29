@@ -1,7 +1,9 @@
+diff --git a/src/quickshell/bar/faces/sysmon/SysMonFace.qml b/src/quickshell/bar/faces/sysmon/SysMonFace.qml
+index 39122a7..2eb7437 100644
 --- a/src/quickshell/bar/faces/sysmon/SysMonFace.qml
 +++ b/src/quickshell/bar/faces/sysmon/SysMonFace.qml
-@@ -105,30 +105,29 @@
-         Behavior on x { NumberAnimation { duration: 800; easing.type: Easing.OutQuint } }
+@@ -125,29 +125,29 @@ Item {
+         Behavior on y { NumberAnimation { duration: 800; easing.type: Easing.OutQuint } }
      }
  
 -    component SysMonCircle: Rectangle {
@@ -20,20 +22,20 @@
          Behavior on animValue { NumberAnimation { duration: 600; easing.type: Easing.OutQuint } }
  
          property real fillRatio: Math.max(0.0, Math.min(1.0, isNaN(animValue) ? 0.0 : animValue))
-+        property real fillY: height * (1.0 - fillRatio)
- 
+-
 -        implicitWidth: root.circleSize
 -        implicitHeight: root.circleSize
 -        width: implicitWidth
 -        height: implicitHeight
 -        radius: width / 2
 -        color: "transparent"
--        border.width: 0
 -        // Each gauge pops on its own hover, like the wifi/bt/volume/kb pills.
 -        scale: circleMouse.containsMouse ? 1.03 : 1.0
++        property real fillY: height * (1.0 - fillRatio)
++
 +        height: sysLayout.pillHeight
 +        width: sysLayout.pillWidth
-+        radius: Math.min(Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2)), height / 2)
++        radius: Math.min(Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.cs(2) : 2)), height / 2)
 +        color: root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
 +        border.color: root.isCompact ? ThemeBackend.surface2 : ThemeBackend.surface1
 +        border.width: 1
@@ -43,9 +45,9 @@
          Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
  
          Timer {
-@@ -144,37 +143,120 @@
+@@ -165,37 +165,120 @@ Item {
          }
-         Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
+         Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
  
 -        ShaderEffect {
 -            id: circleGauge
@@ -54,13 +56,7 @@
              anchors.fill: parent
 +            renderTarget: Canvas.FramebufferObject
 +            renderStrategy: Canvas.Cooperative
- 
--            property vector2d itemSize: Qt.vector2d(width, height)
--            property real fillRatio: circleRoot.fillRatio
--            property real strokeWidth: barWindow ? barWindow.s(2.2) : 2.2
--            property real useSineWave: circleRoot.useSineWave ? 1.0 : 0.0
--            property color accentColor: circleRoot.accentColor
--            property vector4d params: Qt.vector4d(barWindow ? barWindow.s(0.9) : 0.9, 0.0, 0.0, 0.0)
++
 +            onPaint: {
 +                var ctx = getContext("2d");
 +                ctx.clearRect(0, 0, width, height);
@@ -97,6 +93,13 @@
 +                ctx.restore();
 +            }
  
+-            property vector2d itemSize: Qt.vector2d(width, height)
+-            property real fillRatio: circleRoot.fillRatio
+-            property real strokeWidth: barWindow ? barWindow.cs(2.2) : 2.2
+-            property real useSineWave: circleRoot.useSineWave ? 1.0 : 0.0
+-            property color accentColor: circleRoot.accentColor
+-            property vector4d params: Qt.vector4d(barWindow ? barWindow.cs(0.9) : 0.9, 0.0, 0.0, 0.0)
+-
 -            fragmentShader: "file://" + Caching.serpantinumDir + "/assets/shaders/gauges/circular_wave_gauge.frag.qsb"
 +            Connections {
 +                target: pillRoot
@@ -112,8 +115,8 @@
              anchors.centerIn: parent
 -            text: circleRoot.showText ? circleRoot.textVal : circleRoot.icon
 -            font.pixelSize: Math.round(circleRoot.showText
--                ? (barWindow ? barWindow.s(root.isCompact ? 7.5 : 9) : (root.isCompact ? 7.5 : 9))
--                : (barWindow ? barWindow.s(root.isCompact ? 9 : 11) : (root.isCompact ? 9 : 11)))
+-                ? (barWindow ? barWindow.cs(root.isCompact ? 7.5 : 9) : (root.isCompact ? 7.5 : 9))
+-                : (barWindow ? barWindow.cs(root.isCompact ? 9 : 11) : (root.isCompact ? 9 : 11)))
 -            font.bold: circleRoot.showText
 -            font.family: circleRoot.showText
 -                ? ((ThemeBackend.fontFamily !== undefined && ThemeBackend.fontFamily !== "") ? ThemeBackend.fontFamily : "sans-serif")
@@ -121,12 +124,12 @@
 -            color: (ThemeBackend.text !== undefined && ThemeBackend.text !== "") ? ThemeBackend.text : "#ffffff"
 -            horizontalAlignment: Text.AlignHCenter
 -            verticalAlignment: Text.AlignVCenter
-+            spacing: barWindow ? barWindow.s(root.isCompact ? 3 : 4) : (root.isCompact ? 3 : 4)
++            spacing: barWindow ? barWindow.cs(root.isCompact ? 3 : 4) : (root.isCompact ? 3 : 4)
 +
 +            Text {
 +                text: icon
 +                font.family: ThemeBackend.iconFont
-+                font.pixelSize: barWindow ? barWindow.s(root.isCompact ? 13.5 : 14.5) : (root.isCompact ? 13.5 : 14.5)
++                font.pixelSize: barWindow ? barWindow.cs(root.isCompact ? 13.5 : 14.5) : (root.isCompact ? 13.5 : 14.5)
 +                color: root.isCompact ? ThemeBackend.text : ThemeBackend.subtext0
 +                anchors.verticalCenter: parent.verticalCenter
 +            }
@@ -134,7 +137,7 @@
 +            Text {
 +                text: textVal
 +                font.family: ThemeBackend.fontFamily
-+                font.pixelSize: barWindow ? barWindow.s(root.isCompact ? 12 : 13) : (root.isCompact ? 12 : 13)
++                font.pixelSize: barWindow ? barWindow.cs(root.isCompact ? 12 : 13) : (root.isCompact ? 12 : 13)
 +                font.bold: true
 +                color: ThemeBackend.text
 +                anchors.verticalCenter: parent.verticalCenter
@@ -158,12 +161,12 @@
 +
 +                Row {
 +                    anchors.centerIn: parent
-+                    spacing: barWindow ? barWindow.s(root.isCompact ? 3 : 4) : (root.isCompact ? 3 : 4)
++                    spacing: barWindow ? barWindow.cs(root.isCompact ? 3 : 4) : (root.isCompact ? 3 : 4)
 +
 +                    Text {
 +                        text: icon
 +                        font.family: ThemeBackend.iconFont
-+                        font.pixelSize: barWindow ? barWindow.s(root.isCompact ? 13.5 : 14.5) : (root.isCompact ? 13.5 : 14.5)
++                        font.pixelSize: barWindow ? barWindow.cs(root.isCompact ? 13.5 : 14.5) : (root.isCompact ? 13.5 : 14.5)
 +                        color: Qt.rgba(ThemeBackend.crust.r, ThemeBackend.crust.g, ThemeBackend.crust.b, 0.75)
 +                        anchors.verticalCenter: parent.verticalCenter
 +                    }
@@ -171,7 +174,7 @@
 +                    Text {
 +                        text: textVal
 +                        font.family: ThemeBackend.fontFamily
-+                        font.pixelSize: barWindow ? barWindow.s(root.isCompact ? 12 : 13) : (root.isCompact ? 12 : 13)
++                        font.pixelSize: barWindow ? barWindow.cs(root.isCompact ? 12 : 13) : (root.isCompact ? 12 : 13)
 +                        font.bold: true
 +                        color: ThemeBackend.crust
 +                        anchors.verticalCenter: parent.verticalCenter
@@ -186,13 +189,13 @@
              anchors.fill: parent
              hoverEnabled: true
              cursorShape: Qt.PointingHandCursor
-@@ -187,12 +269,13 @@
-         id: sysLayout
+@@ -209,12 +292,13 @@ Item {
+         vertical: root.isVertical
          anchors.centerIn: parent
-         spacing: barWindow ? barWindow.s(root.isCompact ? 5 : 6) : (root.isCompact ? 5 : 6)
+         spacing: barWindow ? barWindow.cs(root.isCompact ? 5 : 6) : (root.isCompact ? 5 : 6)
 -        property int circleSize: root.circleSize
-+        property int pillHeight: barWindow ? barWindow.s(root.isCompact ? 28 : 30) : (root.isCompact ? 28 : 30)
-+        property int pillWidth: barWindow ? barWindow.s(root.isCompact ? 48 : 52) : (root.isCompact ? 48 : 52)
++        property int pillHeight: barWindow ? barWindow.cs(root.isCompact ? 28 : 30) : (root.isCompact ? 28 : 30)
++        property int pillWidth: barWindow ? barWindow.cs(root.isCompact ? 48 : 52) : (root.isCompact ? 48 : 52)
  
          Repeater {
              model: root.activeStats
@@ -202,7 +205,7 @@
                  readonly property string statType: modelData
                  value: {
                      if (statType === "cpu") return isNaN(SysData.cpu) ? 0 : SysData.cpu / 100.0;
-@@ -202,7 +285,10 @@
+@@ -224,7 +308,10 @@ Item {
                      return 0;
                  }
                  textVal: {
@@ -214,7 +217,7 @@
                      return "";
                  }
                  icon: {
-@@ -213,10 +299,10 @@
+@@ -235,10 +322,10 @@ Item {
                      return "";
                  }
                  accentColor: {

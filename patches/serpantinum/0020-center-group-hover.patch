@@ -1,6 +1,8 @@
+diff --git a/src/quickshell/bar/TopBar.qml b/src/quickshell/bar/TopBar.qml
+index 074261f..9b7ce8f 100644
 --- a/src/quickshell/bar/TopBar.qml
 +++ b/src/quickshell/bar/TopBar.qml
-@@ -274,6 +274,16 @@ Item {
+@@ -298,6 +298,16 @@ Item {
      }
  
      property real gap: barWindow ? barWindow.s(2) : 2
@@ -17,7 +19,7 @@
      property real groupGap: barWindow ? -barWindow.s(4) : -4
      property real gap8: barWindow ? barWindow.s(10) : 10
      property real groupPad: (!isSolid || distinctPills) ? (barWindow ? barWindow.s(4) : 4) : 0
-@@ -630,6 +640,13 @@ Item {
+@@ -770,6 +780,13 @@ Item {
  
              property var metrics: getGroupMetrics()
  
@@ -31,27 +33,27 @@
              x: metrics.x
              height: metrics.h
              y: barWindow ? (barWindow.baseOffsetY + (barWindow.barHeight - height) / 2) : 0
-@@ -638,11 +655,13 @@ Item {
+@@ -778,11 +795,13 @@ Item {
              opacity: visible ? 1.0 : 0.0
  
-             color: (contentWrapper.isSolid && contentWrapper.distinctPills)
+             color: (groupGlass.active || (ThemeBackend.liquidGlass && groupBlur.active)) ? "transparent" : ((contentWrapper.isSolid && contentWrapper.distinctPills)
 -                ? Qt.alpha(Qt.darker(ThemeBackend.surface0, 1.15), (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
--                : Qt.alpha(ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
+-                : Qt.alpha(ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0))
 +                ? Qt.alpha(hovered ? ThemeBackend.surface0 : Qt.darker(ThemeBackend.surface0, 1.15), (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
-+                : Qt.alpha(hovered ? ThemeBackend.surface0 : ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
++                : Qt.alpha(hovered ? ThemeBackend.surface0 : ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0))
              radius: ThemeBackend.borderRadius
-             border.width: 0
+             property Item blurSurface: groupBlur
  
 +            Behavior on color { ColorAnimation { duration: 250 } }
 +
-             Behavior on x {
-                 enabled: contentWrapper.layoutAnimationsEnabled
-                 NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
-@@ -672,6 +691,7 @@ Item {
+             WallpaperBlur {
+                 id: groupBlur
+                 z: -1
+@@ -831,6 +850,7 @@ Item {
              distinctPills: contentWrapper.distinctPills
              moduleActive: contentWrapper.isModuleActive(modelData)
              isGrouped: contentWrapper.isModuleGrouped(modelData)
 +            groupHovered: (modelData === "timedate" || modelData === "weather") ? contentWrapper.centerGroupHovered : false
+             providedBackdrop: { void groupBgRepeater.count; void contentWrapper.groupRev; return contentWrapper ? contentWrapper.backdropFor(modelData) : null; }
              targetX: contentWrapper.getModuleX(modelData, contentWrapper.layoutState)
              suppressAnimation: contentWrapper.suppressAnimation
-             layoutAnimationsEnabled: contentWrapper.layoutAnimationsEnabled

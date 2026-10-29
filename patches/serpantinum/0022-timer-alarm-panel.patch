@@ -1,6 +1,8 @@
+diff --git a/src/assets/languages/en.json b/src/assets/languages/en.json
+index e554df8..167f698 100755
 --- a/src/assets/languages/en.json
 +++ b/src/assets/languages/en.json
-@@ -1019,11 +1019,15 @@
+@@ -1237,11 +1237,15 @@
        "tabs": {
          "timer": "Timer",
          "stopwatch": "Stopwatch",
@@ -17,7 +19,7 @@
        "pomodoro": {
          "phases": {
            "focus": "Focus",
-@@ -1047,7 +1051,9 @@
+@@ -1265,7 +1269,9 @@
          "break_over_body": "Break time is up. Let's get back to focus!",
          "pomo_skipped_title": "Pomodoro skipped",
          "pomo_skipped_focus_body": "Focus session skipped. Moving to break.",
@@ -28,9 +30,11 @@
        }
      },
      "draw": {
+diff --git a/src/quickshell/Main.qml b/src/quickshell/Main.qml
+index 3a8d966..8cf296a 100644
 --- a/src/quickshell/Main.qml
 +++ b/src/quickshell/Main.qml
-@@ -102,9 +102,11 @@ PanelWindow {
+@@ -123,9 +123,11 @@ PanelWindow {
                      LauncherController.hide();
                  } else if (cmd === "open") {
                      ClipboardController.hide();
@@ -42,7 +46,7 @@
                      LauncherController.toggle();
                  }
                  return;
-@@ -115,14 +117,31 @@ PanelWindow {
+@@ -136,14 +138,31 @@ PanelWindow {
                      ClipboardController.hide();
                  } else if (cmd === "open") {
                      LauncherController.hide();
@@ -74,27 +78,31 @@
              if (cmd === "airplane" || targetWidget === "airplane" || cmd === "flight" || targetWidget === "flight") {
                  let isAirplane = !Networking.wifiEnabled && !(Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled);
                  if (isAirplane) {
+diff --git a/src/quickshell/Shell.qml b/src/quickshell/Shell.qml
+index fade495..58dd188 100644
 --- a/src/quickshell/Shell.qml
 +++ b/src/quickshell/Shell.qml
-@@ -21,6 +21,7 @@ ShellRoot {
+@@ -50,6 +50,7 @@ ShellRoot {
  
      Launcher {}
      Clipboard {}    
 +    TimerPanel {}
  
      Polkit {}
-     PopoutManager {}
+     WellbeingLimitOverlay {}
+diff --git a/src/quickshell/qmldir b/src/quickshell/qmldir
+index 1bb20f4..cf6d2c2 100644
 --- a/src/quickshell/qmldir
 +++ b/src/quickshell/qmldir
-@@ -5,6 +5,7 @@ Main 1.0 Main.qml
- Bar 1.0 bar/Bar.qml
+@@ -6,6 +6,7 @@ Bar 1.0 bar/Bar.qml
  Floating 1.0 quickactions/Floating.qml
+ FloatingEdgeTrigger 1.0 quickactions/FloatingEdgeTrigger.qml
  Clipboard 1.0 clipboard/Clipboard.qml
 +TimerPanel 1.0 timer/TimerPanel.qml
  Launcher 1.0 launcher/Launcher.qml
  ScreenshotOverlay 1.0 screenshot/ScreenshotOverlay.qml
  WallpaperEngine 1.0 wallpaper/WallpaperEngine.qml
-@@ -64,6 +65,7 @@ singleton FloatingController 1.0 singletons/widgetcontrols/FloatingController.qm
+@@ -70,6 +71,7 @@ singleton FloatingController 1.0 singletons/widgetcontrols/FloatingController.qm
  singleton LauncherController 1.0 singletons/widgetcontrols/LauncherController.qml
  singleton OsdController 1.0 singletons/widgetcontrols/OsdController.qml
  singleton SideMusicController 1.0 singletons/widgetcontrols/SideMusicController.qml
@@ -102,19 +110,24 @@
  singleton TrayMenuController 1.0 singletons/widgetcontrols/TrayMenuController.qml
  singleton WidgetSync 1.0 singletons/widgetcontrols/WidgetSync.qml
  singleton DesktopMenuController singletons/widgetcontrols/DesktopMenuController.qml
+diff --git a/src/quickshell/quickactions/Floating.qml b/src/quickshell/quickactions/Floating.qml
+index 154c49e..265ba60 100644
 --- a/src/quickshell/quickactions/Floating.qml
 +++ b/src/quickshell/quickactions/Floating.qml
-@@ -306,7 +306,6 @@ Variants {
+@@ -407,7 +407,6 @@ Variants {
              property var tabModules: [
                  "actions/DrawAction.qml",
                  "actions/SystemUsage.qml",
 -                "actions/Timer.qml",
-                 "actions/Notes.qml"
+                 "actions/Notes.qml",
+                 "actions/Calculator.qml"
              ]
- 
+diff --git a/src/quickshell/quickactions/actions/Timer.qml b/src/quickshell/quickactions/actions/Timer.qml
+deleted file mode 100644
+index fe5a8a2..0000000
 --- a/src/quickshell/quickactions/actions/Timer.qml
 +++ /dev/null
-@@ -1,875 +0,0 @@
+@@ -1,846 +0,0 @@
 -import QtQuick
 -import QtQuick.Layouts
 -import QtQuick.Controls
@@ -128,7 +141,7 @@
 -
 -    property int requestedLayoutTemplate: 1
 -    property bool isActiveTab: typeof isCurrentTarget !== "undefined" ? isCurrentTarget : true
--    property string iconFont: "Font Awesome 6 Free Solid"
+-    property string iconFont: ThemeBackend.iconFont
 -    property string safeActiveEdge: typeof activeEdge !== "undefined" ? activeEdge : "left"
 -
 -    property bool stateLoaded: false
@@ -331,6 +344,8 @@
 -        stateInitProc.running = true;
 -    }
 -
+-    property string exportedStateKey: ""
+-
 -    function updateExportedState() {
 -        let list = [];
 -
@@ -344,6 +359,9 @@
 -            list.push({ icon: "\uF085", time: root.formatTime(stateCache.pomoRemainingMs, false), colorType: stateCache.pomoState !== 0 ? "green" : "mauve" });
 -        }
 -
+-        let key = JSON.stringify(list);
+-        if (key === root.exportedStateKey) return;
+-        root.exportedStateKey = key;
 -        TimerState.entries = list;
 -    }
 -
@@ -432,14 +450,14 @@
 -
 -        Rectangle {
 -            anchors.fill: parent
--            color: ThemeBackend.mantle
+-            color: "transparent"
 -            radius: ThemeBackend.borderRadius
 -            z: -1
 -        }
 -
 -        Timer {
 -            id: globalTicker
--            interval: 32
+-            interval: (root.visible && root.isActiveTab && stateCache.activeMode === 1 && stateCache.swStartEpoch > 0) ? 32 : 200
 -            repeat: true
 -            running: root.anyTimerActive
 -            onTriggered: {
@@ -499,85 +517,30 @@
 -            }
 -        }
 -
--        Rectangle {
+-        Switch {
 -            id: tabBar
 -            anchors.top: parent.top
 -            anchors.horizontalCenter: parent.horizontalCenter
 -            anchors.topMargin: root.s(12)
 -            width: root.s(270)
 -            height: root.s(36)
--            radius: ThemeBackend.borderRadius
--            color: ThemeBackend.surface0
--            border.width: 1
--            border.color: ThemeBackend.surface1
 -            z: 10
--
--            Rectangle {
--                id: tabActiveHighlight
--                y: root.s(2)
--                height: root.s(32)
--                radius: ThemeBackend.borderRadius
--                color: ThemeBackend.mauve
--                z: 0
--
--                property int prevIdx: 0
--                property int curIdx: stateCache.activeMode
--
--                onCurIdxChanged: {
--                    if (curIdx > prevIdx) { rightAnim.duration = 200; leftAnim.duration = 350; }
--                    else if (curIdx < prevIdx) { leftAnim.duration = 200; rightAnim.duration = 350; }
--                    prevIdx = curIdx;
--                }
--
--                property real stepSize: (parent.width - root.s(4)) / 3
--                property real targetLeft: root.s(2) + (curIdx * stepSize)
--                property real targetRight: targetLeft + stepSize
--
--                property real actualLeft: targetLeft
--                property real actualRight: targetRight
--
--                Behavior on actualLeft { NumberAnimation { id: leftAnim; duration: 250; easing.type: Easing.OutExpo } }
--                Behavior on actualRight { NumberAnimation { id: rightAnim; duration: 250; easing.type: Easing.OutExpo } }
--
--                x: actualLeft
--                width: actualRight - actualLeft
--            }
--
--            Row {
--                anchors.fill: parent
--                anchors.margins: root.s(2)
--                z: 1
--
--                Repeater {
--                    model: [
--                        I18n.t("quickactions.timer.tabs.timer"),
--                        I18n.t("quickactions.timer.tabs.stopwatch"),
--                        I18n.t("quickactions.timer.tabs.pomodoro")
--                    ]
--                    Item {
--                        width: (tabBar.width - root.s(4)) / 3
--                        height: parent.height
--
--                        Text {
--                            anchors.centerIn: parent
--                            text: modelData
--                            font.family: ThemeBackend.fontFamily
--                            font.bold: true
--                            font.pixelSize: root.s(12)
--                            color: stateCache.activeMode === index ? ThemeBackend.mantle : ThemeBackend.text
--                            Behavior on color { ColorAnimation { duration: 250 } }
--                        }
--
--                        MouseArea {
--                            anchors.fill: parent
--                            cursorShape: Qt.PointingHandCursor
--                            onClicked: {
--                                stateCache.activeMode = index;
--                                root.saveFullState();
--                            }
--                        }
--                    }
--                }
+-            options: [
+-                I18n.t("quickactions.timer.tabs.timer"),
+-                I18n.t("quickactions.timer.tabs.stopwatch"),
+-                I18n.t("quickactions.timer.tabs.pomodoro")
+-            ]
+-            Binding { target: tabBar; property: "currentIndex"; value: stateCache.activeMode }
+-            accentColor: ThemeBackend.mauve
+-            baseColor: ThemeBackend.surface0
+-            textColor: ThemeBackend.text
+-            activeTextColor: ThemeBackend.mantle
+-            cornerRadius: ThemeBackend.borderRadius
+-            fontPixelSize: Math.round(root.s(12))
+-            bgOpacity: ThemeBackend.elementOpacity
+-            onToggled: index => {
+-                stateCache.activeMode = index;
+-                root.saveFullState();
 -            }
 -        }
 -
@@ -619,7 +582,7 @@
 -                        isActive: root.isActiveTab && stateCache.activeMode === 0 && root.isTimerIdle
 -                        isWidgetVisible: root.widgetVisible
 -                        iconFont: root.iconFont
--                        baseColor: ThemeBackend.surface0
+-                        baseColor: Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
 -                        accentColor: ThemeBackend.mauve
 -                        textColor: ThemeBackend.text
 -                        subTextColor: ThemeBackend.subtext0
@@ -648,6 +611,7 @@
 -                        buttonIcon: "\uF0E2"
 -                        iconFontSize: root.s(16)
 -                        accentColor: ThemeBackend.surface0
+-                        bgOpacity: ThemeBackend.elementOpacity
 -                        textColor: ThemeBackend.text
 -                        anchors.right: timerPlayBtn.left
 -                        anchors.rightMargin: root.s(20)
@@ -672,6 +636,7 @@
 -                        buttonIcon: root.isTimerRunning ? "\uF04C" : "\uF04B"
 -                        iconFontSize: root.s(24)
 -                        accentColor: ThemeBackend.mauve
+-                        bgOpacity: ThemeBackend.elementOpacity
 -                        textColor: ThemeBackend.mantle
 -                        anchors.centerIn: parent
 -                        onClicked: root.toggleActiveTabState()
@@ -728,9 +693,15 @@
 -                                    width: lapList.width
 -                                    height: root.s(32)
 -                                    radius: ThemeBackend.borderRadius
--                                    color: ThemeBackend.surface0
--                                    border.width: 1
--                                    border.color: ThemeBackend.surface1
+-                                    color: lapGlass.active ? "transparent" : Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
+-
+-                                    GlassFill {
+-                                        id: lapGlass
+-                                        anchors.fill: parent
+-                                        radius: parent.radius
+-                                        tintColor: ThemeBackend.surface0
+-                                        tintAmount: 0.3
+-                                    }
 -
 -                                    property int trueIdx: root.swLapData.length - 1 - index
 -                                    property var lapItem: root.swLapData[trueIdx]
@@ -762,6 +733,7 @@
 -                        buttonIcon: stopwatchView.isRunning ? "\uF024" : "\uF0E2"
 -                        iconFontSize: root.s(16)
 -                        accentColor: ThemeBackend.surface0
+-                        bgOpacity: ThemeBackend.elementOpacity
 -                        textColor: ThemeBackend.text
 -                        anchors.right: swPlayBtn.left
 -                        anchors.rightMargin: root.s(20)
@@ -791,6 +763,7 @@
 -                        buttonIcon: stopwatchView.isRunning ? "\uF04C" : "\uF04B"
 -                        iconFontSize: root.s(24)
 -                        accentColor: ThemeBackend.mauve
+-                        bgOpacity: ThemeBackend.elementOpacity
 -                        textColor: ThemeBackend.mantle
 -                        anchors.centerIn: parent
 -                        onClicked: root.toggleActiveTabState()
@@ -870,10 +843,16 @@
 -                        width: root.s(270)
 -                        height: root.s(160)
 -                        radius: ThemeBackend.borderRadius
--                        color: ThemeBackend.surface0
--                        border.width: 1
--                        border.color: ThemeBackend.surface1
+-                        color: pomoGlass.active ? "transparent" : Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
 -                        visible: pomodoroView.showSettings
+-
+-                        GlassFill {
+-                            id: pomoGlass
+-                            anchors.fill: parent
+-                            radius: parent.radius
+-                            tintColor: ThemeBackend.surface0
+-                            tintAmount: 0.3
+-                        }
 -
 -                        Column {
 -                            anchors.centerIn: parent
@@ -895,6 +874,7 @@
 -                                        buttonIcon: "-"
 -                                        iconFontSize: root.s(14)
 -                                        accentColor: ThemeBackend.surface1
+-                                        bgOpacity: ThemeBackend.elementOpacity
 -                                        textColor: ThemeBackend.text
 -                                        onClicked: {
 -                                            stateCache[modelData.target] = Math.max(modelData.min, stateCache[modelData.target] - modelData.step);
@@ -908,6 +888,7 @@
 -                                        buttonIcon: "+"
 -                                        iconFontSize: root.s(14)
 -                                        accentColor: ThemeBackend.surface1
+-                                        bgOpacity: ThemeBackend.elementOpacity
 -                                        textColor: ThemeBackend.text
 -                                        onClicked: {
 -                                            stateCache[modelData.target] = Math.min(modelData.max, stateCache[modelData.target] + modelData.step);
@@ -934,6 +915,7 @@
 -                        buttonIcon: "\uF013"
 -                        iconFontSize: root.s(16)
 -                        accentColor: ThemeBackend.surface0
+-                        bgOpacity: ThemeBackend.elementOpacity
 -                        textColor: pomodoroView.showSettings ? ThemeBackend.mauve : ThemeBackend.text
 -                        anchors.right: pomoPlayBtn.left
 -                        anchors.rightMargin: root.s(20)
@@ -948,6 +930,7 @@
 -                        buttonIcon: pomodoroView.isRunning ? "\uF04C" : "\uF04B"
 -                        iconFontSize: root.s(24)
 -                        accentColor: pomodoroView.getPhaseColor()
+-                        bgOpacity: ThemeBackend.elementOpacity
 -                        textColor: ThemeBackend.mantle
 -                        anchors.centerIn: parent
 -                        onClicked: {
@@ -962,6 +945,7 @@
 -                        buttonIcon: "\uF051"
 -                        iconFontSize: root.s(16)
 -                        accentColor: ThemeBackend.surface0
+-                        bgOpacity: ThemeBackend.elementOpacity
 -                        textColor: ThemeBackend.text
 -                        anchors.left: pomoPlayBtn.right
 -                        anchors.leftMargin: root.s(20)
@@ -990,13 +974,18 @@
 -        }
 -    }
 -}
+diff --git a/src/quickshell/quickactions/actions/qmldir b/src/quickshell/quickactions/actions/qmldir
+index fa3a790..6199a64 100644
 --- a/src/quickshell/quickactions/actions/qmldir
 +++ b/src/quickshell/quickactions/actions/qmldir
-@@ -2,4 +2,3 @@ Dock 1.0 Dock.qml
+@@ -4,4 +4,3 @@ Dock 1.0 Dock.qml
  DrawAction 1.0 DrawAction.qml
  Notes 1.0 Notes.qml
  SystemUsage 1.0 SystemUsage.qml
 -Timer 1.0 Timer.qml
+diff --git a/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml b/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml
+new file mode 100644
+index 0000000..4735955
 --- /dev/null
 +++ b/src/quickshell/singletons/widgetcontrols/TimerPanelController.qml
 @@ -0,0 +1,95 @@
@@ -1095,6 +1084,9 @@
 +        }
 +    }
 +}
+diff --git a/src/quickshell/timer/TimerFace.qml b/src/quickshell/timer/TimerFace.qml
+new file mode 100644
+index 0000000..10a2339
 --- /dev/null
 +++ b/src/quickshell/timer/TimerFace.qml
 @@ -0,0 +1,1071 @@
@@ -2169,6 +2161,9 @@
 +        }
 +    }
 +}
+diff --git a/src/quickshell/timer/TimerPanel.qml b/src/quickshell/timer/TimerPanel.qml
+new file mode 100644
+index 0000000..e919dde
 --- /dev/null
 +++ b/src/quickshell/timer/TimerPanel.qml
 @@ -0,0 +1,462 @@

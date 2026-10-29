@@ -679,6 +679,22 @@
         "url": "ssh://git@github-dfirmed/Dfirmed/isochron"
       }
     },
+    "lynkeus": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792240114,
+        "narHash": "sha256-Z3IADOXtkotacmAjqvU5B91RU3L38nkYOSwwngpQ5jI=",
+        "ref": "refs/heads/main",
+        "rev": "bbb6c44ac26eddab513294394f0337354fb71b6f",
+        "revCount": 23,
+        "type": "git",
+        "url": "ssh://git@github-dfirmed/Dfirmed/lynkeus"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github-dfirmed/Dfirmed/lynkeus"
+      }
+    },
     "nix-vscode-extensions": {
       "inputs": {
         "nixpkgs": [
@@ -935,6 +951,7 @@
         "home-manager": "home-manager",
         "hyprland": "hyprland",
         "isochron": "isochron",
+        "lynkeus": "lynkeus",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixcord": "nixcord",
         "nixos-hardware": "nixos-hardware",
@@ -958,11 +975,11 @@
         "serpantinum-wallpapers": "serpantinum-wallpapers"
       },
       "locked": {
-        "lastModified": 1792007026,
-        "narHash": "sha256-BKJPjXotJbM52fLEtBu56DlDc+2TzHPLO2kUtp0bQNs=",
+        "lastModified": 1793209075,
+        "narHash": "sha256-YKcvZLpypId++ALcMDNhzS7cIl5MnpolEmU4ZqOqx1c=",
         "owner": "ilyamiro",
         "repo": "serpantinum",
-        "rev": "0af267b49f268a94874631eb8c3b7820e4913e5e",
+        "rev": "a62f82500a68f8c6026309dcf035bab347ec5ff0",
         "type": "github"
       },
       "original": {

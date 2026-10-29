@@ -117,7 +117,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Quickshell desktop shell (v2.1.4+, no upstream tags — flake.lock pins the rev)
+    # Quickshell desktop shell; flake.lock pins the rev (tracks main past v2.3.0)
     serpantinum = {
       url = "github:ilyamiro/serpantinum";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -126,6 +126,12 @@
     # Private DFIR tool (Rust/egui), fetched over SSH; flake.lock pins the rev
     isochron = {
       url = "git+ssh://git@github-dfirmed/Dfirmed/isochron";
+      flake = false;
+    };
+
+    # Private DFIR tool (Rust/egui, pcap analysis), fetched over SSH; flake.lock pins the rev
+    lynkeus = {
+      url = "git+ssh://git@github-dfirmed/Dfirmed/lynkeus";
       flake = false;
     };
   };

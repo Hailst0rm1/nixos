@@ -16,6 +16,10 @@
   # Private Rust/egui tool; source is the `isochron` flake input (git+ssh).
   isochron = pkgs.callPackage "${nixosDir}/pkgs/isochron/package.nix" {src = inputs.isochron;};
 
+  # Private Rust/egui pcap analyser; source is the `lynkeus` flake input (git+ssh).
+  # From unstable: needs a newer rustc than stable ships.
+  lynkeus = pkgs-unstable.callPackage "${nixosDir}/pkgs/lynkeus/package.nix" {src = inputs.lynkeus;};
+
   # Parallel Volatility 3 runner (vol-wrapper) + plugin inventory generator.
   # From unstable so it drives the same volatility3 installed below.
   vol-wrapper = pkgs-unstable.callPackage "${nixosDir}/pkgs/vol-wrapper/package.nix" {};
@@ -140,6 +144,7 @@ in {
         flare-vbox
         vol-wrapper
         isochron
+        lynkeus
         dfir-vm-network
         dfir-lab
       ];

@@ -1,73 +1,35 @@
+diff --git a/src/quickshell/bar/faces/left/LeftFace.qml b/src/quickshell/bar/faces/left/LeftFace.qml
+index 2ed76fa..5bc7b71 100644
 --- a/src/quickshell/bar/faces/left/LeftFace.qml
 +++ b/src/quickshell/bar/faces/left/LeftFace.qml
-@@ -38,11 +38,11 @@ Item {
-             iconOffsetX: 0
+@@ -68,6 +68,7 @@ Item {
+     component MenuButton: Item {
+         id: menuBtn
+         property string glyph: ""
++        property bool logo: false
+         signal clicked()
  
-             cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
--            buttonIcon: "󰒓"
--            iconFontSize: barWindow ? barWindow.s(root.isCompact ? 14 : 15) : (root.isCompact ? 14 : 15)
-+            buttonIcon: "󱄅"
-+            iconFontSize: barWindow ? barWindow.s(root.isCompact ? 17 : 18) : (root.isCompact ? 17 : 18)
+         width: root.isVertical ? root.s(root.isCompact ? 28 : 30) : root.s(root.isCompact ? 30 : 32)
+@@ -85,10 +86,10 @@ Item {
+             visible: !root.iconOnly
+             cornerRadius: Math.max(0, ThemeBackend.borderRadius - root.s(2))
+             buttonIcon: menuBtn.glyph
+-            iconFontSize: root.s(root.isCompact ? 14 : 15)
++            iconFontSize: menuBtn.logo ? root.s(root.isCompact ? 17 : 18) : root.s(root.isCompact ? 14 : 15)
              accentColor: root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
              bgOpacity: root.barOpacity
 -            textColor: isHoveredOrHighlighted ? ThemeBackend.text : (root.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
-+            textColor: "#ffffff"
++            textColor: menuBtn.logo ? "#ffffff" : (isHoveredOrHighlighted ? ThemeBackend.text : (root.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2))
+             onClicked: menuBtn.clicked()
+         }
  
-             opacity: root.showLayout ? 1.0 : 0.0
-             transform: Translate {
---- /dev/null
-+++ b/src/quickshell/bar/faces/left/LeftFace.qml.rej
-@@ -0,0 +1,16 @@
-+--- src/quickshell/bar/faces/left/LeftFace.qml	2026-09-06 12:54:16.668505211 +0200
-++++ src/quickshell/bar/faces/left/LeftFace.qml	2026-09-06 12:54:16.720124520 +0200
-+@@ -69,10 +69,10 @@
-+             iconOffsetX: -2
-+ 
-+             cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
-+-            buttonIcon: "󰒓"
-+-            iconFontSize: barWindow ? barWindow.s(leftWidgetRoot.isCompact ? 14 : 15) : (leftWidgetRoot.isCompact ? 14 : 15)
-++            buttonIcon: "󱄅"
-++            iconFontSize: barWindow ? barWindow.s(leftWidgetRoot.isCompact ? 17 : 18) : (leftWidgetRoot.isCompact ? 17 : 18)
-+             accentColor: leftWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
-+-            textColor: isHoveredOrHighlighted ? ThemeBackend.text : (leftWidgetRoot.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
-++            textColor: "#ffffff"
-+ 
-+             opacity: leftWidgetRoot.showLayout ? 1.0 : 0.0
-+             transform: Translate {
---- a/src/quickshell/bar/faces/left/SideLeftFace.qml
-+++ b/src/quickshell/bar/faces/left/SideLeftFace.qml
-@@ -27,11 +27,11 @@ Item {
-         width: barWindow ? barWindow.s(root.isCompact ? 28 : 30) : (root.isCompact ? 28 : 30)
-         height: barWindow ? barWindow.s(root.isCompact ? 28 : 30) : (root.isCompact ? 28 : 30)
-         cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
--        buttonIcon: "󰒓"
--        iconFontSize: barWindow ? barWindow.s(root.isCompact ? 14 : 15) : (root.isCompact ? 14 : 15)
-+        buttonIcon: "󱄅"
-+        iconFontSize: barWindow ? barWindow.s(root.isCompact ? 17 : 18) : (root.isCompact ? 17 : 18)
-         accentColor: root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
-         bgOpacity: root.barOpacity
--        textColor: isHoveredOrHighlighted ? ThemeBackend.text : (root.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
-+        textColor: "#ffffff"
-         onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle guide"])
-     }
- }
---- /dev/null
-+++ b/src/quickshell/bar/faces/left/SideLeftFace.qml.rej
-@@ -0,0 +1,17 @@
-+--- src/quickshell/bar/faces/left/SideLeftFace.qml	2026-09-06 12:54:16.669012393 +0200
-++++ src/quickshell/bar/faces/left/SideLeftFace.qml	2026-09-06 12:54:16.720247593 +0200
-+@@ -44,11 +44,11 @@
-+         width: barWindow ? barWindow.s(sideTopRoot.isCompact ? 28 : 30) : (sideTopRoot.isCompact ? 28 : 30)
-+         height: barWindow ? barWindow.s(sideTopRoot.isCompact ? 28 : 30) : (sideTopRoot.isCompact ? 28 : 30)
-+         cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
-+-        buttonIcon: "󰒓"
-++        buttonIcon: "󱄅"
-+         iconOffsetX: -2
-+-        iconFontSize: barWindow ? barWindow.s(sideTopRoot.isCompact ? 14 : 15) : (sideTopRoot.isCompact ? 14 : 15)
-++        iconFontSize: barWindow ? barWindow.s(sideTopRoot.isCompact ? 17 : 18) : (sideTopRoot.isCompact ? 17 : 18)
-+         accentColor: sideTopRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
-+-        textColor: isHoveredOrHighlighted ? ThemeBackend.text : (sideTopRoot.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
-++        textColor: "#ffffff"
-+         onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle guide"])
-+     }
-+ }
+@@ -128,7 +129,8 @@ Item {
+         MenuButton {
+             id: settingsBtn
+             visible: root.effectiveShowSettings
+-            glyph: "󰒓"
++            glyph: "󱄅"
++            logo: true
+             onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh open settings"])
+         }
+ 

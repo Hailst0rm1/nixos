@@ -113,6 +113,9 @@ in {
           width = 100;
           opacity = 100; # matches v1's fully-opaque bar
           time.format = "HH:mm:ss"; # matches the current fork's clock
+          # 2.3 added a launcher (search) button beside the menu button; the
+          # launcher already has its own keybind.
+          menuShowLauncher = false;
           # Must track hyprland.nix's plugin.hyprsplit.num_workspaces — patch 5
           # (WorkspacesWidget.qml) uses this to compute each monitor's real
           # workspace-id range (mon_id * workspaceCount + 1 ...).
@@ -145,6 +148,10 @@ in {
               # red / green deliberately left at palette values — semantic, not decorative
             };
         };
+
+        # Bottom-edge app dock. Upstream started pinning Kitty and Files by
+        # default in 2.3, so it now shows up with content.
+        dock.enabled = false;
 
         idle.enabled = false;
 

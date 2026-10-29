@@ -1,36 +1,8 @@
+diff --git a/src/quickshell/bar/faces/wifi/WifiFace.qml b/src/quickshell/bar/faces/wifi/WifiFace.qml
+index f411ef4..4462831 100644
 --- a/src/quickshell/bar/faces/wifi/WifiFace.qml
 +++ b/src/quickshell/bar/faces/wifi/WifiFace.qml
-@@ -159,17 +159,20 @@ Item {
-         let isWifiEnabled = Networking.wifiEnabled;
-         wifiStatus = isWifiEnabled ? "Enabled" : "Off";
- 
--        if (ethDevice) {
--            if (ethDevice.connected) {
--                ethStatus = "Connected";
--            } else if (ethDevice.hasLink) {
--                ethStatus = "Disconnected";
--            } else {
--                ethStatus = "Ethernet";
-+        let bestEth = null;
-+        let bestRank = -1;
-+        for (let i = 0; i < netDeviceRepeater.count; i++) {
-+            let item = netDeviceRepeater.itemAt(i);
-+            let dev = item ? item.device : null;
-+            if (!dev || dev.type !== DeviceType.Wired) continue;
-+            let rank = dev.connected ? 2 : (dev.hasLink ? 1 : 0);
-+            if (rank > bestRank) {
-+                bestRank = rank;
-+                bestEth = dev;
-             }
--        } else {
--            ethStatus = "Ethernet";
-         }
-+        ethDevice = bestEth;
-+        ethStatus = bestRank === 2 ? "Connected" : (bestRank === 1 ? "Disconnected" : "Ethernet");
- 
-         if (!isWifiEnabled) {
-             wifiSsid = "";
-@@ -324,7 +327,7 @@ Item {
+@@ -353,7 +353,7 @@ Item {
          hoverEnabled: true
          cursorShape: Qt.PointingHandCursor
          enabled: root.wifiStyle === "text" && !root.isPreview
@@ -38,11 +10,20 @@
 +        onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network " + (root.showEthernet ? "eth" : "wifi")])
      }
  
-     Row {
-@@ -387,7 +390,7 @@ Item {
+     AxisFlow {
+@@ -430,7 +430,7 @@ Item {
              transform: Translate { y: wifiPill.initAnimTrigger ? 0 : s(15); Behavior on y { NumberAnimation { duration: 620; easing.type: Easing.OutQuint } } }
-             Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
+             Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
  
+-            onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network wifi"])
++            onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network " + (root.showEthernet ? "eth" : "wifi")])
+         }
+     }
+ 
+@@ -448,7 +448,7 @@ Item {
+             textFontSize: s(root.isCompact ? 9 : 10)
+             accentColor: root.isActive ? (root.isCompact ? Qt.lighter(ThemeBackend.blue, 1.08) : ThemeBackend.blue) : (root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0)
+             textColor: root.isActive ? ThemeBackend.base : (root.isCompact ? Qt.lighter(ThemeBackend.text, 1.05) : ThemeBackend.text)
 -            onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network wifi"])
 +            onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network " + (root.showEthernet ? "eth" : "wifi")])
          }

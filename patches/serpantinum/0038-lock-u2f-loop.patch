@@ -1,146 +1,74 @@
---- a/src/quickshell/bar/faces/left/LeftFace.qml.rej
-+++ /dev/null
-@@ -1,16 +0,0 @@
----- src/quickshell/bar/faces/left/LeftFace.qml	2026-09-06 12:54:16.668505211 +0200
--+++ src/quickshell/bar/faces/left/LeftFace.qml	2026-09-06 12:54:16.720124520 +0200
--@@ -69,10 +69,10 @@
--             iconOffsetX: -2
-- 
--             cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
---            buttonIcon: "󰒓"
---            iconFontSize: barWindow ? barWindow.s(leftWidgetRoot.isCompact ? 14 : 15) : (leftWidgetRoot.isCompact ? 14 : 15)
--+            buttonIcon: "󱄅"
--+            iconFontSize: barWindow ? barWindow.s(leftWidgetRoot.isCompact ? 17 : 18) : (leftWidgetRoot.isCompact ? 17 : 18)
--             accentColor: leftWidgetRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
---            textColor: isHoveredOrHighlighted ? ThemeBackend.text : (leftWidgetRoot.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
--+            textColor: "#ffffff"
-- 
--             opacity: leftWidgetRoot.showLayout ? 1.0 : 0.0
--             transform: Translate {
---- a/src/quickshell/bar/faces/left/SideLeftFace.qml.rej
-+++ /dev/null
-@@ -1,17 +0,0 @@
----- src/quickshell/bar/faces/left/SideLeftFace.qml	2026-09-06 12:54:16.669012393 +0200
--+++ src/quickshell/bar/faces/left/SideLeftFace.qml	2026-09-06 12:54:16.720247593 +0200
--@@ -44,11 +44,11 @@
--         width: barWindow ? barWindow.s(sideTopRoot.isCompact ? 28 : 30) : (sideTopRoot.isCompact ? 28 : 30)
--         height: barWindow ? barWindow.s(sideTopRoot.isCompact ? 28 : 30) : (sideTopRoot.isCompact ? 28 : 30)
--         cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
---        buttonIcon: "󰒓"
--+        buttonIcon: "󱄅"
--         iconOffsetX: -2
---        iconFontSize: barWindow ? barWindow.s(sideTopRoot.isCompact ? 14 : 15) : (sideTopRoot.isCompact ? 14 : 15)
--+        iconFontSize: barWindow ? barWindow.s(sideTopRoot.isCompact ? 17 : 18) : (sideTopRoot.isCompact ? 17 : 18)
--         accentColor: sideTopRoot.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
---        textColor: isHoveredOrHighlighted ? ThemeBackend.text : (sideTopRoot.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
--+        textColor: "#ffffff"
--         onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle guide"])
--     }
-- }
+diff --git a/src/quickshell/lock/Lock.qml b/src/quickshell/lock/Lock.qml
+index 0d6581a..d9c5129 100644
 --- a/src/quickshell/lock/Lock.qml
 +++ b/src/quickshell/lock/Lock.qml
-@@ -22,6 +22,77 @@ Scope {
+@@ -16,6 +16,12 @@ Scope {
      property int resumeRevision: 0
  
-     property bool isNiri: false
+     property int connectedScreenCount: 1
 +    // pam_u2f's cue message is only set while the key is flashing for a touch.
 +    // The text is latched so it fades out with the pill instead of vanishing
 +    // the moment the check ends.
 +    property bool u2fShown: false
 +    property string u2fText: ""
 +    property double u2fCueSince: 0
-+
-+    component U2fCue: Rectangle {
-+        id: cue
-+        property real px: 1
-+        property string text: ""
-+        property bool shown: false
-+
-+        implicitWidth: cueRow.implicitWidth + 28 * px
-+        implicitHeight: 34 * px
-+        radius: height / 2
-+        color: Qt.rgba(0, 0, 0, 0.28)
-+        border.width: Math.max(1, px)
-+        border.color: Qt.rgba(ThemeBackend.mauve.r, ThemeBackend.mauve.g, ThemeBackend.mauve.b, 0.35 + 0.45 * cue.pulse)
-+        opacity: cue.shown ? 1 : 0
-+        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
-+
-+        // One phase drives glyph, ring and border so they flash together,
-+        // roughly in step with the YubiKey's own LED.
-+        property real pulse: 0
-+        SequentialAnimation on pulse {
-+            running: cue.shown
-+            loops: Animation.Infinite
-+            NumberAnimation { to: 1; duration: 450; easing.type: Easing.OutCubic }
-+            NumberAnimation { to: 0; duration: 650; easing.type: Easing.InCubic }
-+        }
-+
-+        RowLayout {
-+            id: cueRow
-+            anchors.centerIn: parent
-+            spacing: 10 * cue.px
-+
-+            Item {
-+                Layout.preferredWidth: 18 * cue.px
-+                Layout.preferredHeight: 18 * cue.px
-+
-+                Rectangle {
-+                    anchors.centerIn: parent
-+                    width: parent.width * (1 + 0.9 * cue.pulse)
-+                    height: width
-+                    radius: width / 2
-+                    color: "transparent"
-+                    border.width: Math.max(1, 1.5 * cue.px)
-+                    border.color: ThemeBackend.mauve
-+                    opacity: 0.6 * (1 - cue.pulse)
-+                }
-+
-+                Text {
-+                    anchors.centerIn: parent
-+                    text: "󰌆"
-+                    font.family: "Iosevka Nerd Font"
-+                    font.pixelSize: 16 * cue.px
-+                    color: ThemeBackend.mauve
-+                    opacity: 0.45 + 0.55 * cue.pulse
-+                }
-+            }
-+
-+            Text {
-+                text: cue.text
-+                font.family: ThemeBackend.fontFamily
-+                font.pixelSize: 13 * cue.px
-+                font.weight: Font.Bold
-+                color: "#ffffff"
-+            }
-+        }
-+    }
-     property bool isSway: false
-     property string kbLayout: "US"
-     property int connectedScreenCount: 1
-@@ -198,6 +269,7 @@ Scope {
-         lockUI.authenticating = false;
-         lockUI.statusText = I18n.t("lock.status.locked");
-         rootLock.locked = true;
-+        root.u2fShown = false;
-         pamActionTimer.start();
-         kbPollerRestartTimer.restart();
-     }
-@@ -205,6 +277,8 @@ Scope {
-     function finishUnlock() {
-         if (root.isUnlocking) return;
-         root.isUnlocking = true;
-+        pam.abort();
-+        u2fPam.abort();
+     property bool fingerprintAvailable: false
+     property bool fpUnsupported: false
+     property bool fpHolding: false
+@@ -124,21 +130,21 @@ Scope {
+         command: [
+             "bash",
+             "-c",
+-            "test -e \"${1:-/etc/pam.d}/serpantinum\"",
++            "test -e \"${1:-/etc/pam.d}/serpantinum-password\"",
+             "pam-probe",
+             pam.configDirectory
+         ]
+         onExited: (exitCode) => {
+             if (exitCode !== 0) return;
+-            pam.config = "serpantinum";
+-            fpPam.config = "serpantinum";
+-            root.defaultPamConfig = "serpantinum";
++            pam.config = "serpantinum-password";
++            fpPam.config = "serpantinum-password";
++            root.defaultPamConfig = "serpantinum-password";
+         }
      }
  
-     function completeUnlock() {
-@@ -241,12 +315,62 @@ Scope {
-         onTriggered: {
-             if (rootLock.locked) {
-                 pam.start();
-+                if (!u2fPam.active) u2fPam.start();
-             }
-         }
+     Process {
+         id: noFpPamBuilder
+-        command: ["bash", Caching.serpantinumDir + "/scripts/system/pam_without_fingerprint.sh", root.defaultPamDir, root.noFpPamDir, "serpantinum"]
++        command: ["bash", Caching.serpantinumDir + "/scripts/system/pam_without_fingerprint.sh", root.defaultPamDir, root.noFpPamDir, "serpantinum-password"]
+         onExited: (exitCode) => root.noFpPamReady = exitCode === 0
+     }
+ 
+@@ -243,6 +249,7 @@ Scope {
+ 
+     function beginAuth() {
+         if (!rootLock.locked || root.isUnlocking) return;
++        if (!u2fPam.active) u2fPam.start();
+         root.startFingerprint();
+         passwordStartTimer.restart();
+     }
+@@ -252,6 +259,8 @@ Scope {
+         fingerprintSettleTimer.stop();
+         passwordStartTimer.stop();
+         passwordRetryTimer.stop();
++        u2fRetryTimer.stop();
++        if (u2fPam.active) u2fPam.abort();
+         root.fpAborting = true;
+         root.fpHolding = false;
+         if (fpPam.active) fpPam.abort();
+@@ -382,6 +391,7 @@ Scope {
+         root.fpUnsupported = false;
+         root.fingerprintAvailable = false;
+         fingerprintUnlockTimer.stop();
++        root.u2fShown = false;
+         rootLock.locked = true;
+         pamActionTimer.start();
+     }
+@@ -455,6 +465,54 @@ Scope {
+         onError: root.markFingerprintUnsupported()
      }
  
 +    // The YubiKey gives up on a touch after ~30s, so the key check runs as its
@@ -150,7 +78,7 @@
 +        id: u2fRetryTimer
 +        interval: 1000
 +        onTriggered: {
-+            if (rootLock.locked && !root.isUnlocking) u2fPam.start();
++            if (rootLock.locked && !root.isUnlocking && !u2fPam.active) u2fPam.start();
 +        }
 +    }
 +
@@ -175,7 +103,7 @@
 +        // On success the cue stays up and fades with the lock screen. On the
 +        // key's ~30s touch timeout it is held across the retry gap so it does
 +        // not blink; any earlier failure (key pulled) hides it at once.
-+        // ponytail: elapsed-time heuristic, assumes the key times out after >25s.
++        // shortcut: elapsed-time heuristic, assumes the key times out after >25s.
 +        onCompleted: (result) => {
 +            if (result === PamResult.Success) {
 +                root.finishUnlock();
@@ -183,46 +111,112 @@
 +            }
 +            if (Date.now() - root.u2fCueSince > 25000) u2fHideTimer.restart();
 +            else root.u2fShown = false;
-+            u2fRetryTimer.restart();
++            if (rootLock.locked && !root.isUnlocking) u2fRetryTimer.restart();
 +        }
 +        onError: {
 +            root.u2fShown = false;
-+            u2fRetryTimer.restart();
++            if (rootLock.locked && !root.isUnlocking) u2fRetryTimer.restart();
 +        }
 +    }
 +
      PamContext {
          id: pam
-+        config: "serpantinum-password"
  
-         onCompleted: (result) => {
-             lockUI.authenticating = false;
-@@ -1120,6 +1244,14 @@ Scope {
-                                             anchors.fill: parent
-                                             anchors.topMargin: screenRoot.s(1.5)
-                                             anchors.bottomMargin: -screenRoot.s(1.5)
-+                                U2fCue {
-+                                    Layout.alignment: Qt.AlignHCenter
-+                                    Layout.topMargin: screenRoot.s(18)
-+                                    px: screenRoot.s(1)
-+                                    text: root.u2fText
-+                                    shown: root.u2fShown
-+                                }
-+
-                                             font.family: parent.font.family
-                                             font.pixelSize: parent.font.pixelSize
-                                             font.weight: parent.font.weight
-@@ -1399,6 +1531,13 @@ Scope {
-                                                 }
-                                             }
+diff --git a/src/quickshell/lock/LockScreen.qml b/src/quickshell/lock/LockScreen.qml
+index bed53a7..4dae0ca 100644
+--- a/src/quickshell/lock/LockScreen.qml
++++ b/src/quickshell/lock/LockScreen.qml
+@@ -24,6 +24,77 @@ FocusScope {
+     anchors.fill: parent
+     focus: true
  
-+                                            U2fCue {
-+                                                Layout.alignment: Qt.AlignHCenter
-+                                                px: screenRoot.s(1)
-+                                                text: root.u2fText
-+                                                shown: root.u2fShown
-+                                            }
++    // "Touch your key" pill, shown while pam_u2f waits on the YubiKey.
++    component U2fCue: Rectangle {
++        id: cue
++        property real px: 1
++        property string text: ""
++        property bool shown: false
 +
-                                             RowLayout {
-                                                 Layout.alignment: Qt.AlignHCenter
-                                                 spacing: screenRoot.s(10)
++        implicitWidth: cueRow.implicitWidth + 28 * px
++        implicitHeight: 34 * px
++        width: implicitWidth
++        height: implicitHeight
++        radius: height / 2
++        color: Qt.rgba(0, 0, 0, 0.28)
++        border.width: Math.max(1, px)
++        border.color: Qt.rgba(ThemeBackend.mauve.r, ThemeBackend.mauve.g, ThemeBackend.mauve.b, 0.35 + 0.45 * cue.pulse)
++        opacity: cue.shown ? 1 : 0
++        visible: opacity > 0
++        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
++
++        // One phase drives glyph, ring and border so they flash together,
++        // roughly in step with the YubiKey's own LED.
++        property real pulse: 0
++        SequentialAnimation on pulse {
++            running: cue.shown
++            loops: Animation.Infinite
++            NumberAnimation { to: 1; duration: 450; easing.type: Easing.OutCubic }
++            NumberAnimation { to: 0; duration: 650; easing.type: Easing.InCubic }
++        }
++
++        Row {
++            id: cueRow
++            anchors.centerIn: parent
++            spacing: 10 * cue.px
++
++            Item {
++                width: 18 * cue.px
++                height: 18 * cue.px
++                anchors.verticalCenter: parent.verticalCenter
++
++                Rectangle {
++                    anchors.centerIn: parent
++                    width: parent.width * (1 + 0.9 * cue.pulse)
++                    height: width
++                    radius: width / 2
++                    color: "transparent"
++                    border.width: Math.max(1, 1.5 * cue.px)
++                    border.color: ThemeBackend.mauve
++                    opacity: 0.6 * (1 - cue.pulse)
++                }
++
++                Text {
++                    anchors.centerIn: parent
++                    text: "󰌆"
++                    font.family: ThemeBackend.iconFont
++                    font.pixelSize: 16 * cue.px
++                    color: ThemeBackend.mauve
++                    opacity: 0.45 + 0.55 * cue.pulse
++                }
++            }
++
++            Text {
++                anchors.verticalCenter: parent.verticalCenter
++                text: cue.text
++                font.family: ThemeBackend.fontFamily
++                font.pixelSize: 13 * cue.px
++                font.weight: Font.Bold
++                color: "#ffffff"
++            }
++        }
++    }
++
+     Rectangle {
+         anchors.fill: parent
+         color: ThemeBackend.crust
+@@ -638,6 +709,15 @@ FocusScope {
+             LockPowerControls {
+                 screenRoot: lockScreenRoot
+             }
++
++            U2fCue {
++                anchors.horizontalCenter: parent.horizontalCenter
++                anchors.bottom: parent.bottom
++                anchors.bottomMargin: lockScreenRoot.s(140)
++                px: lockScreenRoot.s(1)
++                text: root.u2fText
++                shown: root.u2fShown
++            }
+     }
+     }
+ }

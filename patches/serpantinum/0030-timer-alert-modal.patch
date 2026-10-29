@@ -1,23 +1,29 @@
+diff --git a/src/quickshell/Shell.qml b/src/quickshell/Shell.qml
+index 58dd188..95520fd 100644
 --- a/src/quickshell/Shell.qml
 +++ b/src/quickshell/Shell.qml
-@@ -22,6 +22,7 @@ ShellRoot {
+@@ -51,6 +51,7 @@ ShellRoot {
      Launcher {}
      Clipboard {}    
      TimerPanel {}
 +    TimerAlert {}
  
      Polkit {}
-     PopoutManager {}
+     WellbeingLimitOverlay {}
+diff --git a/src/quickshell/qmldir b/src/quickshell/qmldir
+index cf6d2c2..44ad571 100644
 --- a/src/quickshell/qmldir
 +++ b/src/quickshell/qmldir
-@@ -6,6 +6,7 @@ Bar 1.0 bar/Bar.qml
- Floating 1.0 quickactions/Floating.qml
+@@ -7,6 +7,7 @@ Floating 1.0 quickactions/Floating.qml
+ FloatingEdgeTrigger 1.0 quickactions/FloatingEdgeTrigger.qml
  Clipboard 1.0 clipboard/Clipboard.qml
  TimerPanel 1.0 timer/TimerPanel.qml
 +TimerAlert 1.0 timer/TimerAlert.qml
  Launcher 1.0 launcher/Launcher.qml
  ScreenshotOverlay 1.0 screenshot/ScreenshotOverlay.qml
  WallpaperEngine 1.0 wallpaper/WallpaperEngine.qml
+diff --git a/src/quickshell/singletons/system/TimerState.qml b/src/quickshell/singletons/system/TimerState.qml
+index d06562b..e007c97 100644
 --- a/src/quickshell/singletons/system/TimerState.qml
 +++ b/src/quickshell/singletons/system/TimerState.qml
 @@ -6,4 +6,8 @@ QtObject {
@@ -29,6 +35,8 @@
 +    // screen alongside the one-shot notification tone.
 +    signal finished(string title, string body)
  }
+diff --git a/src/quickshell/timer/TimerFace.qml b/src/quickshell/timer/TimerFace.qml
+index c665c04..8bdc5d6 100644
 --- a/src/quickshell/timer/TimerFace.qml
 +++ b/src/quickshell/timer/TimerFace.qml
 @@ -338,6 +338,10 @@ Item {

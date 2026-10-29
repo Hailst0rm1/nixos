@@ -1,9 +1,11 @@
---- a/src/quickshell/bar/faces/kb/KbFace.qml
-+++ b/src/quickshell/bar/faces/kb/KbFace.qml
-@@ -123,8 +123,8 @@ Item {
-             "bash",
-             "-c",
-             root.isSway
+diff --git a/src/quickshell/singletons/system/KeyboardLayout.qml b/src/quickshell/singletons/system/KeyboardLayout.qml
+index 1250ff6..1a0b01a 100644
+--- a/src/quickshell/singletons/system/KeyboardLayout.qml
++++ b/src/quickshell/singletons/system/KeyboardLayout.qml
+@@ -88,8 +88,8 @@ Singleton {
+             root.isMango
+                 ? "layout=$(mmsg get keyboardlayout 2>/dev/null | jq -r '.layout // empty' | head -n1); [[ -z \"$layout\" || \"$layout\" == \"null\" ]] && layout=\"US\"; echo \"${layout:0:2}\" | tr '[:lower:]' '[:upper:]'"
+                 : root.isSway
 -                ? "layout=$(swaymsg -t get_inputs 2>/dev/null | jq -r '[.[] | select(.type == \"keyboard\" and .xkb_active_layout_name != null)] | .[0].xkb_active_layout_name // empty' | head -n1); [[ -z \"$layout\" || \"$layout\" == \"null\" ]] && layout=\"US\"; echo \"${layout:0:2}\" | tr '[:lower:]' '[:upper:]'"
 -                : "layout=$(LC_ALL=C hyprctl devices -j 2>/dev/null | jq -r '(.keyboards[] | select(.main == true) | .active_keymap) // .keyboards[0].active_keymap // empty' | head -n1); [[ -z \"$layout\" || \"$layout\" == \"null\" ]] && layout=\"US\"; echo \"${layout:0:2}\" | tr '[:lower:]' '[:upper:]'"
 +                ? "layout=$(swaymsg -t get_inputs 2>/dev/null | jq -r '[.[] | select(.type == \"keyboard\" and .xkb_active_layout_name != null)] | .[0].xkb_active_layout_name // empty' | head -n1); [[ -z \"$layout\" || \"$layout\" == \"null\" ]] && layout=\"US\"; echo \"$layout\""

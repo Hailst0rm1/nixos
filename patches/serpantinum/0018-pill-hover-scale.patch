@@ -1,16 +1,18 @@
+diff --git a/src/quickshell/bar/faces/sysmon/SysMonFace.qml b/src/quickshell/bar/faces/sysmon/SysMonFace.qml
+index 46c7b5d..39122a7 100644
 --- a/src/quickshell/bar/faces/sysmon/SysMonFace.qml
 +++ b/src/quickshell/bar/faces/sysmon/SysMonFace.qml
-@@ -127,6 +127,9 @@ Item {
+@@ -146,6 +146,9 @@ Item {
+         height: implicitHeight
          radius: width / 2
          color: "transparent"
-         border.width: 0
 +        // Each gauge pops on its own hover, like the wifi/bt/volume/kb pills.
 +        scale: circleMouse.containsMouse ? 1.03 : 1.0
 +        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
  
          Timer {
              running: (!activeTarget || activeTarget.moduleActive) && root.showLayout && !initAnimTrigger
-@@ -169,6 +172,15 @@ Item {
+@@ -190,6 +193,15 @@ Item {
              horizontalAlignment: Text.AlignHCenter
              verticalAlignment: Text.AlignVCenter
          }
@@ -25,8 +27,8 @@
 +        }
      }
  
-     Row {
-@@ -210,13 +222,4 @@ Item {
+     AxisFlow {
+@@ -232,13 +244,4 @@ Item {
              }
          }
      }
