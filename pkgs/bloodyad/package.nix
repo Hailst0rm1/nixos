@@ -16,11 +16,11 @@
   });
 
   kerbad = (python.pkgs.kerbad.override {inherit asysocks;}).overridePythonAttrs (old: rec {
-    version = "0.5.10";
+    version = "0.5.12";
     src = fetchPypi {
       pname = "kerbad";
       inherit version;
-      hash = "sha256-qSJgJ1TxOaQo94YhgXEhO1BTnz/kviRxTRhmdDHkzw0=";
+      hash = "sha256-mD35zFBCpdZg9DENnhVc7SWvu6GjZf/NCQP8UMRwhQI=";
     };
     # kerbad 0.5.10 dropped minikerberos dependency
     dependencies = with python.pkgs; [
@@ -36,35 +36,35 @@
   });
 
   badauth = (python.pkgs.badauth.override {inherit asysocks kerbad;}).overridePythonAttrs (old: rec {
-    version = "0.1.6";
+    version = "0.1.7";
     src = fetchPypi {
       pname = "badauth";
       inherit version;
-      hash = "sha256-MqZPcFVjI4qkPLCP3uwaT6FcpnQMdtIFI9AqnYeTll4=";
+      hash = "sha256-kv+U0sUveJsSrLondCpVy/G+EAVnTEl/rGC7Z27qCKc=";
     };
   });
 
   unidns = python.pkgs.unidns.override {inherit asysocks;};
 
   badldap = (python.pkgs.badldap.override {inherit asysocks badauth kerbad unidns;}).overridePythonAttrs (old: rec {
-    version = "0.7.6";
+    version = "0.7.7";
     src = fetchPypi {
       pname = "badldap";
       inherit version;
-      hash = "sha256-Ndsl/WHrcPM8+ZyaS1o7j8oXKc7q1QB09XlEz5lJio8=";
+      hash = "sha256-goDMe+P72KvUjTRGnb2BWN6ECfrfFy48MTjU4zdwa40=";
     };
   });
 in
   python.pkgs.buildPythonApplication {
     pname = "bloodyAD";
-    version = "2.5.5";
+    version = "2.5.7";
     pyproject = true;
 
     src = fetchFromGitHub {
       owner = "CravateRouge";
       repo = "bloodyAD";
-      rev = "v2.5.5";
-      hash = "sha256-J4vQX8z6mqSkwnonNOVYJZGyA63p5QdIkRAiiSld6yg=";
+      rev = "v2.5.7";
+      hash = "sha256-Z/yvjraALxhodCFQtLPmyXEz0qT3BBC7Nq5Qlv2OM2s=";
     };
 
     build-system = [python.pkgs.hatchling];
