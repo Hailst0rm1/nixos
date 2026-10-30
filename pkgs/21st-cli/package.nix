@@ -7,14 +7,14 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "21st-cli";
-  version = "1.17.1";
+  version = "1.18.0";
 
   # Published only as a bundled npm tarball — package.json has `repository:
   # null` and no GitHub mirror exists, so there is nothing to fetchFromGitHub.
   # The npm URL carries the version, so this pin is honest.
   src = fetchurl {
     url = "https://registry.npmjs.org/@21st-dev/cli/-/cli-${finalAttrs.version}.tgz";
-    hash = "sha256-9Qa1JdP3JLcC10SGXPzQDoTJGDXbeyQ+texnC+4eiAE=";
+    hash = "sha256-fhTpLA1k1ybYoPPsjpQ1qn/ASPm1vlQ4sqXQifaVYZ0=";
   };
 
   # `21st install-skill` fetches these three markdown files from 21st.dev at
@@ -36,7 +36,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    install -Dm644 dist/index.js "$out/lib/21st/index.js"
+    # Since 1.18.0 index.js imports sibling code-split chunks; ship all of dist/.
+    mkdir -p "$out/lib"
+    cp -r dist "$out/lib/21st"
     # `21st add` shells out to `npx shadcn@latest add`, so npx must be on PATH.
     makeWrapper ${lib.getExe nodejs} "$out/bin/21st" \
       --add-flags "$out/lib/21st/index.js" \
@@ -62,7 +64,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       # 21st-cli-use delegates the generate/iterate flow to this skill.
       "21st-ai" = fetchurl {
         url = "https://21st.dev/skills/21st-ai.md";
-        hash = "sha256-IpEZgC2DXsAA6GAYb/q2DawnK3rrLvL9kNX5eAx4YBI=";
+        hash = "sha256-vN66BRyVeS9m+MIqnpTosJvpPoe+BgS+H2GaWiUnZSs=";
       };
       "21st-registry" = fetchurl {
         url = "https://21st.dev/skills/21st-registry.md";
