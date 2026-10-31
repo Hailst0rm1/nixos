@@ -160,15 +160,15 @@
   impeccable-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "pbakaus";
     repo = "impeccable";
-    rev = "02523aec3e4c4580102d996d1b6a71fbe062e03f";
-    hash = "sha256-Yu02irBHcflxV+btYAeqSQYbPhvZlHbrNVO6lsiM584=";
+    rev = "df3a4abe7d0840d5f60324812c432e00b66a4e75";
+    hash = "sha256-gmSHpcnXE60ho7LOhY+QtbrUGcO9R1gxo/U2wmydXes=";
   };
   # track-branch: main
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "849c8690bdf86eef60156e13d98efd10fcfd46fb";
-    hash = "sha256-FtP85HaqZJxFEVjS45O6nelNM6erHXtoTT+fSqIwBu4=";
+    rev = "1e64208082f9ee10d1f6a8f60be5da723349ee47";
+    hash = "sha256-7/2bozg4MtRzGf6YNvV0bPK/yCxU2gj8Q0jDRDWnUgk=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -181,15 +181,15 @@
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "coreyhaines31";
     repo = "marketingskills";
-    rev = "820ad2c1c0ac4cc350158bd7912c753681a7d173";
-    hash = "sha256-2FSYTRqDc0j8Nv9W3ShLu5Wxjd5+ZFY/MpPN40ftAls=";
+    rev = "88c79f6528a9347420e57ceb1fff9a60de651768";
+    hash = "sha256-xaBcBdjdn3siGvXk43bPDu6pGxGw5vwBikwOKTCRUAY=";
   };
   # track-branch: main
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "nicobailon";
     repo = "visual-explainer";
-    rev = "5f378868e0ea745a6284b51e710c390f0c76f72c";
-    hash = "sha256-8DZ+tlvQ34bYVscmBhcHeN7YuVnkkgz1utSPg/nhNeo=";
+    rev = "2a34c38c8bf5d0affbf60700f7cf24245bb8ed07";
+    hash = "sha256-/t0i9cQw30R1UrPEfD+zHumuVDSUmFwWmUH5vIZQWMg=";
   };
   # track-branch: main
   ponytail-marketplace-repo = pkgs.fetchFromGitHub {
@@ -229,8 +229,8 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "325afb60108d4ab04e24d715f244bd591ca33fbe";
-    hash = "sha256-bm7thaNz/TrjRWGhEOh57UphTY6Fhz2KcBsIqvlhYAc=";
+    rev = "70aa40042cfb8157a0d84954b9c0d2b30b50af80";
+    hash = "sha256-t9VWQfQB4lVbaDnpb91gqPFFEPwpgE/CHicpy2QW/RA=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
