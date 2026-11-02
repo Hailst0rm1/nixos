@@ -129,15 +129,22 @@ in {
     };
 
     # Default applications (MIME associations)
-    xdg.mimeApps = lib.mkIf cfg.firefox.enable {
-      enable = true;
-      defaultApplications = {
-        "application/pdf" = "firefox.desktop";
-        "text/html" = "firefox.desktop";
-        "x-scheme-handler/http" = "firefox.desktop";
-        "x-scheme-handler/https" = "firefox.desktop";
-      };
-    };
+    xdg.mimeApps = lib.mkMerge [
+      (lib.mkIf cfg.firefox.enable {
+        enable = true;
+        defaultApplications = {
+          "application/pdf" = "firefox.desktop";
+          "text/html" = "firefox.desktop";
+          "x-scheme-handler/http" = "firefox.desktop";
+          "x-scheme-handler/https" = "firefox.desktop";
+        };
+      })
+      (lib.mkIf cfg.obsidian.enable {
+        enable = true;
+        # mkForce: helix.nix also claims text/markdown
+        defaultApplications."text/markdown" = lib.mkForce "md.obsidian.Obsidian.desktop";
+      })
+    ];
     xdg.configFile = lib.mkIf cfg.firefox.enable {
       "mimeapps.list".force = true;
     };

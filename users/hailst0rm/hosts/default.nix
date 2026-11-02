@@ -74,7 +74,14 @@
         enable = lib.mkDefault false;
         openweatherCityId = lib.mkDefault "2673730";
       };
-      quickshell.serpantinum.enable = lib.mkDefault true;
+      quickshell.serpantinum = {
+        enable = lib.mkDefault true;
+        location = {
+          city = lib.mkDefault "Barkarby";
+          latitude = lib.mkDefault 59.4136;
+          longitude = lib.mkDefault 17.8686;
+        };
+      };
     };
   };
 

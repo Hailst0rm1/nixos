@@ -99,6 +99,16 @@ in {
           muteSfx = true;
           weatherUnit = "metric";
           weatherInterval = 15;
+          # Same shape scripts/location_manual.sh writes; source = "manual"
+          # stops location.sh from overwriting it with an IP-based guess.
+          location = {
+            inherit (qsCfg.location) city latitude longitude;
+            country_name = "Sweden";
+            country_code = "SE";
+            timezone = "Europe/Stockholm";
+            source = "manual";
+            updated_at = 0;
+          };
           # Edge-hover Quick Actions sidebar.
           quickactions = false;
         };

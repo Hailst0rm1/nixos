@@ -91,7 +91,29 @@ in {
       };
     };
 
-    quickshell.serpantinum.enable = lib.mkEnableOption "Serpantinum v2 Quickshell desktop shell (replaces panel, notifications, lockscreen; supersedes quickshell.ilyamiro)";
+    quickshell.serpantinum = {
+      enable = lib.mkEnableOption "Serpantinum v2 Quickshell desktop shell (replaces panel, notifications, lockscreen; supersedes quickshell.ilyamiro)";
+
+      # Pinned as a "manual" location so serpantinum never guesses from the
+      # public IP (wrong on VPNs/work networks) — weather reads these coords.
+      location = {
+        city = lib.mkOption {
+          type = lib.types.str;
+          default = "Barkarby";
+          description = "City name shown by serpantinum's weather/location widgets.";
+        };
+        latitude = lib.mkOption {
+          type = lib.types.float;
+          default = 59.4136;
+          description = "Latitude used for serpantinum weather.";
+        };
+        longitude = lib.mkOption {
+          type = lib.types.float;
+          default = 17.8686;
+          description = "Longitude used for serpantinum weather.";
+        };
+      };
+    };
 
     monitorOrientations = lib.mkOption {
       type = lib.types.attrsOf (lib.types.enum ["left" "right" "top" "bottom" "center"]);
