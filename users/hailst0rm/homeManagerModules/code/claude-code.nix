@@ -134,8 +134,8 @@
   humanlayer-skills-repo = pkgs.fetchFromGitHub {
     owner = "humanlayer";
     repo = "skills";
-    rev = "69d5fc61d6ca6f7056d283a2ee2a045be741a1d6";
-    hash = "sha256-I/FEGMmJvmkxAzdHEBnacrG5TcP4Y46Kk9lqkKE834M=";
+    rev = "4d69d20f6e9b57b4fcf0d501ccfb1be961f0f329";
+    hash = "sha256-ZuDObFjOFAahsvrxqDbL9FHrMVWx6Lnh5dttdsW+czo=";
   };
 
   # blader's humanizer skill: rewrite prose to strip AI writing patterns.
@@ -160,15 +160,15 @@
   impeccable-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "pbakaus";
     repo = "impeccable";
-    rev = "4f956490f0056ae1ff5ea80372cf56e83c001d3c";
-    hash = "sha256-MCypMTXHxGDSMlTEJAKMazN+evj4HOdcHw/a24S9DSQ=";
+    rev = "e89e3ada3e875a89ac2c5d33d11e65ebef6fe285";
+    hash = "sha256-LIwnGeC3k2/bqIJoPmnjIa6HzFBdgjUKP5F2tYSFa1I=";
   };
   # track-branch: main
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "baf6a5510790cba7e9d5c2f5399354f54a962bb1";
-    hash = "sha256-6EhOg+POm7w40NXwfbtxzYYBSnyT8OZZgGDJw2DtXPs=";
+    rev = "a35dd45f3976b4a22baa0032db2b3c050c00a163";
+    hash = "sha256-8xpqPlbwbwU18ud3ml6fa4fv4MZ+8n8FTaq2nXOc3Dw=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -229,15 +229,15 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "b80b29bc49d08a71312f44b8feacb2e7585edff4";
-    hash = "sha256-nUx68NEWA7ZqNSJZl0Ldg4yyi83JIQOre2QD0gc7/IY=";
+    rev = "6988c73fb5cb5ae06bcd6b9bc511c503cddbd0df";
+    hash = "sha256-rmovGxVDVO2WLYeaIyoL0STLNXpKF1DIHNNp7T9W0LM=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "alexgreensh";
     repo = "token-optimizer";
-    rev = "077bf10dcf442762c85f026e41ec8e0817e3e5e3";
-    hash = "sha256-VuJULtOAzda1f/Gj32o1CJJvqlgvONVpGz/X2wAwF2I=";
+    rev = "3f29392d69525d4b5c324c7075bfdba3a83effe9";
+    hash = "sha256-0KVtwCdx9T4mMJRfqT1z+MknpCHlbyqMHU86bqsdleM=";
   };
 
   # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
