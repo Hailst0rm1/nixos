@@ -1006,6 +1006,19 @@
     ${pkgs.coreutils}/bin/install -m 0644 ${claudeSettingsFile} "$dst"
   '';
 
+  # LSP-plugin-recommendation state lives in ~/.claude.json (Claude Code's own
+  # mutable config, not settings.json), so disable the dialog by setting the
+  # documented key there. Merge into the live file so runtime state survives;
+  # jq's write only lands on success, so a corrupt file is left untouched.
+  claudeLspDisable = pkgs.writeShellScript "claude-lsp-disable" ''
+    f="$HOME/.claude.json"
+    [ -f "$f" ] || echo '{}' > "$f"
+    tmp=$(${pkgs.coreutils}/bin/mktemp)
+    ${pkgs.jq}/bin/jq '.lspRecommendationDisabled = true' "$f" > "$tmp" \
+      && ${pkgs.coreutils}/bin/mv "$tmp" "$f" \
+      || ${pkgs.coreutils}/bin/rm -f "$tmp"
+  '';
+
   # Installed plugin code lives in ~/.claude/plugins/cache, copied from the
   # marketplace tree. `claude plugin update` compares version strings, so a new
   # rev that keeps its plugin.json version never reaches that copy (checked
@@ -2155,6 +2168,10 @@ in {
     # symlink is already gone when we drop the real file in its place.
     home.activation.claudeSettings = lib.hm.dag.entryAfter ["linkGeneration"] ''
       run ${claudeSettingsInstall}
+    '';
+
+    home.activation.claudeLspRecommendations = lib.hm.dag.entryAfter ["linkGeneration"] ''
+      run ${claudeLspDisable}
     '';
 
     # After claudeSettings: `claude plugin` reads the marketplace declarations
