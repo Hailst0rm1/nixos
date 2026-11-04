@@ -20,15 +20,15 @@
 in
   rustPlatform.buildRustPackage rec {
     pname = "strata";
-    version = "1.1.0";
+    version = "1.1.1";
 
     src = fetchFromGitHub {
       owner = "lgse";
       repo = "strata";
       rev = "v${version}";
-      hash = "sha256-FoYYsjvWY+1SuZtvxancdVR6h7iFmnbtHXW2eTlVCJI=";
+      hash = "sha256-mWFYDKlVR6/LytRBGmgZlWX70N+Qlt3Ev5W5TmJ8UdE=";
     };
-    cargoHash = "sha256-U52ypUksrz/2G8apmyh7x9c+47ZBStT1lHIWso7KfU4=";
+    cargoHash = "sha256-+8Ztfdf/523VTH4nozy9b5Fde+GTk0xWRMbBUBA5rKs=";
     buildNoDefaultFeatures = true;
     # shortcut: upstream integration tests fail in the Nix builder; enable once they pass there.
     doCheck = false;
