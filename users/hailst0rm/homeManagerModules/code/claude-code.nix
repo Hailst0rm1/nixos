@@ -160,29 +160,29 @@
   impeccable-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "pbakaus";
     repo = "impeccable";
-    rev = "c1e0e5492fbb524f5df84d635ecfae7dc438ec45";
-    hash = "sha256-G2J4pOtcLrjHduTj0wRGtvlLa5IcuR64ad9/sfdLMdg=";
+    rev = "b4bff1626c344067788c2679f048a20057c7cc5a";
+    hash = "sha256-auqflH7kEUZzF0EftJLOZeJe1Lvvy8PeaIgSG/j8y5U=";
   };
   # track-branch: main
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "f681b4580fe8340364384b04d9936a645cb05c53";
-    hash = "sha256-zgIJpXZVvtSyOdIi4MS7UhReMC+GVbB3YXgNbD2QCLY=";
+    rev = "890a3f6b8015b0ca4ab5761db8335c02325b0470";
+    hash = "sha256-7hcFJy0D3j8IWdU/YsYCOnugmAKbOQTcv1rU0n28JdE=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "kepano";
     repo = "obsidian-skills";
-    rev = "3ccff5338ea700537839b21900aa5358a0402c98";
-    hash = "sha256-kyH07EVmwIEC/q6i91Kz8mPE78j9ITga2NZUpU1+nHU=";
+    rev = "398127736bd4ba42d767b1419fee1a927508370b";
+    hash = "sha256-+BUNxlcper8xFl0Kuxfe30crKhtrzBiDCiC8sr2IRcM=";
   };
   # track-branch: main
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "coreyhaines31";
     repo = "marketingskills";
-    rev = "3e729622e3de0c82abdb906190d91f9018045872";
-    hash = "sha256-KFekluDde88OilaGAaTZOKBVURh229SsKNsVf97m5Yo=";
+    rev = "1f837447b20bb6f0e72d87b80ece1c221c362c7d";
+    hash = "sha256-fapZdamdz/lK1W71Xnya7s6JN7IGiX1hu5Acx5PyE5A=";
   };
   # track-branch: main
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
@@ -229,15 +229,15 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "95bc8bf2cf1267d2921bdb3bc6a95045cad0af43";
-    hash = "sha256-7KWgkmxqOJLRFYhG2XtPppHumAzZdXTbUp9XBKjL00w=";
+    rev = "7c34422c73b23befbd38f3a6f897758b3658ffe8";
+    hash = "sha256-u5O21drCUVv1xIG2Xpco/0pXyU4orkx5ryU099udSXk=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "alexgreensh";
     repo = "token-optimizer";
-    rev = "414a1dba0e685d6bf3ec8b27d37244b8735417d3";
-    hash = "sha256-1TFXKsrTMs6ymAs3t13Z/+hl9/U1GsR7xGUUA4uwy3g=";
+    rev = "075efc9855d05a50d6ee2984bed4413c47aa7d12";
+    hash = "sha256-qBzg2ijf9hOJxQaRXv/DqGwIV2uCdguDLK7UDcK/eik=";
   };
 
   # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
