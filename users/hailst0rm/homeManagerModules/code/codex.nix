@@ -149,6 +149,14 @@ in {
               command = "${perplexityMcpWrapper}";
               args = [];
             };
+          }
+          // lib.optionalAttrs (config.code.git-issue-orchestrator.enable && config.code.git-issue-orchestrator.mcp.enable) {
+            orchestrator = {
+              command = "${pkgs.git-issue-orchestrator}/bin/orchestrator-mcp";
+              args = [];
+              # wait_for_runs blocks for up to 200 s (docs/mcp-setup.md).
+              tool_timeout_sec = 240;
+            };
           };
       };
     };

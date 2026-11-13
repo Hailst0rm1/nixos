@@ -23,6 +23,9 @@
     "git@github.com:Dfirmed/**"
     "git@github.com:K-Dfirmed/**"
     "git@github-dfirmed:**"
+    # HTTPS clones, such as the git-issue-orchestrator engine's own.
+    "https://github.com/Dfirmed/**"
+    "https://github.com/K-Dfirmed/**"
   ];
 in {
   options.importConfig.git.enable = lib.mkEnableOption "Enable Git configuration.";

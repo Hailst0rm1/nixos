@@ -289,6 +289,22 @@
         "type": "github"
       }
     },
+    "git-issue-orchestrator": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1794064834,
+        "narHash": "sha256-3WRDFHrntyYnYDPJNly1EgKkxRVQvNL1vGdXZLGBcxc=",
+        "ref": "refs/heads/main",
+        "rev": "19ec4a97f473074a5aa685fd4ce42d2855397101",
+        "revCount": 184,
+        "type": "git",
+        "url": "ssh://git@github-dfirmed/Dfirmed/git_issue_orchestrator"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github-dfirmed/Dfirmed/git_issue_orchestrator"
+      }
+    },
     "gnome-shell": {
       "flake": false,
       "locked": {
@@ -968,6 +984,7 @@
         "claude-desktop": "claude-desktop",
         "codex-cli-nix": "codex-cli-nix",
         "disko": "disko",
+        "git-issue-orchestrator": "git-issue-orchestrator",
         "home-manager": "home-manager",
         "hyprland": "hyprland",
         "isochron": "isochron",

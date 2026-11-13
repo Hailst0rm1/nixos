@@ -134,6 +134,12 @@
       url = "git+ssh://git@github-dfirmed/Dfirmed/lynkeus";
       flake = false;
     };
+
+    # Private agent orchestrator (Rust/egui), fetched over SSH; flake.lock pins the rev
+    git-issue-orchestrator = {
+      url = "git+ssh://git@github-dfirmed/Dfirmed/git_issue_orchestrator";
+      flake = false;
+    };
   };
 
   outputs = inputs @ {self, ...}: let
@@ -172,6 +178,9 @@
         inherit hermes-agent;
         hermes-desktop = pkgs.callPackage ./pkgs/hermes-desktop/package.nix {
           inherit hermes-agent;
+        };
+        git-issue-orchestrator = pkgs.callPackage ./pkgs/git-issue-orchestrator/package.nix {
+          src = inputs.git-issue-orchestrator;
         };
 
         # Experimental VM for redteaming

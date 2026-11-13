@@ -41,6 +41,12 @@ with lib; let
         command = "${exaMcpWrapper}";
         args = [];
       };
+    })
+    // (optionalAttrs (config.code.git-issue-orchestrator.enable && config.code.git-issue-orchestrator.mcp.enable) {
+      orchestrator = {
+        command = "${pkgs.git-issue-orchestrator}/bin/orchestrator-mcp";
+        args = [];
+      };
     });
 
   configJson = builtins.toJSON {inherit mcpServers;};

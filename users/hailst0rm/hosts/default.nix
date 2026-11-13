@@ -156,6 +156,11 @@
         baseUrl = lib.mkDefault "http://localhost:11434";
       };
     };
+    git-issue-orchestrator = {
+      enable = lib.mkDefault false;
+      desktop.enable = lib.mkDefault true;
+      mcp.enable = lib.mkDefault true;
+    };
     codex = {
       enable = lib.mkDefault false;
       shareClaudeSkills.enable = lib.mkDefault true;

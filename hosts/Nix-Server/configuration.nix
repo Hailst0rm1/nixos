@@ -456,6 +456,13 @@
       "code" = {
         label = "Code Projects";
         path = "/mnt/nas/Code";
+        # Worktrees reach other hosts as pushed branches; syncing them is redundant.
+        # Worktree metadata stays per-host too: a `git worktree prune` on a host
+        # without the worktree would otherwise sync back and orphan the live one.
+        stignore = ''
+          /*-worktrees
+          /*/.git/worktrees
+        '';
       };
       "notsliver" = {
         label = "NotSliver";

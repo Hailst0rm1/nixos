@@ -1,0 +1,28 @@
+--- a/crates/engine/config/agent-box.sh
++++ b/crates/engine/config/agent-box.sh
+@@ -34,6 +34,17 @@
+   if [ -L "/$d" ]; then a+=(--symlink "$(readlink "/$d")" "/$d")
+   elif [ -d "/$d" ]; then a+=(--ro-bind "/$d" "/$d"); fi
+ done
++# NixOS: every program lives in /nix/store, reached through the system and per-user profiles
++# rather than /usr and /bin.
++if [ -d /nix/store ]; then
++  a+=(--ro-bind /nix/store /nix/store)
++  if [ -L /run/current-system ]; then a+=(--symlink "$(readlink /run/current-system)" /run/current-system); fi
++  # Nix in the box builds through the system's daemon, not a private store in the agent home.
++  if [ -S /nix/var/nix/daemon-socket/socket ]; then
++    a+=(--ro-bind /nix/var/nix/daemon-socket /nix/var/nix/daemon-socket); nix_remote=daemon
++  fi
++  path="/etc/profiles/per-user/$user/bin:/run/current-system/sw/bin:$path"
++fi
+ # Xvfb gives an agent a screen of its own for screenshots, where no window reaches the desktop.
+ # Its abstract socket would sit in the network namespace every box shares, where another box
+ # could read the screen and a second `:99` could not start, so it listens only on its socket in
+@@ -64,6 +75,7 @@
+ a+=(--clearenv --setenv HOME "$home" --setenv USER "$user" --setenv LOGNAME "$user"
+     --setenv PATH "$path"
+     --setenv LANG "${LANG:-C.UTF-8}" --setenv TERM dumb --setenv XDG_RUNTIME_DIR "/tmp/runtime-$uid")
++if [ -n "${nix_remote-}" ]; then a+=(--setenv NIX_REMOTE "$nix_remote"); fi
+ if [ -n "$target" ]; then
+   a+=(--setenv CARGO_TARGET_DIR "$target" --setenv CARGO_BUILD_JOBS "$jobs")
+ fi
