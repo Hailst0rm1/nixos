@@ -12,10 +12,10 @@
   # so fetch the collector directly instead of extracting it from the app.
   sharphound = pkgs.stdenv.mkDerivation {
     pname = "sharphound";
-    version = "2.17.1";
+    version = "2.18.0";
     src = pkgs.fetchurl {
-      url = "https://github.com/SpecterOps/SharpHound/releases/download/v2.17.1/SharpHound_v2.17.1_windows_x86.zip";
-      sha256 = "sha256-Y41tQI+HBnpmSzge/BHa5ddry/tFFFJFMUX5Y8cJsko=";
+      url = "https://github.com/SpecterOps/SharpHound/releases/download/v2.18.0/SharpHound_v2.18.0_windows_x86.zip";
+      sha256 = "sha256-4jOHCe6dSxHBeull3+wSGpeSfEUQsKMvekjlsKCCwWk=";
     };
     nativeBuildInputs = [pkgs.unzip];
     phases = ["installPhase"];
@@ -197,10 +197,10 @@
 
   adPEAS = pkgs.stdenv.mkDerivation {
     pname = "adPEAS";
-    version = "v2.10.0";
+    version = "v2.10.1";
     src = pkgs.fetchurl {
-      url = "https://github.com/61106960/adPEAS/raw/refs/tags/v2.10.0/adPEAS_obf.ps1";
-      sha256 = "sha256-289HtFG5egfC5mPTsANLTOe3mzBmUhT3NzsTrigarKM=";
+      url = "https://github.com/61106960/adPEAS/raw/refs/tags/v2.10.1/adPEAS_obf.ps1";
+      sha256 = "sha256-a2xxBGvgQNWpAk8Ni6yj+lHIJmJgF5h0eWFPRC53Fhk=";
     };
     phases = ["installPhase"];
     installPhase = ''
