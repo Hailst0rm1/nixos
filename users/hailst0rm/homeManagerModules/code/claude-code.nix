@@ -577,17 +577,22 @@
   # still prompts, which breaks unattended runs. An explicit hook `allow`
   # short-circuits that gate. Native deny rules and any other hook's deny
   # (e.g. the codegraph grep gate) still win, since deny outranks allow.
-  # ponytail: no input parsing — matcher is already "Bash", so every call
-  # here is a Bash call to allow. Consumes stdin to avoid SIGPIPE.
+  #
+  # Hook `allow` does NOT pass the "Dangerous rm operation" circuit breaker
+  # (e.g. `rm -rf ./*` after a `cd`); only the
+  # CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS waiver does, and that
+  # waiver switches itself off while any Bash deny/ask *rule* exists. So with
+  # this enabled the sops/age deny moves out of permissions.deny and into
+  # this hook, where a deny still blocks without killing the waiver.
+  # shortcut: segment-start regex on the raw string, same as the codegraph gate.
   autoAllowBashHook = pkgs.writeShellScript "auto-allow-bash" ''
-    ${pkgs.coreutils}/bin/cat >/dev/null
-    ${pkgs.jq}/bin/jq -cn '{
-      "hookSpecificOutput": {
-        "hookEventName": "PreToolUse",
-        "permissionDecision": "allow",
-        "permissionDecisionReason": "autoAllowBash: unattended autonomy"
-      }
-    }'
+    ${pkgs.jq}/bin/jq -c '
+      if (.tool_input.command // "" | test("(^|&&|\\|\\||[;|\\n])\\s*(\\w+=\\S+\\s+)*(sudo\\s+)?(sops|age)(\\s|$)"))
+      then {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",
+            permissionDecisionReason: "autoAllowBash: sops/age commands are denied (secrets)"}}
+      else {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow",
+            permissionDecisionReason: "autoAllowBash: unattended autonomy"}}
+      end'
   '';
 
   # Stop hook: nudge user to run /handoff once the session exceeds
@@ -1331,7 +1336,7 @@ in {
     autoAllowBash.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "PreToolUse hook that explicitly allows every Bash call, suppressing Claude Code's built-in destructive-command gate (the 'could not be checked' prompt on unanalyzable sh -c/rm commands) that fires even under bypassPermissions. Required for fully unattended runs. WARNING: this removes the last backstop against agent-authored rm/sh -c on this machine; native deny rules and the codegraph grep gate still apply, since a hook deny outranks this allow.";
+      description = "PreToolUse hook that explicitly allows every Bash call, suppressing Claude Code's built-in destructive-command gate (the 'could not be checked' prompt on unanalyzable sh -c/rm commands) that fires even under bypassPermissions. Required for fully unattended runs. Also sets CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS (the only way past the dangerous-rm prompt) and moves the sops/age Bash deny from a rule into this hook, since any Bash deny rule disables that waiver. WARNING: this removes the last backstop against agent-authored rm/sh -c on this machine; non-Bash deny rules and hook denies still apply.";
     };
     sessionHandoffReminder = {
       enable = lib.mkOption {
@@ -1782,37 +1787,42 @@ in {
             ++ lib.optionals config.code.claude-code.codegraph.enable [
               "mcp__codegraph__*"
             ];
-          deny = [
-            "Bash(sops:*)"
-            "Bash(age:*)"
-            "Read(/run/secrets/**)"
-            "Read(/run/secrets.d/**)"
-            "Read(/home/hailst0rm/.config/sops/**)"
-            "Read(/home/hailst0rm/.config/sops-nix/**)"
+          deny =
+            # Enforced by autoAllowBashHook instead when that is on: a Bash
+            # deny rule disables the dangerous-rm waiver (see the hook).
+            lib.optionals (!config.code.claude-code.autoAllowBash.enable) [
+              "Bash(sops:*)"
+              "Bash(age:*)"
+            ]
+            ++ [
+              "Read(/run/secrets/**)"
+              "Read(/run/secrets.d/**)"
+              "Read(/home/hailst0rm/.config/sops/**)"
+              "Read(/home/hailst0rm/.config/sops-nix/**)"
 
-            # Payload trimming: bare tool names strip the tool's schema from the
-            # per-turn request (a scoped rule would only block calls, not shrink
-            # the payload). Cut features we don't use on this setup:
-            # - EnterPlanMode/ExitPlanMode: wayfinder/grilling plan as a method, not CC plan mode.
-            # - AskUserQuestion: removing it keeps clarifying questions but forces
-            #   free-text prose (matches interview-style), same question frequency.
-            # - NotebookEdit: no Jupyter here. DesignSync: unused.
-            # - Push/RemoteTrigger: driven via Discord/Hermes. Cron*: scheduled via Hermes cron.
-            # - ScheduleWakeup: only used by /loop dynamic mode, unused.
-            # Kept ON PURPOSE: SendMessage (agent-team channel), ReportFindings
-            # (/code-review + /security-review emit through it in the review gate).
-            "EnterPlanMode"
-            "ExitPlanMode"
-            "DesignSync"
-            "NotebookEdit"
-            "PushNotification"
-            "RemoteTrigger"
-            "ScheduleWakeup"
-            "AskUserQuestion"
-            "CronCreate"
-            "CronDelete"
-            "CronList"
-          ];
+              # Payload trimming: bare tool names strip the tool's schema from the
+              # per-turn request (a scoped rule would only block calls, not shrink
+              # the payload). Cut features we don't use on this setup:
+              # - EnterPlanMode/ExitPlanMode: wayfinder/grilling plan as a method, not CC plan mode.
+              # - AskUserQuestion: removing it keeps clarifying questions but forces
+              #   free-text prose (matches interview-style), same question frequency.
+              # - NotebookEdit: no Jupyter here. DesignSync: unused.
+              # - Push/RemoteTrigger: driven via Discord/Hermes. Cron*: scheduled via Hermes cron.
+              # - ScheduleWakeup: only used by /loop dynamic mode, unused.
+              # Kept ON PURPOSE: SendMessage (agent-team channel), ReportFindings
+              # (/code-review + /security-review emit through it in the review gate).
+              "EnterPlanMode"
+              "ExitPlanMode"
+              "DesignSync"
+              "NotebookEdit"
+              "PushNotification"
+              "RemoteTrigger"
+              "ScheduleWakeup"
+              "AskUserQuestion"
+              "CronCreate"
+              "CronDelete"
+              "CronList"
+            ];
         };
 
         env =
@@ -1838,6 +1848,11 @@ in {
             # worker is always started by claude-mem's own SessionStart hook,
             # which inherits this. See `claudeMemUvx` for what the wrapper fixes.
             CLAUDE_MEM_CHROMA_UVX_PATH = "${claudeMemUvx}/bin/uvx";
+          }
+          // lib.optionalAttrs config.code.claude-code.autoAllowBash.enable {
+            # Waives the dangerous-rm circuit breaker in bypassPermissions mode,
+            # which no hook can. See autoAllowBashHook for what keeps it live.
+            CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
           }
           // lib.optionalAttrs config.code.claude-code.ponytail.enable {
             # Ponytail intensity for every new session (lite/full/ultra/off).
