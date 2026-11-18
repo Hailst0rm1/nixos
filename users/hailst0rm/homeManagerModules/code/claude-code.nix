@@ -1722,6 +1722,7 @@ in {
         autoCompactWindow = 250000;
         tui = "default"; # opt out of fullscreen renderer + its startup prompt
         effortLevel = "high"; # default reasoning effort; /effort overrides per-session
+        advisorModel = "fable"; # stronger model the main one consults; only attaches when it ranks >= the main model
         includeCoAuthoredBy = false;
         skipDangerousModePermissionPrompt = true;
         # When a safety classifier flags a request (most often cyber/bio), switch

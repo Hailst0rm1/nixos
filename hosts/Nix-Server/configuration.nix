@@ -397,7 +397,7 @@
       dashboard.enable = true;
       browser.enable = true;
     };
-    vncDisplay.enable = true;
+    vncDisplay.enable = false;
     podman.enable = true;
     openssh.enable = true;
     cloudflare = {
