@@ -167,22 +167,22 @@
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "751f818d0889f7e7da09d050e695c94ec77463f0";
-    hash = "sha256-3pUoX2tAx0eDBE/nQm3qNI4qqowxcalioMytWlVRsmU=";
+    rev = "9a1282f4c7399b28ad518770cffede00fe691509";
+    hash = "sha256-rY+rP0Ff1QlDieJLevgsM2ZlgtNCpcdGdS/DIUrcMG8=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "kepano";
     repo = "obsidian-skills";
-    rev = "398127736bd4ba42d767b1419fee1a927508370b";
-    hash = "sha256-+BUNxlcper8xFl0Kuxfe30crKhtrzBiDCiC8sr2IRcM=";
+    rev = "1c3f6df5683588e39b12462a75d1d0fcf550f955";
+    hash = "sha256-Cs33MyHM+A+++IBOeB6LzGAd+CfItbeTdWE0MuserwE=";
   };
   # track-branch: main
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "coreyhaines31";
     repo = "marketingskills";
-    rev = "1f837447b20bb6f0e72d87b80ece1c221c362c7d";
-    hash = "sha256-fapZdamdz/lK1W71Xnya7s6JN7IGiX1hu5Acx5PyE5A=";
+    rev = "73573e94a06a39965978b3fa1f9c1eace8cebc7c";
+    hash = "sha256-nH6bXwgMiv7Z4I8XIEDtmRlpKJrhSubyjEv/vifll8Y=";
   };
   # track-branch: main
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
@@ -229,15 +229,15 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "f705e9b99601dd9ac03e2f77c5aded6ff3d9471b";
-    hash = "sha256-1KNpLRu1GS+YhdP6UavMNVQwrCkwUvizaz3brDWWeKc=";
+    rev = "cc4dbf5beb4bd98623e0b842e6617115f4e74631";
+    hash = "sha256-mj5ER0TCbISrJUwJLbDgrRpEdEMSniEathUxmCPEuz4=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "alexgreensh";
     repo = "token-optimizer";
-    rev = "58ceaf03d12e35229f29d2ad64b5f733b2b2e066";
-    hash = "sha256-iIkrP8ul6dOmv3h2S05FR1uXxeWAj95fz+DcG6EAnu8=";
+    rev = "bbf3b8ca54ff69efb4baab25d272bb715863aef9";
+    hash = "sha256-7XffLUvqGiuooL9Bx67HHso3W913+tNOGLP8NkSvtlE=";
   };
 
   # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
