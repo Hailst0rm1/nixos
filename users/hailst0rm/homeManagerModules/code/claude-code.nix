@@ -167,15 +167,15 @@
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "a0e429558100c41fba1bb91be852da23c3423a90";
-    hash = "sha256-d0SWZk9sI8RuDZnGjpvMWNSPgoF6V3W+8awj6PPerqA=";
+    rev = "8a61fa7ba461d5474bac35b5f6700ed598e7022f";
+    hash = "sha256-UYWKCZ2Oj4zbzdnTrrQnlz3Hl2BAOrPeu5RimdQngCg=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "kepano";
     repo = "obsidian-skills";
-    rev = "462a27fa456e43a68bd645fef457217326bfd369";
-    hash = "sha256-1F98a3cEGf9OKruuJT4tEMrm3+WPPpwquHHpAlu+9rk=";
+    rev = "b110b2f8e9eb1f287892f937050dfd40af862cbb";
+    hash = "sha256-L6qIfM2TKp+g3j0J2SxfWf5qeqahCe7+YcSOMPoePOs=";
   };
   # track-branch: main
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -229,8 +229,8 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "c0f37d60b2e4860851575e3cbb003f23fc340d4e";
-    hash = "sha256-CsSm5w3Mwb7nJe9JOgULgs537DSzcUkNMffgXEabmkU=";
+    rev = "f1bb834527637231e23575e2a70c57375efdac04";
+    hash = "sha256-lsRxYNe20707PmOx8jqPMF8ataK91oiU9SjU7Q7jKxo=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
