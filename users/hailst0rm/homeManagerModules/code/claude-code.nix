@@ -167,8 +167,8 @@
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "8a61fa7ba461d5474bac35b5f6700ed598e7022f";
-    hash = "sha256-UYWKCZ2Oj4zbzdnTrrQnlz3Hl2BAOrPeu5RimdQngCg=";
+    rev = "a42461ff9837e1a73adde769a54546276540b817";
+    hash = "sha256-KZpFANCTNKadkAnjxk1FRtLJZclA5ISTVcNSHr6rs5w=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -195,8 +195,8 @@
   ponytail-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "DietrichGebert";
     repo = "ponytail";
-    rev = "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846";
-    hash = "sha256-PhPtZbeX2wBp19GtWRy+fV93+fFYZe5S487eXPDl/us=";
+    rev = "ebd8654c2c627f721eb8f9c0d1bd4090a29f9e10";
+    hash = "sha256-5m6JW3U6EMYUg4YVLh7nRRTWGY3shrFQ0wK0bediVFc=";
   };
   # Codex reads .agents/plugins/marketplace.json, which sends it to upstream
   # `main` for the plugin itself, past the pin. Point that entry back at this
@@ -229,8 +229,8 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "f1bb834527637231e23575e2a70c57375efdac04";
-    hash = "sha256-lsRxYNe20707PmOx8jqPMF8ataK91oiU9SjU7Q7jKxo=";
+    rev = "79d33254e5570b43175c639c2a2ce58bd1e221b9";
+    hash = "sha256-cDJ+m8kRv4+tRFD1h0ZCyFqjSEE2Fph0R8+uAdjR7nk=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
