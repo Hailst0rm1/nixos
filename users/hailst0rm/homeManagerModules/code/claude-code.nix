@@ -104,7 +104,11 @@
     paths = [claudeCodePkg];
     nativeBuildInputs = [pkgs.makeWrapper];
     postBuild = ''
-      wrapProgram $out/bin/claude --add-flags "--mcp-config=${claudeMcpConfigFile}"
+      # The dangerous-rm waiver is read from the launch environment only;
+      # Claude Code ignores it in the settings `env` block.
+      wrapProgram $out/bin/claude \
+        --add-flags "--mcp-config=${claudeMcpConfigFile}" \
+        --set CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS 1
     '';
     inherit (claudeCodePkg) meta;
   };
@@ -571,69 +575,24 @@
     }'
   '';
 
-  # Blanket auto-allow for Bash. bypassPermissions skips the allow/deny
-  # matcher but NOT Claude Code's built-in destructive-command gate — an
-  # `sh -c`/`rm` command it can't statically analyze ("could not be checked")
-  # still prompts, which breaks unattended runs. An explicit hook `allow`
-  # short-circuits that gate. Native deny rules and any other hook's deny
-  # (e.g. the codegraph grep gate) still win, since deny outranks allow.
-  #
-  # Hook `allow` does NOT pass the "Dangerous rm operation" circuit breaker
-  # (e.g. `rm -rf ./*` after a `cd`); only the
-  # CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS waiver does, and that
-  # waiver switches itself off while any Bash deny/ask *rule* exists. So with
-  # this enabled the sops/age deny moves out of permissions.deny and into
-  # this hook, where a deny still blocks without killing the waiver.
-  # shortcut: segment-start regex on the raw string, same as the codegraph gate.
-  autoAllowBashHook = pkgs.writeShellScript "auto-allow-bash" ''
+  # The only restrictions on this setup: sops/age commands and reads of the
+  # decrypted secret paths. They live in a hook, not in permissions.deny,
+  # because any deny/ask rule on Bash, Edit or Read switches off the
+  # dangerous-rm waiver (CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS,
+  # set in claudeCodeWrapped) and the prompts come back. A hook deny does not.
+  # No `allow` branch: bypassPermissions plus the waiver already run
+  # everything else unprompted.
+  # shortcut: segment-start regex on the raw string and Read-tool paths only,
+  # so `cat /run/secrets/x` in Bash passes. Parse the command if that bites.
+  secretsGuardHook = pkgs.writeShellScript "secrets-guard" ''
     ${pkgs.jq}/bin/jq -c '
+      def deny(r): {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny", permissionDecisionReason: r}};
       if (.tool_input.command // "" | test("(^|&&|\\|\\||[;|\\n])\\s*(\\w+=\\S+\\s+)*(sudo\\s+)?(sops|age)(\\s|$)"))
-      then {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",
-            permissionDecisionReason: "autoAllowBash: sops/age commands are denied (secrets)"}}
-      else {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow",
-            permissionDecisionReason: "autoAllowBash: unattended autonomy"}}
+      then deny("sops/age commands are denied (secrets)")
+      elif (.tool_input.file_path // "" | test("^(/run/secrets(\\.d)?|${config.home.homeDirectory}/\\.config/sops(-nix)?)(/|$)"))
+      then deny("reading decrypted secrets is denied")
+      else empty
       end'
-  '';
-
-  # Stop hook: nudge user to run /handoff once the session exceeds
-  # `sessionHandoffReminder.thresholdMinutes`. Auto-dismisses once the
-  # handoff skill has actually been invoked (detected via a Skill
-  # tool_use entry in the transcript). Every error path exits 0 so this can
-  # never disrupt Claude.
-  sessionHandoffReminderHook = pkgs.writeShellScript "handoff-reminder" ''
-    set -eu
-    INPUT=$(${pkgs.coreutils}/bin/cat)
-    TRANSCRIPT=$(${pkgs.jq}/bin/jq -r '.transcript_path // empty' <<<"$INPUT")
-    [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ] || exit 0
-
-    # Transcripts start with several metadata entries (last-prompt,
-    # permission-mode, file-history-snapshot) that have timestamp=null.
-    # Skip them and take the first real timestamp.
-    FIRST_TS=$(${pkgs.jq}/bin/jq -r 'select(.timestamp != null) | .timestamp' "$TRANSCRIPT" 2>/dev/null \
-      | ${pkgs.coreutils}/bin/head -n1)
-    [ -n "$FIRST_TS" ] || exit 0
-
-    START_EPOCH=$(${pkgs.coreutils}/bin/date -d "$FIRST_TS" +%s 2>/dev/null) || exit 0
-    NOW_EPOCH=$(${pkgs.coreutils}/bin/date +%s)
-    AGE_MIN=$(( (NOW_EPOCH - START_EPOCH) / 60 ))
-    THRESHOLD=${toString config.code.claude-code.sessionHandoffReminder.thresholdMinutes}
-    [ "$AGE_MIN" -ge "$THRESHOLD" ] || exit 0
-
-    # Dismiss the reminder once the handoff skill was actually invoked.
-    # Claude Code records skill invocations as a tool_use block with
-    # name="Skill" and input.skill="<skill-name>". This is precise — mere
-    # discussion of the skill in chat does not match.
-    if ${pkgs.jq}/bin/jq -e '.message?.content?[]? | select(.type? == "tool_use" and .name? == "Skill" and .input?.skill? == "handoff")' "$TRANSCRIPT" >/dev/null 2>&1; then
-      exit 0
-    fi
-
-    HOURS=$((AGE_MIN / 60))
-    MINS=$((AGE_MIN % 60))
-    # Claude Code's Stop hook discards raw stdout from the user view; the
-    # documented way to surface a message in the transcript is JSON with a
-    # `systemMessage` field.
-    MSG=$(${pkgs.coreutils}/bin/printf '─── Session age: %dh %dm ───\nRun /handoff -> /clear -> Paste context' "$HOURS" "$MINS")
-    ${pkgs.jq}/bin/jq -nc --arg msg "$MSG" '{"systemMessage": $msg}'
   '';
 
   # SessionStart hook: inject the delegation/model-routing policy into Opus
@@ -685,11 +644,6 @@
     one is done. Where you need a condition the harness does not notify
     on, arm Monitor once instead of looping.
 
-    A report that never arrives is still on disk: each subagent's last
-    message is captured to
-    /tmp/claude-subagent-reports/<session-id>/. Read that file rather than
-    re-running the agent.
-
     ## The brief — a subagent starts with zero context
     State the goal, the scope boundary, the exact return format ("file:line
     + one-line finding"), and what to skip. For Explore, set breadth
@@ -720,117 +674,6 @@
     case "''${MODEL,,}" in
       *opus*) ${pkgs.coreutils}/bin/cat ${delegationPolicy} ;;
     esac
-    exit 0
-  '';
-
-  # SubagentStop hook: persist each subagent's closing message, so a report
-  # that never reaches the orchestrator's context costs one `cat` instead of a
-  # re-run. Measured motivation: one review session lost six subagent reports
-  # and re-ran those review axes; the delegation policy above names this path
-  # so the orchestrator knows where to look.
-  #
-  # `last_assistant_message` is documented on Stop/SubagentStop input but is
-  # NOT verified against a live run here, so the hook degrades instead of
-  # assuming: the transcript path is always recorded, and an absent field is
-  # written into the file as such rather than producing an empty capture that
-  # reads like a silent agent.
-  subagentReportCaptureHook = pkgs.writeShellScript "subagent-report-capture" ''
-    INPUT=$(${pkgs.coreutils}/bin/cat)
-    jq='${pkgs.jq}/bin/jq'
-
-    # Establish parseability first. An input jq cannot read still gets written
-    # out verbatim below -- the payload is the whole point of the capture, so
-    # a parse failure must not be the one path that loses it.
-    if $jq -e . >/dev/null 2>&1 <<<"$INPUT"; then
-      session=$($jq -r '.session_id // "unknown-session"' <<<"$INPUT")
-      transcript=$($jq -r '.transcript_path // ""' <<<"$INPUT")
-      agent=$($jq -r '.agent_name // .agent_type // .agent_id // "subagent"' <<<"$INPUT")
-      message=$($jq -r '.last_assistant_message // ""' <<<"$INPUT")
-      parsed=1
-    else
-      session="unparsed"
-      transcript=""
-      agent="subagent"
-      message=""
-      parsed=0
-    fi
-    [ -n "$session" ] || session="unknown-session"
-    [ -n "$agent" ] || agent="subagent"
-
-    dir="/tmp/claude-subagent-reports/$session"
-    ${pkgs.coreutils}/bin/mkdir -p "$dir"
-
-    # One file per subagent: concurrent writers never share a file, so no
-    # locking is owed and a crashed agent leaves a partial file rather than a
-    # corrupted shared one.
-    stamp=$(${pkgs.coreutils}/bin/date -u +%Y%m%dT%H%M%SZ)
-    slug=$(${pkgs.coreutils}/bin/printf '%s' "$agent" | ${pkgs.gnused}/bin/sed 's/[^A-Za-z0-9._-]/-/g')
-    [ -n "$slug" ] || slug="subagent"
-    out="$dir/$stamp-$slug.md"
-
-    {
-      ${pkgs.coreutils}/bin/echo "# subagent report — $agent"
-      ${pkgs.coreutils}/bin/echo "captured: $stamp"
-      ${pkgs.coreutils}/bin/echo "transcript: ''${transcript:-none in hook input}"
-      ${pkgs.coreutils}/bin/echo
-      if [ "$parsed" = 0 ]; then
-        ${pkgs.coreutils}/bin/echo "Hook input was not valid JSON. Raw payload follows."
-        ${pkgs.coreutils}/bin/echo
-        ${pkgs.coreutils}/bin/printf '%s\n' "$INPUT"
-      elif [ -n "$message" ]; then
-        ${pkgs.coreutils}/bin/printf '%s\n' "$message"
-      else
-        ${pkgs.coreutils}/bin/echo "last_assistant_message was absent from the hook input --"
-        ${pkgs.coreutils}/bin/echo "read the transcript above for what this agent returned."
-      fi
-    } > "$out"
-
-    ${pkgs.coreutils}/bin/echo "subagent report captured: $out"
-    exit 0
-  '';
-
-  # SessionStart hook: load the local `readable` skill's ruleset from message
-  # one, so the output shape applies without typing /readable. The skill is
-  # user-invoked (disable-model-invocation), so it costs no context until this
-  # hook injects it. READABLE_MODE=off in the environment skips the injection —
-  # that is the escape hatch for spawned Hermes workers, whose review ledgers
-  # and QA evidence should keep their own format.
-  readableHook = pkgs.writeShellScript "readable-session-start" ''
-    [ "''${READABLE_MODE:-on}" = "off" ] && exit 0
-    ${pkgs.coreutils}/bin/cat ${./skills/readable/SKILL.md}
-  '';
-
-  # UserPromptSubmit hook: re-assert the shape once per turn. The SessionStart
-  # injection above lands at message one and decays over a long session.
-  # Claude Code's built-in output styles solve exactly this with a per-turn
-  # `turnReminder` string — a field only built-in styles get, and only one
-  # output style can be active at a time, so `readable` cannot be one without
-  # displacing the other SessionStart rulesets. This rebuilds the mechanism on
-  # the hook we already have; the first sentence is Anthropic's own Concise
-  # `turnReminder`, verbatim.
-  readableTurnReminderHook = pkgs.writeShellScript "readable-turn-reminder" ''
-    [ "''${READABLE_MODE:-on}" = "off" ] && exit 0
-    echo "Be concise: lead with the result, skip preamble and narration, keep only what the user needs. Where the response has something to skim, the readable glyphs mark the blocks that carry it."
-  '';
-
-  # SessionStart hook: load personal per-project Claude notes, kept as a tracked
-  # CLAUDE.k.md instead of the CLAUDE.local.md Claude reads natively.
-  #
-  # CLAUDE.local.md is gitignored (see programs.git.ignores below), which means
-  # it is untracked, unversioned, unreviewable — and, decisively, absent from
-  # every new worktree and clone, since git only materialises tracked files.
-  # A tracked CLAUDE.k.md rides along everywhere for free; this hook is the
-  # naming bridge, and doing it at session start rather than at checkout time
-  # is what makes it reach repos cloned before any of this existed.
-  #
-  # Resolved from the git toplevel, matching Claude's own upward search for
-  # memory files, and correct per-worktree (each has its own toplevel).
-  projectNotesHook = pkgs.writeShellScript "claude-project-notes" ''
-    root=$(${pkgs.git}/bin/git rev-parse --show-toplevel 2>/dev/null) || exit 0
-    # Repos set up from ~/Code/workflow ship their own project-level hook that
-    # prints the same file; yield to it so the notes load once.
-    [ -x "$root/scripts/claude-project-notes.sh" ] && exit 0
-    [ -f "$root/CLAUDE.k.md" ] && ${pkgs.coreutils}/bin/cat "$root/CLAUDE.k.md"
     exit 0
   '';
 
@@ -1134,13 +977,13 @@ in {
     };
     exa.enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Enable the Exa web/code search MCP server for Claude Code.";
+      default = false;
+      description = "Enable the Exa web/code search MCP server for Claude Code. Default-off after the 2026-11-23 audit: zero calls outside this repo in 14 days of transcripts.";
     };
     context7.enable = lib.mkOption {
       type = lib.types.bool;
-      default = true;
-      description = "Enable the Context7 (upstash/context7) MCP server: on-demand up-to-date library documentation. Reads CONTEXT7_API_KEY from sops services/context7/api-key — falls through to anonymous (lower rate limits) if the secret file is missing.";
+      default = false;
+      description = "Enable the Context7 (upstash/context7) MCP server: on-demand up-to-date library documentation. Default-off after the 2026-11-23 audit: zero calls in 564 transcripts. Reads CONTEXT7_API_KEY from sops services/context7/api-key — falls through to anonymous (lower rate limits) if the secret file is missing.";
     };
     codegraph.enable = lib.mkOption {
       type = lib.types.bool;
@@ -1237,13 +1080,8 @@ in {
       type = lib.types.bool;
       default = true;
       description = ''
-        Load the local `readable` skill (skills/readable/) from message one via a SessionStart hook: bottom line first, eight line-leading role markers (recommendation, question, done, failed, risk, blocked, assumption, tangent), tangents deferred to the end at full length, and every claim paired with its check. A fork of ayghri/i-have-adhd with the omission-prone rules removed — no list cap, no step trimming, no time estimates — and scoped to conversational output so reports, PR comments, commit messages and machine-readable markers keep their own formats. Absorbs the wording of Claude Code's built-in Concise output style (cut narration, short by default, state things plainly, correctness never traded for brevity) rather than enabling it, since only one output style can be active and its "these rules win" clause would otherwise override the marker layer; a paired UserPromptSubmit hook replays Concise's per-turn `turnReminder` line, which built-in styles get and hooks otherwise do not. Turn off for one session with "stop readable", or per-process with READABLE_MODE=off (used for spawned Hermes workers that produce review ledgers and QA evidence) — the env gate covers both hooks.
+        Make the local `readable` output style (output-styles/readable.md) the default: bottom line first, eight line-leading role markers (recommendation, question, done, failed, risk, blocked, assumption, tangent), plain words for a reader who did not follow the work, tangents deferred to the end at full length, and every claim paired with its check. An output style rather than a SessionStart hook because Claude Code sends the active style with every request, so it does not decay over a long session and needs no per-turn reminder. It applies to the main conversation and forks only; other subagents keep their own format. Scoped to conversational output, so reports, PR comments and commit messages keep theirs. Switch it off per project with `/output-style default`, or per process with `claude --settings '{"outputStyle":"default"}'`.
       '';
-    };
-    projectNotes.enable = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Read a project's CLAUDE.k.md into context at session start. Personal per-project Claude notes kept under version control: unlike the CLAUDE.local.md Claude loads natively, a tracked file is reviewable, survives a reclone, and arrives in every new worktree without any bootstrap step. Resolved from the git toplevel, so it works from any subdirectory and picks up each worktree's own copy.";
     };
     codex.enable = lib.mkOption {
       type = lib.types.bool;
@@ -1333,27 +1171,15 @@ in {
       default = false;
       description = "Install codeburn (getagentseal/codeburn): AI coding token usage tracker with a `codeburn web` dashboard.";
     };
-    autoAllowBash.enable = lib.mkOption {
+    agentTeams.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "PreToolUse hook that explicitly allows every Bash call, suppressing Claude Code's built-in destructive-command gate (the 'could not be checked' prompt on unanalyzable sh -c/rm commands) that fires even under bypassPermissions. Required for fully unattended runs. Also sets CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS (the only way past the dangerous-rm prompt) and moves the sops/age Bash deny from a rule into this hook, since any Bash deny rule disables that waiver. WARNING: this removes the last backstop against agent-authored rm/sh -c on this machine; non-Bash deny rules and hook denies still apply.";
-    };
-    sessionHandoffReminder = {
-      enable = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Print a reminder after every Claude turn once the session exceeds thresholdMinutes, suggesting /handoff then /clear. Auto-dismisses once the session-handoff skill has produced its template this session.";
-      };
-      thresholdMinutes = lib.mkOption {
-        type = lib.types.int;
-        default = 60;
-        description = "Minutes of session age before the reminder starts firing.";
-      };
+      description = "Enable Claude Code's experimental agent teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS). Default-off after the 2026-11-23 audit: used in 2 of 79 sessions.";
     };
     delegationPolicy.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Inject a subagent delegation + model-routing policy at session start, gated to Opus sessions only (SessionStart hook detects the model via hook input, the parent process's --model flag, or the saved /model default). Teaches Opus to orchestrate like Fable: fan out retrieval to haiku, bounded work to sonnet, keep judgment at the top. Fable sessions, cheaper models, and subagents never see it. Also wires a SubagentStop hook that persists each subagent's closing message to /tmp/claude-subagent-reports/<session-id>/, one file per agent, so a report lost on the way back costs a `cat` instead of a re-run — the policy text names that path, so the two travel together.";
+      description = "Inject a subagent delegation + model-routing policy at session start, gated to Opus sessions only (SessionStart hook detects the model via hook input, the parent process's --model flag, or the saved /model default). Teaches Opus to orchestrate like Fable: fan out retrieval to haiku, bounded work to sonnet, keep judgment at the top. Fable sessions, cheaper models, and subagents never see it.";
     };
     sound = {
       enable = lib.mkOption {
@@ -1439,35 +1265,7 @@ in {
         - If a simpler approach exists, say so. Push back when warranted.
         - If something is unclear, stop. Name what's confusing. Ask.
 
-        ## 2. Simplicity First
-
-        **Minimum code that solves the problem. Nothing speculative.**
-
-        - No features beyond what was asked.
-        - No abstractions for single-use code.
-        - No "flexibility" or "configurability" that wasn't requested.
-        - No error handling for impossible scenarios.
-        - If you write 200 lines and it could be 50, rewrite it.
-
-        Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-        ## 3. Surgical Changes
-
-        **Touch only what you must. Clean up only your own mess.**
-
-        When editing existing code:
-        - Don't "improve" adjacent code, comments, or formatting.
-        - Don't refactor things that aren't broken.
-        - Match existing style, even if you'd do it differently.
-        - If you notice unrelated dead code, mention it - don't delete it.
-
-        When your changes create orphans:
-        - Remove imports/variables/functions that YOUR changes made unused.
-        - Don't remove pre-existing dead code unless asked.
-
-        The test: Every changed line should trace directly to the user's request.
-
-        ## 4. Goal-Driven Execution
+        ## 2. Goal-Driven Execution
 
         **Define success criteria. Loop until verified.**
 
@@ -1485,7 +1283,7 @@ in {
 
         Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-        ## 5. Evaluate My Ideas on Merit
+        ## 3. Evaluate My Ideas on Merit
 
         **My suggestions are hypotheses, not instructions. Agreement has to be earned.**
 
@@ -1502,80 +1300,20 @@ in {
 
         ---
 
-        **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+        **These guidelines are working if:** clarifying questions come before implementation rather than after mistakes.
       '';
 
-      # ~/.claude/rules/*.md — nix-ecosystem is always present; rtk only when
-      # code.claude-code.rtk.enable is on.
+      # ~/.claude/rules/*.md — browser is always present; rtk and codegraph
+      # only when their options are on.
       rules =
         {
-          nix-ecosystem = ''
-            # Nix Ecosystem
-
-            General knowledge for working in any Nix-based environment.
-
-            ## Package Discovery & Experimentation
-            - Search for packages: `nix search nixpkgs <query>`
-            - Try a package without installing: `nix shell nixpkgs#<package>` or `nix run nixpkgs#<package>`
-            - Check package info: `nix eval nixpkgs#<package>.meta.description`
-            - Use the MCP nixos tool to search packages, options, and documentation
-
-            ## Development Environments with direnv
-            Add a `shell.nix` or `default.nix` to the project directory:
-            ```nix
-            # save as shell.nix
-            { pkgs ? import <nixpkgs> {}}:
-            pkgs.mkShell {
-              packages = [ pkgs.hello ];
-            }
-            ```
-            Then enable direnv:
-            ```shell
-            echo "use nix" >> .envrc
-            direnv allow
-            ```
-            For flake-based projects, use `use flake` instead of `use nix` in `.envrc`.
-
-            ## Flakes
-            - `nix flake show` — inspect flake outputs
-            - `nix flake check` — validate a flake
-            - `nix flake update` — update all inputs
-            - `nix flake lock --update-input <input>` — update a single input
-
-            ## Secrets Management
-            - Use sops-nix for managing secrets in NixOS configurations
-            - Never hardcode credentials or sensitive data
-            - Secret files are encrypted at rest and decrypted at activation time
-            - Access secrets via `config.sops.secrets.<name>.path`
-
-            ## Debugging
-            - `nix repl` — interactive Nix evaluator; load a flake with `:lf .`
-            - `nix eval` — evaluate an expression without building
-            - `nix build --print-build-logs` — see full build output
-            - `nixos-rebuild build` — verify a NixOS config builds without switching
-
-            ## Security
-            - Follow OPSEC principles in all code
-            - Think adversarially about code execution
-            - Consider defensive coding practices
-            - Document security implications of changes
-          '';
-
           browser = ''
             # Browser Control
 
-            Drive browsers with the `agent-browser` CLI, in preference to the
-            Claude Chrome extension — it launches its own browser, so nothing
-            waits on me to open a window first.
-
-            When a task needs a browser, work down this ladder:
-
-            1. `agent-browser` — the default.
-            2. The Claude Chrome extension (`mcp__claude-in-chrome__*`) — only
-               when `agent-browser` is absent or refuses to launch.
-            3. Neither drives a page → say so plainly and stop. Report only
-               what you actually observed in a browser; curl proves a status
-               code, never a rendered page.
+            Drive browsers with the `agent-browser` CLI. If it cannot drive a
+            page, say so plainly and stop. Report only what you actually
+            observed in a browser; curl proves a status code, never a
+            rendered page.
 
             ```sh
             [ -n "$WAYLAND_DISPLAY$DISPLAY" ] && HEADED=--headed
@@ -1598,24 +1336,11 @@ in {
           rtk = ''
             # RTK (Token-Compact Command Proxy)
 
-            A PreToolUse hook silently rewrites your Bash commands to `rtk`
-            equivalents (e.g. `git status` → `rtk git status`) for 60-90% token
-            savings. You don't need to call `rtk` explicitly — the rewrite is
-            transparent.
-
-            Only Bash tool calls go through the hook. The native `Read`, `Grep`,
-            and `Glob` tools bypass it, so use shell commands (`cat`, `rg`,
-            `find`) or explicit `rtk read`/`rtk grep`/`rtk find` when you want
-            RTK filtering on those workflows.
-
-            On test failures the full unfiltered output is saved to
-            `~/.local/share/rtk/tee/` — read that log instead of re-running the
-            test.
-
-            Useful meta-commands:
-            - `rtk gain`      — token-savings summary
-            - `rtk discover`  — find commands you could have rewritten
-            - `rtk session`   — adoption across recent sessions
+            A PreToolUse hook rewrites your Bash commands to `rtk` equivalents
+            that compact the output, so never call `rtk` yourself. When a
+            filter elided something you need, the output ends with a recovery
+            hint: run `rtk recall <hash>` (`--full` for everything) instead of
+            re-running the command.
           '';
         }
         // lib.optionalAttrs config.code.claude-code.codegraph.enable {
@@ -1632,30 +1357,10 @@ in {
             # CodeGraph (Semantic Code Intelligence)
 
             Reach for CodeGraph before the second grep of the same
-            investigation. One call returns the relevant symbols' verbatim
-            line-numbered source grouped by file, the call paths between them,
-            and a blast-radius summary — including dynamic-dispatch hops
-            (callbacks, interface→impl) grep cannot follow.
-
-            The MCP surface is a single tool, `mcp__codegraph__codegraph_explore`.
-            It answers "how does X work", a flow ("how does X reach Y"), or a
-            survey of an area; naming a file or symbol in the query reads its
-            current source. Query another indexed project — a sibling repo, or a
-            service inside a monorepo — by passing `projectPath`.
-
-            Harnesses without MCP use the identical CLI instead:
-            `codegraph explore <query>`. Also on the CLI only: `codegraph node|query|callers|callees|impact|files|status`
-            (the same operations exist as MCP tools but are unlisted by default;
-            `CODEGRAPH_MCP_TOOLS=explore,node,search,...` re-lists them).
-
-            An unindexed project returns guidance to use the built-in tools
-            rather than failing — indexing stays a deliberate choice. To make
-            one: `codegraph init` in its root, which builds the graph in the
-            same step. From then on the MCP server watches the tree and syncs
-            on every change, and reconciles against disk when it reconnects, so
-            the index is never stale and there is nothing to re-run.
-
-            Nix is supported, so this repo is a valid target too.
+            investigation: `mcp__codegraph__codegraph_explore`, or
+            `codegraph explore <query>` in a harness without MCP. Nix is
+            supported, so this repo is a valid target too. A project is
+            indexed once with `codegraph init` in its root.
 
             In an indexed project a PreToolUse hook denies grep-style searches
             (the Grep tool, `rg`, `grep`, `git grep`) over code until one
@@ -1664,33 +1369,6 @@ in {
             only. Query first, then grep for whatever the graph did not answer.
           '';
         };
-
-      # Custom commands for common workflows
-      # commands = {
-      #   # NixOS rebuild shortcut
-      #   rebuild = {
-      #     description = "Rebuild NixOS configuration";
-      #     command = "sudo nixos-rebuild switch --flake /home/hailst0rm/.nixos";
-      #   };
-
-      #   # Home Manager rebuild
-      #   home-rebuild = {
-      #     description = "Rebuild Home Manager configuration";
-      #     command = "home-manager switch --flake /home/hailst0rm/.nixos";
-      #   };
-
-      #   # Format Nix files
-      #   fmt-nix = {
-      #     description = "Format Nix files in current directory";
-      #     command = "nixfmt **/*.nix";
-      #   };
-
-      #   # Check flake
-      #   # check-flake = {
-      #   #   description = "Check flake for errors";
-      #   #   command = "cd /home/hailst0rm/.nixos && nix flake check";
-      #   # };
-      # };
 
       # MCP servers live in the `claudeMcpServers` let-binding at the top of
       # this file and reach `claude` through `claudeCodeWrapped`, not through
@@ -1708,7 +1386,7 @@ in {
         tui = "default"; # opt out of fullscreen renderer + its startup prompt
         effortLevel = "high"; # default reasoning effort; /effort overrides per-session
         advisorModel = "fable"; # stronger model the main one consults; only attaches when it ranks >= the main model
-        includeCoAuthoredBy = false;
+        attribution = false; # no Co-Authored-By trailer, PR text or session link
         skipDangerousModePermissionPrompt = true;
         # When a safety classifier flags a request (most often cyber/bio), switch
         # to the per-category fallback model and keep going instead of pausing to
@@ -1722,7 +1400,7 @@ in {
         # System-prompt bloat trimming (see aihero.dev "How To Kill The Bloat
         # In Claude Code's System Prompt"). Each flag drops a whole feature —
         # its tools + instructions — from the per-turn payload:
-        # - Workflows: unused; well-defined agent teams (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) cover it.
+        # - Workflows: unused.
         # - RemoteControl: work is driven via Discord/Hermes, not CC's remote-control feature.
         # - ClaudeAiConnectors: Gmail/Calendar/Drive handled via CLIs instead.
         # - Artifact: our HTML skills (visual-explainer/storm/playground/impeccable) Write local files, not claude.ai Artifacts.
@@ -1732,11 +1410,13 @@ in {
         disableWorkflows = true;
         disableRemoteControl = true;
         disableClaudeAiConnectors = true;
-        disableArtifact = true;
+        enableArtifact = false;
 
         worktree = {
           bgIsolation = "none";
         };
+
+        outputStyle = lib.mkIf config.code.claude-code.readable.enable "readable";
 
         statusLine = {
           type = "command";
@@ -1746,46 +1426,11 @@ in {
 
         permissions = {
           defaultMode = "bypassPermissions";
-          allow =
-            [
-              "Read"
-              "Glob"
-              "Grep"
-              "LS"
-              "Edit"
-              "MultiEdit"
-              "Write"
-              "Bash(git status)"
-              "Bash(git diff *)"
-              "Bash(git log *)"
-              "Bash(git add *)"
-              "Bash(git commit *)"
-              "Bash(git checkout *)"
-              "Bash(git branch *)"
-              "Bash(nix *)"
-              "Bash(nixfmt *)"
-              "Bash(nixos-rebuild build *)"
-            ]
-            # Wildcard, not a name list: as of 1.5.0 the server lists exactly one
-            # tool (codegraph_explore) and keeps the older narrow ones callable
-            # but unlisted, so any hand-written list goes stale the moment that
-            # surface moves — which it already had.
-            ++ lib.optionals config.code.claude-code.codegraph.enable [
-              "mcp__codegraph__*"
-            ];
           deny =
-            # Enforced by autoAllowBashHook instead when that is on: a Bash
-            # deny rule disables the dangerous-rm waiver (see the hook).
-            lib.optionals (!config.code.claude-code.autoAllowBash.enable) [
-              "Bash(sops:*)"
-              "Bash(age:*)"
-            ]
-            ++ [
-              "Read(/run/secrets/**)"
-              "Read(/run/secrets.d/**)"
-              "Read(/home/hailst0rm/.config/sops/**)"
-              "Read(/home/hailst0rm/.config/sops-nix/**)"
-
+            # Bare tool names only. A rule on Bash, Edit or Read would switch
+            # off the dangerous-rm waiver; secretsGuardHook covers sops/age
+            # and the secret paths instead.
+            [
               # Payload trimming: bare tool names strip the tool's schema from the
               # per-turn request (a scoped rule would only block calls, not shrink
               # the payload). Cut features we don't use on this setup:
@@ -1814,7 +1459,6 @@ in {
         env =
           {
             CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR = "1";
-            CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
             # Keeps the mcp__claude-in-chrome__* tool schemas out of every
             # session — browser.md routes all browser automation through
             # agent-browser instead. Checked ahead of the
@@ -1835,10 +1479,8 @@ in {
             # which inherits this. See `claudeMemUvx` for what the wrapper fixes.
             CLAUDE_MEM_CHROMA_UVX_PATH = "${claudeMemUvx}/bin/uvx";
           }
-          // lib.optionalAttrs config.code.claude-code.autoAllowBash.enable {
-            # Waives the dangerous-rm circuit breaker in bypassPermissions mode,
-            # which no hook can. See autoAllowBashHook for what keeps it live.
-            CLAUDE_CODE_EVEN_MORE_DANGEROUSLY_SKIP_PERMISSIONS = "1";
+          // lib.optionalAttrs config.code.claude-code.agentTeams.enable {
+            CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
           }
           // lib.optionalAttrs config.code.claude-code.ponytail.enable {
             # Ponytail intensity for every new session (lite/full/ultra/off).
@@ -1872,13 +1514,8 @@ in {
         # Hooks:
         # - PreToolUse (RTK): rewrites Bash commands to token-compact equivalents.
         # - PreToolUse (codegraph gate): denies grep-style searches in indexed projects until codegraph was queried.
-        # - PreToolUse (autoAllowBash): allows every Bash call, suppressing the built-in destructive-command gate for unattended runs.
-        # - Stop (session-handoff reminder): nudges user to wrap up + /clear after threshold.
+        # - PreToolUse (secrets guard): denies sops/age commands and reads of decrypted secrets.
         # - SessionStart (delegation policy): Opus-only orchestration/model-routing context.
-        # - SubagentStop (delegation policy): persists each subagent's closing message.
-        # - SessionStart (readable): loads the output-shape ruleset from message one.
-        # - UserPromptSubmit (readable): one-line per-turn reminder against drift.
-        # - SessionStart (project notes): reads the repo's tracked CLAUDE.k.md.
         hooks = lib.mkMerge [
           (lib.mkIf config.code.claude-code.rtk.enable {
             PreToolUse = [
@@ -1906,31 +1543,19 @@ in {
               }
             ];
           })
-          (lib.mkIf config.code.claude-code.autoAllowBash.enable {
+          {
             PreToolUse = [
               {
-                matcher = "Bash";
+                matcher = "Bash|Read";
                 hooks = [
                   {
                     type = "command";
-                    command = "${autoAllowBashHook}";
+                    command = "${secretsGuardHook}";
                   }
                 ];
               }
             ];
-          })
-          (lib.mkIf config.code.claude-code.sessionHandoffReminder.enable {
-            Stop = [
-              {
-                hooks = [
-                  {
-                    type = "command";
-                    command = "${sessionHandoffReminderHook}";
-                  }
-                ];
-              }
-            ];
-          })
+          }
           (lib.mkIf config.code.claude-code.delegationPolicy.enable {
             SessionStart = [
               {
@@ -1938,50 +1563,6 @@ in {
                   {
                     type = "command";
                     command = "${delegationPolicyHook}";
-                  }
-                ];
-              }
-            ];
-            SubagentStop = [
-              {
-                hooks = [
-                  {
-                    type = "command";
-                    command = "${subagentReportCaptureHook}";
-                  }
-                ];
-              }
-            ];
-          })
-          (lib.mkIf config.code.claude-code.readable.enable {
-            SessionStart = [
-              {
-                hooks = [
-                  {
-                    type = "command";
-                    command = "${readableHook}";
-                  }
-                ];
-              }
-            ];
-            UserPromptSubmit = [
-              {
-                hooks = [
-                  {
-                    type = "command";
-                    command = "${readableTurnReminderHook}";
-                  }
-                ];
-              }
-            ];
-          })
-          (lib.mkIf config.code.claude-code.projectNotes.enable {
-            SessionStart = [
-              {
-                hooks = [
-                  {
-                    type = "command";
-                    command = "${projectNotesHook}";
                   }
                 ];
               }
@@ -2019,6 +1600,14 @@ in {
         skillOverrides =
           {
             impeccable = "name-only";
+            # Typed only: neither the model nor the user invoked these in the
+            # 14 days of transcripts on 2026-11-23, so keep the /command and
+            # drop the description from every session's skill listing.
+            hermes = "user-invocable-only";
+            notebooklm = "user-invocable-only";
+            storm-research = "user-invocable-only";
+            excalidraw-diagram = "user-invocable-only";
+            wizard = "user-invocable-only";
           }
           // lib.optionalAttrs config.code.claude-code.ponytail.enable {
             ponytail = "name-only";
@@ -2100,17 +1689,6 @@ in {
             };
           })
           pluginMarketplaces;
-
-        # Editor preferences (if claude-code supports this)
-        editor = {
-          tabSize = 4;
-          insertSpaces = true;
-        };
-
-        # Terminal preferences
-        terminal = {
-          shell = "${pkgs.zsh}/bin/zsh";
-        };
       };
     };
 
@@ -2150,6 +1728,9 @@ in {
           source = "${gsd-repo}/agents";
           recursive = true;
         };
+      }
+      // lib.optionalAttrs config.code.claude-code.readable.enable {
+        ".claude/output-styles/readable.md".source = ./output-styles/readable.md;
       }
       // mattpocockSkillFiles
       // twentyfirstSkillFiles
@@ -2218,13 +1799,10 @@ in {
       [
         uv # For Python MCP servers
         nodejs # For npm/npx MCP servers
-        git # For git MCP server
+        git
 
         # NotebookLM automation CLI
         notebooklm-py
-
-        # Brave for the Claude browser extension
-        brave
 
         # Browser automation CLI for agents — `/qa-plan` drives it over CDP.
         # Built from pkgs/agent-browser/package.nix.

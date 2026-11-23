@@ -102,8 +102,8 @@
         ];
       };
       n8n.enable = lib.mkDefault false;
-      exa.enable = lib.mkDefault true;
-      context7.enable = lib.mkDefault true;
+      exa.enable = lib.mkDefault false;
+      context7.enable = lib.mkDefault false;
       codegraph.enable = lib.mkDefault true;
       codegraph.grepGate.enable = lib.mkDefault true;
       shadcn.enable = lib.mkDefault true;
@@ -125,7 +125,7 @@
         };
       };
       codeburn.enable = lib.mkDefault false;
-      autoAllowBash.enable = lib.mkDefault true;
+      agentTeams.enable = lib.mkDefault false;
       tokenOptimizer.enable = lib.mkDefault false;
       superpowers.enable = lib.mkDefault false;
       rtk.enable = lib.mkDefault true;
@@ -137,12 +137,7 @@
         defaultMode = lib.mkDefault "full";
       };
       readable.enable = lib.mkDefault true;
-      projectNotes.enable = lib.mkDefault true;
       delegationPolicy.enable = lib.mkDefault true;
-      sessionHandoffReminder = {
-        enable = lib.mkDefault true;
-        thresholdMinutes = lib.mkDefault 60;
-      };
       sound = {
         enable = lib.mkDefault true;
         volume = lib.mkDefault 55;

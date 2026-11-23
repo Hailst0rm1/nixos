@@ -76,13 +76,8 @@ in {
       package = inputs.codex-cli-nix.packages.x86_64-linux.default;
 
       # Global context → ~/.codex/AGENTS.md. Claude's CLAUDE.md is the one
-      # source, so the two cannot drift. Codex `rules` are command-approval
-      # `.rules` files, not instructions, so the nix-ecosystem rule rides along
-      # here instead.
-      context =
-        builtins.replaceStrings ["# CLAUDE.md"] ["# AGENTS.md"] config.programs.claude-code.context
-        + "\n"
-        + config.programs.claude-code.rules.nix-ecosystem;
+      # source, so the two cannot drift.
+      context = builtins.replaceStrings ["# CLAUDE.md"] ["# AGENTS.md"] config.programs.claude-code.context;
 
       # Settings → ~/.codex/config.toml
       settings = {

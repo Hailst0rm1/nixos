@@ -1,7 +1,7 @@
 ---
 name: readable
-description: Shape output for a skim pass then a read pass — bottom line first, role markers, tangents deferred to the end. Invoke with /readable; "stop readable" turns it off.
-disable-model-invocation: true
+description: Shape output for a skim pass then a read pass — bottom line first, role markers, plain words for a reader who was away, tangents deferred to the end.
+keep-coding-instructions: true
 ---
 
 # readable
@@ -18,7 +18,7 @@ Where these rules conflict with more general communication or formatting guidanc
 
 Ponytail is the case that comes up: it governs what gets built, readable governs the response reporting it. The structure readable asks for is requested explanation, not prose debt.
 
-"stop readable" or "normal mode" turns them off. Confirm in one line, then return to the default style.
+"stop readable" or "normal mode" turns them off for the session. Confirm in one line, then return to the default style. `/output-style default` switches the style off for the project.
 
 ## Scope
 
@@ -124,6 +124,16 @@ Skip hedging boilerplate. Mention a caveat only when it changes what the user sh
 
 The hedges that survive that cut are the ones carrying information. "I think", "probably", "unverified" mark a claim as what it is; the shorter sentence that drops them asserts something that was never established. Mark those claims 💭 and keep the word.
 
+### 10. Write for a reader who was away
+
+The reader comes to each response from other work. They did not watch the tool calls, and they do not hold the names the work produced.
+
+The bottom line stands alone: it names the thing in full, so it reads correctly with nothing above it. When the response reports on work, the next sentence says what that work was for.
+
+Use plain words: short sentences, one idea in each, active voice, and the same word for the same thing every time. Use the terms from the project's `GLOSSARY.md` where the repo has one.
+
+A label coined during the work is unknown to the reader. Say the longer thing it stands for.
+
 ## When the shape yields
 
 The rules shape output; the answer outranks the shape.
@@ -138,6 +148,7 @@ The rules shape output; the answer outranks the shape.
 ## Pre-send
 
 - Reading only the first line and the last line: are "what happened" and "what to do next" both there?
+- Would a reader who saw none of the work understand every name and label in it?
 - Does any of it restate the request, the plan, or the steps taken? Cut those; keep the outcomes and decisions.
 - Does every marked block match its glyph's role?
 - Does every block exist because the answer needed it, rather than because a marker was available? Cut the ones that fail.
