@@ -1593,21 +1593,6 @@ in {
             package already defaults `AGENT_BROWSER_EXECUTABLE_PATH` to nixpkgs
             chromium, so `open` needs no setup.
           '';
-
-          interview-style = ''
-            # Interview / Grilling Style
-
-            During grilling, grill-me, grill-with-docs, or any
-            interview-style session where you question me about a plan or
-            design, ask questions as plain free-text prose — one at a
-            time, each with your recommended answer stated. Do NOT use the
-            AskUserQuestion multiple-choice tool for these; I want to
-            answer in my own words so I can be nuanced.
-
-            This applies only to interview/grilling sessions — keep using
-            multiple-choice freely for quick config or routing decisions
-            elsewhere.
-          '';
         }
         // lib.optionalAttrs config.code.claude-code.rtk.enable {
           rtk = ''
@@ -1806,7 +1791,7 @@ in {
               # the payload). Cut features we don't use on this setup:
               # - EnterPlanMode/ExitPlanMode: wayfinder/grilling plan as a method, not CC plan mode.
               # - AskUserQuestion: removing it keeps clarifying questions but forces
-              #   free-text prose (matches interview-style), same question frequency.
+              #   free-text prose, same question frequency.
               # - NotebookEdit: no Jupyter here. DesignSync: unused.
               # - Push/RemoteTrigger: driven via Discord/Hermes. Cron*: scheduled via Hermes cron.
               # - ScheduleWakeup: only used by /loop dynamic mode, unused.
