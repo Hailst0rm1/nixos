@@ -167,8 +167,8 @@
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "a42461ff9837e1a73adde769a54546276540b817";
-    hash = "sha256-KZpFANCTNKadkAnjxk1FRtLJZclA5ISTVcNSHr6rs5w=";
+    rev = "0fe3f5dadfade06758de018a90e6e860274fb8de";
+    hash = "sha256-xPlTqUVT7/u7GPVyU8O1c7m7bzFeooTu85+6phq7SzU=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
@@ -229,15 +229,15 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "79d33254e5570b43175c639c2a2ce58bd1e221b9";
-    hash = "sha256-cDJ+m8kRv4+tRFD1h0ZCyFqjSEE2Fph0R8+uAdjR7nk=";
+    rev = "29bc1cdf32aca60b3bfeec3b718d4ed6614b4f97";
+    hash = "sha256-mD5yNvq0mRnRbiYhLO0WBjG+LeG1b5Y6EPaEPiOrqJo=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "alexgreensh";
     repo = "token-optimizer";
-    rev = "e3f1a2dcad8d8999096b8a881c4d98cdba4ef1a5";
-    hash = "sha256-/qaRJsLuyiRYyCxQKMWhODXuzm/m0g6rCe981tnTd5k=";
+    rev = "3830c829e07f97c4cdaa1d37081c11e689b0345b";
+    hash = "sha256-2I2ZQBo9aZ23FO02agBsEcSHXfFOWODFqRkzIQL1JgQ=";
   };
 
   # Keyed by the `name` in each tree's .claude-plugin/marketplace.json, which is
