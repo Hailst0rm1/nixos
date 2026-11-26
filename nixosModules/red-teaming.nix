@@ -35,18 +35,20 @@
             ln -sf /usr/bin/x86_64-w64-mingw32-gcc-wrapper /usr/bin/x86_64-w64-mingw32-gcc
     '';
 
-    # Legacy BloodHound (Electron viewer, fetched manually) reads this Neo4j.
-    services.neo4j = {
-      enable = true;
-      bolt = {
-        tlsLevel = "DISABLED"; # Disable Bolt encryption to avoid the SSL policy error
-      };
-      https.enable = false;
+    # Legacy BloodHound (`nix shell nixpkgs#bloodhound`) needs Neo4j 4.4: on
+    # nixpkgs' Neo4j 5+ its login spinner hangs forever. Container instead.
+    # Login: bolt://localhost:7687, neo4j / bloodhound (applied on first init only).
+    virtualisation.oci-containers.containers.neo4j-legacy = {
+      image = "neo4j:4.4.48-community";
+      ports = ["127.0.0.1:7474:7474" "127.0.0.1:7687:7687"];
+      volumes = ["/var/lib/neo4j-legacy:/data"];
+      environment.NEO4J_AUTH = "neo4j/bloodhound";
     };
+    systemd.tmpfiles.rules = ["d /var/lib/neo4j-legacy 0750 root root -"];
 
     # BloodHound CE: web UI at http://127.0.0.1:8090 (Caido owns 8080).
-    # Graph lives in Postgres, NOT the Neo4j above: nixpkgs Neo4j is 5+, and
-    # CE 8.x's neo4j driver calls db.indexes()/native-btree, Neo4j 4.4 only.
+    # Graph lives in Postgres, not Neo4j: nixpkgs Neo4j is 5+, and CE 8.x's
+    # neo4j driver calls db.indexes()/native-btree, Neo4j 4.4 only.
     # First admin password: journalctl -u bloodhound-ce | grep -i password
     services.postgresql = {
       enable = true;
