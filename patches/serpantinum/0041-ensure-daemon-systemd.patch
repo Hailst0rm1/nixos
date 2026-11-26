@@ -1,0 +1,13 @@
+--- a/bin/serpantinum	2026-11-26 09:49:51.116925991 +0100
++++ b/bin/serpantinum	2026-11-26 09:49:51.122462096 +0100
+@@ -176,6 +176,10 @@
+ }
+ 
+ ensure_daemon() {
++    # serpantinum.service owns the daemon. The pid file can vanish (tmpfiles, power
++    # scripts), and trusting it then starts a second bar beside the running one.
++    systemctl --user start serpantinum.service 2>/dev/null && return 0
++
+     local pid=""
+     if [ -f "/tmp/serpantinumd.pid" ]; then
+         pid="$(cat "/tmp/serpantinumd.pid" 2>/dev/null)"

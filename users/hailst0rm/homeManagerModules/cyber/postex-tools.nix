@@ -245,7 +245,6 @@ in {
       '';
 
       packages = with pkgs-unstable; [
-        bloodhound-ce
         mimikatz
       ];
     };

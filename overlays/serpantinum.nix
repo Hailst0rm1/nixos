@@ -38,6 +38,8 @@ final: prev: {
         # old SysMonPill inside the new face wrapper. The postPatch RAM-glyph
         # substitution below still targets the icon line this patch preserves.
         ../patches/serpantinum/0040-sysmon-pill-renderer.patch
+        # Stops a keybind from starting a second bar when the pid file is gone.
+        ../patches/serpantinum/0041-ensure-daemon-systemd.patch
       ];
 
     # Every --replace-fail target below occurs exactly once in its file.

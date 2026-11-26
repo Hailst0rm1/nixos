@@ -4,10 +4,12 @@
   fetchurl,
   autoPatchelfHook,
   makeWrapper,
-  go,
-  # TEMPORARY: Remove garble from function params due to nixpkgs 25.11 incompatibility
-  # TODO: Restore this line when garble is fixed in nixpkgs:
-  # garble,
+  # Sliver 1.7.9 hardcodes garble flags (-literals-shared, -literals-shared-short)
+  # that only exist in its own fork, moloch--/garble, released as v<goversion>b and
+  # built with that exact Go. garble demands the exact Go patch it was built with, so
+  # pin go_1_27 (= 1.27.3) to match garble v1.27.3b. Bump both together with Sliver's
+  # garbleVersion (util/assets/constants.go) and nixpkgs' matching go_1_NN.
+  go_1_27,
 }:
 stdenv.mkDerivation rec {
   pname = "sliver";
@@ -25,6 +27,14 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-bFTqlJYfFd4iu3ZZEbhQ0FTmb2kGnkt5mrfMMTTo7zY=";
   };
 
+  # Sliver's garble fork, the exact binary Sliver would otherwise download itself
+  # (util/assets/garble.go). Static Go binary — needs no patchelf. Pair it with
+  # go_1_27 above. garbleVersion lives in Sliver's util/assets/constants.go.
+  garble = fetchurl {
+    url = "https://github.com/moloch--/garble/releases/download/v1.27.3b/garble_linux-amd64";
+    sha256 = "sha256-5WJWB4WFwgRSUhWEphsgXeOEa8HjlxEmDV3aB3LXPFo=";
+  };
+
   dontUnpack = true;
 
   nativeBuildInputs = [
@@ -33,10 +43,7 @@ stdenv.mkDerivation rec {
   ];
 
   buildInputs = [
-    go
-    # TEMPORARY: Removed garble from buildInputs
-    # TODO: Restore this line when garble is fixed in nixpkgs:
-    # garble
+    go_1_27
   ];
   installPhase = ''
     runHook preInstall
@@ -50,21 +57,18 @@ stdenv.mkDerivation rec {
     # Install server (unwrapped)
     install -m755 ${server} $out/bin/.sliver-server-unwrapped
 
-    # TEMPORARY: Install pre-built garble binary to libexec (not in PATH)
-    # TODO: Remove this line when garble is fixed in nixpkgs
-    install -m755 ${./garble} $out/libexec/sliver/garble
+    # Install Sliver's garble fork (static binary)
+    install -m755 ${garble} $out/libexec/sliver/garble
 
-    # Create wrapper for server that sets up Go environment
+    # Create wrapper for server that sets up Go environment.
+    # sgn (shikata-ga-nai) isn't shipped separately; keep the pre-existing
+    # behaviour of pointing it at the garble binary.
     makeWrapper $out/bin/.sliver-server-unwrapped $out/bin/sliver-server \
       --run 'mkdir -p $HOME/.sliver/go/bin' \
-      --run 'ln -sf ${go}/bin/go $HOME/.sliver/go/bin/go' \
-      --run 'ln -sf ${go}/bin/gofmt $HOME/.sliver/go/bin/gofmt' \
+      --run 'ln -sf ${go_1_27}/bin/go $HOME/.sliver/go/bin/go' \
+      --run 'ln -sf ${go_1_27}/bin/gofmt $HOME/.sliver/go/bin/gofmt' \
       --run 'ln -sf '"$out"'/libexec/sliver/garble $HOME/.sliver/go/bin/garble' \
       --run 'ln -sf '"$out"'/libexec/sliver/garble $HOME/.sliver/go/bin/sgn'
-      # TEMPORARY: Changed to use $out/bin/garble instead of $\{garble}/bin/garble
-      # TODO: Restore these lines when garble is fixed in nixpkgs:
-      # --run 'ln -sf $\{garble}/bin/garble $HOME/.sliver/go/bin/garble' \
-      # --run 'ln -sf $\{garble}/bin/sgn $HOME/.sliver/go/bin/sgn'
 
     runHook postInstall
   '';

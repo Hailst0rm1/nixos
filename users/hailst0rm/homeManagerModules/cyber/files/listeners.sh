@@ -59,8 +59,11 @@ run_ghostty() {
 # Start caido
 caido &>/dev/null &
 
-# Start BloodHound
+# Start BloodHound (legacy Electron viewer, fetched manually)
 BloodHound &>/dev/null &
+
+# Open BloodHound CE (systemd service bloodhound-ce)
+xdg-open http://127.0.0.1:8090 &>/dev/null &
 
 # Start Paygen server
 paygen &>/dev/null &

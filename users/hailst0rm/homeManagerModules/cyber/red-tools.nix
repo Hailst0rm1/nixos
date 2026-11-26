@@ -77,7 +77,12 @@ in {
         "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
         "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
         ".config/paygen/config.yaml".source = ./files/paygen-config.yaml;
+        # Legacy BloodHound (Electron viewer) reads this directly.
         ".config/bloodhound/customqueries.json".source = ./files/bloodhound-queries.json;
+        # BloodHound CE: import once via Explore -> Cypher -> Saved Queries -> Import
+        ".config/bloodhound/ce-queries.zip".source = pkgs.runCommand "bloodhound-ce-queries.zip" {} ''
+          ${pkgs.python3}/bin/python3 -I ${./files/bloodhound-queries-to-ce.py} ${./files/bloodhound-queries.json} $out
+        '';
         ".nxc/nxc.conf".source = ./files/nxc.conf;
         # Powershell profile
         ".config/powershell/Microsoft.PowerShell_profile.ps1".text = ''
@@ -183,7 +188,7 @@ in {
         krbrelayx # Kerberos relaying and unconstrained delegation abuse (incl. addspn, dnstool, printerbug)
 
         # === Discovery ===
-        bloodhound-ce
+        # bloodhound-ce runs as a system service (nixosModules/red-teaming.nix)
         bloodhound-py # Bloodhound ingestor (remote SharpHound)
         manspider # SMB share spider - search filenames/content across networks
         adpulse # Active Directory security scanner with 35 automated checks
