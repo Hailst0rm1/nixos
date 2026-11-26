@@ -32,6 +32,14 @@
   notsliver = pkgs-unstable.callPackage "${nixosDir}/pkgs/notsliver/package.nix" {};
   krbrelayx = pkgs-unstable.callPackage "${nixosDir}/pkgs/krbrelayx/package.nix" {};
   bloodyad = pkgs-unstable.callPackage "${nixosDir}/pkgs/bloodyad/package.nix" {};
+  bloodhound-ce-python = pkgs-unstable.callPackage "${nixosDir}/pkgs/bloodhound-ce-python/package.nix" {};
+  # Both this and legacy bloodhound-py ship a python `bloodhound` module, which
+  # collides in the shared home-manager env. The binary is self-wrapped (carries
+  # its own PYTHONPATH), so expose only it and keep both collectors installable.
+  bloodhound-ce-bin = pkgs-unstable.runCommand "bloodhound-ce-python-bin" {} ''
+    mkdir -p $out/bin
+    ln -s ${bloodhound-ce-python}/bin/bloodhound-ce-python $out/bin/bloodhound-ce-python
+  '';
   ipmap = builtins.readFile ./files/ipmap.sh;
   listeners = builtins.readFile ./files/listeners.sh;
   atm =
@@ -189,7 +197,8 @@ in {
 
         # === Discovery ===
         # bloodhound-ce runs as a system service (nixosModules/red-teaming.nix)
-        bloodhound-py # Bloodhound ingestor (remote SharpHound)
+        bloodhound-py # Bloodhound LEGACY ingestor (v5 JSON, for 4.x viewer)
+        bloodhound-ce-bin # Bloodhound CE ingestor (v6 JSON, supports --hashes/Kerberos)
         manspider # SMB share spider - search filenames/content across networks
         adpulse # Active Directory security scanner with 35 automated checks
         bloodyad # AD privesc swiss army knife
