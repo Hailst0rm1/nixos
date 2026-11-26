@@ -80,9 +80,10 @@ in {
           ".config/bloodhound/customqueries.json".source = ./files/bloodhound-queries.json;
         }
         // lib.optionalAttrs bhCe {
-          # BloodHound CE: import once via Explore -> Cypher -> Saved Queries -> Import
+          # BloodHound CE: import once via Explore -> Cypher -> Saved Queries -> Import.
+          # bloodhound-queries-ce.json is the legacy set rewritten for CE (Tag_Owned/Tag_Tier_Zero, native ADCS).
           ".config/bloodhound/ce-queries.zip".source = pkgs.runCommand "bloodhound-ce-queries.zip" {} ''
-            ${pkgs.python3}/bin/python3 -I ${./files/bloodhound-queries-to-ce.py} ${./files/bloodhound-queries.json} $out
+            ${pkgs.python3}/bin/python3 -I ${./files/bloodhound-queries-to-ce.py} ${./files/bloodhound-queries-ce.json} $out
           '';
         }
         // {
