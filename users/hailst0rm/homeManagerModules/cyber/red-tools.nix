@@ -100,7 +100,17 @@ in {
           "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
           "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
           ".config/paygen/config.yaml".source = ./files/paygen-config.yaml;
-          ".nxc/nxc.conf".source = ./files/nxc.conf;
+          # nxc marks owned users over Neo4j bolt only; CE (Postgres) has no bolt, so
+          # without the legacy Neo4j container every run would warn it is unreachable.
+          ".nxc/nxc.conf".text =
+            lib.replaceStrings ["bh_enabled = True"] [
+              "bh_enabled = ${
+                if bh
+                then "True"
+                else "False"
+              }"
+            ]
+            (builtins.readFile ./files/nxc.conf);
           # Powershell profile
           ".config/powershell/Microsoft.PowerShell_profile.ps1".text = ''
             Import-Module "~/cyber/Invoke-CradleCrafter/Invoke-CradleCrafter.psd1"
