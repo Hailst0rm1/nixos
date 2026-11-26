@@ -40,6 +40,8 @@
     removableMedia = lib.mkEnableOption "Enable if OS is installed on a removable media (USB/External device).";
 
     cyber.redTools.enable = lib.mkEnableOption "Enable for offensive tooling.";
+    cyber.redTools.bloodhound.enable = lib.mkEnableOption "legacy BloodHound (Neo4j 4.4 container, bloodhound-py, customqueries.json)";
+    cyber.redTools.bloodhoundCe.enable = lib.mkEnableOption "BloodHound CE (web service on :8090, bloodhound-ce-python, CE queries zip)";
 
     cyber.dfir.enable = lib.mkEnableOption "Enable DFIR tooling and VirtualBox analysis lab.";
   };

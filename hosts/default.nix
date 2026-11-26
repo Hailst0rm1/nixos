@@ -29,6 +29,8 @@
 
   # Red Teaming config
   cyber.redTools.enable = lib.mkDefault false;
+  cyber.redTools.bloodhound.enable = lib.mkDefault false;
+  cyber.redTools.bloodhoundCe.enable = lib.mkDefault true;
 
   # DFIR tooling + VirtualBox analysis lab
   cyber.dfir.enable = lib.mkDefault false;

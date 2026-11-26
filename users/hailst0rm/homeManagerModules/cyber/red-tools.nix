@@ -1,11 +1,14 @@
 {
   inputs,
   config,
+  osConfig,
   lib,
   pkgs,
   pkgs-unstable,
   ...
 }: let
+  bh = osConfig.cyber.redTools.bloodhound.enable;
+  bhCe = osConfig.cyber.redTools.bloodhoundCe.enable;
   # Custom packages
   nixosDir = inputs.self;
   sliver = pkgs.callPackage "${nixosDir}/pkgs/sliver/package.nix" {};
@@ -71,170 +74,176 @@ in {
     };
 
     home = {
-      file = {
-        "cyber/AutoRecon/Plugins" = {
-          source = ./files/AutoRecon-Plugins;
-          recursive = true;
+      file =
+        lib.optionalAttrs bh {
+          # Legacy BloodHound (Electron viewer) reads this directly.
+          ".config/bloodhound/customqueries.json".source = ./files/bloodhound-queries.json;
+        }
+        // lib.optionalAttrs bhCe {
+          # BloodHound CE: import once via Explore -> Cypher -> Saved Queries -> Import
+          ".config/bloodhound/ce-queries.zip".source = pkgs.runCommand "bloodhound-ce-queries.zip" {} ''
+            ${pkgs.python3}/bin/python3 -I ${./files/bloodhound-queries-to-ce.py} ${./files/bloodhound-queries.json} $out
+          '';
+        }
+        // {
+          "cyber/AutoRecon/Plugins" = {
+            source = ./files/AutoRecon-Plugins;
+            recursive = true;
+          };
+          "cyber/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
+          "cyber/AutoRecon/global.toml".source = ./files/autorecon-global.toml;
+          "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
+          "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
+          "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
+          "cyber/Invoke-CradleCrafter".source = Invoke-CradleCrafter;
+          "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
+          "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
+          ".config/paygen/config.yaml".source = ./files/paygen-config.yaml;
+          ".nxc/nxc.conf".source = ./files/nxc.conf;
+          # Powershell profile
+          ".config/powershell/Microsoft.PowerShell_profile.ps1".text = ''
+            Import-Module "~/cyber/Invoke-CradleCrafter/Invoke-CradleCrafter.psd1"
+          '';
         };
-        "cyber/AutoRecon/config.toml".source = ./files/autorecon-config.toml;
-        "cyber/AutoRecon/global.toml".source = ./files/autorecon-global.toml;
-        "cyber/wordlists".source = "${pkgs-unstable.wordlists}/share/wordlists";
-        "cyber/hashcat-rules".source = "${pkgs-unstable.hashcat}/share/doc/hashcat/rules";
-        "cyber/john-rules/john.conf".source = "${pkgs-unstable.john}/etc/john/john.conf";
-        "cyber/Invoke-CradleCrafter".source = Invoke-CradleCrafter;
-        "cyber/metasploit/win-revtcp-listener.rc".source = ./files/win-revtcp-listener.rc;
-        "cyber/metasploit/lin-revtcp-listener.rc".source = ./files/lin-revtcp-listener.rc;
-        ".config/paygen/config.yaml".source = ./files/paygen-config.yaml;
-        # Legacy BloodHound (Electron viewer) reads this directly.
-        ".config/bloodhound/customqueries.json".source = ./files/bloodhound-queries.json;
-        # BloodHound CE: import once via Explore -> Cypher -> Saved Queries -> Import
-        ".config/bloodhound/ce-queries.zip".source = pkgs.runCommand "bloodhound-ce-queries.zip" {} ''
-          ${pkgs.python3}/bin/python3 -I ${./files/bloodhound-queries-to-ce.py} ${./files/bloodhound-queries.json} $out
-        '';
-        ".nxc/nxc.conf".source = ./files/nxc.conf;
-        # Powershell profile
-        ".config/powershell/Microsoft.PowerShell_profile.ps1".text = ''
-          Import-Module "~/cyber/Invoke-CradleCrafter/Invoke-CradleCrafter.psd1"
-        '';
-      };
 
-      packages = with pkgs-unstable; [
-        # === Testing corner ===
-        # wireshark
-        wineWow64Packages.wayland
+      packages = with pkgs-unstable;
+        [
+          # === Testing corner ===
+          # wireshark
+          wineWow64Packages.wayland
 
-        # === Reconnaissance ===
+          # === Reconnaissance ===
 
-        # Passive
-        whois
-        gitleaks # Find creds in git-applications
-        exiftool # Information via metadata on targets public resources
-        subfinder # Subdirectory finder
-        gau # Get-all-Urls - get known urls
-        theharvester # Emails, names, IPs, subdomains
-        waymore # Wayback explorer query and download
-        trufflehog # Find exposed credentials
+          # Passive
+          whois
+          gitleaks # Find creds in git-applications
+          exiftool # Information via metadata on targets public resources
+          subfinder # Subdirectory finder
+          gau # Get-all-Urls - get known urls
+          theharvester # Emails, names, IPs, subdomains
+          waymore # Wayback explorer query and download
+          trufflehog # Find exposed credentials
 
-        # Active
-        autorecon # Automatic recon
-        (writeShellScriptBin "autorecon-wrapped" autorecon-wrapped) # Wrapped script to run autorecon reliably
-        enum4linux-ng # ^Dependency: Enum samba & Windows
-        redis # ^Dependency
-        nmap
-        nmap-formatter
-        rustscan # Fast nmap
-        dnsrecon # DNS recon
-        nbtscan # NetBIOS scan (port 139)
-        net-snmp # Includes: snmpwalk (port UDP/161)
-        onesixtyone # SNMP Scanner (port UDP/161)
-        exploitdb # Searchsploit, searchable vulnerability DB
-        libxml2 # ^Dependency
-        smbmap # SMB Scanner (tcp/445)
-        nuclei # Vulnerability scanner
+          # Active
+          autorecon # Automatic recon
+          (writeShellScriptBin "autorecon-wrapped" autorecon-wrapped) # Wrapped script to run autorecon reliably
+          enum4linux-ng # ^Dependency: Enum samba & Windows
+          redis # ^Dependency
+          nmap
+          nmap-formatter
+          rustscan # Fast nmap
+          dnsrecon # DNS recon
+          nbtscan # NetBIOS scan (port 139)
+          net-snmp # Includes: snmpwalk (port UDP/161)
+          onesixtyone # SNMP Scanner (port UDP/161)
+          exploitdb # Searchsploit, searchable vulnerability DB
+          libxml2 # ^Dependency
+          smbmap # SMB Scanner (tcp/445)
+          nuclei # Vulnerability scanner
 
-        # Web
-        # ipcrawler # Identify best wordlist
-        whatweb # Web scanner (meta) (OVERLAY: ruby 3.4 fix)
-        nikto # Another web scanner
-        gobuster # Directory busting
-        ffuf # Fuzzing
-        feroxbuster # Ffuf alternative
-        # burpsuite # Webapp testing
-        caido-desktop # Burp alternative in rust
-        chromium # For Caido
-        sqlmap # SQL Injection
-        # beekeeper-studio # SQL GUI client (impure)
-        wpscan # Wordpress scanner
-        httpx # Check which hosts are alive, and fingerprint them
-        katana # Web crawler
-        sslscan # Tests SSL
+          # Web
+          # ipcrawler # Identify best wordlist
+          whatweb # Web scanner (meta) (OVERLAY: ruby 3.4 fix)
+          nikto # Another web scanner
+          gobuster # Directory busting
+          ffuf # Fuzzing
+          feroxbuster # Ffuf alternative
+          # burpsuite # Webapp testing
+          caido-desktop # Burp alternative in rust
+          chromium # For Caido
+          sqlmap # SQL Injection
+          # beekeeper-studio # SQL GUI client (impure)
+          wpscan # Wordpress scanner
+          httpx # Check which hosts are alive, and fingerprint them
+          katana # Web crawler
+          sslscan # Tests SSL
 
-        # === Resource Development ===
-        pkgsCross.mingwW64.buildPackages.gcc
-        mono # For compiling C# projects
-        paygen # Custom Payload generator tool
-        psobf # PowerShell obfuscator
-        logic-net # .NET assembly obfuscator using dnlib
-        donut # Convert PE files to shellcode
-        pezor # Shellcode & PE packer with evasion techniques
-        msitools # For AlwaysInstallElevated
+          # === Resource Development ===
+          pkgsCross.mingwW64.buildPackages.gcc
+          mono # For compiling C# projects
+          paygen # Custom Payload generator tool
+          psobf # PowerShell obfuscator
+          logic-net # .NET assembly obfuscator using dnlib
+          donut # Convert PE files to shellcode
+          pezor # Shellcode & PE packer with evasion techniques
+          msitools # For AlwaysInstallElevated
 
-        # === Initial Access ===
-        metasploit
-        ruby # Dependency
-        postgresql_18 # Dependency for MSFDB
-        swaks # SMTP Swiss Army Knife
-        penelope # Shell Handler
-        fakemeeting # Phishing calendar invites
+          # === Initial Access ===
+          metasploit
+          ruby # Dependency
+          postgresql_18 # Dependency for MSFDB
+          swaks # SMTP Swiss Army Knife
+          penelope # Shell Handler
+          fakemeeting # Phishing calendar invites
 
-        # === Execution ===
-        python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
-        dll-proxy-generator # Generate proxy DLLs for DLL hijacking
-        perfect-dll-proxy # Generate proxy DLLs for DLL hijacking using absolute path forwarding
+          # === Execution ===
+          python313Packages.wsgidav # Used to host WebDAV for hosting of payloads
+          dll-proxy-generator # Generate proxy DLLs for DLL hijacking
+          perfect-dll-proxy # Generate proxy DLLs for DLL hijacking using absolute path forwarding
 
-        # === Privilege Escalation ===
-        wes-ng # Windows-exploit-suggester
-        linux-exploit-suggester
-        certipy # ADCS enumeration and exploitation tool
+          # === Privilege Escalation ===
+          wes-ng # Windows-exploit-suggester
+          linux-exploit-suggester
+          certipy # ADCS enumeration and exploitation tool
 
-        # === Lateral Movement ===
-        (pkgs.evil-winrm) # WinRM shell for hacking/pentesting
-        netexec
-        smbclient-ng # A GOOD smbclient
-        mssqlclient-ng # Enhanced impacket mssqlclient for MSSQL interaction
+          # === Lateral Movement ===
+          (pkgs.evil-winrm) # WinRM shell for hacking/pentesting
+          netexec
+          smbclient-ng # A GOOD smbclient
+          mssqlclient-ng # Enhanced impacket mssqlclient for MSSQL interaction
 
-        # === Credential Access ===
-        (writeShellScriptBin "atm" atm) # CUSTOM: netexec credential gathering automation
-        thc-hydra # Brute force
-        hashcat # GPU cracker
-        hashcat-utils
-        john # CPU cracker
-        hashid # Identify hash type (-m for hashcat mode value)
-        python312Packages.impacket # ntmlrelayx.py: Relays ntml requests
-        (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
-        coercer # Coerce a Windows server to authenticate on an arbitrary machine
-        krbrelayx # Kerberos relaying and unconstrained delegation abuse (incl. addspn, dnstool, printerbug)
+          # === Credential Access ===
+          (writeShellScriptBin "atm" atm) # CUSTOM: netexec credential gathering automation
+          thc-hydra # Brute force
+          hashcat # GPU cracker
+          hashcat-utils
+          john # CPU cracker
+          hashid # Identify hash type (-m for hashcat mode value)
+          python312Packages.impacket # ntmlrelayx.py: Relays ntml requests
+          (pkgs.responder) # (OVERLAY) Rogue authentication server to obtain hashes
+          coercer # Coerce a Windows server to authenticate on an arbitrary machine
+          krbrelayx # Kerberos relaying and unconstrained delegation abuse (incl. addspn, dnstool, printerbug)
 
-        # === Discovery ===
-        # bloodhound-ce runs as a system service (nixosModules/red-teaming.nix)
-        bloodhound-py # Bloodhound LEGACY ingestor (v5 JSON, for 4.x viewer)
-        bloodhound-ce-bin # Bloodhound CE ingestor (v6 JSON, supports --hashes/Kerberos)
-        manspider # SMB share spider - search filenames/content across networks
-        adpulse # Active Directory security scanner with 35 automated checks
-        bloodyad # AD privesc swiss army knife
+          # === Discovery ===
+          # bloodhound-ce runs as a system service (nixosModules/red-teaming.nix)
+          manspider # SMB share spider - search filenames/content across networks
+          adpulse # Active Directory security scanner with 35 automated checks
+          bloodyad # AD privesc swiss army knife
 
-        # === Command & Control (C2) ===
-        sliver # C2 framework
-        notsliver # Web-based Sliver C2 operator GUI
-        # ligolo-ng # Tunneling/pivoting tool that uses a TUN interface
-        ligolo-mp # Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
-        updog # Alternative for python web server
+          # === Command & Control (C2) ===
+          sliver # C2 framework
+          notsliver # Web-based Sliver C2 operator GUI
+          # ligolo-ng # Tunneling/pivoting tool that uses a TUN interface
+          ligolo-mp # Tunneling/pivoting tool that uses a TUN interface (multiplayer + tui)
+          updog # Alternative for python web server
 
-        # === Exfiltration ===
-        httpuploadexfil # Like Python server, but upload
+          # === Exfiltration ===
+          httpuploadexfil # Like Python server, but upload
 
-        # === Cloud ===
-        awscli2
-        # pacu # AWS Exploitation framework (bugged 25.12 2/1/2026)
+          # === Cloud ===
+          awscli2
+          # pacu # AWS Exploitation framework (bugged 25.12 2/1/2026)
 
-        # === Wordlists ===
-        cewl # Wordlist generator based on website
-        crunch # Easy wordlist generator
-        username-anarchy # Username generator
-        wordlists # Note: This includes seclists
+          # === Wordlists ===
+          cewl # Wordlist generator based on website
+          crunch # Easy wordlist generator
+          username-anarchy # Username generator
+          wordlists # Note: This includes seclists
 
-        # === Misc ===
-        krb5 # To manage kerberos tickets etc
-        (writeShellScriptBin "cyberchef" ''          # For encoding/encryption etc
-          ${config.browser} "${cyberchef}/share/cyberchef/index.html"
-        '')
-        (writeShellScriptBin "ipmap" ipmap) # Map ip to hostname
-        (writeShellScriptBin "listeners" listeners) # Start web/msf/exfil/routing servers
-        (writeShellScriptBin "var" var) # Easily modify variables
-        (writeShellScriptBin "portspoof" portspoof) # Spoof all ports to show as open
-        (writeShellScriptBin "portmux" portmux) # Manage ports for services
-        iptables # Modern iptables (nftables backend) - required by portspoof/mux
-      ];
+          # === Misc ===
+          krb5 # To manage kerberos tickets etc
+          (writeShellScriptBin "cyberchef" ''            # For encoding/encryption etc
+            ${config.browser} "${cyberchef}/share/cyberchef/index.html"
+          '')
+          (writeShellScriptBin "ipmap" ipmap) # Map ip to hostname
+          (writeShellScriptBin "listeners" listeners) # Start web/msf/exfil/routing servers
+          (writeShellScriptBin "var" var) # Easily modify variables
+          (writeShellScriptBin "portspoof" portspoof) # Spoof all ports to show as open
+          (writeShellScriptBin "portmux" portmux) # Manage ports for services
+          iptables # Modern iptables (nftables backend) - required by portspoof/mux
+        ]
+        ++ lib.optional bh bloodhound-py # Bloodhound LEGACY ingestor (v5 JSON, for 4.x viewer)
+        ++ lib.optional bhCe bloodhound-ce-bin; # Bloodhound CE ingestor (v6 JSON, supports --hashes/Kerberos)
     };
   };
 }

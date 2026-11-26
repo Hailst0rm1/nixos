@@ -14,9 +14,10 @@ seen = set()
 with zipfile.ZipFile(sys.argv[2], "w", zipfile.ZIP_DEFLATED) as zf:
     for i, q in enumerate(legacy):
         name = f"[{q.get('category', 'Custom')}] {q['name']}"
-        while name in seen:  # CE rejects the whole import on a duplicate name
+        # CE rejects the whole import on a duplicate name, compared case-insensitively.
+        while name.lower() in seen:
             name += " (2)"
-        seen.add(name)
+        seen.add(name.lower())
 
         steps = q["queryList"]
         # Legacy filled `r:{}` with the UI's enabled edge types; CE has no such
