@@ -177,22 +177,22 @@
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "1400b93fee0eec0f3404d67a7c328b45d1ed033e";
-    hash = "sha256-24hgTyz5FF3CrgOG3W/gugfNZdw6PY9ViJ6Av4WobQ4=";
+    rev = "ab4fdc57b93e93991012e2c3196102feaec3972e";
+    hash = "sha256-Jhl3KRMCt/63uFTwNpnrW6+xCPBhxaiASfp5sSu8ffs=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "kepano";
     repo = "obsidian-skills";
-    rev = "79e85b73ef041fdfb6437ab3824e2fe29eda9244";
-    hash = "sha256-uz6ABXOX1uxFAy8xLIuXEMGPuk9/MDKnQJLeKnVj7t4=";
+    rev = "9c9560a870fd490b0e1a847f2c8401a50e2d931d";
+    hash = "sha256-OBqGXILvtpMiwe7ErNVeY71j2FCO2mSwNomu0T+4ngU=";
   };
   # track-branch: main
   marketingskills-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "coreyhaines31";
     repo = "marketingskills";
-    rev = "8fd2fcade2fd6629026e9dfe6d133b55b36968b9";
-    hash = "sha256-Jq4dyfEjV7C+6x9VLsFk7Uuo58Uy3j9CUxX30+N9hC0=";
+    rev = "2bf95edb4ebd37198ab7fd18b99ba95c2145ec64";
+    hash = "sha256-7Xd630fpFsHdThcT2ylEj8oPgLH84sVzH9IlQKrFY8k=";
   };
   # track-branch: main
   visual-explainer-marketplace-repo = pkgs.fetchFromGitHub {
@@ -239,8 +239,8 @@
   claude-mem-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "thedotmack";
     repo = "claude-mem";
-    rev = "94474143a3d5bb6f1f25d8049194d675d724310e";
-    hash = "sha256-zt7icqLVWPic95njXydN17N3vjBEvitrRAJqy7I7iH0=";
+    rev = "ad682a38da4cdbd2076451f595adc7db512a626c";
+    hash = "sha256-xlNoEchYvWUvKKr7X8RY0/BSCcu+4a0AXz0sw+17iXU=";
   };
   # track-branch: main
   token-optimizer-marketplace-repo = pkgs.fetchFromGitHub {
