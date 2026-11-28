@@ -131,8 +131,8 @@
   mattpocock-skills-repo = pkgs.fetchFromGitHub {
     owner = "mattpocock";
     repo = "skills";
-    rev = "6f7f7831a625f040a8e06a0e7954826b87ce775a";
-    hash = "sha256-kM/OK6+kbTHzlN5d6wjL9hM80lolcSCoO8A1oRvEJEU=";
+    rev = "bbadaa631c37af594e5a05c9cefacd9956136b18";
+    hash = "sha256-Y+tDX8bKHQ5hGp0R+DSmF2qs8r2tdBg/f4SA9kSeAm4=";
   };
 
   # humanlayer's show-me skill: explain the current topic in-chat with the
@@ -177,8 +177,8 @@
   context-mode-marketplace-repo = pkgs.fetchFromGitHub {
     owner = "mksglu";
     repo = "context-mode";
-    rev = "ab4fdc57b93e93991012e2c3196102feaec3972e";
-    hash = "sha256-Jhl3KRMCt/63uFTwNpnrW6+xCPBhxaiASfp5sSu8ffs=";
+    rev = "80bbddd7875883bc1c50bbd2fe306387122e4cee";
+    hash = "sha256-zz6gRslW9DuJMz8ibqZn7nsc75T2J/Mc3bNGOPc3uic=";
   };
   # track-branch: main
   obsidian-skills-marketplace-repo = pkgs.fetchFromGitHub {
